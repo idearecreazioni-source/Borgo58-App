@@ -7,6 +7,7 @@ import {
   setContoPredefinito,
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
+import Didascalia from "../../components/Didascalia";
 
 // 🔴 QUESTA SCHERMATA E' LA VIA D'USCITA DI UN RIFIUTO (25/08/2026). Da
 // oggi un movimento che passa dalla banca deve dire su quale conto, e chi
@@ -77,11 +78,13 @@ export default function ContiCorrenti() {
       >
         ← Cassa
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Conti correnti</h1>
-      <p className="testo-sala text-b58-charcoal-soft mb-6">
-        Ogni movimento che passa dalla banca dice da quale conto esce o entra. Finché il conto
-        è uno solo lo mette il gestionale da sé: qui serve solo registrarlo.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
+        Conti correnti
+        <Didascalia>
+          Ogni movimento che passa dalla banca dice da quale conto esce o entra. Finché il conto
+          è uno solo lo mette il gestionale da sé: qui serve solo registrarlo.
+        </Didascalia>
+      </h1>
 
       {errore && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -193,14 +196,14 @@ export default function ContiCorrenti() {
             <div className="mt-8">
               <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
                 Conti spenti
+                {/* ⚠️ Non si cancellano: i movimenti già registrati ci sono
+                    attaccati sopra, e un conto sparito lascerebbe uno
+                    storico che non si può più leggere. */}
+                <Didascalia>
+                  Restano qui: i movimenti già registrati continuano a dire da quale conto sono
+                  passati.
+                </Didascalia>
               </h2>
-              {/* ⚠️ Non si cancellano: i movimenti già registrati ci sono
-                  attaccati sopra, e un conto sparito lascerebbe uno storico
-                  che non si può più leggere. */}
-              <p className="testo-sala text-b58-charcoal-soft mb-2">
-                Restano qui: i movimenti già registrati continuano a dire da quale conto sono
-                passati.
-              </p>
               <ul className="space-y-2">
                 {spenti.map((c) => (
                   <li

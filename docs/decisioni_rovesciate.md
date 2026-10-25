@@ -161,8 +161,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 102 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
 | 103 | 15/10/2026 | un impegno scritto a mano nasce visibile allo staff |
 | 104 | 19/10/2026 | nessuna dettatura scrive niente prima che Alessio approvi |
+| 105 | 25/10/2026 | nella Cassa gli avvertimenti sul cassetto restano scritti a schermo |
 
-⚠️ **Righe: 105.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 106.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3786,3 +3787,31 @@ quando questa sezione è stata scritta.
    non morde — non muove soldi né giacenze, e una riga si toglie con un
    tocco. Il prezzo è che una parola capita male finisce in lista senza che
    nessuno l'abbia riletta, e la si vede solo aprendo la lista.
+
+## 105 · 25/10/2026 — «nella Cassa gli avvertimenti sul cassetto restano scritti a schermo»
+
+1. **Cosa era stato deciso e quando.** Il 24/08/2026, nel giro delle
+   didascalie, la home della Cassa aveva lasciato visibili «contare il
+   cassetto non corregge di nascosto» e «non è un'uscita: il cassetto cala
+   e la banca sale», trattandole da avvertimenti; e il 18/08 la frase sotto
+   il campo della serata era stata dichiarata «non decorazione»
+   (`CampoGiornata`).
+
+2. **La ragione di allora.** Dicono cosa succede ai soldi, e la frase della
+   serata distingue «il gestionale ha scelto per me» da «ha sbagliato».
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 25/10, con la
+   fotografia della Cassa: *«eliminare tutte le didascalie che creano
+   confusione… dentro un punto interrogativo»*, poi *«vorrei che tutte le
+   didascalie del gestionale funzionassero così»*). In tutto il modulo
+   Cassa le spiegazioni passano dietro il «?» (`<Didascalia>`), comprese
+   quelle tre. Restano a schermo errori, avvisi che dipendono dai dati
+   (saldo negativo, mance non tue, uscite non ancora nel saldo, «Non torna»,
+   «Pagando dal tuo conto…»), le avvertenze che il database consegna
+   insieme al numero, il limite TD27 e «Non entrano nei ricavi» sui prestiti.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: le frasi non sono cancellate, sono a un tocco. Il prezzo è
+   che chi non tocca il segno non vede più quale serata sta datando, e che
+   il conteggio del cassetto non dice più da solo che la differenza resta
+   scritta (lo dice l'esito, dopo «Conta»).

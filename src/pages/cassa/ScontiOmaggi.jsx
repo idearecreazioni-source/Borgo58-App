@@ -211,7 +211,16 @@ export default function ScontiOmaggi() {
       {/* Riepilogo mensile (TD27) */}
       {months.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Riepilogo mensile</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+            Riepilogo mensile
+            <Didascalia>
+              Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
+              <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato al
+              momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il secondo
+              è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
+              con lei, domanda L1).
+            </Didascalia>
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>
@@ -251,13 +260,6 @@ export default function ScontiOmaggi() {
               </tbody>
             </table>
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-            Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
-            <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
-            al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
-            secondo è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
-            con lei, domanda L1).
-          </p>
         </div>
       )}
 

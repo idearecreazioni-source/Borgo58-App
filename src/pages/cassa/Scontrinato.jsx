@@ -144,22 +144,26 @@ export default function Scontrinato() {
         </div>
       </div>
 
-      {/* ⚠️ La riga compare SOLO quando la serata e il calendario non
-          coincidono — cioè fra mezzanotte e le 05:00. Una spiegazione che
-          c'è sempre si smette di leggere; questa sta dove sta il dubbio. */}
-      {serata && oraFineSerata && serata !== oggiLocale() && (
-        <p className="testo-sala text-b58-charcoal-soft mb-3">
-          Si sta guardando fino alla serata di{" "}
-          <strong className="text-b58-charcoal">{formatDate(serata)}</strong>: fino alle{" "}
-          {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
-        </p>
-      )}
-
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Incassato e scontrinato</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Quanto è entrato e quanto ha un documento fiscale sono <strong>due numeri diversi</strong>. Qui
-        si vede la differenza, e i conti che la compongono restano in elenco finché non li sistemi.
-      </p>
+      {/* 🔴 LE SPIEGAZIONI SONO PASSATE DIETRO IL «?» — 25/10/2026, chiesto
+          da Alessio (rovesciamento n. 105). ⚠️ La frase della serata resta
+          SOLO fra mezzanotte e le 05:00, come prima — ma dentro il segno:
+          una spiegazione che c'è sempre si smette di leggere. */}
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Incassato e scontrinato
+        <Didascalia>
+          Quanto è entrato e quanto ha un documento fiscale sono <strong>due numeri diversi</strong>.
+          Qui si vede la differenza, e i conti che la compongono restano in elenco finché non li
+          sistemi.
+          {serata && oraFineSerata && serata !== oggiLocale() && (
+            <>
+              <br />
+              <br />
+              Si sta guardando fino alla serata di <strong>{formatDate(serata)}</strong>: fino alle{" "}
+              {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
+            </>
+          )}
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -259,11 +263,13 @@ export default function Scontrinato() {
 
           {/* ---- L'elenco --------------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Conti da sistemare</h2>
-            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-              Se batti lo scontrino dopo, o prepari la fattura il giorno seguente, segnalo qui e il
-              conto esce dall&apos;elenco. <strong>È il caso normale, non l&apos;eccezione.</strong>
-            </p>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+              Conti da sistemare
+              <Didascalia>
+                Se batti lo scontrino dopo, o prepari la fattura il giorno seguente, segnalo qui e il
+                conto esce dall&apos;elenco. <strong>È il caso normale, non l&apos;eccezione.</strong>
+              </Didascalia>
+            </h2>
 
             {conti.length === 0 ? (
               <p className="testo-sala-grande text-b58-charcoal-soft/60">
@@ -341,11 +347,13 @@ export default function Scontrinato() {
               far tornare. */}
           {fiscalizzati.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
-              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Già segnati</h2>
-              <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
-                Se uno di questi è stato segnato per sbaglio, togli il segno: il conto
-                torna fra quelli da sistemare.
-              </p>
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+                Già segnati
+                <Didascalia>
+                  Se uno di questi è stato segnato per sbaglio, togli il segno: il conto torna fra
+                  quelli da sistemare.
+                </Didascalia>
+              </h2>
               {/* 🔴 L'IMPORTO E IL NOME (23/08/2026, blocco 5). Prima qui
                   c'erano data, tavolo e tipo di documento, e basta:
                   misurati **15 gruppi di righe indistinguibili fra loro**.

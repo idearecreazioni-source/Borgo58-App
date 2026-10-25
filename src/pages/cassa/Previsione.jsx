@@ -18,6 +18,7 @@ import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, traGiorniLocale } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import Didascalia from "../../components/Didascalia";
 
 // «Ce la faccio al 16?» — Blocco 6b del mandato.
 //
@@ -217,12 +218,14 @@ export default function Previsione() {
         </div>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Ce la faccio?</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Sapere se guadagni è una domanda. Sapere se <strong>arrivi alla scadenza con i soldi sul
-        conto</strong> è un&apos;altra, e non ha la stessa risposta: un costo di agosto può uscire a
-        settembre.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Ce la faccio?
+        <Didascalia>
+          Sapere se guadagni è una domanda. Sapere se <strong>arrivi alla scadenza con i soldi sul
+          conto</strong> è un&apos;altra, e non ha la stessa risposta: un costo di agosto può uscire a
+          settembre.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -276,11 +279,13 @@ export default function Previsione() {
 
           {/* ---- Cosa deve uscire ------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Cosa deve uscire</h2>
-            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-              Fatture e imposte non le scrivi tu: il gestionale le sa già. Una fattura{" "}
-              <strong>sparisce da qui da sola</strong> quando la registri pagata.
-            </p>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+              Cosa deve uscire
+              <Didascalia>
+                Fatture e imposte non le scrivi tu: il gestionale le sa già. Una fattura{" "}
+                <strong>sparisce da qui da sola</strong> quando la registri pagata.
+              </Didascalia>
+            </h2>
             {attesi.length === 0 ? (
               <p className="testo-sala-grande text-b58-charcoal-soft/60">
                 Niente in scadenza entro quella data.
@@ -349,12 +354,14 @@ export default function Previsione() {
 
           {/* ---- Le scadenze che solo lui conosce --------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Le tue scadenze fisse</h2>
-            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-              Affitto, rate, utenze: quello che il gestionale non può sapere da solo.{" "}
-              <strong>Non scriverci le fatture dei fornitori</strong>: quelle le conta già, e finirebbero
-              contate due volte.
-            </p>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+              Le tue scadenze fisse
+              <Didascalia>
+                Affitto, rate, utenze: quello che il gestionale non può sapere da solo.{" "}
+                <strong>Non scriverci le fatture dei fornitori</strong>: quelle le conta già, e
+                finirebbero contate due volte.
+              </Didascalia>
+            </h2>
 
             {scadenze.length > 0 && (
               <ul className="space-y-1.5 mb-4">
@@ -487,12 +494,19 @@ export default function Previsione() {
 
           {/* ---- Il POS ------------------------------------------------ */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Gli incassi con carta</h2>
-            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-              Quello che incassi col POS stasera <strong>non è in banca stasera</strong>: arriva dopo
-              qualche giorno e al netto delle commissioni. Senza questa voce il saldo della banca non
-              tornerebbe mai.
-            </p>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+              Gli incassi con carta
+              <Didascalia>
+                Quello che incassi col POS stasera <strong>non è in banca stasera</strong>: arriva dopo
+                qualche giorno e al netto delle commissioni. Senza questa voce il saldo della banca
+                non tornerebbe mai.
+                <br />
+                <br />
+                I due campi in fondo lasciali vuoti finché non te lo dice la banca:{" "}
+                <strong>vuoto vuol dire «non lo so»</strong>, e il gestionale lo scrive invece di
+                inventare un numero.
+              </Didascalia>
+            </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
@@ -553,10 +567,6 @@ export default function Previsione() {
                   Salva
                 </button>
               </div>
-              <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
-                Lasciali vuoti finché non te lo dice la banca: <strong>vuoto vuol dire «non lo so»</strong>,
-                e il gestionale lo scrive invece di inventare un numero.
-              </p>
             </div>
           </div>
         </>

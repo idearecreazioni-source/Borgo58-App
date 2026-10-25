@@ -183,11 +183,13 @@ export default function CassaHome() {
               succede se premi qualcosa.
               🔴 RESTANO VISIBILI, e non è una svista, le righe che sono
               AVVERTIMENTI: «di cui … sono mance del personale, non tuoi»,
-              «N uscite già registrate non sono ancora nel saldo»,
-              «contare il cassetto non corregge di nascosto», «non è
-              un'uscita: il cassetto cala e la banca sale». Quelle dicono
-              cosa sta succedendo ai soldi, e nasconderle sarebbe l'errore
-              che il mandato chiede di non fare. */}
+              «N uscite già registrate non sono ancora nel saldo». Quelle
+              dicono cosa sta succedendo ai soldi, e nasconderle sarebbe
+              l'errore che il mandato chiede di non fare.
+              ⚠️ Questo elenco nominava anche «contare il cassetto non
+              corregge di nascosto» e «non è un'uscita»: dal 25/10/2026
+              stanno dietro il «?», per decisione di Alessio
+              (rovesciamento n. 105). */}
         </div>
         {entities && (
           <select
@@ -244,9 +246,15 @@ export default function CassaHome() {
                   di cui {formatEUR(tesoreria.di_cui_non_tuo)} sono mance del personale, non tuoi
                 </div>
               )}
+              {/* L'avviso resta (il riquadro è rosso e lo dice); la
+                  spiegazione del perché sta dietro il «?» — 25/10/2026. */}
               {negativeBalance && (
                 <div className="testo-sala text-b58-terracotta-dark mt-1 font-medium">
-                  Saldo negativo: un&apos;uscita senza provenienza.
+                  Saldo negativo
+                  <Didascalia etichetta="Perché è negativo">
+                    Un&apos;uscita senza provenienza: è uscito dal cassetto più contante di quello che
+                    risulta entrato.
+                  </Didascalia>
                 </div>
               )}
               {/* 🔴 «Non lo so» invece del silenzio: senza queste uscite il
@@ -342,13 +350,13 @@ export default function CassaHome() {
               scadenze non parte quando non c'è niente da dire. */}
           {quadratura.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6">
-              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-1">
+              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-3">
                 Non torna ({quadratura.length})
+                <Didascalia>
+                  Non sono errori certi: sono le differenze fra fatture e prima nota che
+                  meritano un&apos;occhiata.
+                </Didascalia>
               </h2>
-              <p className="testo-sala text-b58-charcoal-soft mb-3">
-                ⚠️ Non sono errori certi: sono le differenze fra fatture e prima nota che
-                meritano un&apos;occhiata.
-              </p>
               <ul className="space-y-2">
                 {quadratura.map((r, i) => (
                   <li key={`${r.genere}-${i}`} className="testo-sala">
@@ -564,12 +572,20 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
 
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-      <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Il cassetto</h2>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
-        Contare il cassetto non corregge di nascosto: se quello che trovi è diverso da quello che
-        risulta, <strong>la differenza resta scritta</strong>. Le differenze che tornano tutti i mesi
-        sono un&apos;informazione, non un fastidio.
-      </p>
+      {/* 🔴 LE DUE FRASI DEL CASSETTO SONO PASSATE DIETRO IL «?» — 25/10/2026,
+          chiesto da Alessio («le didascalie che creano confusione», con la
+          fotografia di questo riquadro). Il 24/08 erano state lasciate
+          visibili come avvertimenti: rovesciamento n. 105. ⚠️ Cosa resta
+          scritto senza toccare niente: la differenza mentre la scrivi e
+          l'esito dopo «Conta», che dicono cosa succede ai soldi. */}
+      <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">
+        Il cassetto
+        <Didascalia>
+          Contare il cassetto non corregge di nascosto: se quello che trovi è diverso da quello che
+          risulta, <strong>la differenza resta scritta</strong>. Le differenze che tornano tutti i
+          mesi sono un&apos;informazione, non un fastidio.
+        </Didascalia>
+      </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <CampoGiornata
@@ -636,7 +652,12 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
         </div>
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
-          <label className={labelClass}>Verso in banca €</label>
+          <label className={labelClass}>
+            Verso in banca €
+            <Didascalia>
+              Non è un&apos;uscita: il cassetto cala e la banca sale dello stesso importo.
+            </Didascalia>
+          </label>
           <div className="flex flex-wrap gap-2">
             <input
               type="number"
@@ -655,9 +676,6 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               {inCorso === "versamento" ? "…" : "Versa"}
             </button>
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-1.5">
-            Non è un&apos;uscita: il cassetto cala e la banca sale dello stesso importo.
-          </p>
         </div>
       </div>
 

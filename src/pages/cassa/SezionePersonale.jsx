@@ -228,11 +228,13 @@ export default function SezionePersonale() {
         )}
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Ho messo di tasca mia</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Quello che paghi <strong>tu</strong> per conto della società, e che la società ti deve. I tuoi
-        soldi personali non entrano qui: questo è solo il registro dei prestiti che le fai.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Ho messo di tasca mia
+        <Didascalia>
+          Quello che paghi <strong>tu</strong> per conto della società, e che la società ti deve. I
+          tuoi soldi personali non entrano qui: questo è solo il registro dei prestiti che le fai.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -269,11 +271,11 @@ export default function SezionePersonale() {
             <div className="rounded-xl bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 p-6 mb-6">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
                 Da dire alla commercialista ({daComunicare.length})
+                <Didascalia>
+                  Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta una nota;
+                  quello che sopravvive al mese diventa formale.</strong>
+                </Didascalia>
               </h2>
-              <p className="testo-sala text-b58-charcoal-soft/80 mb-3">
-                Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta una
-                nota; quello che sopravvive al mese diventa formale.</strong>
-              </p>
               <ul className="space-y-2">
                 {daComunicare.map((d) => (
                   <li key={d.anticipazione_id} className="testo-sala-grande">
@@ -536,11 +538,13 @@ export default function SezionePersonale() {
 
           {/* ---- Le note aperte --------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Ancora da rimborsare</h2>
-            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-              Segnando il rimborso, i soldi <strong>escono davvero dalla cassa</strong>: il cassetto
-              deve quadrare col conteggio fisico.
-            </p>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+              Ancora da rimborsare
+              <Didascalia>
+                Segnando il rimborso, i soldi <strong>escono davvero dalla cassa</strong>: il cassetto
+                deve quadrare col conteggio fisico.
+              </Didascalia>
+            </h2>
             {aperte.length === 0 ? (
               <p className="testo-sala-grande text-b58-charcoal-soft/60">Niente in sospeso.</p>
             ) : (
@@ -639,7 +643,13 @@ export default function SezionePersonale() {
           {/* ---- Le ultime chiuse ------------------------------------- */}
           {chiuse.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Già rimborsate</h2>
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+                Già rimborsate
+                <Didascalia>
+                  Una nota già rimborsata non si può togliere: in cassa c&apos;è l&apos;uscita che la
+                  registra. Annullando il rimborso l&apos;uscita sparisce e la nota torna aperta.
+                </Didascalia>
+              </h2>
               <ul className="space-y-1.5">
                 {chiuse.map((n) => (
                   <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 testo-sala-grande">
@@ -686,11 +696,6 @@ export default function SezionePersonale() {
                   </li>
                 ))}
               </ul>
-              <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-                Una nota già rimborsata non si può togliere: in cassa c'è l'uscita
-                che la registra. Annullando il rimborso l'uscita sparisce e la nota
-                torna aperta.
-              </p>
             </div>
           )}
         </>
