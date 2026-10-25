@@ -253,12 +253,21 @@ export default function Ordini() {
               </p>
               <p className="testo-sala text-b58-charcoal-soft mt-1">
                 Non entrano in nessun ordine finché non dici a chi chiederle:{" "}
-                {orfane.map((r) => r.nome).join(", ")}. Il fornitore si sceglie{" "}
+                {orfane.slice(0, 5).map((r) => r.nome).join(", ")}
+                {orfane.length > 5 && ` e altre ${orfane.length - 5}`}. Il fornitore si sceglie{" "}
                 <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center underline">
                   sulla riga, dalla lista della spesa
                 </Link>
                 .
               </p>
+              {orfane.length > 5 && (
+                <details className="mt-1">
+                  <summary className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal cursor-pointer">
+                    Vedi tutte
+                  </summary>
+                  <p className="testo-sala text-b58-charcoal-soft">{orfane.map((r) => r.nome).join(", ")}</p>
+                </details>
+              )}
             </div>
           )}
 

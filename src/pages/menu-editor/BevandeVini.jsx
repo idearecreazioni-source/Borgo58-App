@@ -163,7 +163,7 @@ export default function BevandeVini() {
     const m = nonLetto(margini) ? null : margini.get(v.id);
     return (
       <div className="px-2 pt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <label className="flex items-center gap-1 testo-sala text-b58-charcoal-soft">
+        <label className="flex items-center gap-1 min-w-0 max-w-full testo-sala text-b58-charcoal-soft">
           <span>Prodotto</span>
           <select
             value={v.ingredient_id || ""}
@@ -173,7 +173,7 @@ export default function BevandeVini() {
                 .then(dopoModifica)
                 .catch((err) => setError(err.message))
             }
-            className="tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala bg-transparent max-w-[14rem]"
+            className="tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala bg-transparent min-w-0 max-w-full sm:max-w-[14rem]"
           >
             {/* ⚠️ Un elenco vuoto NON si lascia muto: si legge «non c'e'
                 niente da collegare», che qui e' falso — i prodotti ci sono,
@@ -585,9 +585,13 @@ export default function BevandeVini() {
                   <h3 className="testo-sala-grande font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-1">
                     {cat.nome}
                   </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full testo-sala-grande">
-                      <tbody>
+                  {/* Sul telefono ogni voce va su due righe: il nome a tutta
+                      larghezza, sotto servizio, prezzo e il gesto. In
+                      tabella il nome restava largo pochi millimetri
+                      (25/10/2026, «Carric»). */}
+                  <div className="sm:overflow-x-auto">
+                    <table className="block sm:table w-full testo-sala-grande">
+                      <tbody className="block sm:table-row-group">
                         {cat.voci.map((v) => (
                           // 🔴 DUE RIGHE E NON UNA (30/08, misurato). Il
                           // collegamento al magazzino stava DENTRO la cella
@@ -598,8 +602,8 @@ export default function BevandeVini() {
                           // miei. Su una riga sua a tutta larghezza cresce
                           // in ALTEZZA e non tocca nessuna colonna.
                           <Fragment key={v.id}>
-                          <tr className={`${v.active ? "" : "opacity-50"}`}>
-                            <td className="py-2 pr-2">
+                          <tr className={`grid grid-cols-[1fr_auto_auto] items-center gap-x-3 sm:table-row ${v.active ? "" : "opacity-50"}`}>
+                            <td className="col-span-3 pt-2 sm:py-2 pr-2 min-w-0">
                               <CampoAutosalvato
                                 value={v.name}
                                 onSave={(nome) =>
@@ -611,8 +615,8 @@ export default function BevandeVini() {
                                 <span className="testo-sala text-b58-charcoal-soft/70 px-2">{v.producer}</span>
                               )}
                             </td>
-                            <td className="py-2 w-28 text-b58-charcoal-soft testo-sala">{v.serving}</td>
-                            <td className="py-2 w-28">
+                            <td className="py-1 sm:py-2 sm:w-28 px-2 sm:px-0 text-b58-charcoal-soft testo-sala">{v.serving}</td>
+                            <td className="py-1 sm:py-2 sm:w-28">
                               <CampoAutosalvato
                                 type="number"
                                 step="0.50"
@@ -625,10 +629,10 @@ export default function BevandeVini() {
                                 className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                               />
                             </td>
-                            <td className="py-2 w-20 text-right text-b58-charcoal-soft testo-sala">
+                            <td className="hidden sm:table-cell py-2 w-20 text-right text-b58-charcoal-soft testo-sala">
                               {formatEUR(v.selling_price)}
                             </td>
-                            <td className="py-2 w-24 text-right">
+                            <td className="py-1 sm:py-2 sm:w-24 text-right">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -640,8 +644,8 @@ export default function BevandeVini() {
                               </button>
                             </td>
                           </tr>
-                          <tr className={`border-b border-b58-charcoal/5 ${v.active ? "" : "opacity-50"}`}>
-                            <td colSpan={5} className="pb-2">
+                          <tr className={`block sm:table-row border-b border-b58-charcoal/5 ${v.active ? "" : "opacity-50"}`}>
+                            <td colSpan={5} className="block sm:table-cell pb-2">
                               <RigaMagazzino v={v} />
                             </td>
                           </tr>

@@ -502,10 +502,12 @@ export default function ArchivioDocumentiHome() {
               <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-left min-w-0 tocco-campo">
                 <div className="text-b58-charcoal font-medium">{d.title}</div>
                 <div className="testo-sala text-b58-charcoal-soft mt-0.5">
-                  {d.document_date && <>{formatDate(d.document_date)} · </>}
-                  {d.counterparties && <>{d.counterparties} · </>}
-                  {d.amount != null && <>{formatEUR(d.amount)} · </>}
-                  {d.expiry_date && <>scade {formatDate(d.expiry_date)}</>}
+                  {[
+                    d.document_date && formatDate(d.document_date),
+                    d.counterparties,
+                    d.amount != null && formatEUR(d.amount),
+                    d.expiry_date && `scade ${formatDate(d.expiry_date)}`,
+                  ].filter(Boolean).join(" · ")}
                 </div>
               </button>
               <div className="flex items-center gap-3 shrink-0">

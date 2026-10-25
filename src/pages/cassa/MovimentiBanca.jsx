@@ -130,7 +130,7 @@ export default function MovimentiBanca() {
             e.target.value = "";
             if (files.length) carica(files);
           }}
-          className="testo-sala"
+          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
         />
       </label>
 

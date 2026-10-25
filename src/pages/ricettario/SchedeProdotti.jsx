@@ -94,11 +94,11 @@ export default function SchedeProdotti() {
     // classe loro prendevano i 16 punti predefiniti del browser, che alla
     // calibrazione di un mini tablet fanno 2,50 mm. Ereditando dal padre si
     // sistemano tutti insieme, e chi ha già una classe sua continua a vincere.
-    <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+    <div className="mx-auto max-w-3xl testo-sala-grande">
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+      <h1 className="mb-1 mt-2 font-display text-2xl text-b58-charcoal">
         Schede dei prodotti
         <Didascalia>
           Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui

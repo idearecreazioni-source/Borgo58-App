@@ -492,7 +492,7 @@ export default function AgendaList() {
             to="/agenda/nuovo"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
           >
-            + Nuovo task
+            + Nuovo impegno
           </Link>
         </div>
       </div>
@@ -628,7 +628,7 @@ export default function AgendaList() {
                           <ElencoAdattivo
                             righe={elenco}
                             chiave={(t) => t.id}
-                            intestazioneTitolo="Task"
+                            intestazioneTitolo="Impegno"
                             // Una tabella per sezione: senza una larghezza
                             // fissa «Scadenza» cominciava in un punto diverso
                             // in ognuna (da 600 a 875 punti, misurato).
