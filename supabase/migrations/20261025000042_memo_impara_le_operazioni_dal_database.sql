@@ -656,7 +656,11 @@ begin
     end if;
 
     -- 5. Nota di credito: un fornitore costruito qui, cercato col suo numero.
-    insert into suppliers (name) values ('ZZ Fornitore verifica note') returning id into v_sup;
+    -- Un fornitore appartiene sempre a una societa' (entity_id e' obbligatorio):
+    -- lo si mette nella S.r.l.s., la stessa su cui la voce registra la nota.
+    insert into suppliers (name, entity_id)
+    values ('ZZ Fornitore verifica note', (select id from entities where entity_type = 'srls' limit 1))
+    returning id into v_sup;
     select (e->>'n')::integer into v_sup_n
       from jsonb_array_elements(voce_catalogo()->'fornitori') e
      where e->>'nome' = 'ZZ Fornitore verifica note';
