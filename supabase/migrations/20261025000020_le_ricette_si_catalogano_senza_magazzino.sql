@@ -674,6 +674,7 @@ declare
   v_bozza     uuid;
   v_ricetta   uuid;
   v_altra     uuid;
+  v_prep      uuid;
   v_menu      uuid;
   v_riga_dc   uuid;
   v_r         jsonb;
@@ -776,12 +777,22 @@ begin
       raise exception 'In menu con un ingrediente da collegare: %', coalesce(v_msg, 'nessun errore');
     end if;
 
+    -- ⚠️ Il componente dev'essere una PREPARAZIONE: un piatto finito dentro
+    --    un altro piatto lo respinge gia' una regola piu' vecchia, col suo
+    --    messaggio, e il cancello nuovo non verrebbe mai raggiunto (visto
+    --    applicando sulla prova il 25/10: il primo tentativo usava la ricetta
+    --    nata dalla bozza, che e' un piatto finito).
+    insert into recipes (name, category, recipe_type, portions_yield, yield_quantity, yield_unit)
+    values ('ZZ verifica catalogo - sugo', 'primo', 'preparazione', 1, 1, 'kg')
+    returning id into v_prep;
+    insert into ricetta_ingredienti_da_collegare (recipe_id, posizione, nome)
+    values (v_prep, 1, 'ZZ pecorino');
     insert into recipes (name, category, portions_yield, recipe_type)
     values ('ZZ verifica catalogo - contenitore', 'primo', 2, 'piatto_finito') returning id into v_altra;
     v_respinto := false;
     begin
       insert into recipe_ingredients (recipe_id, component_recipe_id, quantity, unit)
-      values (v_altra, v_ricetta, 1, 'g');
+      values (v_altra, v_prep, 1, 'kg');
     exception when others then v_respinto := true; v_msg := sqlerrm;
     end;
     if not v_respinto or v_msg not like '%preparazione%«ZZ pecorino»%' then
@@ -843,6 +854,9 @@ begin
     update recipes set pronta_per_carta = true where id = v_ricetta;
     insert into menu_items (menu_id, recipe_id, category, selling_price)
     values (v_menu, v_ricetta, 'primo', 12);
+    delete from ricetta_ingredienti_da_collegare where recipe_id = v_prep;
+    insert into recipe_ingredients (recipe_id, component_recipe_id, quantity, unit)
+    values (v_altra, v_prep, 1, 'kg');
 
     -- (7) Allo specchio: a una ricetta pronta non si aggiunge un ingrediente
     --     non collegato.
