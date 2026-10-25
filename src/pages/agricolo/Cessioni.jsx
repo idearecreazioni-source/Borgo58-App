@@ -6,6 +6,7 @@ import { listIngredients } from "../../lib/api/ingredients";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useUnita } from "../../lib/unita";
+import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
@@ -109,12 +110,14 @@ export default function Cessioni() {
         </button>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Cessioni intercompany</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
-        L'azienda agricola cede il raccolto alla S.r.l.s. con fattura. Il prezzo di trasferimento diventa il
-        costo dell'ingrediente a produzione interna. <strong>Da validare con la commercialista</strong>: il sistema non
-        emette il documento fiscale, ne registra i dati.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mb-4">
+        Cessioni intercompany
+        <Didascalia>
+          L'azienda agricola cede il raccolto alla S.r.l.s. con fattura. Il prezzo di trasferimento diventa il
+          costo dell'ingrediente a produzione interna. <strong>Da validare con la commercialista</strong>: il sistema non
+          emette il documento fiscale, ne registra i dati.
+        </Didascalia>
+      </h1>
 
       {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 

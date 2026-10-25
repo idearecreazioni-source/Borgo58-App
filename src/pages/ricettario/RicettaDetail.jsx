@@ -71,6 +71,7 @@ import {
   ragioneNonSalvabile,
   resaPercento,
 } from "../../lib/calcoli/resa";
+import Didascalia from "../../components/Didascalia";
 
 const emptyIngredientForm = {
   ingredient_id: "",
@@ -2145,11 +2146,13 @@ export default function RicettaDetail() {
       {/* Video ricetta */}
       {!isSelezione && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Video ricetta</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-4">
-          ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
-          non si ricavano da soli.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Video ricetta
+          <Didascalia>
+            ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
+            non si ricavano da soli.
+          </Didascalia>
+        </h2>
 
         {videos.length > 0 && (
           <ul className="space-y-2 mb-4">

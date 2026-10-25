@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "../../components/Icon";
 import { useAuth } from "../../context/AuthContext";
+import Didascalia from "../../components/Didascalia";
 
 export default function RicettarioHome() {
   const { isTitolare } = useAuth();
@@ -8,10 +9,12 @@ export default function RicettarioHome() {
   return (
     <div className="max-w-4xl mx-auto testo-sala-grande">
       <div className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Ricettario</h1>
-        <p className="text-b58-charcoal-soft mt-1">
-          {isTitolare ? "Food cost dinamico, allergeni UE, HACCP." : "Ricette, HACCP, allergeni."}
-        </p>
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+          Ricettario
+          <Didascalia>
+            {isTitolare ? "Food cost dinamico, allergeni UE, HACCP." : "Ricette, HACCP, allergeni."}
+          </Didascalia>
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

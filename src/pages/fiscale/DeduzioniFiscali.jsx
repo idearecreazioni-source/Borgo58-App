@@ -11,6 +11,7 @@ import { FISCAL_PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } f
 import { downloadCsv } from "../../lib/csv";
 import PrintButton from "../../components/PrintButton";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import Didascalia from "../../components/Didascalia";
 
 // ⚠️ Questa schermata NON calcola più nessuna quota (15/08/2026). Le regole
 // e il calcolo vivono nel database: `listSpeseValorizzate` restituisce ogni
@@ -387,7 +388,13 @@ export default function DeduzioniFiscali() {
 
       {/* Elenco spese */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Spese {year}</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Spese {year}
+          <Didascalia>
+            Un trattino nella colonna «Deducibile» vuol dire <strong>non classificata</strong>: non è
+            zero, è che nessuno ha ancora detto se si deduce — e infatti non è contata da nessuna parte.
+          </Didascalia>
+        </h2>
         {loading ? (
           <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
         ) : expenses.length === 0 ? (
@@ -453,11 +460,6 @@ export default function DeduzioniFiscali() {
                 ))}
               </tbody>
             </table>
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-              La colonna «Deducibile» la calcola il database, non questa pagina. Un trattino vuol dire{" "}
-              <strong>non classificata</strong>: non è zero, è che nessuno ha ancora detto se si deduce — e
-              infatti non è contata da nessuna parte.
-            </p>
           </div>
         )}
       </div>

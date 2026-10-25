@@ -4,6 +4,7 @@ import { creaBozzaManuale, importaRicettaDaLink, listBozzeRicetta } from "../../
 import { ORIGINI_BOZZA, nuovoGesto, statoLeggibile } from "../../lib/calcoli/bozzeRicetta";
 import { labelFor } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 
 // LE BOZZE DI RICETTA — l'elenco (Ricettario Fase 1A, 06/10/2026).
 //
@@ -71,10 +72,12 @@ export default function BozzeList() {
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Bozze di ricetta</h1>
-      <p className="mb-6 text-stone-600">
-        Una bozza non è ancora nel Ricettario: ci entra solo quando la confermi.
-      </p>
+      <h1 className="mb-6 mt-2 text-2xl font-semibold">
+        Bozze di ricetta
+        <Didascalia>
+          Una bozza non è ancora nel Ricettario: ci entra solo quando la confermi.
+        </Didascalia>
+      </h1>
 
       <form onSubmit={importa} className="mb-2 flex flex-wrap items-end gap-2">
         <label className="flex min-w-0 flex-1 flex-col">

@@ -172,13 +172,15 @@ export default function Previsioni() {
 
       {/* --- Caricare il foglio: la scorciatoia --- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Oppure parti dal tuo foglio Excel</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-4">
-          Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
-          scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
-          database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
-          correggi da qui.
-        </p>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">
+          Oppure parti dal tuo foglio Excel
+          <Didascalia>
+            Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
+            scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
+            database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
+            correggi da qui.
+          </Didascalia>
+        </h2>
 
         {!decompressioneDisponibile() ? (
           <p className="testo-sala text-b58-terracotta-dark">

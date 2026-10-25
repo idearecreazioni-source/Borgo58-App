@@ -362,7 +362,14 @@ export default function AndamentoMensile() {
           {/* --- Cosa si è potuto misurare --- */}
           <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-              <h2 className="font-display testo-sala-titolo text-b58-charcoal">Il mese vero</h2>
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal">
+                Il mese vero
+                <Didascalia>
+                  «Non misurato» vuol dire che quel numero non c&apos;è ancora — non che è zero. Il food
+                  cost arriva dalle ricette, i costi fissi dalle causali di prima nota che hai segnato come
+                  tali.
+                </Didascalia>
+              </h2>
               {!stato?.mese_chiuso && !stato?.parziale && (
                 <button
                   onClick={chiudi}
@@ -396,10 +403,6 @@ export default function AndamentoMensile() {
                 <p className="text-b58-charcoal"><Valore v={misure?.food_cost} /></p>
               </div>
             </div>
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-              «Non misurato» vuol dire che quel numero non c&apos;è ancora — non che è zero. Il food cost
-              arriva dalle ricette, i costi fissi dalle causali di prima nota che hai segnato come tali.
-            </p>
           </div>
 
           {/* --- Il piano sovrapposto ai numeri veri --- */}

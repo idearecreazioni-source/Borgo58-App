@@ -205,16 +205,18 @@ export default function SchedeProdotti() {
                  chiede. Su un dedotto mostra gli ingredienti invece di
                  garantire.
              ================================================================== */}
-          <h2 className="mb-2 font-semibold">Da dove vengono gli allergeni</h2>
-          <p className="mb-4 testo-sala-grande text-stone-600">
-            {/* ⚠️ Trovato dal censimento, non dall'elenco del mandato: è una
-                frase che DESCRIVE come lavora MEMO, non una risposta dopo un
-                gesto — quindi il nome ci va. */}
-            Quello che MEMO deduce vale: non c&apos;è niente da confermare. Questo
-            elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
-            in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
-            prodotto per aprirlo e sistemare a mano quello che manca.
-          </p>
+          <h2 className="mb-4 font-semibold">
+            Da dove vengono gli allergeni
+            <Didascalia>
+              {/* ⚠️ Trovato dal censimento, non dall'elenco del mandato: è una
+                  frase che DESCRIVE come lavora MEMO, non una risposta dopo un
+                  gesto — quindi il nome ci va. */}
+              Quello che MEMO deduce vale: non c&apos;è niente da confermare. Questo
+              elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
+              in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
+              prodotto per aprirlo e sistemare a mano quello che manca.
+            </Didascalia>
+          </h2>
 
           {conAllergeni.length === 0 ? (
             <p className="text-stone-600">Nessun prodotto ha allergeni.</p>

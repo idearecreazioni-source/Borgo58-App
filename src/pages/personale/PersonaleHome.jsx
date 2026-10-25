@@ -4,6 +4,7 @@ import { createEmployee, listEmployees, listExpiringDocuments } from "../../lib/
 import { getEntities } from "../../lib/api/entities";
 import { CONTRACT_TYPES, EMPLOYEE_STATUSES, COMPLIANCE_DOC_TYPES, formatDate, labelFor } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
+import Didascalia from "../../components/Didascalia";
 
 const emptyForm = { first_name: "", last_name: "", role: "", contract_type: "indeterminato" };
 
@@ -66,8 +67,12 @@ export default function PersonaleHome() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Personale & Buste Paga</h1>
-          <p className="text-b58-charcoal-soft mt-1">Anagrafica, documenti, ferie, buste paga, mance.</p>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Personale & Buste Paga
+            <Didascalia>
+              Anagrafica, documenti, ferie, buste paga, mance.
+            </Didascalia>
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link

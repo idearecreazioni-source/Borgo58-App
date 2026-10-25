@@ -101,10 +101,12 @@ export default function Fotografa() {
           ⚠️ Il TITOLO prende il nome, il PULSANTE no: «Fotografa» è il
              gesto, e il gesto non si chiama come chi lo esegue. Il titolo
              dice dove sei, il pulsante dice cosa fare. */}
-      <h1 className="testo-sala-titolo mb-1 font-semibold text-b58-charcoal">MEMO foto</h1>
-      <p className="testo-sala mb-4 text-b58-charcoal-soft">
-        Scatta una foto e MEMO ti dice cosa ci vede.
-      </p>
+      <h1 className="testo-sala-titolo mb-4 font-semibold text-b58-charcoal">
+        MEMO foto
+        <Didascalia>
+          Scatta una foto e MEMO ti dice cosa ci vede.
+        </Didascalia>
+      </h1>
 
       {/* 🔴 IL GESTO STA DOVE ARRIVA IL POLLICE (27/08). Qui la foto È la
           schermata, quindi il pulsante va in basso sul telefono.

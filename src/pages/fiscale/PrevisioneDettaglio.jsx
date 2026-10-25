@@ -400,13 +400,13 @@ export default function PrevisioneDettaglio() {
           sala disegnata vuota del 18/08: plausibile, e muto. */}
       {linee.length > 0 && (
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Di cosa sono fatti i ricavi accessori
+            <Didascalia>
+              Sono le linee oltre alla sala. I loro ricavi stanno già dentro i totali qui sotto,
+              nel pareggio e nella stima delle imposte.
+            </Didascalia>
           </h2>
-          <p className="testo-sala text-b58-charcoal-soft mb-3">
-            Sono le linee oltre alla sala. I loro ricavi stanno già dentro i totali qui sotto,
-            nel pareggio e nella stima delle imposte.
-          </p>
           <div className="overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>

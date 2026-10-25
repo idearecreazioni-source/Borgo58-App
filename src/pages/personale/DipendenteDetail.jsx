@@ -25,6 +25,7 @@ import {
 } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import Didascalia from "../../components/Didascalia";
 
 const monthLabel = (iso) =>
   new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" }).format(new Date(iso));
@@ -281,7 +282,12 @@ export default function DipendenteDetail() {
         </div>
 
         <div className="mb-4 max-w-xs">
-          <label className={labelClass}>Reddito anno precedente €</label>
+          <label className={labelClass}>
+            Reddito anno precedente €
+            <Didascalia>
+              Serve al regime delle mance (soglia 75.000 €, tetto 30%).
+            </Didascalia>
+          </label>
           <input
             type="number"
             step="0.01"
@@ -289,7 +295,6 @@ export default function DipendenteDetail() {
             onChange={(e) => setField("prior_year_income", e.target.value)}
             className={inputClass}
           />
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-1 print:hidden">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">

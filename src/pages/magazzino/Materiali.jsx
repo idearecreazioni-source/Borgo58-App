@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listIngredients } from "../../lib/api/ingredients";
 import { formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // I MATERIALI DI CONSUMO — 29/08/2026, punto 2a del mandato.
 //
@@ -60,11 +61,11 @@ export default function Materiali() {
           </Link>
           <h1 className="font-display text-2xl text-b58-charcoal mt-1">
             Materiali di consumo
+            <Didascalia>
+              Carta, detersivi, imballaggi: si comprano e si contano come tutto il
+              resto, ma non entrano in nessuna ricetta.
+            </Didascalia>
           </h1>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">
-            Carta, detersivi, imballaggi: si comprano e si contano come tutto il
-            resto, ma non entrano in nessuna ricetta.
-          </p>
         </div>
         <Link
           to="/ricettario/ingredienti/nuovo?materiale=1"

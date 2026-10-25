@@ -4,6 +4,7 @@ import { createForagedItem, deleteForagedItem, listForagedItems } from "../../li
 import { listIngredients } from "../../lib/api/ingredients";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
@@ -86,12 +87,14 @@ export default function RaccoltaPropria() {
         </button>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Raccolta propria</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Erbe spontanee e prodotti autoraccolti: zona grigia normativa in Italia, nessun documento
-        fiscale coinvolto — pura tracciabilità HACCP. <strong>Da validare con un consulente alimentare/tecnico
-        HACCP</strong> prima di un uso in produzione.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Raccolta propria
+        <Didascalia>
+          Erbe spontanee e prodotti autoraccolti: zona grigia normativa in Italia, nessun documento
+          fiscale coinvolto — pura tracciabilità HACCP. <strong>Da validare con un consulente alimentare/tecnico
+          HACCP</strong> prima di un uso in produzione.
+        </Didascalia>
+      </h1>
 
       {error && <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 

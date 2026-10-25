@@ -142,7 +142,12 @@ export default function SimulatoreFiscale() {
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Parametri</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <div>
-            <label className={labelClass}>Ricavi annui stimati €</label>
+            <label className={labelClass}>
+              Ricavi annui stimati €
+              <Didascalia>
+                Base del plafond rappresentanza (deduzioni).
+              </Didascalia>
+            </label>
             <input
               type="number"
               step="0.01"
@@ -150,7 +155,6 @@ export default function SimulatoreFiscale() {
               onChange={(e) => setSettings((s) => ({ ...s, annual_revenue_estimate: e.target.value }))}
               className={inputClass}
             />
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">Base del plafond rappresentanza (deduzioni).</p>
           </div>
           <div>
             <label className={labelClass}>Aliquota IRES %</label>
@@ -178,7 +182,13 @@ export default function SimulatoreFiscale() {
             il motore fiscale è uno solo. */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 pt-3 border-t border-b58-charcoal/10">
           <div>
-            <label className={labelClass}>Maxi-deduzione del costo del lavoro</label>
+            <label className={labelClass}>
+              Maxi-deduzione del costo del lavoro
+              <Didascalia>
+                Nasce spenta: un&apos;agevolazione applicata da sola abbassa le imposte stimate sempre nella
+                stessa direzione. Accendila dopo il parere della commercialista.
+              </Didascalia>
+            </label>
             <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
@@ -188,10 +198,6 @@ export default function SimulatoreFiscale() {
               />
               applicala
             </label>
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
-              Nasce spenta: un&apos;agevolazione applicata da sola abbassa le imposte stimate sempre nella
-              stessa direzione. Accendila dopo il parere della commercialista.
-            </p>
           </div>
           <div>
             <label className={labelClass}>Deduzione extra %</label>
@@ -204,16 +210,18 @@ export default function SimulatoreFiscale() {
             />
           </div>
           <div>
-            <label className={labelClass}>Confermati dalla commercialista il</label>
+            <label className={labelClass}>
+              Confermati dalla commercialista il
+              <Didascalia>
+                Finché è vuota, ogni schermata scrive che è una semplificazione.
+              </Didascalia>
+            </label>
             <input
               type="date"
               value={settings.parametri_confermati_da_laura || ""}
               onChange={(e) => setSettings((s) => ({ ...s, parametri_confermati_da_laura: e.target.value }))}
               className={inputClass}
             />
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
-              Finché è vuota, ogni schermata scrive che è una semplificazione.
-            </p>
           </div>
         </div>
 
@@ -229,7 +237,12 @@ export default function SimulatoreFiscale() {
             />
           </div>
           <div>
-            <label className={labelClass}>Prima rata %</label>
+            <label className={labelClass}>
+              Prima rata %
+              <Didascalia>
+                Il resto va alla seconda scadenza.
+              </Didascalia>
+            </label>
             <input
               type="number"
               step="1"
@@ -237,7 +250,6 @@ export default function SimulatoreFiscale() {
               onChange={(e) => setSettings((s) => ({ ...s, acconto_prima_rata_percento: e.target.value }))}
               className={inputClass}
             />
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">Il resto va alla seconda scadenza.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -314,11 +326,13 @@ export default function SimulatoreFiscale() {
             <input type="number" step="0.01" value={estimatedProfit} onChange={(e) => setEstimatedProfit(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Costo del lavoro incrementale €</label>
+            <label className={labelClass}>
+              Costo del lavoro incrementale €
+              <Didascalia>
+                Serve solo se la maxi-deduzione è accesa.
+              </Didascalia>
+            </label>
             <input type="number" step="0.01" value={costoLavoro} onChange={(e) => setCostoLavoro(e.target.value)} className={inputClass} />
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
-              Serve solo se la maxi-deduzione è accesa.
-            </p>
           </div>
         </div>
         {!imposte ? (

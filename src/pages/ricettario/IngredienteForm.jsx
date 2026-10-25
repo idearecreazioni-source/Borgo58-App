@@ -1630,13 +1630,13 @@ export default function IngredienteForm() {
 
       {isEdit && !nonLetto(varianti) && varianti.length > 0 && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Versioni che compri
+            <Didascalia>
+              Dalla più conveniente. Il prezzo è sempre per {form.unit}, così formati diversi si
+              possono confrontare.
+            </Didascalia>
           </h2>
-          <p className="testo-sala text-b58-charcoal-soft mb-3">
-            Dalla più conveniente. Il prezzo è sempre per {form.unit}, così formati diversi si
-            possono confrontare.
-          </p>
           {/* 🔴 BLOCCHETTI SUL TELEFONO, TABELLA SUL COMPUTER — la forma del
               25/08/2026, e qui serviva. Misurato a 375 punti: la tabella
               chiedeva **809 punti in un riquadro da 295**, e la colonna
