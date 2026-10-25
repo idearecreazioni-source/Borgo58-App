@@ -88,13 +88,16 @@ const MISURA = `(() => {
     pxcm,
     larghezza: document.documentElement.clientWidth,
     sbordo: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    intestazione: r(tutti("[data-intestazione-dashboard] a").find((a) => /Agenda completa/.test(a.textContent))),
+    // ⚠️ Dal 25/10/2026 «Agenda completa →» sta accanto a «Impegni di oggi»,
+    //    non più accanto al saluto: si cerca in tutta la schermata.
+    intestazione: r(tutti("main a").find((a) => /Agenda completa/.test(a.textContent))),
     saluto: (() => { const h = document.querySelector("[data-intestazione-dashboard] h1"); if (!h) return null; const s = getComputedStyle(h); return { h: h.getBoundingClientRect().height, riga: parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3 }; })(),
     impegni: tutti("[data-riga-impegno]").map((riga) => ({
       riga: r(riga),
       titolo: r(riga.querySelector("[data-titolo-impegno]")),
       priorita: r(riga.querySelector("[data-priorita-impegno]")),
       testo: riga.querySelector("[data-titolo-impegno]")?.textContent ?? "",
+      bollino: riga.querySelector("[data-priorita-impegno]")?.textContent.trim() ?? "",
     })),
     avvisi: tutti("[data-avviso-riga]").map((riga) => ({
       testo: r(riga.querySelector("button")),
@@ -210,10 +213,15 @@ export function controlla(forma, m, difetti) {
     for (const i of m.impegni) {
       if (/_/.test(i.testo)) no(`la categoria si legge col codice: «${i.testo}»`);
       if (telefono && i.titolo.w < i.riga.w * 0.5) no(`il titolo di un impegno ha ${Math.round(i.titolo.w)} punti su ${Math.round(i.riga.w)}`);
+      // ⚠️ Dal 25/10/2026 il bollino c'è solo sugli impegni urgenti (priorità
+      //    «alta»): dove manca non c'è niente da confrontare col titolo.
+      if (!i.priorita) continue;
       const accanto = Math.abs(i.priorita.y + i.priorita.h / 2 - (i.titolo.y + i.titolo.h / 2)) < i.titolo.h / 2 && i.priorita.x > i.titolo.x;
       if (!telefono && !accanto) no("la priorità non sta più accanto al titolo");
       if (telefono && accanto && i.titolo.w < i.riga.w * 0.5) no("sul telefono la priorità schiaccia il titolo");
     }
+    if (!m.impegni.some((i) => i.priorita)) no("nessun impegno urgente porta il bollino «Urgente»");
+    if (m.impegni.filter((i) => i.priorita).some((i) => i.bollino !== "Urgente")) no("il bollino non dice «Urgente»");
     if (m.avvisi.length === 0) no("nessun avviso disegnato");
     for (const a of m.avvisi) {
       const sotto = a.rimanda.y >= a.testo.basso - 1;

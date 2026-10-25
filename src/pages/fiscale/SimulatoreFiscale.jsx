@@ -298,7 +298,7 @@ export default function SimulatoreFiscale() {
             <span>IVA a debito (sulle vendite)</span><span>{formatEUR(iva.debito)}</span>
           </div>
           <div className="flex justify-between text-b58-charcoal-soft">
-            <span>IVA a credito (sugli acquisti)</span><span>−{formatEUR(iva.credito)}</span>
+            <span>IVA a credito (sugli acquisti)</span><span>{iva.credito > 0 ? "−" : ""}{formatEUR(iva.credito)}</span>
           </div>
           <div className="flex justify-between text-b58-charcoal font-medium pt-1 border-t border-b58-charcoal/10">
             <span>{iva.saldo >= 0 ? "IVA da versare (stima)" : "Credito IVA (stima)"}</span>

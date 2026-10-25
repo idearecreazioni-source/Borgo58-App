@@ -203,7 +203,21 @@ export default function Deducibilita() {
               <strong>fornitore</strong>: da lì in poi le righe la ereditano da sole.
             </Didascalia>
           </h2>
-          <div className="overflow-x-auto">
+          <ul className="sm:hidden divide-y divide-b58-charcoal/5">
+            {daClassificare.map((c) => (
+              <li key={`${c.origine}-${c.riga_id}`} className="py-2.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="testo-sala-grande text-b58-charcoal min-w-0">{c.etichetta}</span>
+                  <span className="testo-sala-grande text-b58-charcoal whitespace-nowrap">{formatEUR(c.importo)}</span>
+                </div>
+                <div className="testo-sala text-b58-charcoal-soft mt-0.5">
+                  {formatDate(c.data)} · {c.origine === "fattura" ? "fattura" : "prima nota"}
+                </div>
+                <div className="testo-sala text-b58-charcoal-soft/80 mt-0.5">{c.motivo}</div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
