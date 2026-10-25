@@ -325,6 +325,11 @@ const OPERAZIONI = new Set([
   "trattieni_caparra",
   "annulla_trattenuta_caparra",
   "promuovi_bozza_ricetta",
+  // ⚠️ Collegare un ingrediente scritto di una ricetta al magazzino
+  // (20261025000020): la riga entra fra gli ingredienti veri ed esce da
+  // quelli «da collegare», in una transazione. A meta' sarebbe lo stesso
+  // ingrediente contato due volte, o sparito.
+  "collega_ingrediente_ricetta",
   // ⚠️ La bozza da un link: bozza, ingredienti e passaggi in una
   // transazione (20261010000002). A meta' resterebbe una bozza col titolo e
   // senza ricetta, che sembra solo incompleta.

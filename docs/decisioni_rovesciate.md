@@ -3827,3 +3827,32 @@ quando questa sezione è stata scritta.
    è `print:hidden`). E le schede in basso della Cassa sono divise in
    quattro gruppi (Ogni giorno · Soldi miei e di altri · Resoconti ·
    Impostazioni), approvati da lui.
+
+## 106 · 25/10/2026 — «una bozza diventa ricetta solo con tutti gli ingredienti collegati al magazzino»
+
+1. **Cosa era stato deciso e quando.** Il 06/10/2026 (migrazione
+   `20261006000001`, Ricettario Fase 1A): un ingrediente di bozza non
+   collegato all'anagrafica è un **buco**, e la promozione a ricetta lo
+   rifiuta nominandolo.
+
+2. **La ragione di allora.** Una riga di ricetta senza prodotto non ha
+   prezzo né allergeni: una ricetta così mostrerebbe un food cost e un
+   elenco allergeni che sembrano interi e non lo sono. E nessun prodotto
+   deve nascere da solo.
+
+3. **Cosa si decide adesso** (Alessio, 25/10: *«vorrei poter già catalogare
+   tutte le mie ricette fin d'ora… l'associazione solo quando si dovrà
+   calcolare il food cost e mettere una ricetta tra le preparazioni e/o in
+   menu»*). Un ingrediente non collegato entra nella ricetta in una tabella
+   sua (`ricetta_ingredienti_da_collegare`) e si collega dopo, dalla scheda.
+   Il collegamento diventa obbligatorio — vincolo del database, non della
+   schermata — per segnarla pronta per la carta, per metterla in un menu e
+   per usarla dentro un'altra ricetta (migrazione `20261025000020`).
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: finché ci sono ingredienti da collegare, costo e allergeni
+   della ricetta sono parziali. Il gestionale lo **dichiara** accanto al
+   costo («Parziale: N ingredienti da collegare») e sopra gli allergeni
+   («Elenco incompleto»), e una ricetta così non può arrivare in un menu né
+   su un foglio stampato per il cliente. Nessun prodotto nasce da solo:
+   questo resta intero.

@@ -73,7 +73,7 @@ export default function BozzeList() {
         ← Ricettario
       </Link>
       <h1 className="mb-6 mt-2 text-2xl font-semibold">
-        Bozze di ricetta
+        Bozze
         <Didascalia>
           Una bozza non è ancora nel Ricettario: ci entra solo quando la confermi.
         </Didascalia>

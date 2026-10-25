@@ -79,7 +79,7 @@ export default function RicettarioHome() {
             <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
               <Icon name="book" className="w-5 h-5" />
             </div>
-            <h3 className="font-display testo-sala-grande text-b58-charcoal">Bozze di ricetta</h3>
+            <h3 className="font-display testo-sala-grande text-b58-charcoal">Bozze</h3>
             <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
               Importa una ricetta da un link di Clove: diventa ricetta solo quando la confermi.
             </p>
