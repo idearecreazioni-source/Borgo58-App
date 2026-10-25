@@ -164,4 +164,11 @@ describe("le righe ancora in attesa", () => {
     expect(t).toContain('"sostituisce"');
     expect(t).toContain("cosa in piu'");
   });
+
+  // 🔴 Misurato sulla prova (25/10/2026): «mettine due litri» e «aggiungi
+  //    anche il pane» perdevano «lista della spesa» detto nella frase di
+  //    prima, e finivano fra le cose «di cui non so in quale lista vanno».
+  it("il nome della lista detto poco fa vale anche per la frase che lo continua", () => {
+    expect(istruzioniConversa()).toContain("IL NOME DELLA LISTA");
+  });
 });
