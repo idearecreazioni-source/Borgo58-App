@@ -101,18 +101,21 @@ begin
   -- (4) Le otto funzioni che anon deve eseguire restano eseguibili: il
   --     modulo pubblico di prenotazione, la chiave della voce e le tre di
   --     servizio. Elenco preso dall'audit del 26/10, uguale su prova e vero.
-  select string_agg(f, ', ') into v_elenco
-    from unnest(array[
-      'public.submit_public_reservation(date,time without time zone,integer,text,text,text,text)',
-      'public.public_reservation_options(date,integer)',
-      'public.giorni_chiusi_prenotabili()',
-      'public.voce_apri_sessione(text)',
-      'public.registra_dettatura_da_chiave(text,text,jsonb,text,text,integer,integer,text,integer,integer)',
-      'public.is_titolare()',
-      'public.normalize_phone(text)',
-      'public.task_origin_visible_to_staff(text)'
-    ]) f
-   where not has_function_privilege('anon', f, 'EXECUTE');
+  --     ⚠️ Nome e argomenti sono scritti separati, e non per gusto: la rete
+  --     `tests/app/migrazioni-senza-portieri.test.js` legge «nome(» come
+  --     una chiamata, e qui le funzioni si nominano soltanto (CI del 26/10).
+  select string_agg(nome || argomenti, ', ') into v_elenco
+    from (values
+      ('public.submit_public_reservation', '(date,time without time zone,integer,text,text,text,text)'),
+      ('public.public_reservation_options', '(date,integer)'),
+      ('public.giorni_chiusi_prenotabili', '()'),
+      ('public.voce_apri_sessione', '(text)'),
+      ('public.registra_dettatura_da_chiave', '(text,text,jsonb,text,text,integer,integer,text,integer,integer)'),
+      ('public.is_titolare', '()'),
+      ('public.normalize_phone', '(text)'),
+      ('public.task_origin_visible_to_staff', '(text)')
+    ) as f(nome, argomenti)
+   where not has_function_privilege('anon', nome || argomenti, 'EXECUTE');
   if v_elenco is not null then
     raise exception 'Queste funzioni non sono più eseguibili da anon, e devono esserlo: %', v_elenco;
   end if;
