@@ -9,9 +9,12 @@ import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 import RipresaBozza from "./RipresaBozza";
 import AvvisoAggiornamento from "./AvvisoAggiornamento";
 import ApriMemo from "./ApriMemo";
+import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
+import { useSegnala } from "./useSegnala";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const segnala = useSegnala();
   const { pathname } = useLocation();
   // Sulla Dashboard il ritorno alla Dashboard non serve.
   const inCasa = pathname === "/" || pathname === "/dashboard";
@@ -203,6 +206,7 @@ export default function Layout() {
               ⚠️ Lo stacco dal menu è in centimetri veri, come i bersagli:
                  due gesti diversi attaccati si prendono l'uno per l'altro. */}
           <div className="flex items-center" style={{ gap: "calc(var(--pxcm) * 0.3)" }}>
+            <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
             <ApriMemo />
             <button
               aria-label="Apri menu"
@@ -239,6 +243,19 @@ export default function Layout() {
         >
           {/* Sopra ogni schermata: se una lettura e tornata a meta, chi guarda
               deve saperlo prima di leggere i numeri, non dopo. */}
+          {/* 🔴 IL QUADERNO DEI DIFETTI (25/10/2026). Sul telefono il
+              pulsante sta nella testata accanto a MEMO; sul computer la
+              testata non c'è, quindi sta qui in alto a destra. Il riquadro
+              si apre sopra la schermata e non la copre: chi segnala sta
+              guardando proprio il difetto. */}
+          <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
+            <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
+          </div>
+          {segnala.aperto && (
+            <div className="print:hidden mb-4">
+              <RiquadroSegnala momento={segnala.momento} onChiudi={segnala.chiudi} />
+            </div>
+          )}
           <AvvisoLettureTagliate />
           <AvvisoAggiornamento />
           <RipresaBozza />

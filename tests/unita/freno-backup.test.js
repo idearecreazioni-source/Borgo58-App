@@ -37,7 +37,14 @@ function copiaFinta(radice, nome, { completa = true } = {}) {
   if (completa) writeFileSync(path.join(d, "05_conteggi.txt"), "tabella = 1\n");
   return d;
 }
-const oreFa = (n) => new Date(Date.now() - n * 3_600_000);
+// ⚠️ «Adesso» e' FISSO, a meta' luglio (26/10/2026): con l'orologio vero la
+//    prova del bordo e' diventata rossa la notte del cambio d'ora. Alle
+//    00:08 UTC del 26/10 «23 ore fa» cadeva alle 02:08 del 25/10, l'ora che
+//    in Italia esiste due volte, e il nome della cartella veniva riletto
+//    come la prima delle due: 24 ore invece di 23. Una prova che dipende
+//    dal giorno in cui gira non prova il freno, prova il calendario.
+const ADESSO = new Date(2026, 6, 15, 12, 0, 0, 0);
+const oreFa = (n) => new Date(ADESSO.getTime() - n * 3_600_000);
 const nomeDi = (d) => {
   const p = (x) => String(x).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
@@ -101,12 +108,12 @@ describe("la decisione: si passa o ci si ferma", () => {
     const r = radiceFinta();
     const nome = nomeDi(oreFa(1));
     copiaFinta(r, nome);
-    expect(backupTroppoVecchio(copiaPiuRecente(r), new Date(), 24)).toBeNull();
+    expect(backupTroppoVecchio(copiaPiuRecente(r), ADESSO, 24)).toBeNull();
   });
 
   // --- ROTTURA 1: nessuna copia -------------------------------------
   it("SI FERMA quando non c'e' nessuna copia, e lo dice con parole sue", () => {
-    const motivo = backupTroppoVecchio(null, new Date(), 24);
+    const motivo = backupTroppoVecchio(null, ADESSO, 24);
     expect(motivo).not.toBeNull();
     expect(motivo).toContain("nessuna copia");
   });
@@ -118,7 +125,7 @@ describe("la decisione: si passa o ci si ferma", () => {
   it("SI FERMA su una copia piu' vecchia del limite, e dice quante ore ha", () => {
     const r = radiceFinta();
     copiaFinta(r, nomeDi(oreFa(50)));
-    const motivo = backupTroppoVecchio(copiaPiuRecente(r), new Date(), 24);
+    const motivo = backupTroppoVecchio(copiaPiuRecente(r), ADESSO, 24);
     expect(motivo).not.toBeNull();
     expect(motivo).toContain("50 ore");
     expect(motivo).toContain("il limite e' 24");
@@ -128,8 +135,8 @@ describe("la decisione: si passa o ci si ferma", () => {
   // --- ROTTURA 3: l'orologio del computer e' stato spostato ----------
   it("SI FERMA su una copia datata nel futuro invece di far finta di sapere", () => {
     const r = radiceFinta();
-    copiaFinta(r, nomeDi(new Date(Date.now() + 5 * 3_600_000)));
-    const motivo = backupTroppoVecchio(copiaPiuRecente(r), new Date(), 24);
+    copiaFinta(r, nomeDi(new Date(ADESSO.getTime() + 5 * 3_600_000)));
+    const motivo = backupTroppoVecchio(copiaPiuRecente(r), ADESSO, 24);
     expect(motivo).not.toBeNull();
     expect(motivo).toContain("futuro");
   });
@@ -139,10 +146,10 @@ describe("la decisione: si passa o ci si ferma", () => {
   it("il bordo del limite discrimina nei due versi", () => {
     const r1 = radiceFinta();
     copiaFinta(r1, nomeDi(oreFa(23)));
-    expect(backupTroppoVecchio(copiaPiuRecente(r1), new Date(), 24)).toBeNull();
+    expect(backupTroppoVecchio(copiaPiuRecente(r1), ADESSO, 24)).toBeNull();
     const r2 = radiceFinta();
     copiaFinta(r2, nomeDi(oreFa(25)));
-    expect(backupTroppoVecchio(copiaPiuRecente(r2), new Date(), 24)).not.toBeNull();
+    expect(backupTroppoVecchio(copiaPiuRecente(r2), ADESSO, 24)).not.toBeNull();
   });
 
   it("il limite predefinito e' 24 ore", () => {

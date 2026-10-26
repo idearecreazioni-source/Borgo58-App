@@ -70,6 +70,8 @@ export default function Detta() {
   const [frasi, setFrasi] = useState([]);
   const [parziale, setParziale] = useState("");
   const [stato, setStato] = useState("");
+  // 25/10/2026: la domanda che MEMO fa quando non può proporre niente.
+  const [chiede, setChiede] = useState(null);
   const [errore, setErrore] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const [riscontro, setRiscontro] = useState(null);
@@ -191,6 +193,24 @@ export default function Detta() {
       setStato("Sto capendo quello che hai detto…");
       try {
         const esito = await mandaDettato(testo);
+        setChiede(null);
+
+        // 🔴 MEMO NON HA CAPITO ABBASTANZA E CHIEDE (25/10/2026). Non è
+        //    nato nessun appunto: la risposta si dà premendo di nuovo il
+        //    microfono, e alla frase dopo MEMO si ricorda di aver chiesto.
+        //    ⚠️ Il microfono NON si riapre da solo: su iPhone si apre solo
+        //    da un tocco, e un ascolto partito da sé sentirebbe la cucina.
+        if (esito?.esito === "chiarimento") {
+          if (parlataRef.current) parla(esito.messaggio);
+          setChiede({ domanda: esito.messaggio, testo });
+          setRiscontro(null);
+          setRisposta(null);
+          setFrasi([]);
+          frasiRef.current = [];
+          setStato("");
+          ricarica();
+          return;
+        }
 
         // 🔴 ERA UNA DOMANDA: non è nato nessun appunto, e non c'è niente da
         //    approvare. Si legge il gestionale COL PROPRIO ACCESSO e si
@@ -677,6 +697,15 @@ export default function Detta() {
           </p>
         )}
       </div>
+
+      {chiede && !ascolto && (
+        <div className="mt-6 rounded-xl border border-b58-gold-dark/40 bg-b58-gold/10 p-4 md:p-6">
+          <h2 className="testo-sala-lontano font-medium text-b58-charcoal">{chiede.domanda}</h2>
+          <p className="testo-sala mt-1 text-b58-charcoal-soft">
+            Hai detto: «{chiede.testo}». Rispondimi col microfono: non ho segnato niente.
+          </p>
+        </div>
+      )}
 
       {/* ------------------------------------------------------------
           LA RISPOSTA A UNA DOMANDA — niente da approvare, niente scritto

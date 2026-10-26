@@ -76,10 +76,47 @@ const SINONIMI_UNITA = {
 // della virgola mobile (3 dl × 0,1 = 0,30000000000000004).
 const CONVERSIONI_ESATTE = {
   ml: { unita: "l", fattore: 0.001 },
+  millilitro: { unita: "l", fattore: 0.001 },
+  millilitri: { unita: "l", fattore: 0.001 },
+  cc: { unita: "l", fattore: 0.001 },
   cl: { unita: "l", fattore: 0.01 },
+  centilitro: { unita: "l", fattore: 0.01 },
+  centilitri: { unita: "l", fattore: 0.01 },
   dl: { unita: "l", fattore: 0.1 },
+  decilitro: { unita: "l", fattore: 0.1 },
+  decilitri: { unita: "l", fattore: 0.1 },
   mg: { unita: "g", fattore: 0.001 },
+  milligrammo: { unita: "g", fattore: 0.001 },
+  milligrammi: { unita: "g", fattore: 0.001 },
+  // Un etto sono 100 g esatti: è una misura, non una stima.
+  hg: { unita: "kg", fattore: 0.1 },
+  etto: { unita: "kg", fattore: 0.1 },
+  etti: { unita: "kg", fattore: 0.1 },
 };
+
+// 🔴 LE FRAZIONI SCRITTE CON UN SOLO SEGNO (25/10/2026, misurato su Clove).
+//    La pagina della crema catalana dichiara «1⁄2 litro latte» con la BARRA
+//    DELLE FRAZIONI (U+2044), non con «/»: il lettore vedeva due numeri,
+//    «1» e «2», e lasciava la quantità vuota. Altri siti scrivono «½», un
+//    carattere solo, dove il lettore non vedeva nessun numero — e allora
+//    nemmeno un buco: la quantità spariva in silenzio.
+//    Qui le due grafie diventano la frazione con «/», PRIMA di leggere. Non
+//    si inventa niente: è la stessa frazione scritta con un altro segno.
+//    ⚠️ «1½» diventa «1 1/2», cioè un numero misto: resta un buco come
+//    «1 1/2», per la stessa regola (due numeri, la quantità va scelta).
+const FRAZIONI_UNICODE = {
+  "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4",
+  "⅕": "1/5", "⅖": "2/5", "⅗": "3/5", "⅘": "4/5", "⅙": "1/6", "⅚": "5/6",
+  "⅐": "1/7", "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8", "⅑": "1/9", "⅒": "1/10",
+};
+const FRAZIONE_UNICODE = new RegExp(`(\\d)?([${Object.keys(FRAZIONI_UNICODE).join("")}])`, "g");
+
+/** «1⁄2» e «½» → «1/2»; «1½» → «1 1/2». Il resto della riga non si tocca. */
+export function frazioniNormalizzate(riga) {
+  return riga
+    .replace(/\s*[\u2044\u2215]\s*/g, "/")
+    .replace(FRAZIONE_UNICODE, (_, cifra, f) => `${cifra ? `${cifra} ` : ""}${FRAZIONI_UNICODE[f]}`);
+}
 
 // Parole di misura che si riconoscono come UNITÀ (non come ingrediente) ma
 // che il gestionale non conosce: restano scritte, e a valle sono un buco
@@ -91,6 +128,13 @@ const MISURE_NON_CODIFICATE = new Set([
   "manciata", "manciate", "noce", "noci", "bustina", "bustine", "barattolo",
   "barattoli", "lattina", "lattine", "scatola", "scatole", "vasetto", "vasetti",
   "goccio", "gocce", "filo", "ciuffo", "ciuffi", "costa", "coste", "cubetto", "cubetti",
+  // Le stesse misure come le scrivono le ricette spagnole e inglesi (Clove le
+  // lascia così anche tradotte: «1 cdta sale»). Senza, la parola finiva nel
+  // nome, l'assistente la toglieva pulendolo, e «1 cdta sale» diventava
+  // «1 sale»: un numero sbagliato invece di un'unità da controllare.
+  "taza", "tazas", "cda", "cdas", "cdta", "cdtas", "cdita", "cditas",
+  "cucharada", "cucharadas", "cucharadita", "cucharaditas", "pizca", "pizcas",
+  "cup", "cups", "tbsp", "tsp",
 ]);
 
 const QB = /\b(?:q\.?\s*b\.?|quanto basta)(?=\s|[.,;:)]|$)/i;
@@ -136,7 +180,7 @@ const senzaDi = (nome) => nome.replace(/^(?:di|d['’])\s*/i, "").replace(/^[:,\
  * che la riguardano.
  */
 function leggiIngrediente(originale) {
-  const riga = senzaSegno(originale);
+  const riga = frazioniNormalizzate(senzaSegno(originale));
   const buchi = [];
   const base = { testo_originale: originale, nome: riga, quantita: null, unita: null, ingredient_id: null, nota: null };
 
