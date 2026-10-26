@@ -73,6 +73,9 @@ import {
 } from "../../lib/calcoli/resa";
 import Didascalia from "../../components/Didascalia";
 import IngredientiDaCollegare from "../../components/IngredientiDaCollegare";
+import LetturaRicetta from "./LetturaRicetta";
+import { tagDellArchivio } from "../../lib/api/recipes";
+import { AllergeniArchivio, TagEStagioni } from "../../components/ArchivioRicetta";
 import { listDaCollegare } from "../../lib/api/ricettaDaCollegare";
 
 const emptyIngredientForm = {
@@ -137,6 +140,20 @@ export default function RicettaDetail() {
   // (25/10/2026, migrazione 20261025000020): fuori dal costo e dagli
   // allergeni, e la schermata lo dichiara.
   const [daCollegare, setDaCollegare] = useState([]);
+  // 🔴 LA RICETTA SI APRE DA LEGGERE (25/10/2026, Alessio): i campi
+  //    compaiono solo dopo «Modifica». Vale anche per il titolare.
+  const [modifica, setModifica] = useState(false);
+  // I tag già usati nell'archivio, per proporli scrivendo: si chiedono solo
+  // quando si entra in modifica.
+  const [tagSuggeriti, setTagSuggeriti] = useState([]);
+  useEffect(() => {
+    if (!modifica) return;
+    tagDellArchivio()
+      .then(setTagSuggeriti)
+      // SILENZIO MOTIVATO: un suggerimento mancante non ferma niente — il
+      // tag si scrive a mano, e nessun dato della ricetta dipende da qui.
+      .catch(() => setTagSuggeriti([]));
+  }, [modifica]);
   const [steps, setSteps] = useState([]);
   const [cost, setCost] = useState(null);
   const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] });
@@ -572,6 +589,29 @@ export default function RicettaDetail() {
     }
   };
 
+  // Gli allergeni della ricetta intera, finché ha ingredienti da collegare
+  // (archivio, 25/10/2026). Qualunque gesto tuo li fa «confermati».
+  const salvaAllergeniArchivio = async (elenco) => {
+    try {
+      const aggiornata = await updateRecipe(id, {
+        allergeni_archivio: elenco,
+        allergeni_archivio_origine: "confermati",
+      });
+      setRecipe((r) => ({ ...r, ...aggiornata }));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const salvaTag = async (tags) => {
+    try {
+      const aggiornata = await updateRecipe(id, { tags });
+      setRecipe((r) => ({ ...r, ...aggiornata }));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const salvaStato = async (campi) => {
     const aggiornata = await updateRecipe(id, campi);
     setRecipe((r) => ({ ...r, ...aggiornata }));
@@ -871,6 +911,15 @@ export default function RicettaDetail() {
           ← {indietro.etichetta}
         </Link>
         <div className="flex items-center gap-3">
+          {modifica && (
+            <button
+              type="button"
+              onClick={() => setModifica(false)}
+              className="tocco-bottone rounded-lg bg-b58-charcoal px-4 testo-sala-grande text-b58-cream"
+            >
+              Fine modifiche
+            </button>
+          )}
           <button
             onClick={handleCopia}
             disabled={copiando}
@@ -894,6 +943,27 @@ export default function RicettaDetail() {
         </p>
       )}
 
+      {!modifica ? (
+        <LetturaRicetta
+          recipe={recipe}
+          righe={recipeIngredients}
+          daCollegare={daCollegare}
+          steps={steps}
+          videos={videos}
+          allergens={allergens}
+          cost={cost}
+          ccpSteps={ccpSteps}
+          tipo={parolaTipo(recipe, "nudo").replace(/^./, (c) => c.toUpperCase())}
+          stato={etichettaStato(recipe.recipe_type, recipe.pronta_per_carta, recipe.in_carta, recipe.ritirata_il)?.label}
+          isTitolare={isTitolare}
+          isSelezione={isSelezione}
+          isComponente={isComponente}
+          passoDaQui={passoDaQui(recipe?.name)}
+          onModifica={() => setModifica(true)}
+          onAllergeniArchivio={salvaAllergeniArchivio}
+        />
+      ) : (
+      <>
       {/* Intestazione */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-3 mb-6">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
@@ -939,8 +1009,11 @@ export default function RicettaDetail() {
                 totale che li ignora in silenzio sembra il costo vero. */}
             {daCollegare.length > 0 && (
               <div className="testo-sala text-b58-terracotta mt-1 max-w-[16rem]">
-                Parziale: {daCollegare.length === 1 ? "1 ingrediente" : `${daCollegare.length} ingredienti`} da
-                collegare al magazzino
+                Parziale · {daCollegare.length} da collegare
+                <Didascalia>
+                  Gli ingredienti non ancora collegati a un prodotto del magazzino non hanno un prezzo: il costo li
+                  ignora, quindi è più basso del vero.
+                </Didascalia>
               </div>
             )}
             {/* 🔴 IL PREZZO DI VENDITA DI UNA SELEZIONE NON SI CALCOLA —
@@ -1240,7 +1313,8 @@ export default function RicettaDetail() {
             return (
               <div className="mt-2 rounded-lg bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 px-3 py-2">
                 <p className="testo-sala text-b58-charcoal">
-                  <strong>🔒 Bloccato apposta.</strong> {bloccati[0]}
+                  <strong>🔒 Bloccato apposta</strong>
+                  <Didascalia>{bloccati[0]}</Didascalia>
                 </p>
                 {menuChePubblica && isTitolare && (
                   <button
@@ -1359,11 +1433,18 @@ export default function RicettaDetail() {
             placeholder={isPreparazione ? "Per la cucina" : "Come appare sul menu"}
             className={inputClass}
           />
-          <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
+          {/* Dietro il «?» dal 25/10: la si legge una volta, poi è arredamento. */}
+          <Didascalia>
             {isPreparazione
               ? "Non compare su nessun menu: la legge solo chi apre questa scheda."
               : "Es. «Fusilloni al ragù di polpo e polvere di prezzemolo»."}
-          </p>
+          </Didascalia>
+        </div>
+
+        {/* I tag dell'archivio (25/10/2026): si cercano dall'elenco. */}
+        <div className="mb-4">
+          <label className={labelClass}>Tag</label>
+          <TagEStagioni tags={recipe.tags} modifica suggeriti={tagSuggeriti} onTags={salvaTag} />
         </div>
 
         {/* ⚠️ NIENTE STAGIONALITÀ SU UN PIATTO DI FINGER FOOD (24/08,
@@ -2277,14 +2358,23 @@ export default function RicettaDetail() {
             </p>
           )}
 
+          {/* 🔴 CON INGREDIENTI DA COLLEGARE i prodotti non bastano a dire gli
+              allergeni (25/10/2026): vale l'elenco della ricetta intera,
+              detto da te o proposto da MEMO, e si scrive qui. */}
           {daCollegare.length > 0 && (
-            <p className="mb-3 rounded bg-b58-terracotta/10 px-3 py-2 testo-sala-grande text-b58-charcoal">
-              <strong>Elenco incompleto.</strong> Gli allergeni di {daCollegare.map((r) => r.nome).join(", ")}{" "}
-              non sono contati: si leggono dal prodotto del magazzino, e questi non sono ancora collegati.
-            </p>
+            <div className="mb-3">
+              <AllergeniArchivio
+                allergeni={recipe.allergeni_archivio ?? null}
+                origine={recipe.allergeni_archivio_origine}
+                extra={allergens.allergens}
+                modifica={isTitolare}
+                onAllergeni={isTitolare ? salvaAllergeniArchivio : undefined}
+              />
+            </div>
           )}
 
           <AllergeniDelPiatto
+            incompleto={daCollegare.length > 0}
             recipeId={id}
             eFinger={isSelezione}
             finger={fingerDelPiatto}
@@ -2323,6 +2413,8 @@ export default function RicettaDetail() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

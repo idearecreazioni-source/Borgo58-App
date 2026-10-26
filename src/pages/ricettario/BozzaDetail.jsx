@@ -14,6 +14,7 @@ import {
   togliPassaggioBozza,
 } from "../../lib/api/bozzeRicetta";
 import { listIngredients } from "../../lib/api/ingredients";
+import { tagDellArchivio } from "../../lib/api/recipes";
 import { buchiDellaBozza, nuovoGesto } from "../../lib/calcoli/bozzeRicetta";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { useUnita } from "../../lib/unita";
@@ -63,6 +64,7 @@ export default function BozzaDetail() {
   const [modifica, setModifica] = useState(false);
   const [dati, setDati] = useState(null);
   const [anagrafica, setAnagrafica] = useState([]);
+  const [tagSuggeriti, setTagSuggeriti] = useState([]);
   const [errore, setErrore] = useState("");
   const [erroreLettura, setErroreLettura] = useState("");
   const [conferma, setConferma] = useState(null); // { esito, gesto }
@@ -88,6 +90,11 @@ export default function BozzaDetail() {
     listIngredients()
       .then((r) => setAnagrafica(r ?? []))
       .catch((e) => setErrore(`Non riesco a leggere l'anagrafica degli ingredienti: ${e.message}`));
+    // SILENZIO MOTIVATO: i tag sono solo suggerimenti; se non si leggono, si
+    // scrivono a mano, e nessun dato della bozza dipende da loro.
+    tagDellArchivio()
+      .then(setTagSuggeriti)
+      .catch(() => setTagSuggeriti([]));
   }, []);
 
   const codiciUnita = useMemo(() => unita.map((u) => u.value), [unita]);
@@ -212,6 +219,7 @@ export default function BozzaDetail() {
         onModifica={() => setModifica((m) => !m)}
         cucina={mostraCucina}
         anagrafica={anagrafica}
+        tagSuggeriti={tagSuggeriti}
         unita={unita}
         azioni={azioni}
       />

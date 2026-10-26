@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // =====================================================================
@@ -39,6 +39,8 @@ const f = {
 };
 const vuoto = () => Promise.resolve([]);
 vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]),
   duplicaRicetta: vi.fn(),
   getRecipe: (...a) => f.getRecipe(...a),
   getRecipeAllergens: () => Promise.resolve({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] }),
@@ -150,7 +152,7 @@ describe("🔴 il punto da cui si scrive una voce di menu", () => {
   });
 });
 
-const apriRicetta = () =>
+async function apriRicetta() {
   render(
     <MemoryRouter initialEntries={["/ricettario/ricette/r9"]}>
       <Routes>
@@ -158,11 +160,15 @@ const apriRicetta = () =>
       </Routes>
     </MemoryRouter>,
   );
+  // 🔴 Dal 25/10/2026 la ricetta si apre DA LEGGERE: i campi compaiono
+  //    solo dopo «Modifica», ed è lì che queste prove guardano.
+  fireEvent.click(await screen.findByRole("button", { name: "Modifica" }));
+}
 
 describe("🔴 la scheda di un piatto, pannello «Nei menu»", () => {
   it("un finger food: nessun «+ menu», il menu dove sta già resta toglibile, e la frase dice perché", async () => {
     f.getRecipe.mockResolvedValue(ricetta("finger_food", "Selezione di mare"));
-    apriRicetta();
+    await apriRicetta();
     await screen.findByText("Nei menu");
     await waitFor(() => expect(screen.getByRole("button", { name: /✓ Menu degli eventi/ })).toBeTruthy());
     expect(screen.queryByRole("button", { name: /\+ Carta dei due mesi/ })).toBeNull();
@@ -171,7 +177,7 @@ describe("🔴 la scheda di un piatto, pannello «Nei menu»", () => {
 
   it("un primo: il «+ menu» c'è come prima, e la frase no", async () => {
     f.getRecipe.mockResolvedValue(ricetta("primo", "Tagliolini al limone"));
-    apriRicetta();
+    await apriRicetta();
     await screen.findByText("Nei menu");
     await waitFor(() => expect(screen.getByRole("button", { name: /\+ Carta dei due mesi/ })).toBeTruthy());
     expect(screen.queryByText(FRASE)).toBeNull();

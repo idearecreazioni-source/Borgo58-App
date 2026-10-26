@@ -12,7 +12,8 @@
 // tests/unita/ricetta-da-link.test.js.
 //
 // 🔴 L'ASSISTENTE (10/10/2026, decisione di Alessio): letta la ricetta, un
-//    modello PROPONE categoria, fasi e nomi puliti (`proposte.ts`). Non tocca
+//    modello PROPONE categoria, fasi e nomi puliti (`proposte.ts`), e dal 25/10
+//    anche tipo, stagioni, tag e allergeni — tutto da confermare. Non tocca
 //    i numeri. Se non risponde, se manca la chiave o se il tetto di spesa e'
 //    raggiunto, la ricetta arriva lo stesso, senza proposte, e lo si dice:
 //    l'importazione non dipende dall'assistente.
@@ -33,9 +34,13 @@ const CORS = {
 const TEMPO_MASSIMO_MS = 10_000;
 const RINVII_MASSIMI = 3;
 
-// Il modello piccolo: tre scelte di classificazione e dei nomi da ripulire,
-// niente che riguardi la salute (gli allergeni non si chiedono qui).
-const MODELLO = "claude-haiku-4-5-20251001";
+// 🔴 25/10/2026: DAL MODELLO PICCOLO AL MEDIO. Fino a ieri qui si chiedevano
+// solo classificazioni e nomi, «niente che riguardi la salute», e il modello
+// piccolo bastava. Adesso si chiedono anche gli ALLERGENI (l'archivio delle
+// ricette, approvato da Alessio): restano proposte da confermare, ma una
+// proposta sbagliata su un allergene costa più di qualche centesimo. Lo
+// stesso modello che legge le etichette (`leggi-foto`).
+const MODELLO = "claude-sonnet-5";
 // Il tetto si alza nello stesso momento in cui si chiede di scrivere di piu'
 // (CLAUDE.md §8): una riga per ingrediente e una per passaggio. Non si paga
 // cio' che non si scrive.
@@ -46,6 +51,28 @@ type Assistente = {
   messaggio: string | null;
   proposte: Proposte | null;
 };
+
+/**
+ * Le etichette già usate nell'archivio, perché l'assistente riusi quelle
+ * invece di inventarne di simili («pesce» e «di pesce»).
+ * ⚠️ Una lettura fallita non ferma niente: senza la lista l'assistente
+ *    propone lo stesso, solo senza il suggerimento. I tag si leggono dalle
+ *    righe, e il gateway ne restituisce al
+ *    più mille per tabella SENZA dirlo: oltre, la lista è parziale. Qui si
+ *    accetta, perché è un suggerimento e non un dato — una lista più corta
+ *    fa solo proporre qualche etichetta nuova in più.
+ */
+async function tagGiaUsati(supabase: ReturnType<typeof createClient>): Promise<string[]> {
+  const [ricette, bozze] = await Promise.all([
+    supabase.from("recipes").select("tags").limit(1000),
+    supabase.from("bozze_ricetta").select("tags").limit(1000),
+  ]);
+  const tutti = new Set<string>();
+  for (const r of [...(ricette.data ?? []), ...(bozze.data ?? [])]) {
+    for (const t of (r as { tags?: string[] }).tags ?? []) tutti.add(t);
+  }
+  return [...tutti].sort().slice(0, 200);
+}
 
 async function chiediAssistente(
   supabase: ReturnType<typeof createClient>,
@@ -75,7 +102,7 @@ async function chiediAssistente(
       model: MODELLO,
       max_tokens: TETTO_RISPOSTA,
       system: ISTRUZIONI,
-      messages: [{ role: "user", content: domandaPerAssistente(ricetta) }],
+      messages: [{ role: "user", content: domandaPerAssistente(ricetta, await tagGiaUsati(supabase)) }],
     });
     tokenDomanda = esito.usage.input_tokens;
     tokenRisposta = esito.usage.output_tokens;

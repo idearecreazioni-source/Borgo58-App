@@ -11,6 +11,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ estrapola: vi.fn(), aggiungi: vi.fn() }));
 
 vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]),
   listRecipes: vi.fn(async () => [{ id: "r1", name: "Amatriciana", portions_yield: 4 }]),
 }));
 vi.mock("../../src/lib/api/bozzeRicetta", () => ({

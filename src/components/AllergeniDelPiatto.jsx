@@ -65,6 +65,10 @@ export default function AllergeniDelPiatto({
   finger = [],
   ingredienti = [],
   allergeniFinger = null,
+  // 25/10/2026: la ricetta ha ingredienti da collegare. Allora «nessun
+  // allergene risulta» è FALSO — mancano proprio quelli non collegati — e
+  // l'elenco della ricetta intera lo dice il blocco d'archivio accanto.
+  incompleto = false,
 }) {
   const [righe, setRighe] = useState(null);
   // Da dove viene ogni allergene, raggruppato per allergene.
@@ -174,7 +178,7 @@ export default function AllergeniDelPiatto({
           nonVuolDire="Non vuol dire che non ne ha: vuol dire che non lo so."
           onRiprova={ricarica}
         />
-      ) : righe.length === 0 ? (
+      ) : righe.length === 0 && incompleto ? null : righe.length === 0 ? (
         <p className="testo-sala-grande text-b58-charcoal-soft/60">
           Nessun allergene risulta dagli ingredienti di questo piatto.
         </p>

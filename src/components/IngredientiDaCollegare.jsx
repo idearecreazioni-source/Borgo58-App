@@ -77,6 +77,13 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
           carta, per metterla in un menu o per usarla dentro un'altra ricetta.
         </Didascalia>
       </h3>
+      {/* 🔴 UNA VOLTA SOLA, NON SOTTO OGNI RIGA (25/10/2026, Alessio: «ci sono
+          ancora molte didascalie inutilmente visibili»). Con il magazzino
+          vuoto la frase era ripetuta sotto ogni ingrediente insieme a un
+          menu «Collega a un prodotto…» che non aveva niente da proporre. */}
+      {prodotti.length === 0 && modificabile && (
+        <p className="testo-sala text-b58-charcoal-soft mb-2">Il magazzino è ancora vuoto: per ora non c'è niente da collegare.</p>
+      )}
       <ul className="space-y-2">
         {righe.map((r) => (
           <li key={r.id} className="rounded-lg bg-white border border-dashed border-b58-charcoal/25 p-3">
@@ -110,6 +117,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
                   ))}
                 </select>
                 <div className="col-span-2 sm:col-span-3 flex flex-wrap gap-2">
+                  {prodotti.length > 0 && (
                   <select
                     aria-label={`Collega «${r.nome}» a un prodotto`}
                     value=""
@@ -122,6 +130,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                  )}
                   {daTogliere === r.id ? (
                     <>
                       <button
@@ -155,11 +164,6 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
               </p>
             )}
             {r.nota && <p className="testo-sala text-b58-charcoal-soft mt-1">{r.nota}</p>}
-            {prodotti.length === 0 && modificabile && (
-              <p className="testo-sala text-b58-charcoal-soft mt-1">
-                Nel magazzino non c'è ancora nessun prodotto da collegare.
-              </p>
-            )}
             {esiti[r.id] && <p className="testo-sala text-b58-terracotta mt-1">{esiti[r.id]}</p>}
           </li>
         ))}
