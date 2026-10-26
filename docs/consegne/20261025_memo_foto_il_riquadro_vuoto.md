@@ -1,6 +1,6 @@
 # MEMO foto: il riquadro vuoto e il «?» da solo — 25/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** `10de1fa` (la striscia verde), sopra l'unione di `origin/slave` e `ef6831c` (MEMO foto). Working tree pulito. **Nessuna migrazione, nessuna funzione online, nessun dato toccato.**
+**HEAD dichiarato sotto questo riepilogo:** `1b5a264`, l'unione di `origin/slave` (`0cd09d8`, che contiene master `bfffa1d`) sopra `10de1fa` (la striscia verde) e `ef6831c` (MEMO foto). Unione senza conflitti; dopo l'unione: lint pulito, 2310 prove pure verdi, compilazione riuscita. Working tree pulito. **Nessuna migrazione, nessuna funzione online, nessun dato toccato.**
 
 ## Origine
 Due screenshot di Alessio (telefono e computer) dopo il rilascio dei ritocchi di forma: sul telefono il pulsante «Fotografa» sta in basso e in cima resta un riquadro vuoto; sotto «L'hai messo tu il…» c'è un «?» da solo. Il nero dei pulsanti resta (sua decisione).
