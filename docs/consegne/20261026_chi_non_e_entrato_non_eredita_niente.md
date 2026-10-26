@@ -1,6 +1,6 @@
 # Chi non è entrato non eredita niente — 26/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** `97dae3e`, sul ramo `claude/permessi-predefiniti-anon` aperto da `origin/slave` `4a2716c`. Due commit: `4f90da6` (migrazione) e `97dae3e` (verifica più stretta, dalla revisione ECC). Working tree pulito.
+**HEAD dichiarato sotto questo riepilogo:** `cbf3898`, sul ramo `claude/permessi-predefiniti-anon` aperto da `origin/slave` `4a2716c`. Tre commit: `4f90da6` (migrazione), `97dae3e` (verifica più stretta, dalla revisione ECC) e `cbf3898` (i nomi delle funzioni scritti in modo che la rete dei portieri non li scambi per chiamate: falso allarme della CI su #238). Working tree pulito.
 **Migrazione `20261026000001_chi_non_e_entrato_non_eredita_niente`: applicata SOLO al progetto di prova**, non alla produzione. Nessuna funzione online, nessun dato toccato.
 
 ## Origine
