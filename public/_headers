@@ -1,0 +1,30 @@
+# Le intestazioni di sicurezza del sito (Cloudflare Pages) — 26/10/2026.
+#
+# PERCHE' ESISTONO. Fino a oggi il sito non ne mandava nessuna: un'altra
+# pagina poteva incorniciare il gestionale (cassa, buste paga) e far
+# cliccare a qualcuno un pulsante che non vede, e uno script arrivato da
+# fuori avrebbe potuto spedire la sessione dove voleva. La CSP qui sotto
+# dice al browser da dove il gestionale puo' caricare e a chi puo' parlare.
+#
+# DA DOVE VIENE L'ELENCO, misurato sulla build del 26/10/2026: nessuno
+# script scritto dentro index.html (solo /assets/*.js), e fuori dal sito
+# soltanto i due progetti Supabase e i caratteri di Google Fonts.
+#
+# 🔴 I DUE PROGETTI SUPABASE SONO SCRITTI PER NOME, non come *.supabase.co:
+#    con l'asterisco il gestionale potrebbe parlare con il progetto di
+#    chiunque. Il vero (REF_PRODUZIONE) serve borgo58.it, quello di prova
+#    (REF_PROVA) le anteprime dei rami. Se un progetto cambia, cambia qui:
+#    tests/unita/intestazioni-sicurezza.test.js confronta questa riga con
+#    scripts/comune.mjs e diventa rossa se non coincidono.
+#
+# ⚠️ 'unsafe-inline' resta solo negli stili, non negli script.
+#
+# ⚠️ Microfono e fotocamera restano permessi al sito stesso: servono alla
+#    dettatura e alle foto di MEMO.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://oudjuqbqszisdtwzbxdo.supabase.co https://bnwqgpuyzmzujxfbtyvs.supabase.co; media-src 'self' data: blob:; connect-src 'self' https://oudjuqbqszisdtwzbxdo.supabase.co wss://oudjuqbqszisdtwzbxdo.supabase.co https://bnwqgpuyzmzujxfbtyvs.supabase.co wss://bnwqgpuyzmzujxfbtyvs.supabase.co; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=(), usb=()
