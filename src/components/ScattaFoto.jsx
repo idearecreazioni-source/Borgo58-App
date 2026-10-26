@@ -105,7 +105,19 @@ export default function ScattaFoto({
   };
 
   return (
-    <div className="rounded-lg border border-stone-300 bg-stone-50 p-3">
+    // 🔴 COL GESTO IN BASSO, SUL TELEFONO IL RIQUADRO NON C'E' — 25/10/2026,
+    //    da uno screenshot di Alessio. Il pulsante esce dal riquadro per
+    //    andare sotto il pollice, e il riquadro restava li' in cima, vuoto,
+    //    alto quanto lo spaziatore della barra. Sul telefono quindi niente
+    //    bordo e niente fondo (l'anteprima ha il suo), e lo spazio per la
+    //    barra lo riserva la pagina in fondo, non questo componente a meta'.
+    <div
+      className={
+        gestoInBasso
+          ? "md:rounded-lg md:border md:border-stone-300 md:bg-stone-50 md:p-3"
+          : "rounded-lg border border-stone-300 bg-stone-50 p-3"
+      }
+    >
       <input
         ref={campo}
         type="file"
@@ -202,5 +214,5 @@ export default function ScattaFoto({
 //    dentro la barra e una fuori. Due copie della stessa cosa divergono, e
 //    quella che resta indietro è sempre quella che si guarda di meno.
 function Forse({ dentro, children }) {
-  return dentro ? <BarraDelPollice>{children}</BarraDelPollice> : children;
+  return dentro ? <BarraDelPollice spaziatore={false}>{children}</BarraDelPollice> : children;
 }

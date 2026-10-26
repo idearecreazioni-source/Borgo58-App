@@ -115,7 +115,14 @@ export default function BarraDelPollice({ children, altezza = "2.05cm", spaziato
         //    una riga scritta, giusta, e che non poteva avere effetto —
         //    la stessa famiglia della dichiarazione perdente del 25/08.
         //    Adesso c'e', e il nome vive in un posto solo (`index.css`).
-        style={{ paddingBottom: "calc(var(--pxcm) * 1 + var(--sicuro-basso, 0px))" }}
+        //
+        // 🔴 E SUL COMPUTER LO STACCO NON SERVE — 25/10/2026, dagli
+        //    screenshot di Alessio. Scritto come `paddingBottom` nello stile,
+        //    vinceva su `md:py-0` e lasciava un centimetro vuoto sotto il
+        //    pulsante anche dove la barra torna nel flusso: in MEMO foto il
+        //    riquadro del computer era alto il doppio del pulsante. Ora lo
+        //    stile pubblica solo la misura, e la classe la usa sotto `md:`.
+        style={{ "--stacco-pollice": "calc(var(--pxcm) * 1 + var(--sicuro-basso, 0px))" }}
         className={
           // ⚠️ `left-0 right-0` e non `w-full`: dentro un contenitore con
           //    margini, `w-full` prende la larghezza del contenitore e la
@@ -124,6 +131,7 @@ export default function BarraDelPollice({ children, altezza = "2.05cm", spaziato
           "bg-b58-parchment/95 px-4 py-3 backdrop-blur print:hidden " +
           // Da tablet in su torna dov'era: nessun `fixed`, nessun bordo,
           // nessuno sfondo.
+          "pb-(--stacco-pollice) " +
           "md:static md:z-auto md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none"
         }
       >

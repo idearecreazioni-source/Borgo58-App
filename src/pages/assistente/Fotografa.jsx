@@ -266,11 +266,25 @@ export default function Fotografa() {
             )}
 
             <div className="mt-4 border-t border-b58-charcoal/10 pt-4">
-              <label className="testo-sala mb-1 block font-medium uppercase tracking-wide text-b58-charcoal-soft">
-                Tetto di spesa al mese
-              </label>
+              {/* 🔴 IL «?» STA ACCANTO A CIO' CHE SPIEGA — 25/10/2026, da uno
+                  screenshot di Alessio. Stava in fondo, sotto «L'hai messo tu
+                  il…», su una riga sua: un punto di domanda da solo, che non
+                  diceva di cosa parlava. */}
+              <div className="mb-1 flex items-center">
+                <label
+                  htmlFor="tetto-spesa-foto"
+                  className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft"
+                >
+                  Tetto di spesa al mese
+                </label>
+                <Didascalia>
+                  Lascialo vuoto se non vuoi nessun limite. Quando la spesa arriva al tetto le foto
+                  smettono di partire, ma le schede si compilano a mano come sempre.
+                </Didascalia>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
+                  id="tetto-spesa-foto"
                   type="number"
                   step="0.01"
                   min="0"
@@ -311,10 +325,6 @@ export default function Fotografa() {
                 </p>
               )}
 
-              <Didascalia>
-                Lascialo vuoto se non vuoi nessun limite. Quando la spesa arriva al tetto le foto
-                smettono di partire, ma le schede si compilano a mano come sempre.
-              </Didascalia>
             </div>
 
             {errore && (
@@ -377,6 +387,10 @@ export default function Fotografa() {
           </section>
         )
       )}
+
+      {/* Lo spazio per la barra del pollice, in fondo: sul telefono la barra
+          e' fissa e coprirebbe l'ultima riga. Stessa forma di MEMO voce. */}
+      <div aria-hidden="true" className="md:hidden" style={{ height: "var(--barra-pollice, 0px)" }} />
     </div>
   );
 }
