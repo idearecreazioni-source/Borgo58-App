@@ -88,7 +88,26 @@ export async function listCashMovements({ entityId, from, to, direction } = {}) 
   return data;
 }
 
-export async function createCashMovement(payload) {
+/**
+ * Un movimento di prima nota.
+ *
+ * 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+ * dal corridoio: il database chiude la cosa detta e scrive il movimento in
+ * una transazione (20261026000002), e una seconda volta lo rifiuta invece
+ * di scriverlo due volte. Senza, l'insert diretto di sempre.
+ */
+export async function createCashMovement(payload, { azioneDettataId = null } = {}) {
+  if (azioneDettataId) {
+    const id = await eseguiOperazione("registra_movimento_cassa", {
+      p_movimento: payload,
+      p_azione_dettata_id: azioneDettataId,
+    });
+    const { data, error } = await supabase.from("cash_movements").select(MOVEMENT_SELECT).eq("id", id).single();
+    // ⚠️ A questo punto il movimento è scritto e la cosa detta chiusa: se
+    //    fallisce solo la rilettura non è un errore di salvataggio, e dirlo
+    //    tale farebbe rifare una cosa già fatta (revisione ECC del 26/10).
+    return error ? { id } : data;
+  }
   const { data, error } = await supabase
     .from("cash_movements")
     .insert(payload)

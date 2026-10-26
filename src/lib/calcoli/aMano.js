@@ -48,3 +48,22 @@ export function conCampi(attuale, campi, mappa) {
   }
   return fuori;
 }
+
+/**
+ * L'id della cosa detta da chiudere INSIEME al salvataggio, o null.
+ *
+ * 🔴 Dal 26/10/2026 la chiusura non è più una seconda chiamata dopo il
+ * salvataggio: l'id viaggia con la scrittura e il database chiude e scrive
+ * in una transazione (20261026000002). Se fossero due, un errore fra le
+ * due lascerebbe il dato scritto e la cosa ancora «da fare» — e la volta
+ * dopo la stessa spesa entrerebbe due volte.
+ *
+ * Stesse condizioni di `chiudi()` in `daVoce.js`: niente da chiudere senza
+ * id, se l'ha già chiusa questa schermata, o se l'azione non è più da
+ * finire (eseguita, finita a mano, annullata).
+ */
+export function idDaChiudere({ id, azione, chiusa }) {
+  if (!id || chiusa) return null;
+  if (azione && azione.da_finire === false) return null;
+  return id;
+}

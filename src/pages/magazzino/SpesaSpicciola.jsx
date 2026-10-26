@@ -140,12 +140,13 @@ export default function SpesaSpicciola() {
   const aggiungi = () => {
     if (!articolo.trim()) return;
     return fai(async () => {
-      await aggiungiSpesaSpicciola({ articolo, categoria });
-      // 🔴 SOLO DOPO CHE È RIUSCITO: senza questo passaggio la riga
-      //    detta resterebbe in sospeso DOPO essere stata scritta, e la
-      //    volta dopo si approverebbe di nuovo — la stessa cosa due
-      //    volte in lista.
-      await venuto.chiudi();
+      const chiudendo = venuto.idDaChiudere;
+      // 🔴 La cosa detta si chiude NELLA STESSA transazione della voce
+      //    (20261026000002): con due chiamate, un errore fra le due lasciava
+      //    la riga detta in sospeso dopo essere stata scritta, e la volta
+      //    dopo si approvava di nuovo — la stessa cosa due volte in lista.
+      await aggiungiSpesaSpicciola({ articolo, categoria }, { azioneDettataId: chiudendo });
+      if (chiudendo) venuto.segnaChiusa();
       setArticolo("");
       // ⚠️ La categoria RESTA scritta: chi aggiunge tre cose di pulizia le
       // aggiunge una dopo l'altra, e rimetterla ogni volta è il genere di

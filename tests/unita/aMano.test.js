@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PARAMETRO, conCampi, indirizzoAMano } from "../../src/lib/calcoli/aMano";
+import { PARAMETRO, conCampi, idDaChiudere, indirizzoAMano } from "../../src/lib/calcoli/aMano";
 
 // =====================================================================
 // LA VIA D'USCITA A MANO — le regole, provate senza aprire una schermata
@@ -104,5 +104,23 @@ describe("i campi capiti si applicano senza cancellare gli altri", () => {
   it("uno zero è un valore, non un vuoto", () => {
     const fuori = conCampi({ amount: "5" }, { importo: 0 }, MAPPA);
     expect(fuori.amount).toBe(0);
+  });
+});
+
+// LA VOCE SI CHIUDE INSIEME AL DATO — 26/10/2026. L'id viaggia con la
+// scrittura (20261026000002): queste sono le condizioni per cui viaggia.
+describe("idDaChiudere", () => {
+  it("c'è un id e la cosa è ancora da finire: viaggia con la scrittura", () => {
+    expect(idDaChiudere({ id: "a", azione: { da_finire: true }, chiusa: false })).toBe("a");
+  });
+  it("prima che l'azione sia letta vale l'id: sarà il database a rifiutare se non va", () => {
+    expect(idDaChiudere({ id: "a", azione: null, chiusa: false })).toBe("a");
+    // un'azione letta senza il campo: si comporta come chiudi(), che chiude
+    expect(idDaChiudere({ id: "a", azione: {}, chiusa: false })).toBe("a");
+  });
+  it("senza voce, già chiusa da qui o non più da finire: niente da chiudere", () => {
+    expect(idDaChiudere({ id: null, azione: null, chiusa: false })).toBeNull();
+    expect(idDaChiudere({ id: "a", azione: { da_finire: true }, chiusa: true })).toBeNull();
+    expect(idDaChiudere({ id: "a", azione: { da_finire: false }, chiusa: false })).toBeNull();
   });
 });

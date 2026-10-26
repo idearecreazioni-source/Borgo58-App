@@ -29,7 +29,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { azioneAMano, chiudiAMano } from "./api/voce";
-import { PARAMETRO } from "./calcoli/aMano";
+import { idDaChiudere, PARAMETRO } from "./calcoli/aMano";
 
 /**
  * La schermata è stata aperta per finire a mano una cosa detta a voce?
@@ -97,5 +97,24 @@ export function useDaVoce(applica) {
     }
   }, [id, azione, chiusa]);
 
-  return { id, azione, errore, chiusa, chiudi, cePer: Boolean(id) };
+  /**
+   * Da chiamare dopo che una scrittura che ha ricevuto `idDaChiudere` è
+   * riuscita: il database ha già chiuso la cosa detta nella stessa
+   * transazione, qui si aggiorna solo la schermata. Nessuna chiamata.
+   *
+   * ⚠️ `chiudi()` resta per le schermate non ancora convertite (lotti
+   * successivi del 26/10/2026): le sue due transazioni sono il difetto.
+   */
+  const segnaChiusa = useCallback(() => setChiusa(true), []);
+
+  return {
+    id,
+    azione,
+    errore,
+    chiusa,
+    chiudi,
+    segnaChiusa,
+    idDaChiudere: idDaChiudere({ id, azione, chiusa }),
+    cePer: Boolean(id),
+  };
 }
