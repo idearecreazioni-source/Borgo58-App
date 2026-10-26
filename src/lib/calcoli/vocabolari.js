@@ -110,6 +110,15 @@ export const SPECCHIATI = [
   { costante: "LINEE_PREVISIONE", valori: LINEE_PREVISIONE, tabella: "scenario_linee_accessorie", colonna: "codice" },
   { costante: "FORME_LINEA", valori: FORME_LINEA, tabella: "scenario_linee_accessorie", colonna: "forma" },
   { costante: "RECIPE_TYPES", valori: RECIPE_TYPES, tabella: "recipes", colonna: "recipe_type" },
+  // La bozza sceglie lo stesso tipo della ricetta che diventerà (25/10/2026):
+  // un elenco solo, due colonne — se divergessero, una delle due righe è rossa.
+  {
+    costante: "RECIPE_TYPES",
+    valori: RECIPE_TYPES,
+    tabella: "bozze_ricetta",
+    colonna: "tipo",
+    daVersione: "20261025000050",
+  },
   { costante: "SEASONS", valori: SEASONS, tabella: "recipes", colonna: "seasonality" },
   { costante: "VIDEO_PLATFORMS", valori: VIDEO_PLATFORMS, tabella: "recipe_videos", colonna: "platform" },
   { costante: "STEP_PHASES", valori: STEP_PHASES, tabella: "recipe_steps", colonna: "phase" },
