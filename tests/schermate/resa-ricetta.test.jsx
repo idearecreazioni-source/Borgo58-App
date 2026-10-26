@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // =====================================================================
@@ -26,6 +26,8 @@ const finto = vi.hoisted(() => ({ righe: [], daCollegare: [] }));
 const vuoto = () => Promise.resolve([]);
 
 vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]),
   duplicaRicetta: vi.fn(),
   getRecipe: vi.fn(async () => ({
     id: "r1",
@@ -138,6 +140,9 @@ async function apri() {
       </Routes>
     </MemoryRouter>,
   );
+  // 🔴 Dal 25/10/2026 la ricetta si apre DA LEGGERE: i campi compaiono
+  //    solo dopo «Modifica», ed è lì che queste prove guardano.
+  fireEvent.click(await screen.findByRole("button", { name: "Modifica" }));
   // Si aspetta il modulo della riga, non il titolo: il nome della ricetta
   // vive dentro un campo che si salva da solo, non in un testo.
   await waitFor(() => expect(bottoneAggiungi()).toBeTruthy());
@@ -310,8 +315,10 @@ describe("🔴 gli ingredienti da collegare si vedono, e il costo si dice parzia
     ];
     const { container } = await apri();
     await waitFor(() => expect(container.textContent).toMatch(/Da collegare al magazzino \(1\)/));
-    expect(container.textContent).toMatch(/Parziale: 1 ingrediente da\s*collegare al magazzino/);
-    expect(container.textContent).toMatch(/Elenco incompleto/);
+    expect(container.textContent).toMatch(/Parziale · 1 da collegare/);
+    // Dal 25/10 al posto di «Elenco incompleto» si dicono gli allergeni
+    // della ricetta intera: qui nessuno li ha detti.
+    expect(container.textContent).toMatch(/non ancora detti/);
     expect(container.querySelector('select[aria-label="Collega «prezzemolo» a un prodotto"]')).toBeTruthy();
   });
 

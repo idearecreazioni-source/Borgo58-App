@@ -202,9 +202,13 @@ import {
   domandaPerAssistente,
   jsonDallaRisposta,
   proposteValide,
+  TIPI_PROPONIBILI,
+  STAGIONI_PROPONIBILI,
+  ALLERGENI_PROPONIBILI,
+  TAG_MASSIMI,
 } from "../../supabase/functions/ricetta-da-link/proposte";
 import { applicaProposte } from "../../src/lib/calcoli/ricettaDaLink";
-import { STEP_PHASES, RECIPE_CATEGORIES } from "../../src/lib/constants";
+import { STEP_PHASES, RECIPE_CATEGORIES, RECIPE_TYPES, SEASONS, ALLERGENS } from "../../src/lib/constants";
 
 describe("le proposte dell'assistente si controllano prima di usarle", () => {
   it("gli elenchi sono quelli del gestionale (il finger food no: la promozione lo rifiuta)", () => {
@@ -220,7 +224,7 @@ describe("le proposte dell'assistente si controllano prima di usarle", () => {
       1,
       2
     );
-    expect(p).toEqual({ categoria: null, fasi: ["cottura", null], ingredienti: [{ nome: "panna", nota: null }] });
+    expect(p).toEqual({ categoria: null, fasi: ["cottura", null], ingredienti: [{ nome: "panna", nota: null }], tipo: null, stagioni: null, tags: null, allergeni: null });
   });
 
   it("🔴 se le righe non sono tante quante quelle della ricetta, si scartano TUTTE", () => {
@@ -229,12 +233,53 @@ describe("le proposte dell'assistente si controllano prima di usarle", () => {
       3,
       2
     );
-    expect(p).toEqual({ categoria: "dolce", fasi: null, ingredienti: null });
+    expect(p).toEqual({ categoria: "dolce", fasi: null, ingredienti: null, tipo: null, stagioni: null, tags: null, allergeni: null });
   });
 
   it("una risposta che non è un oggetto non rompe niente", () => {
-    expect(proposteValide(null, 1, 1)).toEqual({ categoria: null, fasi: null, ingredienti: null });
+    expect(proposteValide(null, 1, 1)).toEqual({ categoria: null, fasi: null, ingredienti: null, tipo: null, stagioni: null, tags: null, allergeni: null });
     expect(jsonDallaRisposta('```json\n{"categoria":"primo"}\n```')).toEqual({ categoria: "primo" });
+  });
+
+  it("tipo, stagioni, tag e allergeni: solo i valori degli elenchi chiusi", () => {
+    const p = proposteValide(
+      {
+        tipo: "selezione",
+        stagioni: ["estate", "monsone", "estate"],
+        tags: [" Pesce ", "pesce", "", 7, "una etichetta lunghissima che è un riassunto"],
+        allergeni: ["glutine", "fragole", "latte"],
+      },
+      0,
+      0
+    );
+    expect(p.tipo).toBeNull();
+    expect(p.stagioni).toEqual(["estate"]);
+    expect(p.tags).toEqual(["pesce"]);
+    expect(p.allergeni).toEqual(["glutine", "latte"]);
+  });
+
+  it("🔴 allergeni assenti NON sono «nessun allergene»: null e [] restano due risposte", () => {
+    expect(proposteValide({}, 0, 0).allergeni).toBeNull();
+    expect(proposteValide({ allergeni: "glutine" }, 0, 0).allergeni).toBeNull();
+    expect(proposteValide({ allergeni: [] }, 0, 0).allergeni).toEqual([]);
+  });
+
+  it("«tutto l'anno» è l'alternativa alle stagioni, e i tag non superano il tetto", () => {
+    expect(proposteValide({ stagioni: ["estate", "tutto_anno"] }, 0, 0).stagioni).toEqual(["tutto_anno"]);
+    expect(proposteValide({ tags: ["a", "b", "c", "d", "e", "f", "g", "h"] }, 0, 0).tags).toHaveLength(TAG_MASSIMI);
+  });
+
+  it("gli elenchi dell'assistente sono quelli del gestionale", () => {
+    expect([...TIPI_PROPONIBILI].sort()).toEqual(RECIPE_TYPES.map((t) => t.value).sort());
+    expect([...STAGIONI_PROPONIBILI].sort()).toEqual(SEASONS.map((s) => s.value).sort());
+    expect([...ALLERGENI_PROPONIBILI].sort()).toEqual(ALLERGENS.map((a) => a.value).sort());
+  });
+
+  it("la domanda dice le etichette già usate, se ce ne sono", () => {
+    expect(domandaPerAssistente({ titolo: "X", ingredienti: [], passaggi: [] }, ["pesce", "forno"])).toMatch(
+      /Etichette già usate nell'archivio: pesce, forno/
+    );
+    expect(domandaPerAssistente({ titolo: "X", ingredienti: [], passaggi: [] })).not.toMatch(/Etichette/);
   });
 
   it("la domanda numera righe e passaggi e dice quanti sono", () => {
@@ -303,5 +348,32 @@ describe("una frazione come la scrive Clove", () => {
       ["tuorli", 5, null],
     ]);
     expect(b.bozza.buchi_dichiarati.some((x) => x.includes("latte"))).toBe(false);
+  });
+});
+
+describe("le proposte dell'archivio sopra la bozza (25/10/2026)", () => {
+  const vuota = { bozza: {}, ingredienti: [], passaggi: [] };
+
+  it("tipo, stagioni, tag e allergeni arrivano sulla bozza, e la bozza lo dichiara", () => {
+    const r = applicaProposte(vuota, {
+      tipo: "preparazione",
+      stagioni: ["inverno"],
+      tags: ["siciliana"],
+      allergeni: ["latte"],
+    });
+    expect(r.bozza).toMatchObject({ tipo: "preparazione", stagioni: ["inverno"], tags: ["siciliana"], allergeni: ["latte"] });
+    expect(r.proposte).toEqual(["il tipo", "le stagioni", "i tag", "gli allergeni"]);
+  });
+
+  // 🔴 null = «non l'ha detto», [] = «nessuno»: la differenza è la salute di qualcuno.
+  it("allergeni non detti restano non detti; un elenco vuoto è una risposta", () => {
+    expect(applicaProposte(vuota, { allergeni: null }).bozza).not.toHaveProperty("allergeni");
+    const nessuno = applicaProposte(vuota, { allergeni: [] });
+    expect(nessuno.bozza.allergeni).toEqual([]);
+    expect(nessuno.proposte).toEqual(["gli allergeni"]);
+  });
+
+  it("stagioni e tag vuoti non si dichiarano proposti", () => {
+    expect(applicaProposte(vuota, { stagioni: [], tags: [] }).proposte).toEqual([]);
   });
 });

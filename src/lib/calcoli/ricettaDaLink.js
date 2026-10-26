@@ -43,7 +43,8 @@ export function testoDellaRicetta(ricetta) {
 /**
  * Applica le PROPOSTE dell'assistente (10/10/2026) sopra quello che il
  * lettore ha capito: la categoria, la fase di ogni passaggio, il nome pulito
- * e la nota di ogni ingrediente. Restituisce anche l'elenco di cosa ha
+ * e la nota di ogni ingrediente, e dal 25/10/2026 tipo, stagioni, tag e
+ * allergeni (questi ultimi sempre «da confermare»). Restituisce anche l'elenco di cosa ha
  * proposto, che la bozza dichiara («proposto dall'assistente»).
  *
  * 🔴 I NUMERI NON SI TOCCANO: quantità e unità restano quelle del lettore.
@@ -78,6 +79,26 @@ export function applicaProposte(letta, proposte) {
       return { ...r, nome, nota };
     });
     if (cambiati) fatte.push("i nomi degli ingredienti");
+  }
+  // L'archivio (25/10/2026): tipo, stagioni, tag e allergeni.
+  if (proposte.tipo) {
+    bozza.tipo = proposte.tipo;
+    fatte.push("il tipo");
+  }
+  if (Array.isArray(proposte.stagioni) && proposte.stagioni.length) {
+    bozza.stagioni = proposte.stagioni;
+    fatte.push("le stagioni");
+  }
+  if (Array.isArray(proposte.tags) && proposte.tags.length) {
+    bozza.tags = proposte.tags;
+    fatte.push("i tag");
+  }
+  // ⚠️ Gli allergeni: `null` vuol dire «non l'ha detto», e allora la bozza
+  //    resta senza elenco; un elenco VUOTO e' una risposta («nessuno») e
+  //    passa come tale, sempre da confermare.
+  if (Array.isArray(proposte.allergeni)) {
+    bozza.allergeni = proposte.allergeni;
+    fatte.push("gli allergeni");
   }
   return { ...letta, bozza, ingredienti, passaggi, proposte: fatte };
 }

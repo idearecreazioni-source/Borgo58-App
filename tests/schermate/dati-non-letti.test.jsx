@@ -15,6 +15,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const finte = { allergeni: vi.fn(), catena: vi.fn() };
 vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]),
   allergeniDelPiatto: (...a) => finte.allergeni(...a),
   catenaAllergeni: (...a) => finte.catena(...a),
   dimenticaScelta: vi.fn(),

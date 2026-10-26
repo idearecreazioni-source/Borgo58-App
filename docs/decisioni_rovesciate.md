@@ -163,8 +163,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 104 | 19/10/2026 | nessuna dettatura scrive niente prima che Alessio approvi |
 | 105 | 25/10/2026 | nella Cassa gli avvertimenti sul cassetto restano scritti a schermo |
 | 106 | 25/10/2026 | una bozza diventa ricetta solo con tutti gli ingredienti collegati al magazzino |
+| 107 | 25/10/2026 | la scheda della ricetta si apre già coi campi da scrivere |
+| 108 | 25/10/2026 | gli allergeni di una ricetta si leggono solo dai prodotti del magazzino |
 
-⚠️ **Righe: 107.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 109.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3857,3 +3859,54 @@ quando questa sezione è stata scritta.
    («Elenco incompleto»), e una ricetta così non può arrivare in un menu né
    su un foglio stampato per il cliente. Nessun prodotto nasce da solo:
    questo resta intero.
+
+## 107 · 25/10/2026 — «la scheda della ricetta si apre già coi campi da scrivere»
+
+1. **Cosa era stato deciso e quando.** Dal primo Ricettario (agosto 2026)
+   la scheda di una ricetta è un modulo: nome, porzioni, stati, righe e
+   fasi sono campi che si salvano da soli, e chi apre la ricetta la apre
+   per modificarla.
+
+2. **La ragione di allora.** Il Ricettario era vuoto e ogni ricetta veniva
+   aperta per essere scritta: un gesto in meno per arrivare ai campi.
+
+3. **Cosa si decide adesso** (Alessio, 25/10: *«vorrei vedere la ricetta
+   pulita e leggibile quando la apro, e solo se voglio apportare delle
+   modifiche i campi modificabili»*). La ricetta si apre in una scheda di
+   lettura (`LetturaRicetta.jsx`): titolo, categoria, tipo, porzioni o
+   resa, tag e stagioni, ingredienti con le quantità, procedimento,
+   allergeni, video. I campi compaiono solo con «Modifica», e «Fine
+   modifiche» torna alla lettura. Le spiegazioni lunghe passano dietro il
+   «?»; restano a vista solo gli avvisi corti («Parziale · 7 da
+   collegare», «Bloccato apposta»).
+
+4. **La ragione di allora non vale più**: ora le ricette arrivano
+   dall'archivio di Alessio e si aprono per essere lette molto più spesso
+   che per essere scritte. Il prezzo è un tocco in più per modificare. Lo
+   staff, che le ricette non le può modificare, vede solo la lettura.
+
+## 108 · 25/10/2026 — «gli allergeni di una ricetta si leggono solo dai prodotti del magazzino»
+
+1. **Cosa era stato deciso e quando.** Dal 13/08/2026 gli allergeni di un
+   piatto vengono **solo** dai prodotti collegati (`v_recipe_allergens`), e
+   l'assistente che legge una ricetta da un collegamento non li proponeva.
+
+2. **La ragione di allora.** Un allergene è la salute di qualcuno: deve
+   venire da una fonte che si può controllare, il prodotto e la sua
+   etichetta.
+
+3. **Cosa si decide adesso** (Alessio, 25/10, l'archivio delle ricette):
+   finché una ricetta ha ingredienti da collegare, i suoi allergeni si
+   dicono per la ricetta intera (`recipes.allergeni_archivio`, migrazione
+   `20261025000051`). MEMO li propone leggendo la ricetta, e restano
+   **«proposti da MEMO, da confermare»** finché Alessio non li tocca o
+   preme «Confermo». Per leggerli bene, la funzione che legge le ricette
+   passa al modello medio invece di quello piccolo.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: l'elenco d'archivio non arriva mai su un menu (una ricetta
+   con ingredienti da collegare non può andare in carta), il filtro
+   «senza X» lo usa solo se qualcuno l'ha detto — altrimenti la ricetta
+   **non passa** — e appena tutti gli ingredienti sono collegati tornano a
+   comandare i prodotti. Il costo di ogni lettura sale: si misura alla
+   prima ricetta vera.

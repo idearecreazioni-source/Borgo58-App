@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { tagUsati } from "../calcoli/archivioRicette";
 
 // statusFilter: "in_carta" | "pronta" | "in_sviluppo" | undefined (tutte)
 // 🔴 `selezioni` — 30/08/2026. Una SELEZIONE di finger è un `piatto_finito`
@@ -49,6 +50,17 @@ export async function listAllRecipeAllergens() {
   const { data, error } = await supabase
     .from("v_recipe_allergens")
     .select("recipe_id, allergens, allergeni_da_verificare");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// L'archivio (25/10/2026): quali ricette hanno ancora ingredienti da
+// collegare, quindi leggono gli allergeni da `allergeni_archivio`.
+// ⚠️ Una riga per RICETTA (vista `ricette_da_collegare`), non per
+// ingrediente: le righe da collegare passerebbero le mille, e il gateway
+// taglierebbe in silenzio proprio le ultime ricette.
+export async function listRicetteDaCollegare() {
+  const { data, error } = await supabase.from("ricette_da_collegare").select("recipe_id, righe");
   if (error) throw error;
   return data ?? [];
 }
@@ -344,4 +356,19 @@ export async function catenaAllergeni(recipeId) {
   const { data, error } = await supabase.rpc("catena_allergeni", { p_recipe_id: recipeId });
   if (error) throw error;
   return data ?? [];
+}
+
+// I tag già usati nell'archivio (ricette e bozze), da proporre mentre se ne
+// scrive uno: così «siciliana» non nasce anche come «sicilia».
+// ⚠️ Il gateway restituisce al massimo mille righe per lettura, in silenzio:
+//    qui va bene, perché è un SUGGERIMENTO — un tag che manca si riscrive a
+//    mano. Non usarla per contare o filtrare.
+export async function tagDellArchivio() {
+  const [ricette, bozze] = await Promise.all([
+    supabase.from("recipes").select("tags").limit(1000),
+    supabase.from("bozze_ricetta").select("tags").limit(1000),
+  ]);
+  if (ricette.error) throw ricette.error;
+  if (bozze.error) throw bozze.error;
+  return tagUsati([...(ricette.data ?? []), ...(bozze.data ?? [])]);
 }

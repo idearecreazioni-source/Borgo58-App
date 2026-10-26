@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { listRecipes, listAllRecipeCosts, listAllRecipeAllergens } from "../../lib/api/recipes";
+import { listRecipes, listAllRecipeCosts, listAllRecipeAllergens, listRicetteDaCollegare } from "../../lib/api/recipes";
+import { allergeniDellaRicetta, eSenza, tagUsati } from "../../lib/calcoli/archivioRicette";
 import {
   ALLERGENS,
   RECIPE_CATEGORIES,
@@ -66,6 +67,9 @@ export default function RicetteList() {
   const [statusFilter, setStatusFilter] = useState("");
   const [stagione, setStagione] = useState("");
   const [senzaAllergene, setSenzaAllergene] = useState("");
+  const [tag, setTag] = useState("");
+  // Le ricette con ingredienti ancora da collegare (l'archivio, 25/10/2026).
+  const [daCollegare, setDaCollegare] = useState(new Set());
   const navigate = useNavigate();
   const { isTitolare } = useAuth();
 
@@ -127,10 +131,11 @@ export default function RicetteList() {
     };
     // Il food cost è riservato al titolare — lo staff non lo carica nemmeno.
     const jobs = isTitolare
-      ? Promise.all([listRecipes(filters), listAllRecipeCosts(), listAllRecipeAllergens()])
-      : Promise.all([listRecipes(filters), Promise.resolve([]), listAllRecipeAllergens()]);
+      ? Promise.all([listRecipes(filters), listAllRecipeCosts(), listAllRecipeAllergens(), listRicetteDaCollegare()])
+      : Promise.all([listRecipes(filters), Promise.resolve([]), listAllRecipeAllergens(), listRicetteDaCollegare()]);
     jobs
-      .then(([recipeData, costData, allergenData]) => {
+      .then(([recipeData, costData, allergenData, daCollegareData]) => {
+        setDaCollegare(new Set(daCollegareData.map((d) => d.recipe_id)));
         setRecipes(recipeData);
         setCosts(Object.fromEntries(costData.map((c) => [c.recipe_id, c])));
         setAllergeni(Object.fromEntries(allergenData.map((a) => [a.recipe_id, a])));
@@ -159,9 +164,10 @@ export default function RicetteList() {
       });
     }
 
+    if (tag) r = r.filter((x) => (x.tags ?? []).includes(tag));
+
     if (senzaAllergene) {
       r = r.filter((x) => {
-        const a = allergeni[x.id];
         // 🔴 CHI NON SI SA NON È «SENZA», ed è il cuore di questo filtro.
         // Una ricetta i cui allergeni nessuno ha confermato non può
         // comparire fra le «senza glutine»: sarebbe una lista che dice a
@@ -169,29 +175,36 @@ export default function RicetteList() {
         // sa niente. Assenza di informazione e informazione di assenza
         // sono due cose diverse (19/08), e qui la differenza è la salute
         // di qualcuno.
-        if (!a || a.allergeni_da_verificare) return false;
-        return !(a.allergens ?? []).includes(senzaAllergene);
+        // 🔴 E una ricetta d'ARCHIVIO (ingredienti da collegare) non si
+        // giudica dai soli prodotti collegati: lo decide
+        // `allergeniDellaRicetta`, in un posto solo (25/10/2026).
+        return eSenza(allergeniDellaRicetta(x, allergeni[x.id], daCollegare.has(x.id)), senzaAllergene);
       });
     }
 
     return r;
-  }, [recipes, stagione, senzaAllergene, allergeni]);
+  }, [recipes, stagione, tag, senzaAllergene, allergeni, daCollegare]);
 
   // ⚠️ Quante restano fuori perché non si sa: si DICHIARA, non si tace.
   // Un filtro che ne nasconde nove senza dirlo fa credere che ce ne sia
   // solo una — e il numero è la ragione per andare a compilare le schede.
   const esclusePerchePocoChiare = useMemo(() => {
     if (!senzaAllergene) return 0;
-    const base = stagione
+    let base = stagione
       ? recipes.filter((x) => {
           const s = x.seasonality ?? [];
           return s.includes(stagione) || s.includes("tutto_anno");
         })
       : recipes;
-    return base.filter((x) => !allergeni[x.id] || allergeni[x.id].allergeni_da_verificare).length;
-  }, [recipes, senzaAllergene, stagione, allergeni]);
+    if (tag) base = base.filter((x) => (x.tags ?? []).includes(tag));
+    return base.filter((x) => !allergeniDellaRicetta(x, allergeni[x.id], daCollegare.has(x.id)).noti).length;
+  }, [recipes, senzaAllergene, stagione, tag, allergeni, daCollegare]);
 
-  const filtroAttivo = search || category || statusFilter || stagione || senzaAllergene;
+  // I tag si scelgono fra quelli usati: un elenco chiuso a mano invecchierebbe
+  // al primo tag nuovo.
+  const tuttiITag = useMemo(() => tagUsati(recipes), [recipes]);
+
+  const filtroAttivo = search || category || statusFilter || stagione || tag || senzaAllergene;
   const selectClass =
     "tocco-riga rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
@@ -290,6 +303,14 @@ export default function RicetteList() {
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
+        {(tuttiITag.length > 0 || tag) && (
+          <select value={tag} onChange={(e) => setTag(e.target.value)} className={selectClass}>
+            <option value="">Tutti i tag</option>
+            {tuttiITag.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        )}
         <select
           value={senzaAllergene}
           onChange={(e) => setSenzaAllergene(e.target.value)}
@@ -307,7 +328,7 @@ export default function RicetteList() {
           {esclusePerchePocoChiare === 1
             ? "Una ricetta resta fuori"
             : `${esclusePerchePocoChiare} ricette restano fuori`}{" "}
-          perché i loro allergeni non sono confermati: non si può dire che siano senza.{" "}
+          perché i loro allergeni non sono confermati o non sono stati detti: non si può dire che siano senza.{" "}
           <Link to="/ricettario/schede" className="tocco-inline underline text-b58-terracotta">
             Le schede dei prodotti
           </Link>
