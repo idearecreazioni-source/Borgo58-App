@@ -77,7 +77,9 @@ begin
     from pg_class c
    where c.relnamespace = 'public'::regnamespace
      and c.relkind in ('r', 'p', 'v', 'm', 'f')
-     and has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN');
+     and (has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+          -- un privilegio dato a una sola colonna non si vede con la riga sopra
+          or has_any_column_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,REFERENCES'));
   if v_elenco is not null then
     raise exception 'anon ha ancora privilegi su: %', v_elenco;
   end if;
@@ -96,12 +98,23 @@ begin
     raise exception 'anon può ancora usare le sequenze: %', v_elenco;
   end if;
 
-  -- (4) Il modulo pubblico di prenotazione funziona ancora: le sue
-  --     funzioni restano eseguibili da anon.
-  if not has_function_privilege('anon', 'public.submit_public_reservation(date,time without time zone,integer,text,text,text,text)', 'EXECUTE')
-     or not has_function_privilege('anon', 'public.public_reservation_options(date,integer)', 'EXECUTE')
-     or not has_function_privilege('anon', 'public.giorni_chiusi_prenotabili()', 'EXECUTE') then
-    raise exception 'Il modulo pubblico di prenotazione ha perso le sue funzioni: non si toccano.';
+  -- (4) Le otto funzioni che anon deve eseguire restano eseguibili: il
+  --     modulo pubblico di prenotazione, la chiave della voce e le tre di
+  --     servizio. Elenco preso dall'audit del 26/10, uguale su prova e vero.
+  select string_agg(f, ', ') into v_elenco
+    from unnest(array[
+      'public.submit_public_reservation(date,time without time zone,integer,text,text,text,text)',
+      'public.public_reservation_options(date,integer)',
+      'public.giorni_chiusi_prenotabili()',
+      'public.voce_apri_sessione(text)',
+      'public.registra_dettatura_da_chiave(text,text,jsonb,text,text,integer,integer,text,integer,integer)',
+      'public.is_titolare()',
+      'public.normalize_phone(text)',
+      'public.task_origin_visible_to_staff(text)'
+    ]) f
+   where not has_function_privilege('anon', f, 'EXECUTE');
+  if v_elenco is not null then
+    raise exception 'Queste funzioni non sono più eseguibili da anon, e devono esserlo: %', v_elenco;
   end if;
 
   -- (5) Gli utenti entrati non perdono niente.
@@ -109,7 +122,17 @@ begin
     raise exception 'authenticated ha perso i privilegi sulle tabelle: la migrazione ha toccato il ruolo sbagliato.';
   end if;
 
-  raise notice 'Fatto: anon non eredita più niente su tabelle e sequenze nuove, e non ha privilegi su quelle esistenti. Il modulo pubblico funziona ancora.';
+  -- (6) Quanti predefiniti di supabase_admin per anon restano: non è un
+  --     errore (non si possono togliere da qui), ma il messaggio finale
+  --     deve dirlo invece di promettere più di quello che è successo.
+  select count(*) into v_n
+    from pg_default_acl d
+    cross join lateral aclexplode(d.defaclacl) a
+   where d.defaclrole = 'supabase_admin'::regrole
+     and d.defaclnamespace = 'public'::regnamespace
+     and a.grantee = 'anon'::regrole;
+
+  raise notice 'Fatto: le tabelle e le sequenze che crea il gestionale non danno più niente ad anon, e anon non ha privilegi su quelle esistenti. Le otto funzioni pubbliche funzionano ancora. Restano % predefiniti di supabase_admin per anon, della piattaforma.', v_n;
 end $verifica$;
 
 insert into applied_migrations (version, name)
