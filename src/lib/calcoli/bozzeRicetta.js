@@ -12,7 +12,7 @@
 //
 // ⚠️ LA STESSA DEFINIZIONE VIVE IN DUE POSTI, CON DUE RUOLI DIVERSI: qui la
 //    si MOSTRA prima della conferma, nella funzione del database
-//    (migrazione 20261025000020, l'ultima che la riscrive) la si FA RISPETTARE. Le frasi sono le stesse
+//    (migrazione 20261025000050, l'ultima che la riscrive) la si FA RISPETTARE. Le frasi sono le stesse
 //    apposta, e la prova `tests/unita/bozze-ricetta.test.js` controlla che
 //    ogni frase di questo file compaia anche nel corpo della funzione: se
 //    una delle due imparasse un buco nuovo e l'altra no, diventa rossa.
@@ -28,6 +28,14 @@ export const ORIGINI_BOZZA = [
   { value: "screenshot", label: "Da uno screenshot" },
   { value: "testo", label: "Da un testo" },
   { value: "voce", label: "Dalla voce" },
+];
+
+// Che cosa diventerà la bozza. Gli stessi valori di `recipe_type`: la rete
+// dei vocabolari li tiene d'accordo (src/lib/calcoli/vocabolari.js).
+export const TIPI_BOZZA = [
+  { value: "piatto_finito", label: "Piatto" },
+  { value: "preparazione", label: "Preparazione" },
+  { value: "finger", label: "Finger" },
 ];
 
 export const STATI_BOZZA = [
@@ -58,7 +66,17 @@ export function buchiDellaBozza(bozza, ingredienti = [], passaggi = [], unitaNot
   if (vuoto(bozza?.categoria)) buchi.push("manca la categoria");
   else if (bozza.categoria === "finger_food")
     buchi.push("i finger si creano dal Ricettario: questa bozza non puo' diventarne uno");
-  if (vuoto(bozza?.porzioni)) buchi.push("mancano le porzioni");
+  // 25/10/2026 (migrazione 20261025000050): una preparazione o un finger
+  //    non si conta a porzioni ma a RESA — quanto ne viene da una dose. Il
+  //    database lo pretende già sulle ricette (`componente_richiede_resa`).
+  const tipo = bozza?.tipo ?? "piatto_finito";
+  if (tipo === "piatto_finito") {
+    if (vuoto(bozza?.porzioni)) buchi.push("mancano le porzioni");
+  } else if (vuoto(bozza?.resa_quantita) || vuoto(bozza?.resa_unita)) {
+    buchi.push(
+      `manca la resa (quanto ne viene da una dose di questa ${tipo === "finger" ? "ricetta di finger" : "preparazione"})`
+    );
+  }
   const segnalazioni = bozza?.buchi_dichiarati ?? [];
   if (segnalazioni.length > 0)
     buchi.push(`segnalazioni ancora aperte: ${segnalazioni.join("; ")}`);

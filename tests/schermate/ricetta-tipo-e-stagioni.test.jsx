@@ -31,6 +31,8 @@ const f = {
 };
 const vuoto = () => Promise.resolve([]);
 vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]),
   duplicaRicetta: vi.fn(),
   getRecipe: (...a) => f.getRecipe(...a),
   getRecipeAllergens: () => Promise.resolve({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] }),
@@ -111,7 +113,7 @@ const ricetta = (extra) => ({
   ...extra,
 });
 
-const apri = () =>
+async function apri() {
   render(
     <MemoryRouter initialEntries={["/ricettario/ricette/r1"]}>
       <Routes>
@@ -119,6 +121,10 @@ const apri = () =>
       </Routes>
     </MemoryRouter>,
   );
+  // 🔴 Dal 25/10/2026 la ricetta si apre DA LEGGERE: i campi compaiono
+  //    solo dopo «Modifica», ed è lì che queste prove guardano.
+  fireEvent.click(await screen.findByRole("button", { name: "Modifica" }));
+}
 
 // Il pulsante di uno stato, per nome intero (non «Pronta per la carta»
 // dentro «✓ Pronta per la carta» per sbaglio: si ancora alla fine).
@@ -138,7 +144,7 @@ beforeEach(() => {
 describe("🔴 gli stati dicono che cosa è la scheda", () => {
   it("preparazione: niente «Pronta per la carta» né «In carta», e i suoi tre stati", async () => {
     f.getRecipe.mockResolvedValue(ricetta());
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(stato("Pronta per la carta")).toBeNull();
     expect(stato("In carta")).toBeNull();
@@ -154,7 +160,7 @@ describe("🔴 gli stati dicono che cosa è la scheda", () => {
     f.getRecipe.mockResolvedValue(
       ricetta({ recipe_type: "finger", name: "Bocconcino di tonno", pronta_per_carta: true }),
     );
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(stato("Pronta per la carta")).toBeTruthy();
     expect(stato("In carta")).toBeTruthy();
@@ -164,7 +170,7 @@ describe("🔴 gli stati dicono che cosa è la scheda", () => {
 
   it("una preparazione segnata pronta si legge «Pronta per l'uso»", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ pronta_per_carta: true }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(screen.getByText(/^Stato:/).textContent).toMatch(/Pronta per l'uso/);
   });
@@ -173,17 +179,20 @@ describe("🔴 gli stati dicono che cosa è la scheda", () => {
     // Il database dal 20/08 lo impedisce; una riga di prima può esserci
     // ancora. Non si riscrive niente: si dice.
     f.getRecipe.mockResolvedValue(ricetta({ pronta_per_carta: true, in_carta: true }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(screen.getByText(/^Stato:/).textContent).toMatch(/Pronta per l'uso/);
     expect(stato("In carta")).toBeNull();
-    expect(screen.getByText(/risulta ancora dentro un menu/i)).toBeTruthy();
+    // Dal 25/10 la ragione sta dietro il «?» di «Bloccato apposta».
+    const bloccato = screen.getByText(/Bloccato apposta/).closest("p");
+    fireEvent.click(bloccato.querySelector("button"));
+    expect(await screen.findByText(/risulta ancora dentro un menu/i)).toBeTruthy();
     expect(f.updateRecipe).not.toHaveBeenCalled();
   });
 
   it("un piatto ha ancora i suoi quattro stati", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "piatto_finito", name: "Tagliolini al limone" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(stato("In sviluppo")).toBeTruthy();
     expect(stato("Pronta per la carta")).toBeTruthy();
@@ -196,7 +205,7 @@ describe("🔴 gli stati dicono che cosa è la scheda", () => {
     f.getRecipe.mockResolvedValue(
       ricetta({ recipe_type: "piatto_finito", category: "finger_food", name: "Tagliere di quattro" }),
     );
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(stato("Pronta per la carta")).toBeTruthy();
     expect(stato("Pronta per l'uso")).toBeNull();
@@ -208,7 +217,7 @@ describe("🔴 il costo di una preparazione si legge per unità di resa", () => 
     // Totale 6,40 € per 2 litri: 3,20 €/l. Il finto dà 3,20 anche come costo
     // a porzione, quindi il numero da solo non basta: conta l'unità.
     f.getRecipe.mockResolvedValue(ricetta({ yield_quantity: 2, yield_unit: "l" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     await waitFor(() => expect(screen.getByText(/totale della preparazione/)).toBeTruthy());
     expect(screen.queryByText(/\/ porzione/)).toBeNull();
@@ -219,7 +228,7 @@ describe("🔴 il costo di una preparazione si legge per unità di resa", () => 
 
   it("un piatto resta a porzione", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "piatto_finito", yield_quantity: null, yield_unit: null }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     await waitFor(() => expect(screen.getByText(/\/ porzione/)).toBeTruthy());
   });
@@ -228,7 +237,7 @@ describe("🔴 il costo di una preparazione si legge per unità di resa", () => 
 describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
   it("su una preparazione diventa una nota interna, e il testo che c'era resta", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ menu_description: "Si tiene in frigo due giorni" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(screen.queryByText("Descrizione per il menu")).toBeNull();
     expect(screen.getByText("Nota interna")).toBeTruthy();
@@ -238,7 +247,7 @@ describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
 
   it("salvando una preparazione la nota resta nello stesso campo, senza perdersi", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ menu_description: "Si tiene in frigo due giorni" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     fireEvent.click(screen.getByRole("button", { name: "Salva modifiche" }));
     await waitFor(() => expect(f.updateRecipe).toHaveBeenCalled());
@@ -247,7 +256,7 @@ describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
 
   it("su un finger resta «Descrizione per il menu»: si vende", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "finger", name: "Bocconcino di tonno" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(screen.getByText("Descrizione per il menu")).toBeTruthy();
     expect(screen.queryByText("Nota interna")).toBeNull();
@@ -255,7 +264,7 @@ describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
 
   it("su un piatto resta «Descrizione per il menu»", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "piatto_finito", name: "Tagliolini al limone" }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(screen.getByText("Descrizione per il menu")).toBeTruthy();
     expect(screen.queryByText("Nota interna")).toBeNull();
@@ -266,7 +275,7 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
   for (const tipo of ["preparazione", "piatto_finito", "finger"]) {
     it(`${tipo}: accendere «Tutto l'anno» spegne le stagioni, e una stagione spegne «Tutto l'anno»`, async () => {
       f.getRecipe.mockResolvedValue(ricetta({ recipe_type: tipo, seasonality: ["estate", "autunno"] }));
-      apri();
+      await apri();
       await screen.findByText(/^Stato:/);
       expect(accesa("Estate")).toBe(true);
 
@@ -285,7 +294,7 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
 
   it("quattro stagioni accese si vedono come «Tutto l'anno», e così si salvano", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["primavera", "estate", "autunno"] }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     fireEvent.click(screen.getByRole("button", { name: "Inverno" }));
     expect(accesa("Tutto l'anno")).toBe(true);
@@ -297,7 +306,7 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
 
   it("dati di prima con le quattro stagioni scritte una per una: si vede «Tutto l'anno»", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["primavera", "estate", "autunno", "inverno"] }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(accesa("Tutto l'anno")).toBe(true);
     expect(accesa("Estate")).toBe(false);
@@ -306,7 +315,7 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
 
   it("dati di prima con le due forme insieme: a schermo vince «Tutto l'anno», e il database non si tocca finché non si salva", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["tutto_anno", "estate"] }));
-    apri();
+    await apri();
     await screen.findByText(/^Stato:/);
     expect(accesa("Tutto l'anno")).toBe(true);
     expect(accesa("Estate")).toBe(false);
@@ -316,5 +325,29 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
     await waitFor(() => expect(f.updateRecipe).toHaveBeenCalled());
     // Si salva quello che si vede.
     expect(f.updateRecipe.mock.calls[0][1].seasonality).toEqual(["tutto_anno"]);
+  });
+});
+
+// 🔴 LA RICETTA SI APRE DA LEGGERE (25/10/2026, Alessio): «vorrei vedere la
+//    ricetta pulita e leggibile quando la apro, e solo se voglio apportare
+//    delle modifiche i campi modificabili».
+describe("🔴 la ricetta si apre da leggere", () => {
+  it("aprendola non c'è nessun campo da scrivere, e «Modifica» li fa comparire", async () => {
+    f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "piatto_finito", name: "Crema catalana" }));
+    const { container } = render(
+      <MemoryRouter initialEntries={["/ricettario/ricette/r1"]}>
+        <Routes>
+          <Route path="/ricettario/ricette/:id" element={<RicettaDetail />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const modifica = await screen.findByRole("button", { name: "Modifica" });
+    expect(screen.getByRole("heading", { name: "Crema catalana" })).toBeTruthy();
+    expect(container.querySelectorAll("input, textarea, select")).toHaveLength(0);
+    fireEvent.click(modifica);
+    await screen.findByRole("button", { name: "Fine modifiche" });
+    expect(container.querySelectorAll("input, textarea, select").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Fine modifiche" }));
+    await screen.findByRole("button", { name: "Modifica" });
   });
 });

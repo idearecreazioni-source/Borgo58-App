@@ -119,6 +119,30 @@ describe("i buchi di una bozza", () => {
   });
 });
 
+describe("una preparazione o un finger si contano a resa, non a porzioni", () => {
+  const PREP = { categoria: "dolce", tipo: "preparazione", buchi_dichiarati: [] };
+  it("una preparazione senza resa ha un buco che dice la resa, e NON le porzioni", () => {
+    const b = buchiDellaBozza(PREP, [RIGA_BUONA], [PASSO_BUONO], ["g"]);
+    expect(b).toEqual(["manca la resa (quanto ne viene da una dose di questa preparazione)"]);
+  });
+  it("con la resa e l'unità non manca niente", () => {
+    const b = buchiDellaBozza({ ...PREP, resa_quantita: 0.8, resa_unita: "kg" }, [RIGA_BUONA], [PASSO_BUONO], ["g"]);
+    expect(b).toEqual([]);
+  });
+  it("la resa senza unità è ancora un buco", () => {
+    const b = buchiDellaBozza({ ...PREP, resa_quantita: 0.8 }, [RIGA_BUONA], [PASSO_BUONO], ["g"]);
+    expect(b).toHaveLength(1);
+  });
+  it("un finger dice «ricetta di finger»", () => {
+    const b = buchiDellaBozza({ ...PREP, tipo: "finger" }, [RIGA_BUONA], [PASSO_BUONO], ["g"]);
+    expect(b[0]).toContain("ricetta di finger");
+  });
+  it("una bozza senza tipo è un piatto: pretende le porzioni", () => {
+    const b = buchiDellaBozza({ categoria: "primo", buchi_dichiarati: [] }, [RIGA_BUONA], [PASSO_BUONO], ["g"]);
+    expect(b).toEqual(["mancano le porzioni"]);
+  });
+});
+
 describe("🔴 le due definizioni dei buchi dicono le stesse frasi", () => {
   // Le parti fisse di ogni frase di src/lib/calcoli/bozzeRicetta.js devono
   // comparire nel corpo della funzione del database, che le fa rispettare.
@@ -126,6 +150,9 @@ describe("🔴 le due definizioni dei buchi dicono le stesse frasi", () => {
     "manca la categoria",
     "i finger si creano dal Ricettario: questa bozza non puo' diventarne uno",
     "mancano le porzioni",
+    "manca la resa (quanto ne viene da una dose di questa ",
+    "ricetta di finger",
+    "preparazione",
     "segnalazioni ancora aperte: ",
     "nessun ingrediente",
     "»: quantita' mancante",
@@ -190,6 +217,13 @@ describe("la conferma passa solo dal corridoio", () => {
     expect(API).not.toContain("gesto_promozione");
     const campi = API.slice(API.indexOf("const CAMPI_BOZZA"), API.indexOf("];", API.indexOf("const CAMPI_BOZZA")));
     expect(campi).not.toMatch(/promossa_il|ricetta_id|stato/);
+  });
+});
+
+describe("🔴 tipo e resa arrivano davvero al database", () => {
+  it("sono fra i campi che la scrittura lascia passare", () => {
+    const campi = API.slice(API.indexOf("const CAMPI_BOZZA"), API.indexOf("];", API.indexOf("const CAMPI_BOZZA")));
+    for (const c of ["tipo", "resa_quantita", "resa_unita"]) expect(campi).toContain(`"${c}"`);
   });
 });
 

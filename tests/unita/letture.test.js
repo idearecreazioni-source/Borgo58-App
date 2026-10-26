@@ -208,6 +208,13 @@ describe("nessuna lettura resta muta", () => {
       // ⚠️ La lettura della SCHEDA invece non ha nessun catch: se fallisce
       // quella, si vede.
       "src/pages/ricettario/IngredienteForm.jsx",
+      // ⚠️ AGGIUNTI IL 25/10/2026 con i tag dell'archivio delle ricette. Qui
+      // non manca un dato: mancano i **suggerimenti** mentre si scrive un tag
+      // («siciliana» già usato altrove). Se non si leggono, il tag si scrive
+      // a mano e si salva lo stesso. La lettura della ricetta e della bozza
+      // invece non ha nessun catch muto: se fallisce quella, si vede.
+      "src/pages/ricettario/BozzaDetail.jsx",
+      "src/pages/ricettario/RicettaDetail.jsx",
       // ⚠️ AGGIUNTO IL 29/08 con le cose da fare in cucina. Qui non manca
       // un dato: manca un'**AVVERTENZA** — quali ingredienti non bastano
       // per la preparazione che si sta per registrare. E quell'avvertenza

@@ -1,6 +1,7 @@
 import { RECIPE_CATEGORIES, STEP_PHASES, labelFor } from "../../lib/constants";
-import { ORIGINI_BOZZA, quantitaDalCampo, statoLeggibile } from "../../lib/calcoli/bozzeRicetta";
+import { ORIGINI_BOZZA, TIPI_BOZZA, quantitaDalCampo, statoLeggibile } from "../../lib/calcoli/bozzeRicetta";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import { AllergeniArchivio, TagEStagioni } from "../../components/ArchivioRicetta";
 
 // LA SCHEDA DI UNA BOZZA — una schermata sola, per leggerla e per correggerla.
 //
@@ -22,6 +23,20 @@ import CampoAutosalvato from "../../components/CampoAutosalvato";
 //    ricettario virtuale non è un campo da compilare.
 
 const CATEGORIE_BOZZA = RECIPE_CATEGORIES.filter((c) => c.value !== "finger_food");
+
+// 25/10/2026, Alessio: *«tra le categorie disponibili non c'è preparazioni o
+// finger»*. Non sono categorie (antipasto, primo…) ma il TIPO di ricetta, ed è
+// per questo che stanno in un menu a sé: una crema pasticcera è un dolce E una
+// preparazione. Un piatto si conta a porzioni, una preparazione o un finger a
+// RESA — quanto ne viene da una dose — perché è da lì che nasce il costo
+// quando li si usa dentro un'altra ricetta.
+const aResa = (bozza) => (bozza.tipo ?? "piatto_finito") !== "piatto_finito";
+
+// 25/10/2026: una quantità che la ricetta originale non diceva NON si inventa
+// (né qui né dall'assistente, che non tocca i numeri). Si dice da dove viene
+// il vuoto, così non sembra una dimenticanza di chi ha copiato.
+const SENZA_QUANTITA = "quantità non indicata nella ricetta originale";
+const vienDaFuori = (bozza) => bozza.origine_tipo && bozza.origine_tipo !== "manuale";
 
 const COLORE_FASE = {
   mise_en_place: "bg-b58-olive/15 text-b58-olive-dark",
@@ -87,6 +102,7 @@ export default function SchedaBozza({
   cucina = false,
   anagrafica = [],
   unita = [],
+  tagSuggeriti = [],
   azioni = {},
 }) {
   const video = bozza.sunto?.match(VIDEO)?.[1] ?? null;
@@ -139,19 +155,57 @@ export default function SchedaBozza({
                   </option>
                 ))}
               </select>
-              <span className="inline-flex items-center gap-2">
-                <CampoAutosalvato
-                  value={bozza.porzioni ?? ""}
-                  etichetta="Porzioni"
-                  placeholder="—"
-                  className={`${piccolo} w-20 text-right`}
-                  onSave={(t) => {
-                    const n = quantitaDalCampo(t);
-                    azioni.bozza({ porzioni: n === null ? null : Math.round(n) });
-                  }}
-                />
-                porzioni
-              </span>
+              <select
+                value={bozza.tipo ?? "piatto_finito"}
+                aria-label="Tipo"
+                className={piccolo}
+                onChange={(e) => azioni.bozza({ tipo: e.target.value })}
+              >
+                {TIPI_BOZZA.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              {aResa(bozza) ? (
+                <span className="inline-flex items-center gap-2">
+                  resa
+                  <CampoAutosalvato
+                    value={bozza.resa_quantita == null ? "" : numeroNelCampo(bozza.resa_quantita)}
+                    etichetta="Resa"
+                    placeholder="—"
+                    className={`${piccolo} w-20 text-right tabular-nums`}
+                    onSave={(t) => azioni.bozza({ resa_quantita: quantitaDalCampo(t) })}
+                  />
+                  <select
+                    value={bozza.resa_unita ?? ""}
+                    aria-label="Unità della resa"
+                    className={`${piccolo} w-24`}
+                    onChange={(e) => azioni.bozza({ resa_unita: e.target.value || null })}
+                  >
+                    <option value="">unità</option>
+                    {unita.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {u.label}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  <CampoAutosalvato
+                    value={bozza.porzioni ?? ""}
+                    etichetta="Porzioni"
+                    placeholder="—"
+                    className={`${piccolo} w-20 text-right`}
+                    onSave={(t) => {
+                      const n = quantitaDalCampo(t);
+                      azioni.bozza({ porzioni: n === null ? null : Math.round(n) });
+                    }}
+                  />
+                  porzioni
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -160,13 +214,36 @@ export default function SchedaBozza({
               ) : (
                 <Chip tenue>categoria da scegliere</Chip>
               )}
-              {bozza.porzioni ? <Chip>{bozza.porzioni} porzioni</Chip> : <Chip tenue>porzioni da dire</Chip>}
+              {aResa(bozza) && <Chip>{labelFor(TIPI_BOZZA, bozza.tipo)}</Chip>}
+              {aResa(bozza) ? (
+                bozza.resa_quantita && bozza.resa_unita ? (
+                  <Chip>
+                    resa {numero(bozza.resa_quantita)} {bozza.resa_unita}
+                  </Chip>
+                ) : (
+                  <Chip tenue>resa da dire</Chip>
+                )
+              ) : bozza.porzioni ? (
+                <Chip>{bozza.porzioni} porzioni</Chip>
+              ) : (
+                <Chip tenue>porzioni da dire</Chip>
+              )}
             </>
           )}
           <Chip tenue>
             {labelFor(ORIGINI_BOZZA, bozza.origine_tipo)} · {statoLeggibile(bozza)}
           </Chip>
         </div>
+
+        {/* L'archivio (25/10/2026): stagioni e tag. */}
+        <TagEStagioni
+          tags={bozza.tags}
+          stagioni={bozza.stagioni}
+          modifica={modifica}
+          suggeriti={tagSuggeriti}
+          onTags={(tags) => azioni.bozza({ tags })}
+          onStagioni={(stagioni) => azioni.bozza({ stagioni })}
+        />
 
         {modifica ? (
           <div className="mt-3 grid gap-2">
@@ -214,6 +291,7 @@ export default function SchedaBozza({
             const nota = notaSenzaQb(r.nota);
             if (!modifica) {
               const q = quantitaLeggibile(r);
+              const nonDetta = !q && vienDaFuori(bozza);
               return (
                 <li key={r.id} className="grid grid-cols-[6.5rem_1fr] gap-3 py-2">
                   <span className={`text-right tabular-nums ${q ? "font-medium text-b58-charcoal" : "text-b58-charcoal-soft/50"}`}>
@@ -221,6 +299,7 @@ export default function SchedaBozza({
                   </span>
                   <span>
                     <span className="text-b58-charcoal">{r.nome}</span>
+                    {nonDetta && <span className="block testo-sala text-b58-ambra-dark">{SENZA_QUANTITA}</span>}
                     {nota && <span className="block testo-sala text-b58-charcoal-soft/80">{nota}</span>}
                   </span>
                 </li>
@@ -267,6 +346,9 @@ export default function SchedaBozza({
                     ))}
                   </select>
                   {nota && <span className="testo-sala text-b58-charcoal-soft/80">{nota}</span>}
+                  {quantitaLeggibile(r) === null && vienDaFuori(bozza) && (
+                    <span className="basis-full testo-sala text-b58-ambra-dark">{SENZA_QUANTITA}</span>
+                  )}
                 </div>
                 {cucina && (
                   <select
@@ -292,6 +374,22 @@ export default function SchedaBozza({
             + Ingrediente
           </button>
         )}
+      </Scheda>
+
+      {/* 🔴 Gli allergeni della ricetta intera: proposti da MEMO o detti da
+          te. Toccarli o premere «Confermo» li fa «confermati» — e l'origine
+          viaggia SEMPRE con l'elenco, perché il database la pretende. */}
+      <Scheda titolo="Allergeni">
+        <AllergeniArchivio
+          allergeni={bozza.allergeni ?? null}
+          origine={bozza.allergeni_origine}
+          modifica={modifica}
+          onAllergeni={
+            modifica || puoModificare
+              ? (allergeni) => azioni.bozza({ allergeni, allergeni_origine: "confermati" })
+              : undefined
+          }
+        />
       </Scheda>
 
       <Scheda titolo="Procedimento">

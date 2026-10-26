@@ -25,6 +25,18 @@ const CAMPI_BOZZA = [
   "sunto",
   "categoria",
   "porzioni",
+  // 25/10/2026: che cosa diventerà, e quanto ne viene (migrazione 20261025000050).
+  // ⚠️ Senza queste tre righe il campo si vedrebbe e non arriverebbe al
+  //    database: `solo()` scarta in silenzio ciò che non è in elenco.
+  "tipo",
+  "resa_quantita",
+  "resa_unita",
+  // 25/10/2026, l'archivio (migrazione 20261025000051). Gli allergeni
+  // viaggiano SEMPRE con la loro origine: il vincolo pretende tutte e due.
+  "tags",
+  "stagioni",
+  "allergeni",
+  "allergeni_origine",
   "buchi_dichiarati",
   // Solo per svuotarlo («Visto»): dal browser non si puo' scrivere alla creazione.
   "proposte_assistente",
@@ -36,7 +48,7 @@ const solo = (dati, campi) =>
 export async function listBozzeRicetta() {
   const { data, error } = await supabase
     .from("bozze_ricetta")
-    .select("id, titolo, origine_tipo, stato, porzioni, promossa_il, ricetta_id, created_at, updated_at")
+    .select("id, titolo, origine_tipo, stato, categoria, tipo, tags, porzioni, promossa_il, ricetta_id, created_at, updated_at")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

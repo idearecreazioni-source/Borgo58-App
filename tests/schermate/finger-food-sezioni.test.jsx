@@ -38,7 +38,9 @@ vi.mock("../../src/lib/api/menus", () => ({
   setActiveMenu: vi.fn(),
   updateMenuItemPrice: vi.fn(),
 }));
-vi.mock("../../src/lib/api/recipes", () => ({ listRecipes: vuoto, listAllRecipeCosts: vuoto }));
+vi.mock("../../src/lib/api/recipes", () => ({
+  tagDellArchivio: () => Promise.resolve([]),
+  listRicetteDaCollegare: () => Promise.resolve([]), listRecipes: vuoto, listAllRecipeCosts: vuoto }));
 vi.mock("../../src/lib/api/dailyMenu", () => ({ listAllergensForRecipes: () => Promise.resolve({}) }));
 
 const { default: MenuDetail } = await import("../../src/pages/ricettario/MenuDetail");
