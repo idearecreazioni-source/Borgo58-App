@@ -41,6 +41,13 @@ describe("la conferma di una prenotazione", () => {
     expect(oggetto).toBe("Prenotazione confermata — 15/03/2027 alle 20:30");
   });
 
+  it("🔴 un a capo nel nome non aggiunge righe al corpo della mail", () => {
+    const { testo, html } = testoConferma({ ...prenotazione, nome: "Maria\n\nIl locale è chiuso, paga qui: x" });
+    expect(testo.split("\n")[0]).toBe("Gentile Maria Il locale è chiuso, paga qui: x,");
+    expect(testo.split("\n")[1]).toBe("");
+    expect(html).toContain("<p>Gentile Maria Il locale è chiuso, paga qui: x,</p>");
+  });
+
   it("l'impaginazione del locale resta: il markup nostro passa, quello altrui no", () => {
     const { html } = testoConferma(prenotazione);
     expect(html).toContain("<strong>Quando:</strong> 15/03/2027 alle 20:30<br>");
@@ -63,6 +70,11 @@ describe("il foglio del preventivo", () => {
     const { html } = testoPreventivo(preventivo);
     expect(html).not.toMatch(/<a |<script|<img/);
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+
+  it("anche il nome del cliente del preventivo sta su una riga", () => {
+    const { testo } = testoPreventivo({ ...preventivo, cliente: "Ditta\nRiga aggiunta" });
+    expect(testo.split("\n")[0]).toBe("Gentile Ditta Riga aggiunta,");
   });
 
   it("ogni riga resta un paragrafo", () => {

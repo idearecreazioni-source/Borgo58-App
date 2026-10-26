@@ -32,6 +32,15 @@ export function esc(valore: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Un nome sta su una riga sola. Con un a capo dentro, il «nome» del modulo
+ * pubblico potrebbe aggiungere righe intere al corpo della mail, come se le
+ * scrivesse il locale (revisione del 26/10/2026).
+ */
+export function suUnaRiga(valore: unknown): string {
+  return String(valore ?? "").replace(/\s+/g, " ").trim();
+}
+
 /** 2027-03-15 → 15/03/2027. Il formato americano confonde chi legge in fretta. */
 export function dataItaliana(iso: string): string {
   const [anno, mese, giorno] = iso.split("-");
@@ -46,7 +55,7 @@ export function testoConferma(p: Prenotazione): { oggetto: string; testo: string
   const data = p.data ? dataItaliana(p.data) : "";
   const ora = (p.ora ?? "").slice(0, 5);
   const coperti = p.coperti ?? 0;
-  const nome = p.nome ?? "";
+  const nome = suUnaRiga(p.nome);
 
   const oggetto = `Prenotazione confermata — ${data} alle ${ora}`;
 
@@ -98,7 +107,7 @@ export function testoPreventivo(v: Record<string, unknown>) {
 
   const oggetto = `Borgo 58 — preventivo per il ${data}`;
   const testo = [
-    `Gentile ${v.cliente ?? ""},`,
+    `Gentile ${suUnaRiga(v.cliente)},`,
     "",
     `ecco il preventivo per il ${data}, per ${persone} ${persone === 1 ? "persona" : "persone"}.`,
     "",

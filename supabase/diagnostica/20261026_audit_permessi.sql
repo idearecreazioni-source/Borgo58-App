@@ -68,7 +68,12 @@ select * from (
       case when has_table_privilege('anon', c.oid, 'SELECT') then 'lettura' end,
       case when has_table_privilege('anon', c.oid, 'INSERT') then 'inserimento' end,
       case when has_table_privilege('anon', c.oid, 'UPDATE') then 'modifica' end,
-      case when has_table_privilege('anon', c.oid, 'DELETE') then 'cancellazione' end
+      case when has_table_privilege('anon', c.oid, 'DELETE') then 'cancellazione' end,
+      -- Un privilegio dato a una sola colonna non si vede con
+      -- has_table_privilege: va chiesto a parte (revisione del 26/10).
+      case when has_any_column_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE')
+             and not has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE')
+           then 'su singole colonne' end
     ) || case when c.relkind = 'v' then ' (vista)'
               when not c.relrowsecurity then ' — E SENZA RLS'
               else '' end
@@ -78,21 +83,24 @@ select * from (
     and (has_table_privilege('anon', c.oid, 'SELECT')
       or has_table_privilege('anon', c.oid, 'INSERT')
       or has_table_privilege('anon', c.oid, 'UPDATE')
-      or has_table_privilege('anon', c.oid, 'DELETE'))
+      or has_table_privilege('anon', c.oid, 'DELETE')
+      or has_any_column_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE'))
 
   union all
 
   -- 4. Policy che valgono anche per chi non e' entrato (ruolo `anon` o
   --    `public`, che comprende anon). Il modulo di prenotazione passa da
-  --    funzioni, non da policy: una riga qui va spiegata.
+  --    funzioni, non da policy: una riga qui va spiegata. Si guardano
+  --    anche le policy dei file (`storage`): un contenitore privato con una
+  --    policy aperta e' pubblico quanto uno dichiarato pubblico.
   select
     4,
     'POLICY VALIDA ANCHE PER ANON',
-    p.tablename::text,
+    p.schemaname::text || '.' || p.tablename::text,
     p.cmd || ' — policy ' || p.policyname
       || case when p.qual = 'true' or p.with_check = 'true' then ' — CONDIZIONE SEMPRE VERA' else '' end
   from pg_policies p
-  where p.schemaname = 'public' and (p.roles && array['anon', 'public']::name[])
+  where p.schemaname in ('public', 'storage') and (p.roles && array['anon', 'public']::name[])
 
   union all
 
@@ -109,7 +117,7 @@ select * from (
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
-    and p.prokind = 'f'
+    and p.prokind in ('f', 'p')
     and p.prorettype <> 'trigger'::regtype
     and has_function_privilege('anon', p.oid, 'EXECUTE')
 

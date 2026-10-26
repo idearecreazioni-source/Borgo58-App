@@ -29,8 +29,19 @@ const direttiva = (nome) =>
     .slice(1) ?? null;
 
 describe("public/_headers", () => {
-  it("vale per tutto il sito: una regola sola, su /*", () => {
+  it("vale per tutto il sito: una regola sola, su /*, con le intestazioni rientrate", () => {
     expect(righe[0]).toBe("/*");
+    // Cloudflare riconosce un'intestazione solo se la riga è rientrata:
+    // senza rientro la leggerebbe come un altro percorso, in silenzio.
+    for (const r of righe.slice(1)) expect(r, r).toMatch(/^\s+\S/);
+  });
+
+  it("le immagini dello storage arrivano dai due progetti, e le connessioni anche in wss", () => {
+    for (const ref of [REF_PRODUZIONE, REF_PROVA]) {
+      expect(direttiva("img-src")).toContain(`https://${ref}.supabase.co`);
+      expect(direttiva("connect-src")).toContain(`wss://${ref}.supabase.co`);
+    }
+    expect(direttiva("object-src")).toEqual(["'none'"]);
   });
 
   it("🔴 il gestionale parla col progetto vero e con quello di prova, e con nessun altro Supabase", () => {
@@ -57,7 +68,7 @@ describe("public/_headers", () => {
 
   it("index.html non contiene script scritti dentro la pagina, che la CSP bloccherebbe", () => {
     const html = readFileSync("index.html", "utf8");
-    const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
+    const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script[^>]*>/gi)];
     expect(script.length).toBeGreaterThan(0);
     for (const [intero, corpo] of script) {
       expect(corpo.trim(), intero).toBe("");
