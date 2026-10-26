@@ -571,14 +571,19 @@ export default function Detta() {
       <div className="mb-6">
         {/* 🔴 SI CHIAMA MEMO (27/08). Il titolo prende il nome, il pulsante
             «Premi e parla» no: quello è il gesto. */}
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">MEMO voce</h1>
-        {/* ⚠️ Il testo va DENTRO il segno (11/09/2026): come `testo="…"`
-            il componente non lo leggeva, e la spiegazione si apriva vuota. */}
-        <Didascalia>
-          Premi una volta per accendere il microfono, di&apos; tutto quello che ti serve di fila, poi
-          ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo
-          chiede.
-        </Didascalia>
+        {/* 🔴 IL «?» DENTRO IL TITOLO — 25/10/2026: stava sotto, su una riga
+            sua, come in MEMO foto sotto il tetto di spesa (screenshot di
+            Alessio). Un punto di domanda da solo non dice di cosa parla. */}
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+          MEMO voce
+          {/* ⚠️ Il testo va DENTRO il segno (11/09/2026): come `testo="…"`
+              il componente non lo leggeva, e la spiegazione si apriva vuota. */}
+          <Didascalia>
+            Premi una volta per accendere il microfono, di&apos; tutto quello che ti serve di fila, poi
+            ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo
+            chiede.
+          </Didascalia>
+        </h1>
       </div>
 
       {errore && (
