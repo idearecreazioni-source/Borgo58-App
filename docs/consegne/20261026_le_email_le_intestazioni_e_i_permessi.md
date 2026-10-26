@@ -1,6 +1,6 @@
 # Sicurezza P0: le email ai clienti, le intestazioni del sito e l'audit dei permessi — 26/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** `3f75ab5`, sul ramo `claude/p0-sicurezza-email-header-rls` aperto da `origin/master` `794af67`. Tre commit: `4e1d87d` (email), `e622892` (intestazioni), `3f75ab5` (audit). Working tree pulito. **Nessuna migrazione, nessun dato toccato. La funzione online `email-cliente` NON è stata reinstallata**: va fatto dopo l'unione (`npm run funzione email-cliente -- --conferma`).
+**HEAD dichiarato sotto questo riepilogo:** `8a07840`, sul ramo `claude/p0-sicurezza-email-header-rls` aperto da `origin/master` `794af67`. Quattro commit: `4e1d87d` (email), `e622892` (intestazioni), `3f75ab5` (audit), `8a07840` (revisione: avviso CodeQL e rilievi ECC, vedi in fondo). Proposta #236 verso `slave`. Working tree pulito. **Nessuna migrazione, nessun dato toccato. La funzione online `email-cliente` NON è stata reinstallata**: va fatto dopo l'unione (`npm run funzione email-cliente -- --conferma`).
 
 ## Origine
 Piano di verifica del 25/10/2026, voci P0.2, P0.3 e P0.5, chieste in chat il 26/10 «su un ramo, senza unire».
@@ -51,3 +51,14 @@ Piano di verifica del 25/10/2026, voci P0.2, P0.3 e P0.5, chieste in chat il 26/
 
 ## Cosa abbiamo rovesciato
 Nessuna decisione rovesciata. Il sito non aveva intestazioni di sicurezza per assenza, non per una scelta scritta. Ho cercato `_headers`, `Content-Security`, `frame-ancestors` e `X-Frame` in `docs/` e in `CLAUDE.md`: nessun risultato.
+
+## Revisione dopo la proposta (`8a07840`)
+- **CodeQL**, controllo di GitHub, avviso di gravità alta su `tests/unita/intestazioni-sicurezza.test.js:60`: l'espressione che cerca gli script in `index.html` non riconosceva `<SCRIPT>` maiuscolo. Corretta: ora è insensibile alle maiuscole e accetta la chiusura `</script …>`.
+- **Revisione `ecc:security-reviewer`**: nessun rilievo alto. Accolti:
+  - il nome del cliente sta su una riga sola, così un a capo nel modulo pubblico non aggiunge righe al corpo della mail (2 prove);
+  - l'audit vede i privilegi su singole colonne, le policy di `storage` valide per anon e le procedure;
+  - la prova delle intestazioni controlla il rientro delle righe, i due progetti in `img-src` e `wss`, e `object-src 'none'`.
+- **Non accolti** (bassi): `upgrade-insecure-requests` e `frame-src` esplicito (già coperto da `default-src 'self'`); il controllo del contenuto di `search_path`.
+- **Audit rilanciato sul progetto di prova**, in sola lettura: le stesse 8 righe attese e zero nelle altre categorie. Le 4 policy di `storage` valgono solo per `authenticated`.
+- **Prove dopo la revisione:** lint a zero; prove pure 2355 verdi, con le stesse 3 rosse per gli a capo CRLF.
+- **Rilievo medio rimasto aperto:** la CSP scrive i progetti per nome. Se la variabile `VITE_SUPABASE_URL` di Cloudflare puntasse altrove, il gestionale non parlerebbe col database. Da qui il valore non si legge: va controllato sull'anteprima del ramo.
