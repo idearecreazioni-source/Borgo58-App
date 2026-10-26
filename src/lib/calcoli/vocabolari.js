@@ -267,6 +267,12 @@ export const GUARDIE_ESENTI = [
       "elenca come il cliente può pagare ADESSO, in sala (contante, carta), che dal 26/08/2026 è di proposito un sottoinsieme di ciò che `order_payments.mezzo` ammette: il terzo valore, «caparra», è una quota già saldata settimane prima e non un modo di pagare che un cameriere possa scegliere. Lo scrive solo il gestionale, quando Alessio conferma lo scalo. Sono due domande diverse — «come stai pagando» e «come è stata saldata questa quota» — e il discriminante del 17/08 dice che allora non si fondono. ⚠️ E il verso conta: se un giorno la guardia venisse allargata a «caparra», un cameriere potrebbe chiudere un conto dichiarando una caparra che non esiste",
   },
   {
+    funzione: "voce_risolvi_operazione",
+    parametro: "p_tipo",
+    perche:
+      "non valida niente: e' un ramo che sceglie quali tipi di azione vocale vogliono il mezzo di pagamento o una data prima di essere scritti (caparra, mancia, nota di credito, uscita prevista) — un sottoinsieme voluto dei tipi accesi. E come per voce_risolvi_dati il vocabolario dei tipi vive in `tipi_azione_vocale`, una tabella e non un vincolo `check`, quindi non esiste nessun insieme del database con cui questa guardia potrebbe combaciare (25/10/2026, blocco 1 di MEMO)",
+  },
+  {
     funzione: "voce_risolvi_dati",
     parametro: "p_tipo",
     perche:

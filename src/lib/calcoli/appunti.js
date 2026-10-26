@@ -50,6 +50,11 @@ const DI_SERVIZIO = new Set([
   "impegni_possibili",
   "indistinguibili",
   "scelto_a_mano",
+  // Gli identificativi che il database ha appena ritrovato: accanto c'e'
+  // gia' il loro nome leggibile («prenotazione», «fornitore nome»), e una
+  // sigla di trentasei caratteri in una firma non dice niente a nessuno.
+  "prenotazione_id",
+  "supplier_id",
 ]);
 
 /**
@@ -100,6 +105,9 @@ const ETICHETTE = {
   avviso_ora: "alle",
   data_nuova: "nuovo giorno",
   data_precedente: "adesso è",
+  fornitore_nome: "fornitore",
+  ogni_mesi: "si ripete ogni (mesi)",
+  telefono_non_capito: "telefono non capito (non lo scrivo)",
 };
 
 // ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una

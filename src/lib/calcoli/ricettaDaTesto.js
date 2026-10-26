@@ -128,6 +128,13 @@ const MISURE_NON_CODIFICATE = new Set([
   "manciata", "manciate", "noce", "noci", "bustina", "bustine", "barattolo",
   "barattoli", "lattina", "lattine", "scatola", "scatole", "vasetto", "vasetti",
   "goccio", "gocce", "filo", "ciuffo", "ciuffi", "costa", "coste", "cubetto", "cubetti",
+  // Le stesse misure come le scrivono le ricette spagnole e inglesi (Clove le
+  // lascia così anche tradotte: «1 cdta sale»). Senza, la parola finiva nel
+  // nome, l'assistente la toglieva pulendolo, e «1 cdta sale» diventava
+  // «1 sale»: un numero sbagliato invece di un'unità da controllare.
+  "taza", "tazas", "cda", "cdas", "cdta", "cdtas", "cdita", "cditas",
+  "cucharada", "cucharadas", "cucharadita", "cucharaditas", "pizca", "pizcas",
+  "cup", "cups", "tbsp", "tsp",
 ]);
 
 const QB = /\b(?:q\.?\s*b\.?|quanto basta)(?=\s|[.,;:)]|$)/i;

@@ -317,6 +317,20 @@ describe("1D · quantità scritte in modo esplicito", () => {
     expect(buchi(e)[0]).toContain("più di un numero");
   });
 
+  // 25/10/2026: il Chimichurri da Clove aveva «1 cdta sale» e «1⁄4 taza
+  // cipolla». Senza riconoscerle, la misura finiva nel nome e l'assistente,
+  // pulendolo, la toglieva: restava «1 sale».
+  it("le misure spagnole e inglesi restano unità, non finiscono nel nome", () => {
+    const e = conIngredienti("1 cdta sale", "1\u20444 taza cipolla rossa", "3 cdas aceto", "2 tbsp olio", "1 cucharadita cumino");
+    expect(soloGliIngredienti(e)).toEqual([
+      { nome: "sale", quantita: 1, unita: "cdta" },
+      { nome: "cipolla rossa", quantita: 0.25, unita: "taza" },
+      { nome: "aceto", quantita: 3, unita: "cdas" },
+      { nome: "olio", quantita: 2, unita: "tbsp" },
+      { nome: "cumino", quantita: 1, unita: "cucharadita" },
+    ]);
+  });
+
   it("le unità italiane scritte per intero, e l'etto", () => {
     const e = conIngredienti(
       "2 etti burro",
