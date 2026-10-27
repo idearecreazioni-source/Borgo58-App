@@ -684,7 +684,7 @@ export default function PrimaNota() {
                 <label className={labelClass}>Rif. documento</label>
               )}
               <input
-                aria-label="Riferimento del documento"
+                aria-label="Rif. documento"
                 value={form.document_reference}
                 onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
                 placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (facoltativo)"}

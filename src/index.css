@@ -876,12 +876,16 @@ body {
    ACCESSIBILITÀ DI BASE — 27/10/2026 (audit WCAG del 25/10)
    ===================================================================== */
 
-/* Il fuoco da tastiera si vede SEMPRE. ⚠️ Dentro `:where()` apposta: pesa
-   zero, quindi i campi che hanno già il loro anello (`focus:ring-…`) lo
-   tengono, e questo vale solo dove prima non c'era niente (WCAG 2.4.7). */
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 3px solid var(--color-b58-charcoal);
-  outline-offset: 2px;
+/* Il fuoco da tastiera si vede SEMPRE (WCAG 2.4.7). ⚠️ Nel livello `base`
+   apposta: le classi di Tailwind stanno nel livello `utilities`, che vince,
+   quindi i campi che hanno già il loro anello (`focus:ring-…` con
+   `focus:outline-none`) tengono il loro e non ne mostrano due; questo vale
+   solo dove prima non c'era niente (revisione ecc:a11y-architect, 27/10). */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-b58-charcoal);
+    outline-offset: 2px;
+  }
 }
 
 /* «Vai al contenuto»: il primo tasto Tab salta il menu (WCAG 2.4.1). Si vede
