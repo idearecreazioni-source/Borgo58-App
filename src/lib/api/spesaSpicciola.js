@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // LA SPESA SPICCIOLA — 23/08/2026, blocco 8 del mandato del collaudo.
 //
@@ -32,7 +33,24 @@ export async function categorieSpesaSpicciola() {
   return data ?? [];
 }
 
-export async function aggiungiSpesaSpicciola({ articolo, categoria, nota }) {
+// 🔴 CON `azioneDettataId` (aperta da MEMO voce) È L'ECCEZIONE alla
+// categoria A qui sopra, dal 26/10/2026: le scritture sono due — la voce e
+// la chiusura della cosa detta — e passano dal corridoio in una
+// transazione (20261026000002). Erano due chiamate, e un errore fra le due
+// lasciava la voce scritta e la cosa ancora «da fare»: la volta dopo,
+// la stessa cosa due volte in lista. Senza voce, l'insert diretto di sempre.
+export async function aggiungiSpesaSpicciola({ articolo, categoria, nota }, { azioneDettataId = null } = {}) {
+  if (azioneDettataId) {
+    const id = await eseguiOperazione("aggiungi_spesa_spicciola", {
+      p_articolo: articolo,
+      p_categoria: categoria ?? null,
+      p_nota: nota ?? null,
+      p_azione_dettata_id: azioneDettataId,
+    });
+    const { data, error } = await supabase.from("spesa_spicciola").select().eq("id", id).single();
+    // ⚠️ Scritta e chiusa: una rilettura fallita non è un salvataggio fallito.
+    return error ? { id } : data;
+  }
   const { data, error } = await supabase
     .from("spesa_spicciola")
     .insert({

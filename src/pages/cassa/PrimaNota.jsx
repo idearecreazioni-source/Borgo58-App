@@ -265,7 +265,8 @@ export default function PrimaNota() {
     setSaving(true);
     setError("");
     try {
-      await createCashMovement({
+      const chiudendo = venuto.idDaChiudere;
+      const movimento = {
         entity_id: entityId,
         direction: form.direction,
         amount: Number(form.amount),
@@ -283,11 +284,13 @@ export default function PrimaNota() {
         //    e' nel database, questa riga evita solo di andarci a sbattere.
         e_investimento: offreInvestimento ? form.e_investimento : false,
         note: form.note || null,
-      });
-      // 🔴 DOPO il salvataggio riuscito, mai prima: chiudendo prima, un
-      //    salvataggio fallito farebbe sparire la riga dall'elenco senza
-      //    che il movimento sia mai stato scritto.
-      await venuto.chiudi();
+      };
+      // 🔴 La cosa detta si chiude NELLA STESSA transazione del movimento
+      //    (20261026000002), non con una seconda chiamata dopo: un errore
+      //    fra le due lasciava il movimento scritto e la cosa ancora da
+      //    fare, e la volta dopo lo stesso movimento entrava due volte.
+      await createCashMovement(movimento, { azioneDettataId: chiudendo });
+      if (chiudendo) venuto.segnaChiusa();
       setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
       await reload();
     } catch (e) {
