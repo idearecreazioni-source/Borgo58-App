@@ -197,13 +197,17 @@ begin
       'pulizie', (select count(*) from haccp_cleaning_logs),
       'temperature', (select count(*) from haccp_temperature_logs));
 
-    begin perform record_stock_consumption_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then v_rifiuti := v_rifiuti + 1; end;
-    begin perform allinea_giacenza_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then v_rifiuti := v_rifiuti + 1; end;
-    begin perform register_stock_delivery_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then v_rifiuti := v_rifiuti + 1; end;
-    begin perform registra_temperatura_da_voce(v_sbagliata, gen_random_uuid(), 4); exception when others then v_rifiuti := v_rifiuti + 1; end;
-    begin perform registra_pulizia_da_voce(v_sbagliata, gen_random_uuid()); exception when others then v_rifiuti := v_rifiuti + 1; end;
-    begin perform add_shopping_list_item_da_voce(v_sbagliata, null, 'ZZ verifica'); exception when others then v_rifiuti := v_rifiuti + 1; end;
+    begin perform record_stock_consumption_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
+    begin perform allinea_giacenza_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
+    begin perform register_stock_delivery_da_voce(v_sbagliata, gen_random_uuid(), 1); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
+    begin perform registra_temperatura_da_voce(v_sbagliata, gen_random_uuid(), 4); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
+    begin perform registra_pulizia_da_voce(v_sbagliata, gen_random_uuid()); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
+    begin perform add_shopping_list_item_da_voce(v_sbagliata, null, 'ZZ verifica'); exception when others then if sqlerrm like '%non si finisce da questa schermata%' then v_rifiuti := v_rifiuti + 1; else raise; end if; end;
 
+    -- ⚠️ CONTA SOLO IL RIFIUTO GIUSTO: prodotti, frighi e compiti sono id
+    --    inventati, quindi la funzione di sempre fallirebbe comunque. Se il
+    --    controllo della schermata lasciasse passare, l'errore sarebbe un altro
+    --    e qui verrebbe rilanciato (revisione ecc:code-reviewer del 27/10).
     if v_rifiuti <> 6 then
       raise exception 'VERIFICA: una cosa detta di prima nota e'' stata accettata da % schermate su 6 che non la finiscono.', 6 - v_rifiuti;
     end if;
