@@ -7,6 +7,12 @@
 
   --color-b58-cream: #fbf8f2;
   --color-b58-cream-dark: #f0e8da;
+  /* 🔴 SAND, usato dalla ruota dell'ora (SceltaOra.jsx e .ruota-ora qui sotto)
+     ma MAI DEFINITO fino al 27/10/2026: bordo e fondo della riga centrale
+     risultavano assenti (audit di accessibilità del 25/10). Il bordo regge il
+     3:1 sul bianco chiesto ai contorni dei controlli (WCAG 1.4.11). */
+  --color-b58-sand: #8f806b;
+  --color-b58-sand-light: #f3ecdf;
   --color-b58-parchment: #fffefa;
   --color-b58-terracotta: #b5502e;
   --color-b58-terracotta-dark: #93401f;
@@ -865,3 +871,49 @@ body {
   height: calc(var(--pxcm) * 1.7);
 }
 
+
+/* =====================================================================
+   ACCESSIBILITÀ DI BASE — 27/10/2026 (audit WCAG del 25/10)
+   ===================================================================== */
+
+/* Il fuoco da tastiera si vede SEMPRE (WCAG 2.4.7). ⚠️ Nel livello `base`
+   apposta: le classi di Tailwind stanno nel livello `utilities`, che vince,
+   quindi i campi che hanno già il loro anello (`focus:ring-…` con
+   `focus:outline-none`) tengono il loro e non ne mostrano due; questo vale
+   solo dove prima non c'era niente (revisione ecc:a11y-architect, 27/10). */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-b58-charcoal);
+    outline-offset: 2px;
+  }
+}
+
+/* «Vai al contenuto»: il primo tasto Tab salta il menu (WCAG 2.4.1). Si vede
+   solo quando prende il fuoco. */
+.salta-al-contenuto {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 60;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-b58-parchment);
+  color: var(--color-b58-charcoal);
+  font-weight: 600;
+}
+.salta-al-contenuto:focus {
+  top: 0.75rem;
+}
+
+/* Chi ha chiesto al sistema meno movimento non riceve scorrimenti né
+   transizioni (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

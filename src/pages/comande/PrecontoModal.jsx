@@ -1,4 +1,5 @@
 import { orderTotals } from "../../lib/api/orders";
+import { useChiudiConEsc } from "../../lib/chiudiConEsc";
 import { ALLERGENS, formatEUR, labelFor } from "../../lib/constants";
 import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 
@@ -28,6 +29,7 @@ const nomeSulConto = (item) => {
 //    non fiscale interna: si stampa sulla termica non fiscale del bar.
 //    Finche' quella stampante non c'e', si stampa dal browser.
 export default function PrecontoModal({ order, copertoPrice, onClose }) {
+  useChiudiConEsc(true, onClose);
   const { items, itemsTotal, nonInviate, coperti, copertoUnitPrice, copertoTotal, total } =
     orderTotals(order, copertoPrice);
 
@@ -49,7 +51,12 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Preconto — ${order.table_label}`}
+      className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50"
+    >
       {/* ⚠️ Allargata come la chiusura conto (22/08): con le scritte a 3,20 mm
           dentro 384 punti le righe del conto andavano a capo. Il preconto è il
           foglio che finisce in mano al cliente — una riga spezzata lì è una
@@ -57,7 +64,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
       <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[92vh]">
         <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between shrink-0 print:hidden">
           <span className="font-display testo-sala-grande">Preconto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
+          <button type="button" onClick={onClose} aria-label="Chiudi il preconto" className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
             ×
           </button>
         </div>

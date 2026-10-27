@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { lasciaPerdereRegistrazione, registrazioneInCorso } from "../lib/registrazioneInCorso";
 import Sidebar from "./Sidebar";
+import { useChiudiConEsc } from "../lib/chiudiConEsc";
 import Logo from "./Logo";
 import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 import RipresaBozza from "./RipresaBozza";
@@ -14,6 +15,8 @@ import { useSegnala } from "./useSegnala";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Esc chiude il menu sul telefono come la «Chiudi menu» (27/10/2026).
+  useChiudiConEsc(mobileOpen, () => setMobileOpen(false));
   const segnala = useSegnala();
   const { pathname } = useLocation();
   // Sulla Dashboard il ritorno alla Dashboard non serve.
@@ -88,6 +91,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-b58-cream flex">
+      <a href="#contenuto" className="salta-al-contenuto">
+        Vai al contenuto
+      </a>
       {/* IL MENU SPARISCE FINO A 1024 PUNTI (`lg:`), non piu' a 768 (`md:`).
 
           🔴 Misurato il 21/08 col mini tablet in verticale di Alessio, che e'
@@ -133,7 +139,7 @@ export default function Layout() {
           voci. Il menu aperto deve coprire tutto; chiuso, la barra torna
           com'era. */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div role="dialog" aria-modal="true" aria-label="Menu" className="lg:hidden fixed inset-0 z-50 flex">
           <div className="w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
             <Sidebar
               onNavigate={() => setMobileOpen(false)}
@@ -237,7 +243,9 @@ export default function Layout() {
             ⚠️ Le Comande restano fuori (`isComande`): sono calibrate sul
             tablet di sala, non su un monitor da ufficio. */}
         <main
-          className={`flex-1 px-4 py-6 md:px-8 md:py-8 ${
+          id="contenuto"
+          tabIndex={-1}
+          className={`flex-1 px-4 py-6 md:px-8 md:py-8 focus:outline-none ${
             isComande ? "" : "contenuto-ampio"
           }`}
         >

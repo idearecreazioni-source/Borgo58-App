@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useChiudiConEsc } from "../../lib/chiudiConEsc";
 import {
   addDraftItem,
   allergeniDellaRiga,
@@ -144,6 +145,10 @@ export default function Sala() {
   // la riga nasce nel turno in corso.
   const [showBis, setShowBis] = useState(false);
   const [bisPiatto, setBisPiatto] = useState(null); // quale selezione si sta bissando
+  // Esc fa quello che fa la barra in alto di ogni pannello (27/10/2026).
+  useChiudiConEsc(showWines, () => setShowWines(false));
+  useChiudiConEsc(showBis, () => (bisPiatto ? setBisPiatto(null) : setShowBis(false)));
+  useChiudiConEsc(clienteAperto, () => setClienteAperto(false));
   const [bisElenco, setBisElenco] = useState(null);
   const [bisErrore, setBisErrore] = useState("");
 
@@ -2235,7 +2240,7 @@ export default function Sala() {
           farle perdere il tavolo selezionato, si torna indietro da una
           barra sempre visibile in alto. */}
       {showWines && order && (
-        <div className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
+        <div role="dialog" aria-modal="true" aria-label={`Carta dei vini — ${order.table_label}`} className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
           <button
             type="button"
             onClick={() => setShowWines(false)}
@@ -2277,7 +2282,7 @@ export default function Sala() {
           essercene due, di mare e di terra, e i finger sono diversi), poi
           quale bocconcino. Con un elenco solo non si saprebbe di chi è. */}
       {showBis && order && (
-        <div className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
+        <div role="dialog" aria-modal="true" aria-label={`Bis — ${order.table_label}`} className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
           <button
             type="button"
             onClick={() => (bisPiatto ? setBisPiatto(null) : setShowBis(false))}
@@ -2364,7 +2369,7 @@ export default function Sala() {
           ci stanno senza far scorrere — che e' proprio quello che questa
           correzione toglie. */}
       {clienteAperto && order && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-b58-charcoal/50 p-4">
+        <div role="dialog" aria-modal="true" aria-label={`Chi paga — ${order.table_label}`} className="fixed inset-0 z-50 flex items-center justify-center bg-b58-charcoal/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-b58-cream p-4 shadow-xl">
             <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 className="font-display testo-sala-grande text-b58-charcoal">

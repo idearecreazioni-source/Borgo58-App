@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useChiudiConEsc } from "../../lib/chiudiConEsc";
 import {
   cancelOrder,
   closeOrderAsDiscountGift,
@@ -35,6 +36,7 @@ const nomeSulConto = (item) => {
 // Modale "chiudi conto" (§3.2), ripreso dal prototipo UX di Cowork: riepilogo
 // raggruppato per piatto, poi pagato/sconto/omaggio/annullato.
 export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }) {
+  useChiudiConEsc(true, onClose);
   const [mode, setMode] = useState(null); // null | "sconto" | "omaggio" | "annulla" | "romana" | "misto"
   const [quotaCarta, setQuotaCarta] = useState("");
   // Divisione alla romana con arrotondamento (§3.2.2, deciso da Alessio il
@@ -293,7 +295,12 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   };
 
   return (
-    <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Chiusura conto — ${order.table_label}`}
+      className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50"
+    >
       {/* 🔴 LA FINESTRA PRENDE QUASI TUTTO LO SCHERMO (22/08, da un rilievo
           di Alessio in scala reale). Era `max-w-sm` — 384 punti, meno di
           metà di un tablet da 8 pollici — e con le scritte portate a 3,20 mm
@@ -308,7 +315,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
       <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden">
         <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
           <span className="font-display testo-sala-grande">Chiusura conto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
+          <button type="button" onClick={onClose} aria-label="Chiudi senza incassare" className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
             ×
           </button>
         </div>
