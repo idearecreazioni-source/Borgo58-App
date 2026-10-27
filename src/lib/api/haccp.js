@@ -119,13 +119,23 @@ export async function listTemperatureLogs(equipmentId, periodo) {
 // una transazione sola. La lettura si salva SEMPRE — anche fuori range,
 // anche senza rimedio: una misurazione persa è irrecuperabile, un rimedio
 // scritto dopo è ancora un rimedio.
-export async function addTemperatureLog({ equipmentId, recordedTempC, note, correctiveAction }) {
-  return eseguiOperazione("registra_temperatura", {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+export async function addTemperatureLog(
+  { equipmentId, recordedTempC, note, correctiveAction },
+  { azioneDettataId = null } = {},
+) {
+  const parametri = {
     p_equipment_id: equipmentId,
     p_recorded_temp_c: recordedTempC,
     p_note: note || null,
     p_corrective_action: correctiveAction || null,
-  });
+  };
+  if (azioneDettataId) {
+    return eseguiOperazione("registra_temperatura_da_voce", { p_azione_dettata_id: azioneDettataId, ...parametri });
+  }
+  return eseguiOperazione("registra_temperatura", parametri);
 }
 
 // --- Ricevimento merci ---
@@ -197,7 +207,21 @@ export async function listCleaningLogs(taskId, periodo) {
   return data;
 }
 
-export async function addCleaningLog({ taskId, note }) {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+// ⚠️ Senza voce è un insert diretto (una tabella, la RLS come barriera);
+//    con la voce le scritture sono due — la pulizia e la chiusura — e
+//    passano dal corridoio.
+export async function addCleaningLog({ taskId, note }, { azioneDettataId = null } = {}) {
+  if (azioneDettataId) {
+    await eseguiOperazione("registra_pulizia_da_voce", {
+      p_azione_dettata_id: azioneDettataId,
+      p_task_id: taskId,
+      p_note: note || null,
+    });
+    return;
+  }
   const { error } = await supabase.from("haccp_cleaning_logs").insert({
     task_id: taskId,
     note: note || null,

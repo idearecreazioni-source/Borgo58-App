@@ -141,12 +141,22 @@ export default function TemperatureLog() {
     setSaving(true);
     setError("");
     try {
-      const esito = await addTemperatureLog({
-        equipmentId,
-        recordedTempC: Number(readingForm.recordedTempC),
-        note: readingForm.note,
-        correctiveAction: readingForm.correctiveAction,
-      });
+      // 🔴 SI CHIUDE SOLO SE È QUELLA CHE AVEVA DETTO. Se aveva nominato un
+      //    frigo e la lettura finisce su un altro, quella cosa detta NON è
+      //    stata fatta: chiuderla la farebbe sparire dall'elenco senza che
+      //    la misura di quel frigo sia mai stata registrata. E si chiude NELLA
+      //    STESSA transazione della lettura (20261027000001).
+      const suo = venuto.azione?.campi?.attrezzatura;
+      const chiudendo = !suo || suo === equipmentId ? venuto.idDaChiudere : null;
+      const esito = await addTemperatureLog(
+        {
+          equipmentId,
+          recordedTempC: Number(readingForm.recordedTempC),
+          note: readingForm.note,
+          correctiveAction: readingForm.correctiveAction,
+        },
+        { azioneDettataId: chiudendo },
+      );
       // La lettura è salvata comunque. Se era fuori range senza rimedio,
       // resta aperta una non conformità: si dice, non si nasconde.
       setAvviso(
@@ -156,12 +166,7 @@ export default function TemperatureLog() {
             ? "Fuori range: registrata insieme al rimedio che hai scritto."
             : ""
       );
-      // 🔴 SI CHIUDE SOLO SE È QUELLA CHE AVEVA DETTO. Se aveva nominato un
-      //    frigo e la lettura finisce su un altro, quella cosa detta NON è
-      //    stata fatta: chiuderla la farebbe sparire dall'elenco senza che
-      //    la misura di quel frigo sia mai stata registrata.
-      const suo = venuto.azione?.campi?.attrezzatura;
-      if (!suo || suo === equipmentId) await venuto.chiudi();
+      if (chiudendo) venuto.segnaChiusa();
       setOpenRow(null);
       setReadingForm(emptyReadingForm);
       await load();

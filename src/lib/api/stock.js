@@ -84,16 +84,16 @@ export async function listStockLotsDisplay(ingredientId) {
   }));
 }
 
-export async function registerStockDelivery({
-  ingredientId,
-  quantity,
-  supplierId,
-  expiryDate,
-  note,
-  unitCost,
-  rigaLista,
-}) {
-  const { data, error } = await supabase.rpc("register_stock_delivery", {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+// ⚠️ Con la voce passa DAL CORRIDOIO, senza la RPC diretta di sempre (che
+//    resta un debito dichiarato nel Contratto §5).
+export async function registerStockDelivery(
+  { ingredientId, quantity, supplierId, expiryDate, note, unitCost, rigaLista },
+  { azioneDettataId = null } = {},
+) {
+  const parametri = {
     p_ingredient_id: ingredientId,
     p_quantity: quantity,
     p_supplier_id: supplierId ?? null,
@@ -103,7 +103,11 @@ export async function registerStockDelivery({
     // Su quale riga della lista della spesa va questo arrivo. Vuoto = la
     // più vecchia aperta, ed è il predefinito che la schermata dichiara.
     p_riga_lista: rigaLista ?? null,
-  });
+  };
+  if (azioneDettataId) {
+    return eseguiOperazione("register_stock_delivery_da_voce", { p_azione_dettata_id: azioneDettataId, ...parametri });
+  }
+  const { data, error } = await supabase.rpc("register_stock_delivery", parametri);
   if (error) throw error;
   return data;
 }
@@ -111,13 +115,23 @@ export async function registerStockDelivery({
 // ⚠️ Toglie dai lotti col metodo FEFO E fotografa il costo di quello che
 // esce: due tabelle, quindi corridoio (Contratto B4, 16/08/2026). A metà
 // sarebbe merce sparita dalla giacenza senza nessuno scarico che lo dica.
-export async function recordStockConsumption({ ingredientId, quantity, reason = "consumo", note }) {
-  return eseguiOperazione("record_stock_consumption", {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+export async function recordStockConsumption(
+  { ingredientId, quantity, reason = "consumo", note },
+  { azioneDettataId = null } = {},
+) {
+  const parametri = {
     p_ingredient_id: ingredientId,
     p_quantity: quantity,
     p_reason: reason,
     p_note: note ?? null,
-  });
+  };
+  if (azioneDettataId) {
+    return eseguiOperazione("record_stock_consumption_da_voce", { p_azione_dettata_id: azioneDettataId, ...parametri });
+  }
+  return eseguiOperazione("record_stock_consumption", parametri);
 }
 
 // Cosa il magazzino NON ha potuto scaricare chiudendo i conti: voci
@@ -196,12 +210,19 @@ export async function scarichiSenzaRicavo(entityId, dal, al) {
 // sbagliata guardando la schermata.
 // 🔴 E non l'ho deciso io: l'ha trovato la rete del Contratto B4
 // (`tests/app/scritture-dal-corridoio.test.js`), diventando rossa da sola.
-export async function allineaGiacenza(ingredientId, quantoCe, note) {
-  return eseguiOperazione("allinea_giacenza", {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+export async function allineaGiacenza(ingredientId, quantoCe, note, { azioneDettataId = null } = {}) {
+  const parametri = {
     p_ingredient_id: ingredientId,
     p_quanto_ce: Number(quantoCe),
     p_note: note ?? null,
-  });
+  };
+  if (azioneDettataId) {
+    return eseguiOperazione("allinea_giacenza_da_voce", { p_azione_dettata_id: azioneDettataId, ...parametri });
+  }
+  return eseguiOperazione("allinea_giacenza", parametri);
 }
 
 // Cosa c'è da allineare, coi prodotti in esaurimento in cima: è il momento in

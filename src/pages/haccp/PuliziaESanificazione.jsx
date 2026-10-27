@@ -123,11 +123,13 @@ export default function PuliziaESanificazione() {
     setSaving(true);
     setError("");
     try {
-      await addCleaningLog({ taskId, note: logNote });
       // 🔴 Solo se è il compito che aveva detto: registrandone un altro,
-      //    quella cosa detta non è stata fatta.
+      //    quella cosa detta non è stata fatta. E si chiude NELLA STESSA
+      //    transazione della pulizia (20261027000001).
       const suo = venuto.azione?.campi?.compito;
-      if (!suo || suo === taskId) await venuto.chiudi();
+      const chiudendo = !suo || suo === taskId ? venuto.idDaChiudere : null;
+      await addCleaningLog({ taskId, note: logNote }, { azioneDettataId: chiudendo });
+      if (chiudendo) venuto.segnaChiusa();
       setOpenTaskId(null);
       setLogNote("");
       await load();
