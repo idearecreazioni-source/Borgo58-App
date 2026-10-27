@@ -168,6 +168,14 @@ begin
     raise exception 'Manca la chiave.';
   end if;
 
+  -- rete-guardie: luogo_promemoria — il rifiuto del luogo sconosciuto non ripete piu' il testo ricevuto e viene prima della chiave
+  -- ⚠️ Il luogo si guarda PRIMA della chiave (revisione di sicurezza,
+  --    28/10): dopo, la differenza fra i due rifiuti direbbe a chi prova se
+  --    la chiave che ha in mano vale. E il testo ricevuto non si ripete.
+  if v_luogo not in ('casa', 'ristorante') then
+    raise exception 'Questo luogo non lo conosco: i luoghi sono casa e ristorante.';
+  end if;
+
   select * into v_riga from chiavi_luogo
    where impronta = encode(extensions.digest(p_chiave, 'sha256'), 'hex') and revocata_il is null
    for update;
@@ -175,10 +183,6 @@ begin
     -- Non si dice se non esiste o se e' stata revocata: lo vorrebbe
     -- sapere solo chi la sta indovinando.
     raise exception 'Questa chiave non vale.';
-  end if;
-
-  if v_luogo not in ('casa', 'ristorante') then
-    raise exception 'Il luogo «%» non lo conosco: i luoghi sono casa e ristorante.', p_luogo;
   end if;
 
   -- Il freno: 30 letture all'ora per chiave.
@@ -299,7 +303,7 @@ begin
     v_fermo := false;
     begin
       perform luogo_promemoria(v_k->>'chiave', 'garage');
-    exception when others then v_fermo := sqlerrm like 'Il luogo «garage» non lo conosco%';
+    exception when others then v_fermo := sqlerrm like 'Questo luogo non lo conosco%';
     end;
     if not v_fermo then
       raise exception 'VERIFICA (4b): un luogo sconosciuto non e'' stato respinto.';

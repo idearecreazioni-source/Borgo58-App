@@ -19,7 +19,15 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { LUOGHI, testoNotifica } from "./testo.ts";
 
-const TESTO = { "Content-Type": "text/plain; charset=utf-8" };
+const TESTO = { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff" };
+
+// Una richiesta vera e' una chiave e una parola: oltre questo non si legge.
+const BYTE_MASSIMI = 2048;
+
+// ⚠️ Solo questi rifiuti si dicono a chi chiama (revisione di sicurezza,
+//    28/10): l'indirizzo e' pubblico, e un errore inatteso del database
+//    racconterebbe com'e' fatto dentro.
+const RIFIUTI_NOTI = ["Manca la chiave.", "Questa chiave non vale.", "Questo luogo non lo conosco"];
 
 const risposta = (stato: number, testo: string) => new Response(testo, { status: stato, headers: TESTO });
 
@@ -30,10 +38,16 @@ Deno.serve(async (req) => {
   const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   if (!supabaseUrl || !supabaseAnon) return risposta(500, "Configurazione dell'ambiente mancante.");
 
+  if (Number(req.headers.get("content-length") ?? 0) > BYTE_MASSIMI) {
+    return risposta(413, "La richiesta è troppo lunga.");
+  }
+
   let chiave = req.headers.get("x-chiave-luogo") ?? "";
   let luogo = "";
   try {
-    const corpo = await req.json();
+    const grezzo = await req.text();
+    if (grezzo.length > BYTE_MASSIMI) return risposta(413, "La richiesta è troppo lunga.");
+    const corpo = JSON.parse(grezzo);
     if (!chiave && typeof corpo?.chiave === "string") chiave = corpo.chiave;
     luogo = String(corpo?.luogo ?? "").trim().toLowerCase();
   } catch {
@@ -41,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   if (!chiave) return risposta(401, "Manca la chiave.");
-  if (!LUOGHI[luogo]) return risposta(400, `Il luogo «${luogo}» non lo conosco: i luoghi sono casa e ristorante.`);
+  if (!LUOGHI[luogo]) return risposta(400, "Questo luogo non lo conosco: i luoghi sono casa e ristorante.");
 
   const supabase = createClient(supabaseUrl, supabaseAnon);
   const { data, error } = await supabase.rpc("luogo_promemoria", { p_chiave: chiave, p_luogo: luogo });
@@ -49,7 +63,10 @@ Deno.serve(async (req) => {
     const msg = error.message ?? "";
     if (msg.startsWith("Troppe richieste")) return risposta(429, msg);
     if (msg === "Questa chiave non vale." || msg === "Manca la chiave.") return risposta(401, msg);
-    return risposta(400, msg);
+    if (RIFIUTI_NOTI.some((r) => msg.startsWith(r))) return risposta(400, msg);
+    // Il dettaglio resta nei registri della funzione; la chiave no.
+    console.error("luogo_promemoria:", msg);
+    return risposta(500, "Errore interno: riprova più tardi.");
   }
 
   const impegni = Array.isArray(data?.impegni) ? data.impegni : [];

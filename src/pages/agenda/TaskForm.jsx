@@ -109,7 +109,16 @@ export default function TaskForm() {
   const [form, setForm] = useState(emptyForm);
   // ⚠️ Solo su un promemoria NUOVO: aprendo uno esistente i campi sono i
   //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
-  const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
+  // ⚠️ Un luogo che non e' fra quelli ammessi (la voce che sente «garage») si
+  //    lascia cadere qui, come fa il database sull'approvazione diretta:
+  //    altrimenti nessun pulsante sarebbe acceso e il salvataggio verrebbe
+  //    respinto dal vincolo con un errore che non si capisce (28/10/2026).
+  const venuto = useDaVoce((c) => {
+    if (isEdit) return;
+    const luogo = String(c?.luogo ?? "").trim().toLowerCase();
+    const noto = TASK_LUOGHI.some((l) => l.value === luogo);
+    setForm((f) => conCampi(f, { ...c, luogo: noto ? luogo : undefined }, DA_VOCE));
+  });
   const [origineModulo, setOrigineModulo] = useState(null);
   // ⚠️ La categoria con cui l'impegno è arrivato: togliendo la casella dei
   //    lavori torna QUELLA, non «altro» — un impegno nato dall'Archivio
