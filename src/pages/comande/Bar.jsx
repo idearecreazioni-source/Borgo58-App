@@ -14,6 +14,7 @@ import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
 import Didascalia from "../../components/Didascalia";
 import Scorciatoia from "../../components/Scorciatoia";
+import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
 
 // Schermata BAR — tablet 11" in orizzontale, su supporto fisso (§3.2.1).
 //
@@ -64,8 +65,8 @@ export default function Bar() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, POLL_MS);
-    return () => clearInterval(interval);
+    // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
+    return ogniTantoSeVisibile(load, POLL_MS);
   }, []);
 
   useEffect(() => {

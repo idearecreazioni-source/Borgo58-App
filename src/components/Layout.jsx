@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
+import Caricamento from "./Caricamento";
+import PezzoMancante from "./PezzoMancante";
 import { useAuth } from "../context/AuthContext";
 import { lasciaPerdereRegistrazione, registrazioneInCorso } from "../lib/registrazioneInCorso";
 import Sidebar from "./Sidebar";
@@ -259,7 +261,13 @@ export default function Layout() {
           <AvvisoLettureTagliate />
           <AvvisoAggiornamento />
           <RipresaBozza />
-          <Outlet />
+          {/* La cornice resta ferma mentre arriva il pezzo della schermata
+              (27/10/2026): sparirebbe tutta, menu compreso, a ogni cambio. */}
+          <PezzoMancante key={pathname}>
+            <Suspense fallback={<Caricamento />}>
+              <Outlet />
+            </Suspense>
+          </PezzoMancante>
         </main>
       </div>
     </div>

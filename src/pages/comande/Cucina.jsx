@@ -10,6 +10,7 @@ import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 import Scorciatoia from "../../components/Scorciatoia";
+import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
 
 // CUCINA — postazione di stampa, non schermata di lavoro (§3.2.1).
 //
@@ -80,8 +81,8 @@ export default function Cucina() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, POLL_MS);
-    return () => clearInterval(interval);
+    // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
+    return ogniTantoSeVisibile(load, POLL_MS);
   }, []);
 
   const fogli = bigliettiCucina(righe, chiamate);
