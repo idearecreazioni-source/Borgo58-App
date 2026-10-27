@@ -26,23 +26,29 @@ import { formatDate } from "../constants";
  * non si è guardato — la stessa ragione per cui una selezione di finger non
  * compare più fra i piatti.
  *
- * ⚠️ «In ritardo» e «Più avanti» si CHIUDONO, le altre no. Il criterio non
- * è la lunghezza: è che quelle due sono le uniche in cui *stare dentro
- * l'elenco non è una notizia*. Quattordici scadute non si leggono una per
- * una — si guarda il numero, e si apre quando si ha tempo. Quello che va
- * fatto adesso è già in cima, perché lui ci ha messo la stella.
+ * ⚠️ «Più avanti» si CHIUDE, le altre no: è l'unica in cui *stare dentro
+ * l'elenco non è una notizia*.
+ *
+ * 🔴 «IN RITARDO» NON C'È PIÙ — 27/10/2026, chiesto da Alessio: «vorrei che
+ * gli impegni in ritardo non finissero più nella sezione "in ritardo" ma
+ * vorrei che mi vengano riproposti nei giorni a seguire fino a quando non
+ * li spunto». Una sezione chiusa di suo era il posto dove uno scaduto
+ * smetteva di farsi vedere. Ora si legge sotto «Oggi», in testa, ogni
+ * giorno finché non si spunta (`giornoInAgenda`).
+ * ⚠️ La scadenza nel database NON si sposta: resta la data vera, così una
+ * ricorrenza continua a contare da lì e il quadrotto dice da quanto è
+ * scaduto. Cambia dove si legge, non il dato — come la stella.
  */
 export const SEZIONI = [
   {
     key: "per_me_conta",
     titolo: "Per me conta",
     // Non si chiude: è la ragione per cui esiste la stella.
-    // ⚠️ E sparisce quando è vuota, come «in ritardo»: un titoletto vuoto
+    // ⚠️ E sparisce quando è vuota: un titoletto vuoto
     // in cima ogni giorno è rumore che si impara a saltare.
     nascondiSeVuota: true,
     forte: true,
   },
-  { key: "in_ritardo", titolo: "In ritardo", nascondiSeVuota: true, chiudibile: true, chiusaDiSuo: true, allarme: true },
   { key: "questa_settimana", titolo: "Questa settimana", perGiorno: true },
   { key: "piu_avanti", titolo: "Più avanti", chiudibile: true, chiusaDiSuo: true, perMese: true },
   { key: "quando_capita", titolo: "Quando capita" },
@@ -63,8 +69,25 @@ export const SEZIONI = [
  */
 // ⚠️ La stella vince sui lavori: è l'unico segno che dice «questo davanti
 // agli occhi», e un lavoro stellato deve stare in testa come gli altri.
+// ⚠️ Uno scaduto entra in «Questa settimana», sotto «Oggi»: la corsia del
+// database resta `in_ritardo`, ed è quella che il badge e MEMO contano.
 export const sezioneDi = (t) =>
-  t.preferito ? "per_me_conta" : t.category === "lavori" ? "lavori" : t.corsia;
+  t.preferito
+    ? "per_me_conta"
+    : t.category === "lavori"
+      ? "lavori"
+      : t.corsia === "in_ritardo"
+        ? "questa_settimana"
+        : t.corsia;
+
+/**
+ * IL GIORNO SOTTO CUI SI LEGGE UN IMPEGNO: la sua scadenza, oppure oggi se
+ * è già passata. Domani uno scaduto di ieri sarà ancora sotto «Oggi».
+ * ⚠️ Le date sono `AAAA-MM-GG`, quindi il confronto fra stringhe è quello
+ * fra giorni.
+ */
+export const giornoInAgenda = (t, oggiISO) =>
+  t?.due_date && t.due_date < oggiISO ? oggiISO : t?.due_date;
 
 /**
  * Le righe di ogni sezione, contate una volta sola.
@@ -136,7 +159,13 @@ export function campiImpegno(t) {
     {
       chiave: "scadenza",
       etichetta: "Scadenza",
-      valore: t.due_date ? formatDate(t.due_date) : "",
+      // ⚠️ Sotto «Oggi» uno scaduto si riconosce da qui: senza la sezione
+      //    rossa, è questa frase a dire che il giorno è già passato.
+      valore: t.due_date
+        ? t.corsia === "in_ritardo" && t.giorni_alla_scadenza < 0
+          ? `${formatDate(t.due_date)} · scaduto da ${giorniFa(-t.giorni_alla_scadenza)}`
+          : formatDate(t.due_date)
+        : "",
       vuoto: "quando capita",
       forte: t.corsia === "in_ritardo",
     },
@@ -200,6 +229,8 @@ export function fraseRicorrenza(ogni, unita) {
   if (!(unita in SINGOLARE)) return null;
   return ogni === 1 ? `ogni ${SINGOLARE[unita]}` : `ogni ${ogni} ${unita}`;
 }
+
+const giorniFa = (n) => (n === 1 ? "1 giorno" : `${n} giorni`);
 
 function anzianita(giorni) {
   const mesi = Math.round(giorni / 30);
