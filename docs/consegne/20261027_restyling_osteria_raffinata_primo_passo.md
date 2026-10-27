@@ -1,6 +1,6 @@
 # Restyling «Osteria raffinata», primo passo: il carattere e il tema scuro — 27/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** il commit che contiene questo file, sul ramo `claude/restyling-osteria` aperto da `origin/slave` `831bd14`. Un commit. Working tree pulito.
+**HEAD dichiarato sotto questo riepilogo:** il commit che contiene questa riga, sul ramo `claude/restyling-osteria` aperto da `origin/slave` `831bd14`. Tre commit: il lavoro (`269ce97`), il logo al buio, e questo riepilogo aggiornato. Working tree pulito.
 **Nessun database e nessuna funzione toccati.** Cambia solo l'aspetto.
 
 ## Origine
@@ -33,6 +33,9 @@ Il 27/10 Alessio ha scelto, fra tre proposte, la direzione A «Osteria raffinata
   - il pulsante oro della sala;
   - un nome in Scadenze;
   - il grigio chiaro di Tailwind.
+
+## Trovato sull'anteprima
+- Al buio la scritta «Borgo» del logo, scura, quasi spariva. Ora il logo sta su una targhetta color panna, solo al buio.
 
 ## Non verificato
 - **Il gestionale vero al buio dopo l'accesso:** tutte le altre schermate, le finestre, la sala sul tablet. Serve l'anteprima.
