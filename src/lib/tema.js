@@ -2,46 +2,35 @@ import { useEffect, useState } from "react";
 
 // IL TEMA CHIARO O SCURO — 27/10/2026 (restyling, richiesta di Alessio)
 //
-// Tre scelte: «chiaro», «scuro», «auto» (come il telefono). La scelta vive
-// sul dispositivo, come la calibrazione del tocco: il tablet di sala e il
-// telefono possono volere cose diverse. Senza scelta resta il chiaro.
+// Due scelte: «chiaro» e «scuro». La scelta vive sul dispositivo, come la
+// calibrazione del tocco: il tablet di sala e il telefono possono volere
+// cose diverse. Senza scelta resta il chiaro.
+// 🔴 «COME IL TELEFONO» TOLTO — 27/10/2026, sera, chiesto da Alessio.
+//    Chi l'aveva scelto si ritrova il tema che il telefono mostrava in
+//    quel momento, salvato come scelta sua (`public/tema.js`): niente cambia
+//    sotto gli occhi.
 //
 // ⚠️ LA PRIMA VOLTA il tema lo mette `public/tema.js`, prima che la pagina
-//    si disegni; qui si tiene aggiornato quando lo si cambia, e quando il
-//    telefono passa da giorno a sera con la scelta «Come il telefono».
-//    La regola è la stessa nei due file.
+//    si disegni; qui si tiene aggiornato quando lo si cambia. La regola è la
+//    stessa nei due file.
 
 export const CHIAVE_TEMA = "b58-tema";
 export const SCELTE_TEMA = [
   { valore: "chiaro", etichetta: "Chiaro" },
   { valore: "scuro", etichetta: "Scuro" },
-  { valore: "auto", etichetta: "Come il telefono" },
 ];
-
-const BUIO = "(prefers-color-scheme: dark)";
 
 export function leggiSceltaTema(memoria = globalThis.localStorage) {
   try {
     const s = memoria?.getItem(CHIAVE_TEMA);
-    return s === "scuro" || s === "auto" ? s : "chiaro";
+    return s === "scuro" ? "scuro" : "chiaro";
   } catch {
     return "chiaro";
   }
 }
 
-/** Il tema da mostrare per una scelta: «auto» segue il telefono. */
-export function temaEffettivo(scelta, telefonoAlBuio) {
-  if (scelta === "scuro") return "scuro";
-  if (scelta === "auto" && telefonoAlBuio) return "scuro";
-  return "chiaro";
-}
-
-function alBuio() {
-  return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(BUIO).matches;
-}
-
 function applica(scelta) {
-  document.documentElement.setAttribute("data-tema", temaEffettivo(scelta, alBuio()));
+  document.documentElement.setAttribute("data-tema", scelta === "scuro" ? "scuro" : "chiaro");
 }
 
 export function useTema() {
@@ -49,11 +38,6 @@ export function useTema() {
 
   useEffect(() => {
     applica(scelta);
-    if (scelta !== "auto" || !window.matchMedia) return undefined;
-    const m = window.matchMedia(BUIO);
-    const cambia = () => applica(scelta);
-    m.addEventListener?.("change", cambia);
-    return () => m.removeEventListener?.("change", cambia);
   }, [scelta]);
 
   const scegli = (nuova) => {

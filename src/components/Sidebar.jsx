@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { INDIRIZZO_MEMO, statoVersoMemo } from "../lib/calcoli/ritornoMemo";
 import { SCELTE_TEMA, useTema } from "../lib/tema";
 
-// Chiaro, scuro o come il telefono (27/10/2026): sta nel piede del menu,
+// Chiaro o scuro (27/10/2026): sta nel piede del menu,
 // accanto a «Esci», perché non c'è una pagina delle impostazioni e qui la
 // si trova da ogni schermata, sul tablet come sul telefono.
 function SceltaTema() {
