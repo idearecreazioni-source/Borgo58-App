@@ -50,7 +50,7 @@ export default function Sidebar({ onNavigate, sopra = null }) {
 
       {sopra}
 
-      <nav className="flex-1 overflow-y-auto px-3 space-y-1">
+      <nav aria-label="Menu principale" className="flex-1 overflow-y-auto px-3 space-y-1">
         <NavLink to="/dashboard" end onClick={onNavigate} className={linkClasses}>
           <Icon name="box" className="w-4 h-4" />
           Dashboard
