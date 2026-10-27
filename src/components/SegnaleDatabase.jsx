@@ -45,7 +45,7 @@ import { ambienteCorrente, paginaDeiClienti } from "../lib/ambiente";
 // identico per costruzione, perché è scritto una volta sola più sotto.
 const STATI = {
   produzione: {
-    fondo: "bg-b58-charcoal",
+    fondo: "bg-b58-inverso",
     titolo: "DATI VERI",
     // ⚠️ Simmetrica a quella rossa, e il verso è opposto apposta: la rossa
     // dice cosa NON succede, la grigia dice cosa succede.

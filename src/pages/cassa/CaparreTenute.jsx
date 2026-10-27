@@ -41,7 +41,7 @@ export default function CaparreTenute() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Cassa
       </Link>

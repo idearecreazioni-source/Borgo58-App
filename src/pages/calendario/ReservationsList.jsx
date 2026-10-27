@@ -12,14 +12,14 @@ import Didascalia from "../../components/Didascalia";
 //    due stati nati il 21 e il 22/08, dopo questo elenco.
 // ⚠️ E uno stato che un giorno arriverà senza la sua voce prende il colore
 //    neutro (`SFONDO_NEUTRO`) invece di sparire.
-const SFONDO_NEUTRO = "bg-b58-charcoal-soft";
+const SFONDO_NEUTRO = "bg-b58-inverso-soft";
 const STATUS_BADGE = {
   richiesta_in_attesa: "bg-b58-gold",
   confermata: "bg-b58-olive",
   servita: SFONDO_NEUTRO,
   non_presentata: "bg-b58-terracotta-dark",
   rifiutata: "bg-b58-terracotta",
-  annullata: "bg-b58-charcoal-soft/50",
+  annullata: "bg-b58-inverso-soft/50",
 };
 
 const todayISO = oggiLocale;
@@ -110,7 +110,7 @@ export default function ReservationsList() {
           </Link>
           <Link
             to="/calendario-eventi/nuova"
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
           >
             + Nuova prenotazione
           </Link>
@@ -120,7 +120,7 @@ export default function ReservationsList() {
       {daConfermare.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <div className="flex items-center gap-2.5 mb-3">
-            <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+            <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
               {daConfermare.length}
             </span>
             <h2 className="font-display testo-sala-titolo text-b58-charcoal">
@@ -161,7 +161,7 @@ export default function ReservationsList() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         />
         <button
           type="button"
@@ -176,7 +176,7 @@ export default function ReservationsList() {
           className={`tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
             date
               ? "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
-              : "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+              : "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
           }`}
         >
           Tutte le date
@@ -195,12 +195,12 @@ export default function ReservationsList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca cliente (nome, telefono, email)…"
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti i tipi</option>
           {RESERVATION_TYPES.map((t) => (
@@ -210,7 +210,7 @@ export default function ReservationsList() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti gli stati</option>
           {RESERVATION_STATUSES.map((s) => (
@@ -219,7 +219,7 @@ export default function ReservationsList() {
         </select>
       </div>
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
@@ -253,7 +253,7 @@ export default function ReservationsList() {
                     {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
+                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-sul-colore testo-sala font-medium px-2.5 py-1 shrink-0`}
                   >
                     {labelFor(RESERVATION_STATUSES, r.status)}
                   </span>
@@ -309,7 +309,7 @@ export default function ReservationsList() {
                     ))}
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
+                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-sul-colore testo-sala font-medium px-2.5 py-1`}
                       >
                         {labelFor(RESERVATION_STATUSES, r.status)}
                       </span>

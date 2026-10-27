@@ -98,7 +98,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   );
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   // 🔴 LO SCONTRINO PARTE DA SOLO (22/08/2026, decisione di Alessio):
   // *«viene considerato emesso fino a prova contraria, non viceversa. Il
@@ -293,7 +293,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   };
 
   return (
-    <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-b58-velo/50 flex items-center justify-center p-4 z-50">
       {/* 🔴 LA FINESTRA PRENDE QUASI TUTTO LO SCHERMO (22/08, da un rilievo
           di Alessio in scala reale). Era `max-w-sm` — 384 punti, meno di
           metà di un tablet da 8 pollici — e con le scritte portate a 3,20 mm
@@ -305,17 +305,17 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
           ⚠️ E la larghezza non è una questione di gusto: *è il momento in
           cui si incassa*. Non c'è niente di più importante da vedere in quel
           momento, e non c'è ragione perché stia in un quarto di schermo. */}
-      <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden">
-        <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
+      <div className="bg-b58-campo rounded-xl max-w-3xl w-full overflow-hidden">
+        <div className="bg-b58-inverso text-b58-sul-colore px-4 py-3 flex items-center justify-between">
           <span className="font-display testo-sala-grande">Chiusura conto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
+          <button type="button" onClick={onClose} className="tocco-bottone text-b58-sul-colore/80 hover:text-b58-sul-colore testo-sala-grande leading-none">
             ×
           </button>
         </div>
 
         <div className="p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           {error && (
-            <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
+            <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <div className="font-mono testo-sala bg-b58-cream-dark/40 border border-dashed border-b58-charcoal/20 rounded-lg p-3">
@@ -381,7 +381,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 Non vuol dire che non ce ne sia una. Riprova prima di incassare:
                 chiudere adesso potrebbe fargli pagare due volte.
               </p>
-              <button type="button" onClick={ricaricaCaparra} className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
+              <button type="button" onClick={ricaricaCaparra} className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4">
                 Riprova
               </button>
             </div>
@@ -395,7 +395,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   <button
                     type="button"
                     onClick={() => setSceltaCaparra(true)}
-                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-3"
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala font-medium px-3"
                   >
                     Scala la caparra
                   </button>
@@ -416,7 +416,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   <button
                     type="button"
                     onClick={() => setSceltaCaparra(null)}
-                    className="underline text-b58-terracotta-dark"
+                    className="underline text-b58-terracotta-dark-testo"
                   >
                     cambia
                   </button>
@@ -483,7 +483,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                     type="button"
                     disabled={busy || aspettaCaparra}
                     onClick={() => handlePaid(pm.value)}
-                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala font-medium px-3"
                   >
                     Paga {pm.label.toLowerCase()}
                   </button>
@@ -509,7 +509,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   Omaggio
                 </button>
               </div>
-              <button type="button" onClick={() => setMode("annulla")} className="tocco-bottone w-full testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+              <button type="button" onClick={() => setMode("annulla")} className="tocco-bottone w-full testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo">
                 Annulla tavolo
               </button>
               {/* 🔴 QUI C'ERA: «Nessun incasso viene registrato in cassa:
@@ -571,7 +571,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               {/* ⚠️ Il rifiuto vero è nel database: le quote devono fare
                   l'incassato al centesimo. Qui si evita solo di premere. */}
               {!mistoValido && (
-                <p className="testo-sala text-b58-terracotta-dark">
+                <p className="testo-sala text-b58-terracotta-dark-testo">
                   Le due parti devono essere tutt'e due maggiori di zero. Se paga tutto in un
                   modo solo, torna indietro e usa «Paga contante» o «Paga carta».
                 </p>
@@ -581,7 +581,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !mistoValido}
                   onClick={handleMisto}
-                  className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
+                  className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala font-medium px-3"
                 >
                   {busy ? "Chiudo…" : "Chiudi il conto"}
                 </button>
@@ -641,13 +641,13 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   <span>{formatEUR(totaleRomana)}</span>
                 </div>
                 {cortesia > 0 && (
-                  <div className="flex justify-between py-0.5 text-b58-olive-dark">
+                  <div className="flex justify-between py-0.5 text-b58-olive-dark-testo">
                     <span>Cortesia (registrata come sconto)</span>
                     <span>−{formatEUR(cortesia)}</span>
                   </div>
                 )}
                 {cortesia < 0 && (
-                  <div className="py-0.5 text-b58-terracotta-dark">
+                  <div className="py-0.5 text-b58-terracotta-dark-testo">
                     Supera il conto di {formatEUR(-cortesia)}: gli spicci in più sono
                     mance, si registrano nella sezione Mance — non qui.
                   </div>
@@ -690,13 +690,13 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                     type="button"
                     disabled={busy || totaleRomana <= 0 || totaleRomana > total || (cortesia > 0 && !form.causaleId)}
                     onClick={() => handleRomana(pm.value)}
-                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-3"
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-medium px-3"
                   >
                     Chiudi a {formatEUR(totaleRomana)} — {pm.label.toLowerCase()}
                   </button>
                 ))}
               </div>
-              <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+              <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-2">
                 Indietro
               </button>
             </div>
@@ -748,11 +748,11 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.causaleId || (mode === "sconto" && !form.collectedAmount)}
                   onClick={handleDiscountGift}
-                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala font-medium px-4"
                 >
                   Conferma
                 </button>
-                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-2">
                   Indietro
                 </button>
               </div>
@@ -772,11 +772,11 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.cancelReason.trim()}
                   onClick={handleCancel}
-                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala font-medium px-4"
                 >
                   Conferma annullamento
                 </button>
-                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-2">
                   Indietro
                 </button>
               </div>

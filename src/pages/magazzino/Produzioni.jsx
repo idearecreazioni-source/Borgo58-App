@@ -181,7 +181,7 @@ export default function Produzioni() {
   };
 
   const input =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const label = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
   const BOTTONE =
     "tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3";
@@ -190,7 +190,7 @@ export default function Produzioni() {
     <div className="testo-sala max-w-3xl mx-auto pb-16">
       <Link
         to="/magazzino"
-        className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Magazzino
       </Link>
@@ -204,7 +204,7 @@ export default function Produzioni() {
       </h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -428,7 +428,7 @@ export default function Produzioni() {
             type="button"
             disabled={salvando || !dosi || !quantita}
             onClick={salva}
-            className="tocco-bottone mt-4 rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+            className="tocco-bottone mt-4 rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-medium px-4"
           >
             {salvando ? "Registro…" : "Registra la produzione"}
           </button>
@@ -497,7 +497,7 @@ export default function Produzioni() {
                         {p.nome}
                       </span>
                       {p.in_lista && (
-                        <span className="testo-sala rounded-full bg-b58-gold text-b58-parchment px-2.5 py-1">
+                        <span className="testo-sala rounded-full bg-b58-gold text-b58-sul-colore px-2.5 py-1">
                           da fare
                         </span>
                       )}
@@ -543,7 +543,7 @@ export default function Produzioni() {
                         diversi: intero (non si dice niente), parziale, e —
                         per le produzioni di prima del 30/08 — non lo so. */}
                     {p.costo_stato === "parziale" && (
-                      <span className="block testo-sala text-b58-terracotta-dark mt-1">
+                      <span className="block testo-sala text-b58-terracotta-dark-testo mt-1">
                         una parte della merce non aveva un prezzo: quel costo è più basso del vero
                       </span>
                     )}
@@ -574,7 +574,7 @@ export default function Produzioni() {
                           max="365"
                           value={ogniGiorni}
                           onChange={(e) => setOgniGiorni(e.target.value)}
-                          className="tocco-campo w-20 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-2 testo-sala text-b58-charcoal"
+                          className="tocco-campo w-20 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-2 testo-sala text-b58-charcoal"
                         />
                         <span className="testo-sala text-b58-charcoal-soft">giorni</span>
                         <button
@@ -631,7 +631,7 @@ export default function Produzioni() {
       ) : (
         <ul className="space-y-2">
           {fatte.map((p) => (
-            <li key={p.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+            <li key={p.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
               <span className="testo-sala font-medium text-b58-charcoal">{p.preparazione}</span>
               <span className="testo-sala text-b58-charcoal-soft ml-2">
                 {formatQta(p.quantita_ottenuta)} {p.unita} da {formatQta(p.dosi)}{" "}

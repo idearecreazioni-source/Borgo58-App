@@ -46,8 +46,8 @@ const STATUS_ACTIONS = {
   // rimasta vuota tutta la sera: il posto non torna utile a nessuno, e
   // domani è la cosa che vale la pena ricordarsi di quel cliente.
   confermata: [
-    { to: "non_presentata", label: "Non si è presentato", cls: "bg-b58-charcoal-soft" },
-    { to: "annullata", label: "Annulla", cls: "bg-b58-charcoal-soft" },
+    { to: "non_presentata", label: "Non si è presentato", cls: "bg-b58-inverso-soft" },
+    { to: "annullata", label: "Annulla", cls: "bg-b58-inverso-soft" },
   ],
   // Anche questa si disfa: capita di segnarlo e poi vederlo arrivare tardi.
   non_presentata: [{ to: "confermata", label: "In realtà è arrivato", cls: "bg-b58-olive" }],
@@ -195,7 +195,7 @@ export default function ReservationForm() {
   }
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -292,7 +292,7 @@ export default function ReservationForm() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Calendario Eventi
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
@@ -300,7 +300,7 @@ export default function ReservationForm() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -318,7 +318,7 @@ export default function ReservationForm() {
                 tavolo <span className="font-medium">{tavoli.map((t) => t.etichetta_al_momento).join(" · ")}</span>
               </>
             ) : (
-              <span className="text-b58-terracotta-dark">senza tavolo</span>
+              <span className="text-b58-terracotta-dark-testo">senza tavolo</span>
             )}
             {" · "}
             {/* ⚠️ Non è più un collegamento secco (difetti n. 1 e n. 10 del
@@ -331,7 +331,7 @@ export default function ReservationForm() {
                 tavolo» — e non offriva la strada per rimediare. */}
             <Link
               to={`/calendario-eventi/pianta?data=${form.reservation_date}&assegna=${id}`}
-              className="tocco-inline underline text-b58-terracotta"
+              className="tocco-inline underline text-b58-terracotta-testo"
             >
               {tavoli.length > 0 ? "apri la pianta" : "dai un tavolo dalla pianta"}
             </Link>
@@ -343,7 +343,7 @@ export default function ReservationForm() {
               <button
                 key={a.to}
                 onClick={() => handleStatusChange(a.to)}
-                className={`${a.cls} text-b58-parchment testo-sala font-medium rounded-full px-3 py-1.5`}
+                className={`${a.cls} text-b58-sul-colore testo-sala font-medium rounded-full px-3 py-1.5`}
               >
                 {a.label}
               </button>
@@ -377,7 +377,7 @@ export default function ReservationForm() {
                 type="button"
                 onClick={rimettiLaCaparra}
                 disabled={inCaparra}
-                className="tocco-bottone mt-3 rounded-lg px-4 testo-sala-grande text-b58-terracotta-dark disabled:opacity-60"
+                className="tocco-bottone mt-3 rounded-lg px-4 testo-sala-grande text-b58-terracotta-dark-testo disabled:opacity-60"
               >
                 {inCaparra ? "Un momento…" : "In realtà è arrivato: rimettila com'era"}
               </button>
@@ -402,7 +402,7 @@ export default function ReservationForm() {
                 type="button"
                 onClick={tieniLaCaparra}
                 disabled={inCaparra}
-                className="tocco-bottone mt-3 rounded-lg bg-b58-charcoal px-4 testo-sala-grande text-b58-parchment disabled:opacity-60"
+                className="tocco-bottone mt-3 rounded-lg bg-b58-inverso px-4 testo-sala-grande text-b58-sul-colore disabled:opacity-60"
               >
                 {inCaparra ? "Un momento…" : "Tengo la caparra"}
               </button>
@@ -430,7 +430,7 @@ export default function ReservationForm() {
                 onClick={() => setForm((f) => ({ ...f, type: t.value }))}
                 className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.type === t.value
-                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
@@ -516,7 +516,7 @@ export default function ReservationForm() {
               {customerId && (
                 <Link
                   to={`/calendario-eventi/clienti/${customerId}`}
-                  className="normal-case font-normal text-b58-terracotta hover:text-b58-terracotta-dark ml-2"
+                  className="normal-case font-normal text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo ml-2"
                 >
                   vedi scheda cliente
                 </Link>
@@ -597,7 +597,7 @@ export default function ReservationForm() {
         <button
           type="submit"
           disabled={saving}
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium px-5 py-2.5 testo-sala-grande"
         >
           {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea prenotazione"}
         </button>
@@ -610,7 +610,7 @@ export default function ReservationForm() {
             <button
               onClick={loadNeeds}
               disabled={loadingNeeds}
-              className="rounded-lg bg-b58-charcoal text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-inverso text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {loadingNeeds ? "Calcolo…" : "Calcola per " + form.party_size + " persone"}
             </button>

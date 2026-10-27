@@ -72,7 +72,7 @@ export default function DipendenteDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setField = (field, value) => setEmployee((e) => ({ ...e, [field]: value }));
@@ -213,14 +213,14 @@ export default function DipendenteDetail() {
   return (
     <div className="documento-stampato max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Personale
         </Link>
         <PrintButton label="Esporta dossier PDF" />
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4 print:hidden">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4 print:hidden">{error}</p>
       )}
 
       {/* Anagrafica */}
@@ -318,7 +318,7 @@ export default function DipendenteDetail() {
           <button
             onClick={saveHeader}
             disabled={savingHeader}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
           >
             {savingHeader ? "Salvo…" : "Salva anagrafica"}
           </button>
@@ -331,7 +331,7 @@ export default function DipendenteDetail() {
         {documents.length > 0 && (
           <ul className="space-y-2 mb-4">
             {documents.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+              <li key={d.id} className="flex items-center justify-between gap-3 testo-sala-grande bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                 <div>
                   <span className="text-b58-charcoal font-medium">{labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}</span>
                   {d.description && <span className="text-b58-charcoal-soft"> · {d.description}</span>}
@@ -348,7 +348,7 @@ export default function DipendenteDetail() {
             ))}
           </ul>
         )}
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 print:hidden">
           {/* SPEC-0010, 11/09/2026: la scadenza in mezza riga (138 punti) si
               tagliava — chiedeva 181, 260 a 64 punti per cm. */}
           <div className="riga-campi">
@@ -362,7 +362,7 @@ export default function DipendenteDetail() {
             <input value={docForm.document_reference} onChange={(e) => setDocForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={`${inputClass} cella-larga`} />
           </div>
           <div className="flex justify-end mt-2">
-            <button type="button" disabled={busy} onClick={addDocument} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={addDocument} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
               + Aggiungi documento
             </button>
           </div>
@@ -392,7 +392,7 @@ export default function DipendenteDetail() {
             ))}
           </ul>
         )}
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden flex flex-wrap gap-2 items-end">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 print:hidden flex flex-wrap gap-2 items-end">
           <select value={leaveForm.leave_type} onChange={(e) => setLeaveForm((f) => ({ ...f, leave_type: e.target.value }))} className={inputClass + " w-32"}>
             {LEAVE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -401,7 +401,7 @@ export default function DipendenteDetail() {
           <input type="date" value={leaveForm.start_date} onChange={(e) => setLeaveForm((f) => ({ ...f, start_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="date" value={leaveForm.end_date} onChange={(e) => setLeaveForm((f) => ({ ...f, end_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="number" step="0.5" value={leaveForm.days} onChange={(e) => setLeaveForm((f) => ({ ...f, days: e.target.value }))} placeholder="Giorni" className={inputClass + " w-24"} />
-          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Aggiungi
           </button>
         </div>
@@ -454,13 +454,13 @@ export default function DipendenteDetail() {
             pavimento anti-zoom, index.css), sul computer non cambia niente.
             Il mese ha la sua larghezza (`campo-mese`): «settembre 2026»
             chiede più di una data. */}
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden riga-campi testo-sala">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 print:hidden riga-campi testo-sala">
           <input type="month" value={payForm.period_month} onChange={(e) => setPayForm((f) => ({ ...f, period_month: e.target.value }))} className={inputClass + " campo-mese"} />
           <input type="number" step="0.01" value={payForm.gross_amount} onChange={(e) => setPayForm((f) => ({ ...f, gross_amount: e.target.value }))} placeholder="Lordo €" className={inputClass + " cella-media"} />
           <input type="number" step="0.01" value={payForm.net_amount} onChange={(e) => setPayForm((f) => ({ ...f, net_amount: e.target.value }))} placeholder="Netto €" className={inputClass + " cella-media"} />
           <input value={payForm.document_reference} onChange={(e) => setPayForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass + " cella-larga"} />
           <div className="riga-campi-gesti">
-            <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
               + Aggiungi
             </button>
           </div>

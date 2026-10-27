@@ -195,7 +195,7 @@ export default function CassaHome() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -204,7 +204,7 @@ export default function CassaHome() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -236,20 +236,20 @@ export default function CassaHome() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className={`rounded-xl p-4 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">In cassa</div>
-              <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
+              <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"}`}>
                 {tesoreria ? formatEUR(tesoreria.contante_atteso) : "—"}
               </div>
               {/* La parte che non è sua: è un avviso, non una spiegazione —
                   quei soldi stanno nel cassetto e sono di altri. */}
               {tesoreria && Number(tesoreria.di_cui_non_tuo) > 0 && (
-                <div className="testo-sala text-b58-gold-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-gold-dark-testo mt-1 font-medium">
                   di cui {formatEUR(tesoreria.di_cui_non_tuo)} sono mance del personale, non tuoi
                 </div>
               )}
               {/* L'avviso resta (il riquadro è rosso e lo dice); la
                   spiegazione del perché sta dietro il «?» — 25/10/2026. */}
               {negativeBalance && (
-                <div className="testo-sala text-b58-terracotta-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-terracotta-dark-testo mt-1 font-medium">
                   Saldo negativo
                   <Didascalia etichetta="Perché è negativo">
                     Un&apos;uscita senza provenienza: è uscito dal cassetto più contante di quello che
@@ -293,11 +293,11 @@ export default function CassaHome() {
                   «+0,00» e «−152,94» uno sotto l'altro, senza dire di cosa.
                   In prima nota il verso è proprio quello che si vuole sapere
                   a colpo d'occhio. */}
-              <div className="testo-sala-grande text-b58-olive-dark font-medium">
+              <div className="testo-sala-grande text-b58-olive-dark-testo font-medium">
                 +{formatEUR(monthIn)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">entrati</span>
               </div>
-              <div className="testo-sala-grande text-b58-terracotta-dark font-medium">
+              <div className="testo-sala-grande text-b58-terracotta-dark-testo font-medium">
                 −{formatEUR(monthOut)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">usciti</span>
               </div>
@@ -350,7 +350,7 @@ export default function CassaHome() {
               scadenze non parte quando non c'è niente da dire. */}
           {quadratura.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6">
-              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-3">
+              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark-testo mb-3">
                 Non torna ({quadratura.length})
                 <Didascalia>
                   Non sono errori certi: sono le differenze fra fatture e prima nota che
@@ -529,7 +529,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
     contato !== "" && teorico != null ? Number(contato) - teorico : null;
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -617,7 +617,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
           inputClass={inputClass}
         />
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>Ho contato €</label>
           <div className="flex flex-wrap gap-2">
             <input
@@ -633,7 +633,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               type="button"
               disabled={inCorso !== "" || contato === ""}
               onClick={() => conta(false)}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3  disabled:opacity-60 shrink-0"
             >
               {inCorso === "conteggio" ? "…" : "Conta"}
             </button>
@@ -643,11 +643,11 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               che si impara a ignorare. */}
           {daFiscalizzare && (
             <div className="mt-2 rounded-lg bg-b58-terracotta/10 border border-b58-terracotta/30 px-3 py-2">
-              <p className="text-[12px] text-b58-terracotta-dark">{daFiscalizzare}</p>
+              <p className="text-[12px] text-b58-terracotta-dark-testo">{daFiscalizzare}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Link
                   to="/cassa/scontrinato"
-                  className="tocco-bottone inline-flex items-center text-[12px] underline text-b58-charcoal hover:text-b58-terracotta"
+                  className="tocco-bottone inline-flex items-center text-[12px] underline text-b58-charcoal hover:text-b58-terracotta-testo"
                 >
                   Vai a sistemarli
                 </Link>
@@ -655,7 +655,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
                   type="button"
                   disabled={inCorso !== ""}
                   onClick={() => conta(true)}
-                  className="tocco-bottone text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+                  className="tocco-bottone text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta-testo disabled:opacity-60"
                 >
                   Chiudi lo stesso, ne prendo atto
                 </button>
@@ -663,14 +663,14 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
             </div>
           )}
           {differenza != null && differenza !== 0 && (
-            <p className="testo-sala text-b58-gold-dark mt-1.5">
+            <p className="testo-sala text-b58-gold-dark-testo mt-1.5">
               {differenza < 0 ? "Mancano" : "Ci sono"} {formatEUR(Math.abs(differenza))}{" "}
               {differenza < 0 ? "rispetto al teorico" : "in più del teorico"}.
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>
             Verso in banca €
             <Didascalia>
@@ -698,7 +698,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
         </div>
       </div>
 
-      {esito && <p className="testo-sala text-b58-olive-dark mt-3">{esito}</p>}
+      {esito && <p className="testo-sala text-b58-olive-dark-testo mt-3">{esito}</p>}
 
       {tesoreria?.ultimo_conteggio_il && (
         <p className="testo-sala text-b58-charcoal-soft/70 mt-3 border-t border-b58-charcoal/10 pt-2">

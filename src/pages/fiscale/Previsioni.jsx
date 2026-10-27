@@ -50,7 +50,7 @@ export default function Previsioni() {
   }, [entityId]);
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const apriFoglio = async (file) => {
     setError("");
@@ -116,7 +116,7 @@ export default function Previsioni() {
 
   return (
     <div className="testo-sala max-w-4xl mx-auto pb-16">
-      <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Proiezione fiscale
       </Link>
       <div className="flex items-center justify-between gap-3 flex-wrap mt-1 mb-2">
@@ -135,7 +135,7 @@ export default function Previsioni() {
             scritto per la società sbagliata non si nota da nessun numero. */}
         <Link
           to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
-          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4"
         >
           + Scrivi una previsione
         </Link>
@@ -143,7 +143,7 @@ export default function Previsioni() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -167,7 +167,7 @@ export default function Previsioni() {
       </p>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* --- Caricare il foglio: la scorciatoia --- */}
@@ -183,7 +183,7 @@ export default function Previsioni() {
         </h2>
 
         {!decompressioneDisponibile() ? (
-          <p className="testo-sala text-b58-terracotta-dark">
+          <p className="testo-sala text-b58-terracotta-dark-testo">
             Questo browser non sa aprire i file Excel. Apri il gestionale con Chrome aggiornato.
           </p>
         ) : (
@@ -192,7 +192,7 @@ export default function Previsioni() {
             type="file"
             accept=".xlsx"
             onChange={(e) => apriFoglio(e.target.files?.[0])}
-            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
+            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-sul-colore hover:file:bg-b58-azione-dark"
           />
         )}
 
@@ -204,7 +204,7 @@ export default function Previsioni() {
             </p>
 
             {letto.problemi.length > 0 ? (
-              <div className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+              <div className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
                 <p className="font-medium mb-1">Non ho riconosciuto questo foglio, e non tiro a indovinare:</p>
                 <ul className="list-disc pl-5 space-y-0.5 testo-sala">
                   {letto.problemi.map((p) => <li key={p}>{p}</li>)}
@@ -254,7 +254,7 @@ export default function Previsioni() {
                     type="button"
                     onClick={conferma}
                     disabled={salvando}
-                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                   >
                     {salvando ? "Salvo…" : "Crea la previsione"}
                   </button>
@@ -278,20 +278,20 @@ export default function Previsioni() {
           {scenari.map((s) => (
             <li
               key={s.id}
-              className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 flex items-center justify-between gap-3"
+              className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-4 flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <Link to={`/fiscale/previsioni/${s.id}`} className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta">
+                <Link to={`/fiscale/previsioni/${s.id}`} className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta-testo">
                   <span className="font-medium">{s.nome}</span>
                 </Link>
                 <p className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {s.anno} · {s.tipo === "partenza" ? "previsione di partenza" : "riproiezione"} ·{" "}
                   {s.congelato_il ? (
-                    <span className="text-b58-olive-dark">
+                    <span className="text-b58-olive-dark-testo">
                       chiusa il {new Date(s.congelato_il).toLocaleDateString("it-IT")}
                     </span>
                   ) : (
-                    <span className="text-b58-terracotta-dark">ancora aperta</span>
+                    <span className="text-b58-terracotta-dark-testo">ancora aperta</span>
                   )}
                 </p>
               </div>
@@ -299,14 +299,14 @@ export default function Previsioni() {
                 {!s.congelato_il && (
                   <Link
                     to={`/fiscale/previsioni/${s.id}/modifica`}
-                    className="tocco-bottone inline-flex items-center testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                    className="tocco-bottone inline-flex items-center testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                   >
                     Correggi
                   </Link>
                 )}
                 <button
                   onClick={() => elimina(s)}
-                  className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                 >
                   Cancella
                 </button>

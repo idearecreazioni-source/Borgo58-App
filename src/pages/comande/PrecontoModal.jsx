@@ -49,15 +49,15 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-b58-velo/50 flex items-center justify-center p-4 z-50">
       {/* ⚠️ Allargata come la chiusura conto (22/08): con le scritte a 3,20 mm
           dentro 384 punti le righe del conto andavano a capo. Il preconto è il
           foglio che finisce in mano al cliente — una riga spezzata lì è una
           domanda a voce mentre si ha altro da fare. */}
-      <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[92vh]">
-        <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between shrink-0 print:hidden">
+      <div className="tema-chiaro bg-b58-campo rounded-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[92vh]">
+        <div className="bg-b58-inverso text-b58-sul-colore px-4 py-3 flex items-center justify-between shrink-0 print:hidden">
           <span className="font-display testo-sala-grande">Preconto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
+          <button type="button" onClick={onClose} className="tocco-bottone text-b58-sul-colore/80 hover:text-b58-sul-colore testo-sala-grande leading-none">
             ×
           </button>
         </div>
@@ -162,7 +162,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-3"
+            className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala font-medium px-3"
           >
             Stampa
           </button>

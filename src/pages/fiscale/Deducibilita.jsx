@@ -74,7 +74,7 @@ export default function Deducibilita() {
   );
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -107,7 +107,7 @@ export default function Deducibilita() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Proiezione fiscale
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -115,7 +115,7 @@ export default function Deducibilita() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && (
@@ -126,7 +126,7 @@ export default function Deducibilita() {
           <select
             value={anno}
             onChange={(e) => setAnno(Number(e.target.value))}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {[annoCorrente + 1, annoCorrente, annoCorrente - 1].map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -145,7 +145,7 @@ export default function Deducibilita() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -185,7 +185,7 @@ export default function Deducibilita() {
             {/* ⚠️ L'avvertenza arriva dal database insieme al numero, non
                 dal testo di questa pagina: una seconda schermata che
                 mostrasse lo stesso numero se la porterebbe dietro. */}
-            <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
+            <p className="testo-sala text-b58-charcoal-soft bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
               {rettifiche.avvertenza}
             </p>
           </>
@@ -302,16 +302,16 @@ export default function Deducibilita() {
                       type="date"
                       value={r.verificata_il || ""}
                       onChange={(e) => cambiaRegola(r.id, { verificata_il: e.target.value || null })}
-                      className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                      className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
                     />
                     {!r.verificata_il && (
-                      <div className="testo-sala text-b58-gold-dark mt-0.5">mai confermata</div>
+                      <div className="testo-sala text-b58-gold-dark-testo mt-0.5">mai confermata</div>
                     )}
                   </td>
                   <td className="py-2 text-right">
                     <button
                       onClick={() => cambiaRegola(r.id, { attiva: !r.attiva })}
-                      className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                     >
                       {r.attiva ? "Disattiva" : "Riattiva"}
                     </button>
@@ -329,7 +329,7 @@ export default function Deducibilita() {
           </table>
         </div>
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
           <h3 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-3">
             Nuova regola
           </h3>
@@ -395,7 +395,7 @@ export default function Deducibilita() {
               type="button"
               disabled={saving || !form.etichetta.trim()}
               onClick={aggiungiRegola}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Salvo…" : "+ Aggiungi"}
             </button>
@@ -409,12 +409,12 @@ export default function Deducibilita() {
 function Riquadro({ etichetta, valore, nota, allarme }) {
   return (
     <div
-      className={`rounded-lg bg-white px-3 py-2.5 ring-1 ${
+      className={`rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ${
         allarme ? "ring-b58-gold-dark/40" : "ring-b58-charcoal/10"
       }`}
     >
       <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">{etichetta}</div>
-      <div className={`testo-sala-titolo ${allarme ? "text-b58-gold-dark" : "text-b58-charcoal"}`}>
+      <div className={`testo-sala-titolo ${allarme ? "text-b58-gold-dark-testo" : "text-b58-charcoal"}`}>
         {formatEUR(valore)}
       </div>
       {nota && <div className="testo-sala text-b58-charcoal-soft/70 mt-0.5">{nota}</div>}

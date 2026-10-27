@@ -44,7 +44,7 @@ import Didascalia from "../../components/Didascalia";
 
 const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-4";
 const campo =
-  "tocco-campo w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const etichetta = "block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1";
 
 const NOME_TIPO = {
@@ -341,7 +341,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                 patchRiga(i, { ingrediente_id: ing.id, nuovo_ingrediente: null });
                 setApertaRiga(null);
               }}
-              className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="underline text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               è la stessa cosa
             </button>
@@ -426,7 +426,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       <button
         type="button"
         onClick={() => setNumeriAperti(numeriAperti === i ? null : i)}
-        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
+        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo underline"
       >
         {numeriAperti === i ? "nascondi i numeri" : "correggi i numeri"}
       </button>
@@ -466,7 +466,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           className={`testo-sala-grande rounded-lg px-3 py-2 mb-3 ${
             quadra
               ? "bg-b58-olive/10 text-b58-charcoal"
-              : "bg-b58-terracotta/10 text-b58-terracotta-dark"
+              : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
           }`}
         >
           {quadra ? (
@@ -491,7 +491,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           <button
             type="button"
             onClick={() => apriAllegato(allegati[0])}
-            className="text-b58-terracotta hover:text-b58-terracotta-dark underline"
+            className="text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo underline"
           >
             Apri il documento ({allegati[0].file_name})
           </button>
@@ -508,7 +508,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           scelta non esiste, un menu con una voce sola è ingombro — e questa
           schermata è già stata bocciata una volta per troppa roba. */}
       {dentro.some(({ r }) => (listaPerIngrediente[r.ingrediente_id] ?? []).length > 0) && (
-        <div className="mb-3 rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2">
+        <div className="mb-3 rounded-lg bg-b58-campo border border-b58-charcoal/10 px-3 py-2">
           <p className="testo-sala-grande text-b58-charcoal mb-1">Sulla lista della spesa:</p>
           <ul className="testo-sala-grande text-b58-charcoal-soft space-y-1">
             {dentro.map(({ r, i }) => {
@@ -528,7 +528,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                     <select
                       value={r.riga_lista ?? scelta.id}
                       onChange={(e) => patchRiga(i, { riga_lista: e.target.value })}
-                      className="ml-2 tocco-campo rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 testo-sala"
+                      className="ml-2 tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-1.5 py-0.5 testo-sala"
                     >
                       {aperte.map((x) => (
                         <option key={x.id} value={x.id}>
@@ -551,7 +551,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           <button
             type="button"
             onClick={() => setNotiAperti((v) => !v)}
-            className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta text-left"
+            className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta-testo text-left"
           >
             <strong>{noti.length}</strong>{" "}
             {noti.length === 1 ? "riga già conosciuta" : "righe già conosciute"} entrano in
@@ -566,7 +566,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                   <button
                     type="button"
                     onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
-                    className="ml-2 testo-sala underline hover:text-b58-terracotta"
+                    className="ml-2 testo-sala underline hover:text-b58-terracotta-testo"
                   >
                     cambia
                   </button>
@@ -588,7 +588,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           </p>
           <ul className="testo-sala-grande text-b58-charcoal-soft space-y-0.5">
             {nuovi.map(({ r, i }) => (
-              <li key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 px-3 py-1.5">
+              <li key={i} className="rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/10 px-3 py-1.5">
                 <strong className="text-b58-charcoal">{r.nuovo_ingrediente.nome}</strong>
                 {" — "}
                 {Number(r.quantita) * (Number(r.fattore) || 1)} {unitaDi(r)}
@@ -597,7 +597,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                 <button
                   type="button"
                   onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
-                  className="ml-2 testo-sala underline hover:text-b58-terracotta"
+                  className="ml-2 testo-sala underline hover:text-b58-terracotta-testo"
                 >
                   {apertaRiga === i ? "chiudi" : "cambia"}
                 </button>
@@ -621,7 +621,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           </p>
           <div className="space-y-1.5">
             {daDecidere.map(({ r, i }) => (
-              <div key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10">
+              <div key={i} className="rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/10">
                 <button
                   type="button"
                   onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
@@ -652,7 +652,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       {Object.entries(rincari)
         .filter(([, v]) => v?.tipo === "rincaro" && v.da_segnalare)
         .map(([i, v]) => (
-          <p key={i} className="testo-sala-grande text-b58-terracotta-dark mb-1">
+          <p key={i} className="testo-sala-grande text-b58-terracotta-dark-testo mb-1">
             ⚠️ <strong>{nomeRiga(righe[i])}</strong>: prima lo pagavi {v.prezzo_precedente}, ora{" "}
             {(Number(righe[i].costo_unitario) / (Number(righe[i].fattore) || 1)).toFixed(2)} (+
             {v.variazione}%)
@@ -672,7 +672,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
               nuova. Di solito compri «{v.descrizione}»
               {v.fornitore ? ` da ${v.fornitore}` : ""} a {Number(v.prezzo).toFixed(2)} €; questa
               viene {v.prezzo_nuovo.toFixed(2)} € —{" "}
-              <strong className={diff > 0 ? "text-b58-terracotta-dark" : "text-b58-olive"}>
+              <strong className={diff > 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-testo"}>
                 {diff > 0 ? "+" : ""}
                 {diff.toFixed(0)}%
               </strong>
@@ -738,7 +738,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
         </div>
       </div>
       {par?.registra_haccp === true && (
-        <p className="testo-sala text-b58-terracotta-dark mt-1">
+        <p className="testo-sala text-b58-terracotta-dark-testo mt-1">
           Scriverà nel registro HACCP una consegna ricevuta <strong>adesso</strong>: accendila solo
           se la merce è appena arrivata.
         </p>
@@ -918,7 +918,7 @@ export default function PostaInArrivo() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Archivio Documenti
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
@@ -930,7 +930,7 @@ export default function PostaInArrivo() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -973,7 +973,7 @@ export default function PostaInArrivo() {
                     ["arresa", "lettore_fermo", "non_so"].includes(
                       statoLettura(m, tettoTentativi, lettore).chiave
                     )
-                      ? "testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
+                      ? "testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
                       : "testo-sala-grande text-b58-charcoal-soft mb-3"
                   }
                 >
@@ -986,7 +986,7 @@ export default function PostaInArrivo() {
                       type="button"
                       disabled={inCorso === m.id}
                       onClick={() => agisci(m.id, () => riprovaLettura(m.id))}
-                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark testo-sala-grande px-3 py-1.5"
+                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
                     >
                       {inCorso === m.id ? "…" : "Fai riprovare a leggerla"}
                     </button>
@@ -1007,7 +1007,7 @@ export default function PostaInArrivo() {
                           setLettore(await lettorePostaFermo());
                         })
                       }
-                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark testo-sala-grande px-3 py-1.5"
+                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
                     >
                       {inCorso === m.id ? "…" : "Leggila adesso"}
                     </button>
@@ -1023,7 +1023,7 @@ export default function PostaInArrivo() {
                   ce
                 );
                 return nota ? (
-                  <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                  <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
                     {nota.frase}
                   </p>
                 ) : null;
@@ -1055,7 +1055,7 @@ export default function PostaInArrivo() {
                     <button
                       type="button"
                       onClick={() => setTestoAperto(testoAperto === m.id ? null : m.id)}
-                      className="tocco-bottone testo-sala-grande text-b58-terracotta hover:underline"
+                      className="tocco-bottone testo-sala-grande text-b58-terracotta-testo hover:underline"
                     >
                       {testoAperto === m.id ? "Chiudi la mail" : "Leggi la mail"}
                     </button>
@@ -1063,7 +1063,7 @@ export default function PostaInArrivo() {
                       // `whitespace-pre-wrap` perché una mail va a capo dove
                       // ha deciso chi l'ha scritta, e `break-words` perché un
                       // link lungo non ha spazi: senza, sborda sul telefono.
-                      <p className="testo-sala-grande text-b58-charcoal bg-white/60 ring-1 ring-b58-charcoal/10 rounded-lg px-3 py-2 mt-2 whitespace-pre-wrap break-words">
+                      <p className="testo-sala-grande text-b58-charcoal bg-b58-campo/60 ring-1 ring-b58-charcoal/10 rounded-lg px-3 py-2 mt-2 whitespace-pre-wrap break-words">
                         {m.testo}
                       </p>
                     )}
@@ -1081,13 +1081,13 @@ export default function PostaInArrivo() {
                         <button
                           type="button"
                           onClick={() => apri(a)}
-                          className="text-b58-terracotta hover:underline"
+                          className="text-b58-terracotta-testo hover:underline"
                         >
                           {a.file_name}
                         </button>
                       ) : (
                         <span
-                          className="text-b58-terracotta-dark"
+                          className="text-b58-terracotta-dark-testo"
                           title={a.errore || "Non è stato possibile salvarlo"}
                         >
                           {a.file_name} — non salvato
@@ -1101,10 +1101,10 @@ export default function PostaInArrivo() {
               {daDecidere.map((a) => (
                 <div
                   key={a.id}
-                  className="rounded-lg bg-white/60 ring-1 ring-b58-charcoal/10 p-3 mt-3"
+                  className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 mt-3"
                 >
                   <div className="flex items-start gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0 mt-0.5">
+                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-sul-colore testo-sala font-medium px-2.5 py-1 shrink-0 mt-0.5">
                       {NOME_TIPO[a.tipo] ?? a.tipo}
                     </span>
                     <span className="text-b58-charcoal">
@@ -1227,7 +1227,7 @@ export default function PostaInArrivo() {
                     return (
                       <>
                         {bloccato && (
-                          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
                             {bloccato}
                           </p>
                         )}
@@ -1236,7 +1236,7 @@ export default function PostaInArrivo() {
                             muti sono stati chiusi il 27/08); quello che
                             mancava era farli arrivare sotto gli occhi. */}
                         {errore?.dove === a.id && (
-                          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
                             {errore.messaggio}
                           </p>
                         )}
@@ -1266,7 +1266,7 @@ export default function PostaInArrivo() {
                             type="button"
                             disabled={inCorso === a.id || !!bloccato}
                             onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
+                            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-3 py-1.5 testo-sala-grande"
                           >
                             {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
                           </button>
@@ -1286,7 +1286,7 @@ export default function PostaInArrivo() {
                             <button
                               type="button"
                               onClick={() => setAperta(aperta === a.id ? null : a.id)}
-                              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
+                              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo ml-1"
                             >
                               {aperta === a.id ? "Chiudi i campi" : "Correggi i dati"}
                             </button>
@@ -1308,14 +1308,14 @@ export default function PostaInArrivo() {
                 type="button"
                 disabled={inCorso === m.id}
                 onClick={() => agisci(m.id, () => scartaPosta(m.id))}
-                className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mt-3"
+                className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo mt-3"
               >
                 Non serve niente di tutto questo — togli la mail
               </button>
               {/* Anche qui l'esito sta sulla riga toccata: sia lo scarto sia
                   «fai riprovare a leggerla» passano da `agisci(m.id, …)`. */}
               {errore?.dove === m.id && (
-                <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
                   {errore.messaggio}
                 </p>
               )}

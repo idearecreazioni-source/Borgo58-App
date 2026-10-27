@@ -165,7 +165,7 @@ export default function TaskForm() {
   }
 
   const inputClass =
-    "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const siRipete = Boolean(form.ricorrenza_unita);
@@ -199,7 +199,7 @@ export default function TaskForm() {
   const rigaCompatta = "flex flex-wrap items-end gap-x-3 gap-y-2";
   const contenitoreCampo = "min-w-0 max-w-full testo-sala";
   const campoCompatto =
-    "block max-w-full rounded-lg border border-b58-charcoal/15 bg-white px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
+    "block max-w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
   // 🔴 L'ALTEZZA TORNA QUELLA DEGLI ALTRI CAMPI — 25/09/2026, dal
   //    censimento visivo. Era 0,75 cm (scelta dell'11/09, «troppo grandi»)
   //    e accanto ai campi da 0,85 si vedeva: 7,5 mm contro 8,5 nello stesso
@@ -280,7 +280,7 @@ export default function TaskForm() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link to="/agenda" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/agenda" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
@@ -288,7 +288,7 @@ export default function TaskForm() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -577,13 +577,13 @@ export default function TaskForm() {
                   sollecito_unita: "",
                 }))
               }
-              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
+              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo mt-1.5"
             >
               Rimuovi promemoria
             </button>
           )}
           {reminderSentAt && (
-            <p className="testo-sala text-b58-olive-dark mt-1.5">
+            <p className="testo-sala text-b58-olive-dark-testo mt-1.5">
               ✓ Promemoria già inviato il {new Date(reminderSentAt).toLocaleString("it-IT")}
             </p>
           )}
@@ -593,7 +593,7 @@ export default function TaskForm() {
           <button
             type="submit"
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>

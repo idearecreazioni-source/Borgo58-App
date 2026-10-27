@@ -111,7 +111,7 @@ export default function SezionePersonale() {
   }, [entityId]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -213,14 +213,14 @@ export default function SezionePersonale() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa, Banca e Prima Nota
         </Link>
         {entities && (
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -237,7 +237,7 @@ export default function SezionePersonale() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -261,7 +261,7 @@ export default function SezionePersonale() {
             {/* ⚠️ Il limite viaggia col numero: questo saldo non entra
                 nella previsione di cassa, perché una nota aperta non ha
                 una scadenza. */}
-            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
+            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
               {saldo?.avvertenza}
             </p>
           </div>
@@ -293,7 +293,7 @@ export default function SezionePersonale() {
             <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ho pagato io</h2>
 
             {tag.length === 0 ? (
-              <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+              <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
                 <p className="testo-sala-grande text-b58-charcoal mb-1">
                   Prima serve almeno un <strong>motivo</strong>.
                 </p>
@@ -317,14 +317,14 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Crea
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+              <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
                 {/* SPEC-0010, 11/09/2026: «Quando» in mezza riga (132 punti)
                     si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
                 <div className="riga-campi mb-3">
@@ -420,7 +420,7 @@ export default function SezionePersonale() {
                 </div>
 
                 {!form.documento.trim() && (
-                  <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                  <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
                     Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
                     registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
                     non aggiungi il documento.
@@ -510,7 +510,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
                     onClick={registra}
-                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
@@ -587,7 +587,7 @@ export default function SezionePersonale() {
                       {erroreRiga[n.id] && (
                         <p
                           data-prova="investimento-nota-errore"
-                          className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1"
+                          className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1"
                         >
                           {erroreRiga[n.id]}
                         </p>
@@ -596,7 +596,7 @@ export default function SezionePersonale() {
                     <span className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => pareggia(n.id)}
-                        className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5"
+                        className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3 py-1.5"
                       >
                         Mi sono rimborsato
                       </button>
@@ -675,7 +675,7 @@ export default function SezionePersonale() {
                         </span>
                       </label>
                       {erroreRiga[n.id] && (
-                        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
+                        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
                           {erroreRiga[n.id]}
                         </p>
                       )}

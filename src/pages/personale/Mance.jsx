@@ -93,7 +93,7 @@ export default function Mance() {
   }, [tipsYear]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleCollect = async () => {
     if (!collectForm.amount || Number(collectForm.amount) <= 0) return;
@@ -213,11 +213,11 @@ export default function Mance() {
   return (
     <div className="testo-sala max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Personale
         </Link>
         {entities && (
-          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal">
+          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala text-b58-charcoal">
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
           </select>
@@ -238,7 +238,7 @@ export default function Mance() {
       </p>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -259,7 +259,7 @@ export default function Mance() {
           {/* Raccolta */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
             <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Raccolta</h2>
-            <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 flex flex-wrap gap-2 items-end mb-4">
+            <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 flex flex-wrap gap-2 items-end mb-4">
               <input type="number" step="0.01" min="0" value={collectForm.amount} onChange={(e) => setCollectForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Importo €" className={inputClass + " w-32"} />
               <input type="date" value={collectForm.collected_date} onChange={(e) => setCollectForm((f) => ({ ...f, collected_date: e.target.value }))} className={inputClass + " w-40"} />
               {/* ⚠️ Dove sono finiti quei soldi: in contanti restano nel
@@ -270,7 +270,7 @@ export default function Mance() {
                 {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
               </select>
               <input value={collectForm.note} onChange={(e) => setCollectForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativa)" className={inputClass + " flex-1 min-w-[120px]"} />
-              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60">
+              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60">
                 + Registra raccolta
               </button>
             </div>
@@ -373,12 +373,12 @@ export default function Mance() {
                   {employees.map((emp) => {
                     const check = allocations[emp.id] ? regimeCheck(emp) : null;
                     const checkColor =
-                      check?.level === "danger" ? "text-b58-terracotta-dark"
-                        : check?.level === "warning" ? "text-b58-gold-dark"
-                          : check?.level === "ok" ? "text-b58-olive-dark"
+                      check?.level === "danger" ? "text-b58-terracotta-dark-testo"
+                        : check?.level === "warning" ? "text-b58-gold-dark-testo"
+                          : check?.level === "ok" ? "text-b58-olive-dark-testo"
                             : "text-b58-charcoal-soft";
                     return (
-                      <div key={emp.id} className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                      <div key={emp.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                         <div className="flex items-center justify-between gap-3">
                           <span className="testo-sala text-b58-charcoal">{emp.last_name} {emp.first_name}</span>
                           <input
@@ -401,7 +401,7 @@ export default function Mance() {
                   <span className="testo-sala text-b58-charcoal-soft">
                     Totale da distribuire: <span className="text-b58-charcoal font-medium">{formatEUR(allocationTotal)}</span>
                     {oltreIlMonte && (
-                      <span className="text-b58-terracotta-dark">
+                      <span className="text-b58-terracotta-dark-testo">
                         {" "}· supera il monte disponibile di {formatEUR(allocationTotal - Number(balance.balance))}
                       </span>
                     )}
@@ -415,7 +415,7 @@ export default function Mance() {
                     type="button"
                     disabled={busy || allocationTotal <= 0 || oltreIlMonte}
                     onClick={handleRegisterDistribution}
-                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                   >
                     Registra distribuzione
                   </button>

@@ -163,7 +163,7 @@ export default function MagazzinoHome() {
   };
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="testo-sala max-w-5xl mx-auto">
@@ -189,7 +189,7 @@ export default function MagazzinoHome() {
             ) : (
               <>
                 {sottoSoglia > 0 ? (
-                  <strong className="text-b58-terracotta-dark">
+                  <strong className="text-b58-terracotta-dark-testo">
                     {sottoSoglia} sotto scorta minima
                   </strong>
                 ) : (
@@ -197,7 +197,7 @@ export default function MagazzinoHome() {
                 )}
                 {" · "}
                 {inScadenza > 0 ? (
-                  <strong className="text-b58-gold-dark">
+                  <strong className="text-b58-gold-dark-testo">
                     {inScadenza === 1 ? "1 scade" : `${inScadenza} scadono`} entro tre giorni
                   </strong>
                 ) : (
@@ -306,7 +306,7 @@ export default function MagazzinoHome() {
           </Link>
           <Link
             to="/magazzino/carico"
-            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4"
           >
             + Registra carico
           </Link>
@@ -314,7 +314,7 @@ export default function MagazzinoHome() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -491,7 +491,7 @@ export default function MagazzinoHome() {
             onClick={() => setSearchParams({})}
             className={`tocco-bottone rounded-lg border px-3 testo-sala font-medium transition-colors ${
               mondoScelto === ""
-                ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                 : "border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal"
             }`}
           >
@@ -504,7 +504,7 @@ export default function MagazzinoHome() {
               onClick={() => setSearchParams({ mondo: m.codice })}
               className={`tocco-bottone rounded-lg border px-3 testo-sala font-medium transition-colors ${
                 mondoScelto === m.codice
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                   : "border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal"
               }`}
             >
@@ -547,7 +547,7 @@ export default function MagazzinoHome() {
              numero qui sopra e a quella con cui risponde MEMO. */
           segno={(l) =>
             sottoScorta(l) ? (
-              <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+              <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                 sotto scorta minima
               </span>
             ) : null
@@ -655,7 +655,7 @@ export default function MagazzinoHome() {
                   type="button"
                   disabled={saving || !consumptionForm.quantity}
                   onClick={() => handleConsumption(l.ingredient_id)}
-                  className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60"
+                  className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "Conferma"}
                 </button>

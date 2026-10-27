@@ -18,7 +18,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
   const [salvando, setSalvando] = useState(false);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
 
   const pagata = fattura.status === "pagata";
@@ -89,7 +89,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
             type="button"
             disabled={salvando || !(valore > 0) || !data}
             onClick={salva}
-            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
           >
             {salvando ? "Registro…" : "Registra la nota"}
           </button>

@@ -152,7 +152,7 @@ export default function AndamentoMensile() {
   }, [carica]);
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   // ⚠️ DUE GESTI SEPARATI, non «cancella e rifai» in un colpo solo
   // (decisione di Alessio, 16/08): prima si cancella, poi si rifotografa.
@@ -215,13 +215,13 @@ export default function AndamentoMensile() {
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
-      <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Proiezione fiscale
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">Come sta andando</h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       <div className="flex flex-wrap gap-2 items-end mb-6">
@@ -257,7 +257,7 @@ export default function AndamentoMensile() {
           tabella diventano quelli di un altro anno, e la metà alta resta
           perfettamente sana. È il modo peggiore di sbagliare. */}
       {annoAltrove != null && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <strong>Attenzione:</strong> stai guardando il {anno} confrontato con una previsione del{" "}
           {annoAltrove}. I numeri del piano, la stima a dicembre e le imposte qui sotto sono quelli
           del {annoAltrove}, non del {anno}.
@@ -265,7 +265,7 @@ export default function AndamentoMensile() {
       )}
 
       {stato?.parziale && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <strong>Mese in corso:</strong> {stato.giorni_trascorsi} giorni su {stato.giorni_mese}. Il
           confronto è rapportato ai giorni passati, quindi è una fotografia parziale — non un mese andato
           male.
@@ -303,7 +303,7 @@ export default function AndamentoMensile() {
                 <button
                   type="button"
                   onClick={() => togliPeriodo(p.id)}
-                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                 >
                   togli
                 </button>
@@ -347,7 +347,7 @@ export default function AndamentoMensile() {
               type="button"
               disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
               onClick={aggiungiPeriodo}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Segna
             </button>
@@ -360,7 +360,7 @@ export default function AndamentoMensile() {
       ) : (
         <>
           {/* --- Cosa si è potuto misurare --- */}
-          <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+          <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal">
                 Il mese vero
@@ -374,13 +374,13 @@ export default function AndamentoMensile() {
                 <button
                   onClick={chiudi}
                   disabled={chiudendo}
-                  className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {chiudendo ? "Chiudo…" : "Fotografa questo mese"}
                 </button>
               )}
               {stato?.mese_chiuso && (
-                <span className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-1.5">
+                <span className="testo-sala text-b58-olive-dark-testo bg-b58-olive/10 rounded-lg px-3 py-1.5">
                   Mese chiuso — questi numeri non cambiano più
                 </span>
               )}
@@ -407,7 +407,7 @@ export default function AndamentoMensile() {
 
           {/* --- Il piano sovrapposto ai numeri veri --- */}
           {anno_.length > 0 && (
-            <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6 overflow-x-auto">
+            <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6 overflow-x-auto">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
                 In che direzione stiamo andando — {anno}
                 <Didascalia>
@@ -437,7 +437,7 @@ export default function AndamentoMensile() {
                         <span className="text-b58-charcoal-soft">Reale a oggi</span>
                         <span className="text-right tabular-nums text-b58-charcoal">{r.misurato ? q(r.reale_a_oggi) : "non misurato"}</span>
                         <span className="text-b58-charcoal-soft">Scarto</span>
-                        <span className={`text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark font-medium" : "text-b58-olive-dark"}`}>{scarto}</span>
+                        <span className={`text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark-testo font-medium" : "text-b58-olive-dark-testo"}`}>{scarto}</span>
                         <span className="text-b58-charcoal-soft">Stima a dicembre</span>
                         <span className="text-right tabular-nums font-medium text-b58-charcoal">{q(r.proiettato_anno)}</span>
                       </div>
@@ -480,7 +480,7 @@ export default function AndamentoMensile() {
                             {r.misurato ? q(r.reale_a_oggi)
                               : <span className="text-b58-charcoal-soft/50 testo-sala">non misurato</span>}
                           </td>
-                          <td className={`py-1.5 text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark font-medium" : "text-b58-olive-dark"}`}>
+                          <td className={`py-1.5 text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark-testo font-medium" : "text-b58-olive-dark-testo"}`}>
                             {r.scarto_percento == null ? "—"
                               : r.unita === "percento"
                                 ? `${Number(r.scarto_percento) > 0 ? "+" : ""}${Number(r.scarto_percento).toLocaleString("it-IT", { maximumFractionDigits: 1 })} punti`
@@ -564,13 +564,13 @@ export default function AndamentoMensile() {
                       )}
                       <Link
                         to="/cassa/scontrinato"
-                        className="testo-sala text-b58-terracotta-dark underline mt-1 inline-block"
+                        className="testo-sala text-b58-terracotta-dark-testo underline mt-1 inline-block"
                       >
                         Vedi i {dueImposte.conti_sospesi} conti da sistemare →
                       </Link>
                     </div>
                   )}
-                  <p className={`testo-sala rounded px-2 py-1.5 mt-3 ${fineAnno.voci_misurate > 0 ? "text-b58-charcoal-soft bg-b58-cream-dark" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
+                  <p className={`testo-sala rounded px-2 py-1.5 mt-3 ${fineAnno.voci_misurate > 0 ? "text-b58-charcoal-soft bg-b58-cream-dark" : "text-b58-terracotta-dark-testo bg-b58-terracotta/10"}`}>
                     {fineAnno.voci_misurate} voci misurate su {fineAnno.voci_totali}. {avvisoFineAnno}
                   </p>
                 </div>
@@ -612,7 +612,7 @@ export default function AndamentoMensile() {
                           {s.misurato ? (s.reale == null ? "—" : Number(s.reale).toLocaleString("it-IT"))
                             : <span className="text-b58-charcoal-soft/50 testo-sala">non misurato</span>}
                         </td>
-                        <td className={`py-1.5 text-right tabular-nums ${Number(s.scostamento) < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"}`}>
+                        <td className={`py-1.5 text-right tabular-nums ${Number(s.scostamento) < 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-dark-testo"}`}>
                           {s.scostamento == null ? "—" : formatEUR(s.scostamento)}
                         </td>
                       </tr>
@@ -638,7 +638,7 @@ export default function AndamentoMensile() {
 
           {/* --- Il budget degli omaggi --- */}
           {budget && (
-            <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+            <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">Quanti omaggi puoi permetterti</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 testo-sala-grande">
                 <div>
@@ -663,7 +663,7 @@ export default function AndamentoMensile() {
                 </div>
               </div>
               {avvisoBudget && (
-                <p className={`testo-sala rounded px-2 py-1.5 mt-3 ${budget.misurato ? "text-b58-olive-dark bg-b58-olive/10" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
+                <p className={`testo-sala rounded px-2 py-1.5 mt-3 ${budget.misurato ? "text-b58-olive-dark-testo bg-b58-olive/10" : "text-b58-terracotta-dark-testo bg-b58-terracotta/10"}`}>
                   {avvisoBudget}
                 </p>
               )}
@@ -695,7 +695,7 @@ export default function AndamentoMensile() {
 
           {/* --- I mesi già chiusi --- */}
           {consuntivi.length > 0 && (
-            <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5">
+            <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">I mesi già fotografati</h2>
               <div className="overflow-x-auto">
                 <table className="w-full testo-sala-grande">
@@ -718,7 +718,7 @@ export default function AndamentoMensile() {
                               la famiglia di difetti contro cui è nato questo
                               lavoro. */}
                           {c.chiusure_precedenti > 0 && (
-                            <span className="testo-sala text-b58-gold-dark bg-b58-gold/15 rounded-full px-2 py-0.5 ml-2">
+                            <span className="testo-sala text-b58-gold-dark-testo bg-b58-gold/15 rounded-full px-2 py-0.5 ml-2">
                               rifatta
                               {c.chiusure_precedenti > 1 ? ` ${c.chiusure_precedenti} volte` : ""}
                               {c.prima_chiusura_il

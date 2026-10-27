@@ -40,7 +40,7 @@ export default function Causali() {
   }, [causali]);
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!newLabel.trim()) return;
@@ -90,7 +90,7 @@ export default function Causali() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Cassa
       </Link>
       {/* 🔴 I TRE PARAGRAFI SONO PASSATI DIETRO IL «?» — 25/10/2026,
@@ -121,10 +121,10 @@ export default function Causali() {
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
-      <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
+      <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
         <input
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
@@ -140,7 +140,7 @@ export default function Causali() {
           type="button"
           disabled={saving || !newLabel.trim()}
           onClick={handleAdd}
-          className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>
@@ -177,7 +177,7 @@ export default function Causali() {
                         <button
                           onClick={() => handleRemove(c.id)}
                           data-disattiva-causale
-                          className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                           title="Disattiva"
                           aria-label={`Disattiva la causale «${c.label}»`}
                         >
@@ -199,7 +199,7 @@ export default function Causali() {
                         <select
                           value={c.regola_deducibilita_id || ""}
                           onChange={(e) => handleRegola(c.id, e.target.value)}
-                          className="w-full mt-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                          className="w-full mt-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
                         >
                           <option value="">deducibilità: da dire</option>
                           {regole.map((r) => (

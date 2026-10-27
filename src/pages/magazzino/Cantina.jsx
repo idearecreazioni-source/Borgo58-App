@@ -125,7 +125,7 @@ export default function Cantina() {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <Link
           to="/magazzino"
-          className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           ← Magazzino
         </Link>
@@ -133,7 +133,7 @@ export default function Cantina() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-4">Cantina</h1>
 
       {esito && (
-        <p className="testo-sala-grande text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-3">
+        <p className="testo-sala-grande text-b58-olive-dark-testo bg-b58-olive/10 rounded-lg px-3 py-2 mb-3">
           {esito}
         </p>
       )}
@@ -154,7 +154,7 @@ export default function Cantina() {
             value={scelto}
             onChange={(e) => setScelto(e.target.value)}
             disabled={nonLetto(prodotti)}
-            className="tocco-campo max-w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo max-w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal"
           >
             {/* ⚠️ Un elenco vuoto NON resta muto: si leggerebbe «non c'è
                 niente da stappare», che è falso — i prodotti ci sono,
@@ -177,13 +177,13 @@ export default function Cantina() {
             type="button"
             disabled={!scelto || inCorso === "apri"}
             onClick={apri}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
           >
             {inCorso === "apri" ? "Apro…" : "Stappa"}
           </button>
         </div>
         {errore?.dove === "apri" && (
-          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
             {errore.messaggio}
           </p>
         )}
@@ -200,7 +200,7 @@ export default function Cantina() {
           </span>
         </h2>
         {nonLetto(aperte) ? (
-          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
             Non sono riuscito a leggere le bottiglie aperte.{" "}
             <button type="button" onClick={caricaAperte} className="tocco-testo underline">
               Riprova
@@ -241,14 +241,14 @@ export default function Cantina() {
                       step="0.5"
                       value={calici}
                       onChange={(e) => setCalici(e.target.value)}
-                      className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande w-24"
+                      className="tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande w-24"
                     />
                   </label>
                   <button
                     type="button"
                     disabled={inCorso === b.id}
                     onClick={() => chiudi(b, "buttata")}
-                    className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 text-b58-parchment testo-sala-grande px-3 py-1.5"
+                    className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 text-b58-sul-colore testo-sala-grande px-3 py-1.5"
                   >
                     {inCorso === b.id ? "Registro…" : "Butta il fondo"}
                   </button>
@@ -263,7 +263,7 @@ export default function Cantina() {
                     Lascia stare
                   </button>
                   {errore?.dove === b.id && (
-                    <p className="w-full testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+                    <p className="w-full testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
                       {errore.messaggio}
                     </p>
                   )}
@@ -290,7 +290,7 @@ export default function Cantina() {
                     Butto il fondo…
                   </button>
                   {errore?.dove === b.id && (
-                    <p className="w-full testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+                    <p className="w-full testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
                       {errore.messaggio}
                     </p>
                   )}
@@ -320,7 +320,7 @@ export default function Cantina() {
               type="date"
               value={dal}
               onChange={(e) => setDal(e.target.value)}
-              className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
+              className="tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande"
             />
           </label>
           <label className="testo-sala text-b58-charcoal-soft">
@@ -329,13 +329,13 @@ export default function Cantina() {
               type="date"
               value={al}
               onChange={(e) => setAl(e.target.value)}
-              className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
+              className="tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande"
             />
           </label>
         </div>
 
         {nonLetto(inventario) ? (
-          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
             Non sono riuscito a leggere l&apos;inventario.{" "}
             <button type="button" onClick={caricaInventario} className="tocco-testo underline">
               Riprova

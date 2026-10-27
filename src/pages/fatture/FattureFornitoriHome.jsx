@@ -209,7 +209,7 @@ export default function FattureFornitoriHome() {
   }, [tutteDaPagare]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
 
   const filtroAttivo = Boolean(filtri.supplierId || filtri.dal || filtri.al);
@@ -433,7 +433,7 @@ export default function FattureFornitoriHome() {
           <span key={u.id} className="text-b58-charcoal-soft">
             {" · nota "}
             {u.nota?.numero ? `${u.nota.numero} ` : ""}
-            <strong className="text-b58-terracotta-dark">−{formatEUR(u.importo)}</strong>
+            <strong className="text-b58-terracotta-dark-testo">−{formatEUR(u.importo)}</strong>
             {inv.status !== "pagata" && (
               <span className="ml-1 inline-block align-middle">
                 <ConfermaDistruttiva
@@ -564,7 +564,7 @@ export default function FattureFornitoriHome() {
               arriva dallo SDI si legge invece di ricopiarlo. */}
           <Link
             to="/fatture-fornitori/da-file"
-            className="tocco-bottone inline-flex items-center mt-2 rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal"
+            className="tocco-bottone inline-flex items-center mt-2 rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal"
           >
             Carica una fattura elettronica
           </Link>
@@ -617,7 +617,7 @@ export default function FattureFornitoriHome() {
           credito»). */}
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -662,7 +662,7 @@ export default function FattureFornitoriHome() {
             Chiudi
           </button>
         </div>
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <select
               value={form.entity_id}
@@ -692,7 +692,7 @@ export default function FattureFornitoriHome() {
                 nel dubbio si impara a ignorare, e allora non avvisa piu'
                 nemmeno quando serve. */}
             {suppliers.find((s) => s.id === form.supplier_id)?.regime_esonero === true && (
-              <p className="testo-sala text-b58-terracotta-dark sm:col-span-2">
+              <p className="testo-sala text-b58-terracotta-dark-testo sm:col-span-2">
                 ⚠️ Questo fornitore è in regime di esonero: l&apos;autofattura la devi emettere tu.
                 Il gestionale non la emette — passa da Fatture in Cloud.
               </p>
@@ -758,7 +758,7 @@ export default function FattureFornitoriHome() {
               type="button"
               disabled={saving || !form.supplier_id || !form.invoice_date || !form.amount}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra fattura"}
             </button>
@@ -778,7 +778,7 @@ export default function FattureFornitoriHome() {
           fornitore prende la riga, le due date hanno la loro larghezza, e
           «Togli i filtri» sul telefono sta su una riga sua, allineato ai
           campi; da 640 punti in su resta in fondo alla riga. */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 mb-4 riga-campi">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-4 mb-4 riga-campi">
         <div className="cella-larga">
           <label className={labelClass}>Fornitore</label>
           <select
@@ -815,7 +815,7 @@ export default function FattureFornitoriHome() {
             <button
               type="button"
               onClick={() => cambiaFiltro({ supplierId: "", dal: "", al: "" })}
-              className="tocco-campo inline-flex items-center testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-campo inline-flex items-center testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               Togli i filtri
             </button>
@@ -832,7 +832,7 @@ export default function FattureFornitoriHome() {
           onClick={() => setSezione("da_pagare")}
           className={`tocco-bottone rounded-lg px-4 testo-sala-grande ${
             sezione === "da_pagare"
-              ? "bg-b58-charcoal text-b58-parchment"
+              ? "bg-b58-inverso text-b58-sul-colore"
               : "border border-b58-charcoal/20 text-b58-charcoal-soft"
           }`}
         >
@@ -843,7 +843,7 @@ export default function FattureFornitoriHome() {
           onClick={() => setSezione("pagate")}
           className={`tocco-bottone rounded-lg px-4 testo-sala-grande ${
             sezione === "pagate"
-              ? "bg-b58-charcoal text-b58-parchment"
+              ? "bg-b58-inverso text-b58-sul-colore"
               : "border border-b58-charcoal/20 text-b58-charcoal-soft"
           }`}
         >
@@ -852,7 +852,7 @@ export default function FattureFornitoriHome() {
         <select
           value={ordine}
           onChange={(e) => setOrdine(e.target.value)}
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 testo-sala-grande text-b58-charcoal"
           aria-label="Come ordinare"
         >
           <option value="scadenza">Ordina: scadenza</option>
@@ -888,7 +888,7 @@ export default function FattureFornitoriHome() {
             {ordinate(daPagare).map((inv) => {
               const urgency = dueUrgency(inv.due_date);
               return (
-                <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+                <li key={inv.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
                       <span className="testo-sala text-b58-charcoal font-medium">{inv.supplier.name}</span>
@@ -904,9 +904,9 @@ export default function FattureFornitoriHome() {
                           <span
                             className={
                               urgency === "danger"
-                                ? "text-b58-terracotta-dark font-medium"
+                                ? "text-b58-terracotta-dark-testo font-medium"
                                 : urgency === "warning"
-                                ? "text-b58-gold-dark font-medium"
+                                ? "text-b58-gold-dark-testo font-medium"
                                 : ""
                             }
                           >
@@ -965,7 +965,7 @@ export default function FattureFornitoriHome() {
                         onClick={() =>
                           payingId === inv.id ? setPayingId(null) : apriPagamento(inv)
                         }
-                        className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                        className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                       >
                         {/* ⚠️ «LASCIA PERDERE», NON «ANNULLA» (22/08). Qui
                             «Annulla» stava a 1,62 mm da «Rimuovi», che
@@ -1001,7 +1001,7 @@ export default function FattureFornitoriHome() {
 
                   {/* Il rifiuto accanto al gesto: vedi `erroreRiga`. */}
                   {erroreRiga?.id === inv.id && (
-                    <p className="mt-2 testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
+                    <p className="mt-2 testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1.5">
                       {erroreRiga.messaggio}
                     </p>
                   )}
@@ -1062,7 +1062,7 @@ export default function FattureFornitoriHome() {
                           type="button"
                           disabled={paying || !dataUscita}
                           onClick={() => handlePay(inv.id)}
-                          className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                          className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                         >
                           {paying ? "Confermo…" : "Conferma pagamento"}
                         </button>
@@ -1131,7 +1131,7 @@ export default function FattureFornitoriHome() {
                         </p>
                       )}
                       {dataUscita && dataUscita < inv.invoice_date && (
-                        <p className="testo-sala text-b58-gold-dark mt-2">
+                        <p className="testo-sala text-b58-gold-dark-testo mt-2">
                           Escono <strong>prima</strong> della data della fattura
                           ({formatDate(inv.invoice_date)}): è un acconto? Se invece hai sbagliato il
                           giorno, correggilo — in prima nota resterebbe così.
@@ -1178,7 +1178,7 @@ export default function FattureFornitoriHome() {
           )}
           <ul className="space-y-2">
             {ordinate(pagate.righe).map((inv) => (
-              <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+              <li key={inv.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
                 <div className="testo-sala text-b58-charcoal-soft flex items-center justify-between gap-2 flex-wrap">
                   <span>
                     <span className="text-b58-charcoal">{inv.supplier.name}</span>

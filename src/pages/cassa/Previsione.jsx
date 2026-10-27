@@ -122,7 +122,7 @@ export default function Previsione() {
   }, [entityId, giorni]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -192,7 +192,7 @@ export default function Previsione() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa, Banca e Prima Nota
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -200,7 +200,7 @@ export default function Previsione() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -209,7 +209,7 @@ export default function Previsione() {
           <select
             value={giorni}
             onChange={(e) => setGiorni(Number(e.target.value))}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {ORIZZONTI.map((o) => (
               <option key={o.giorni} value={o.giorni}>fra {o.label}</option>
@@ -228,7 +228,7 @@ export default function Previsione() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -246,7 +246,7 @@ export default function Previsione() {
             </div>
             <div
               className={`text-3xl font-medium mb-3 ${
-                negativo ? "text-b58-terracotta-dark" : "text-b58-charcoal"
+                negativo ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"
               }`}
             >
               {previsione ? formatEUR(previsione.saldo_previsto) : "—"}
@@ -257,14 +257,14 @@ export default function Previsione() {
                 <span>cassa {formatEUR(previsione.oggi_cassa)}</span>
                 <span>+ banca {formatEUR(previsione.oggi_banca)}</span>
                 <span>+ carta in arrivo {formatEUR(previsione.pos_in_arrivo)}</span>
-                <span className="text-b58-terracotta-dark">
+                <span className="text-b58-terracotta-dark-testo">
                   − da pagare {formatEUR(previsione.uscite_attese)} ({previsione.quante_uscite})
                 </span>
               </div>
             )}
 
             {negativo && (
-              <p className="testo-sala-grande text-b58-terracotta-dark mt-3 font-medium">
+              <p className="testo-sala-grande text-b58-terracotta-dark-testo mt-3 font-medium">
                 Con quello che deve uscire, a quella data i soldi non bastano.
               </p>
             )}
@@ -272,7 +272,7 @@ export default function Previsione() {
             {/* ⚠️ L'avvertenza arriva dal database insieme al numero, e qui
                 dichiara il buco più grosso: mancano gli stipendi, che sono
                 la voce più pesante dell'anno. */}
-            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 leading-relaxed">
+            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 leading-relaxed">
               {previsione?.avvertenza}
             </p>
           </div>
@@ -354,7 +354,7 @@ export default function Previsione() {
               />
             )}
             {!nonLetto(oltre) && oltre?.quante_oltre > 0 && (
-              <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
+              <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
                 Oltre questa data{" "}
                 {oltre.quante_oltre === 1
                   ? "c'è un'uscita già registrata"
@@ -418,14 +418,14 @@ export default function Previsione() {
                       {s.chiusa_il ? (
                         <button
                           onClick={() => riapri(s.id)}
-                          className="testo-sala text-b58-olive-dark hover:text-b58-charcoal"
+                          className="testo-sala text-b58-olive-dark-testo hover:text-b58-charcoal"
                         >
                           rimettila in elenco
                         </button>
                       ) : (
                         <button
                           onClick={() => chiudi(s.id)}
-                          className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                         >
                           non serve più
                         </button>
@@ -436,7 +436,7 @@ export default function Previsione() {
               </ul>
             )}
 
-            <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+            <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
               {/* SPEC-0010, 11/09/2026: «Scade il» in mezza riga (132 punti)
                   si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
               <div className="riga-campi mb-3">
@@ -499,7 +499,7 @@ export default function Previsione() {
                   type="button"
                   disabled={saving || !form.descrizione.trim() || !form.importo}
                   onClick={aggiungiScadenza}
-                  className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "+ Aggiungi"}
                 </button>
@@ -524,18 +524,18 @@ export default function Previsione() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+              <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-charcoal/10">
                 <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">In arrivo (lordo)</div>
                 <div className="testo-sala-titolo text-b58-charcoal">{pos ? formatEUR(pos.lordo) : "—"}</div>
                 <div className="testo-sala text-b58-charcoal-soft/70">{pos?.conti ?? 0} conti</div>
               </div>
-              <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+              <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-charcoal/10">
                 <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Commissioni</div>
                 <div className="testo-sala-titolo text-b58-charcoal">
                   {pos?.commissioni != null ? formatEUR(pos.commissioni) : "—"}
                 </div>
               </div>
-              <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+              <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-charcoal/10">
                 <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Arriverà</div>
                 <div className="testo-sala-titolo text-b58-charcoal">
                   {pos?.netto_atteso != null ? formatEUR(pos.netto_atteso) : "—"}
@@ -543,11 +543,11 @@ export default function Previsione() {
               </div>
             </div>
 
-            <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4 leading-relaxed">
+            <p className="testo-sala text-b58-charcoal-soft bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4 leading-relaxed">
               {pos?.avvertenza}
             </p>
 
-            <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+            <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div>
                   <label className={labelClass}>Accredita dopo (giorni)</label>

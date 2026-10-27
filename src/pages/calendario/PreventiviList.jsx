@@ -74,7 +74,7 @@ export default function PreventiviList() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Calendario eventi
       </Link>
       <div className="flex items-center justify-between gap-4 mt-1 mb-6">
@@ -82,14 +82,14 @@ export default function PreventiviList() {
         <button
           onClick={nuovo}
           disabled={creando}
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 text-b58-parchment testo-sala-grande px-4 py-2"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 text-b58-sul-colore testo-sala-grande px-4 py-2"
         >
           {creando ? "…" : "Nuovo preventivo"}
         </button>
       </div>
 
       {errore && (
-        <div className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <p>{errore}</p>
           <button onClick={carica} className="underline testo-sala mt-1">
             Riprova

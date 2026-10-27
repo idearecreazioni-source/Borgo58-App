@@ -151,7 +151,7 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         // in larghezza: la misura sta nel foglio di stile, in un posto
         // solo, e ricopiarla qui vorrebbe dire due numeri che un giorno
         // divergono.
-        className="tocco-bottone inline-flex items-center justify-center text-b58-charcoal-soft/60 hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center justify-center text-b58-charcoal-soft/60 hover:text-b58-terracotta-testo"
       >
         {/* Il segno disegnato: piccolo, perché accanto a un titolo non
             deve pesare. Il bersaglio che risponde al dito è il pulsante
@@ -170,7 +170,7 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
           id={id}
           role="tooltip"
           style={{ left: spostamento }}
-          className="absolute top-full z-30 mt-1 w-64 max-w-[80vw] rounded-lg bg-b58-charcoal px-3 py-2 testo-sala font-normal normal-case tracking-normal text-b58-parchment shadow-lg"
+          className="absolute top-full z-30 mt-1 w-64 max-w-[80vw] rounded-lg bg-b58-inverso px-3 py-2 testo-sala font-normal normal-case tracking-normal text-b58-sul-colore shadow-lg"
         >
           {children}
         </span>

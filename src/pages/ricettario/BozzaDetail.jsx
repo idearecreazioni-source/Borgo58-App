@@ -245,7 +245,7 @@ export default function BozzaDetail() {
       {errore && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{errore}</p>}
       {avvisoAssistente && <p className="mb-4 rounded bg-amber-50 p-3 text-amber-900">{avvisoAssistente}</p>}
       {proposte.length > 0 && !ferma && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-b58-olive/10 p-3 text-b58-olive-dark ring-1 ring-b58-olive/20">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-b58-olive/10 p-3 text-b58-olive-dark-testo ring-1 ring-b58-olive/20">
           <span>
             Proposte dall'assistente: {proposte.join(", ")}. Controllale e correggi dove serve.
           </span>
@@ -296,7 +296,7 @@ export default function BozzaDetail() {
           </p>
           <button
             type="button"
-            className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
+            className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore"
             onClick={() => setInCucina(true)}
           >
             Mettila nel Ricettario
@@ -341,7 +341,7 @@ export default function BozzaDetail() {
                 <button
                   type="button"
                   disabled={lavorando || (conferma.esito === "ricetta" && buchi.length > 0)}
-                  className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
+                  className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore disabled:opacity-50"
                   onClick={confermaDavvero}
                 >
                   {lavorando
@@ -365,7 +365,7 @@ export default function BozzaDetail() {
               <button
                 type="button"
                 disabled={buchi.length > 0}
-                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore disabled:opacity-50"
                 onClick={() => apriConferma("ricetta")}
               >
                 Crea la ricetta

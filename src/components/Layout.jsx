@@ -71,7 +71,7 @@ export default function Layout() {
         <button
           type="button"
           onClick={continua}
-          className="tocco-bottone rounded-lg bg-b58-charcoal text-b58-parchment testo-sala font-medium px-3"
+          className="tocco-bottone rounded-lg bg-b58-inverso text-b58-sul-colore testo-sala font-medium px-3"
         >
           Continua a registrare
         </button>
@@ -142,7 +142,7 @@ export default function Layout() {
           </div>
           <button
             aria-label="Chiudi menu"
-            className="flex-1 bg-b58-charcoal/40"
+            className="flex-1 bg-b58-velo/40"
             onClick={() => {
               setSospeso(null);
               setMobileOpen(false);

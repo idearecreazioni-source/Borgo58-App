@@ -4,7 +4,7 @@ export const PHASES = {
   1: { label: "Fase 1 · Nucleo operativo", colorClass: "bg-b58-terracotta" },
   2: { label: "Fase 2 · Fiscale e amministrativo", colorClass: "bg-b58-olive" },
   3: { label: "Fase 3 · Comunicazione", colorClass: "bg-b58-gold" },
-  4: { label: "Fase 4 · Extra, quando serve", colorClass: "bg-b58-charcoal-soft" },
+  4: { label: "Fase 4 · Extra, quando serve", colorClass: "bg-b58-inverso-soft" },
 };
 
 export const MODULES = [

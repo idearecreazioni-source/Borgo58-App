@@ -97,7 +97,7 @@ export default function RegistraCarico() {
   const selectedIngredient = ingredients.find((i) => i.ingredient_id === form.ingredient_id);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -136,13 +136,13 @@ export default function RegistraCarico() {
 
   return (
     <div className="testo-sala max-w-xl mx-auto">
-      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Magazzino
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Registra carico</h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -240,7 +240,7 @@ export default function RegistraCarico() {
         )}
 
         {rigaChePrende && (
-          <div className="rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 testo-sala text-b58-charcoal">
+          <div className="rounded-lg bg-b58-campo border border-b58-charcoal/10 px-3 py-2 testo-sala text-b58-charcoal">
             Questo carico va sulla riga della lista della spesa
             {rigaChePrende.quantita_richiesta != null && (
               <>
@@ -259,7 +259,7 @@ export default function RegistraCarico() {
               <select
                 value={rigaScelta || rigaPredefinita?.id || ""}
                 onChange={(e) => setRigaScelta(e.target.value)}
-                className="mt-2 w-full tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala"
+                className="mt-2 w-full tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1.5 testo-sala"
               >
                 {righe.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -276,7 +276,7 @@ export default function RegistraCarico() {
         <button
           type="submit"
           disabled={saving || !form.ingredient_id || !form.quantity}
-          className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5  testo-sala"
+          className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium px-5  testo-sala"
         >
           {saving ? "Registro…" : "Registra carico"}
         </button>

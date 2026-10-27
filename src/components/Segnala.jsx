@@ -69,13 +69,13 @@ export function RiquadroSegnala({ momento, onChiudi }) {
 
   if (stato === "inviata") {
     return (
-      <div className="rounded-xl border border-b58-olive/40 bg-white p-4 flex flex-col gap-3">
+      <div className="rounded-xl border border-b58-olive/40 bg-b58-campo p-4 flex flex-col gap-3">
         <p className="text-b58-charcoal">Segnalata. Stasera la leggo e preparo la correzione.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onChiudi} className="tocco-bottone rounded-lg bg-b58-olive px-4 text-white font-medium">
             Chiudi
           </button>
-          <Link to="/segnalazioni" onClick={onChiudi} className="tocco-bottone inline-flex items-center rounded-lg px-4 text-b58-olive-dark underline">
+          <Link to="/segnalazioni" onClick={onChiudi} className="tocco-bottone inline-flex items-center rounded-lg px-4 text-b58-olive-dark-testo underline">
             Le tue segnalazioni
           </Link>
         </div>
@@ -84,7 +84,7 @@ export function RiquadroSegnala({ momento, onChiudi }) {
   }
 
   return (
-    <div className="rounded-xl border border-b58-charcoal/15 bg-white p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-b58-charcoal/15 bg-b58-campo p-4 flex flex-col gap-3">
       <label htmlFor="segnala-testo" className="font-medium text-b58-charcoal">
         Cosa non va?
       </label>
@@ -101,7 +101,7 @@ export function RiquadroSegnala({ momento, onChiudi }) {
       <p className="testo-sala text-b58-charcoal-soft">
         Salvo anche questa schermata: {momento?.titolo || momento?.indirizzo}.
       </p>
-      {errore && <p className="testo-sala text-b58-turno-dark">{errore}</p>}
+      {errore && <p className="testo-sala text-b58-turno-dark-testo">{errore}</p>}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
