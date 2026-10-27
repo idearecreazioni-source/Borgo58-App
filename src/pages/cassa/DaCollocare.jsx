@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import {
+  annotaSpesaDettataAMano,
   annullaCollocazione,
   collocaSpesa,
   eliminaSpesa,
@@ -23,6 +24,8 @@ import {
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { formatDate, formatEUR } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import { useDaVoce } from "../../lib/daVoce";
 
 // «DA COLLOCARE» — le spese dette a MEMO o fotografate (11/10/2026, C12).
 //
@@ -413,6 +416,87 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
   );
 }
 
+// 🔴 «FALLO A MANO» DI UNA SPESA DETTA (27/10/2026). Prima si arrivava qui
+//    e la spesa non c'era: la scrive solo «Approva», e la schermata non
+//    aveva un modo per scriverla — un vicolo cieco trovato da Alessio.
+//    Qui la si corregge e la si mette fra quelle da collocare; il database
+//    chiude la cosa detta nella stessa transazione (20261027000002).
+// ⚠️ NON È CONTABILITÀ nemmeno così: entra nell'elenco qui sotto, e da lì
+//    si colloca come tutte le altre.
+const VUOTA = { importo: "", data: "", controparte: "", descrizione: "" };
+
+function SchedaDallaVoce({ venuto, scheda, setScheda, onScritta }) {
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState("");
+  const guardia = useRef(unaVoltaSola());
+
+  const imposta = (k) => (e) => setScheda((c) => ({ ...c, [k]: e.target.value }));
+  const vuota = !scheda.importo.trim() && !scheda.descrizione.trim();
+
+  const salva = async (e) => {
+    e.preventDefault();
+    if (vuota || !venuto.idDaChiudere || !guardia.current.prendi("salva")) return;
+    setErrore("");
+    setLavoro(true);
+    try {
+      await annotaSpesaDettataAMano(venuto.idDaChiudere, scheda);
+      venuto.segnaChiusa();
+      onScritta();
+    } catch (err) {
+      setErrore(err.message);
+    } finally {
+      guardia.current.lascia("salva");
+      setLavoro(false);
+    }
+  };
+
+  return (
+    <form onSubmit={salva} className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
+      <h2 className="mb-3 font-display font-semibold text-b58-charcoal">La spesa che hai detto</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="voce-importo" className={etichetta}>Importo (€)</label>
+          <input id="voce-importo" inputMode="decimal" className={campo} value={scheda.importo} onChange={imposta("importo")} />
+        </div>
+        <div>
+          <label htmlFor="voce-data" className={etichetta}>Giorno della spesa</label>
+          <input id="voce-data" type="date" className={`${campo} campo-data`} value={scheda.data} onChange={imposta("data")} />
+        </div>
+        <div>
+          <label htmlFor="voce-controparte" className={etichetta}>Da chi</label>
+          <input id="voce-controparte" className={campo} value={scheda.controparte} onChange={imposta("controparte")} />
+        </div>
+        <div>
+          <label htmlFor="voce-descrizione" className={etichetta}>Che cosa</label>
+          <input id="voce-descrizione" className={campo} value={scheda.descrizione} onChange={imposta("descrizione")} />
+        </div>
+      </div>
+      {vuota && (
+        <p id="voce-manca" className="testo-sala mt-2 text-b58-charcoal-soft">
+          Scrivi almeno l'importo o che cosa hai comprato.
+        </p>
+      )}
+      {errore && (
+        <p role="alert" className="testo-sala mt-2 rounded bg-red-50 p-2 text-red-700">
+          {errore}
+        </p>
+      )}
+      {/* ⚠️ Con la scheda vuota il bottone resta raggiungibile da tastiera e
+          dice perché non salva (aria-describedby): spento del tutto, chi usa
+          la tastiera lo salterebbe senza sapere cosa manca. */}
+      <button
+        type="submit"
+        disabled={lavoro}
+        aria-disabled={vuota || undefined}
+        aria-describedby={vuota ? "voce-manca" : undefined}
+        className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark disabled:opacity-60 aria-disabled:opacity-60"
+      >
+        {lavoro ? "La sto mettendo…" : "Mettila fra quelle da collocare"}
+      </button>
+    </form>
+  );
+}
+
 export default function DaCollocare() {
   const [aperte, setAperte] = useState(null);
   const [fatte, setFatte] = useState([]);
@@ -420,6 +504,8 @@ export default function DaCollocare() {
   const [errLettura, setErrLettura] = useState("");
   const [esiti, setEsiti] = useState({});
   const [avviso, setAvviso] = useState("");
+  const [scheda, setScheda] = useState(VUOTA);
+  const venuto = useDaVoce((c) => setScheda((s) => ({ ...s, ...c })));
 
   const carica = () => {
     setErrLettura("");
@@ -499,6 +585,7 @@ export default function DaCollocare() {
   if (errLettura) {
     return (
       <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+        <StriscaDallaVoce venuto={venuto} />
         <DatoNonLetto cosa="le spese da collocare" nonVuolDire="che non ce ne siano" onRiprova={carica} />
       </div>
     );
@@ -517,6 +604,20 @@ export default function DaCollocare() {
           volta sola.
         </Didascalia>
       </h1>
+
+      <StriscaDallaVoce venuto={venuto} />
+      {/* Si aspetta la rilettura dell'appunto: una scheda vuota che poi si
+          riempie da sola sembra un modulo che cambia sotto le dita. */}
+      {venuto.idDaChiudere && (venuto.azione || venuto.errore) && (
+        <SchedaDallaVoce
+          venuto={venuto}
+          scheda={scheda}
+          setScheda={setScheda}
+          // ⚠️ La spesa è scritta: se la rilettura fallisce, sopra a
+          //    DatoNonLetto resta la striscia «Fatto», così non sembra fallita.
+          onScritta={carica}
+        />
+      )}
 
       {avviso && <p className="testo-sala mb-3 text-b58-ambra-dark">{avviso}</p>}
 

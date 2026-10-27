@@ -347,6 +347,11 @@ const OPERAZIONI = new Set([
   "annulla_collocazione_spesa",
   // Una tabella sola, ma e' una cancellazione: passa di qui come le altre.
   "elimina_spesa_da_collocare",
+  // 🔴 «Fallo a mano» di una spesa detta (20261027000002): la spesa entra
+  // fra quelle da collocare e la cosa detta si chiude, in una transazione.
+  // A meta' resterebbe la spesa scritta e l'appunto ancora da approvare: la
+  // volta dopo, «Approva» la scriverebbe una seconda volta.
+  "annota_spesa_dettata_a_mano",
   // 🔴 La banca e le fatture entrano da file (20261024000001). Una fattura
   // elettronica può creare il fornitore E la fattura (col suo promemoria):
   // a meta' resterebbe un fornitore nato per niente, o una fattura senza
