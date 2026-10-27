@@ -1,105 +1,114 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
+import Caricamento from "./components/Caricamento";
 import SegnaleDatabase from "./components/SegnaleDatabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
-import RicettarioHome from "./pages/ricettario/RicettarioHome";
-import IngredientiList from "./pages/ricettario/IngredientiList";
-import SchedeProdotti from "./pages/ricettario/SchedeProdotti";
-import BozzeList from "./pages/ricettario/BozzeList";
-import BozzaDetail from "./pages/ricettario/BozzaDetail";
-import Estrapola from "./pages/ricettario/Estrapola";
-import AnteprimaDaTesto from "./pages/ricettario/AnteprimaDaTesto";
-import Fotografa from "./pages/assistente/Fotografa";
-import Detta from "./pages/assistente/Detta";
-import IngredienteForm from "./pages/ricettario/IngredienteForm";
-import RicetteList from "./pages/ricettario/RicetteList";
-import RicettaForm from "./pages/ricettario/RicettaForm";
-import RicettaDetail from "./pages/ricettario/RicettaDetail";
-import StaffRicettaDetail from "./pages/ricettario/StaffRicettaDetail";
-import MenuList from "./pages/ricettario/MenuList";
-import MenuForm from "./pages/ricettario/MenuForm";
-import MenuDetail from "./pages/ricettario/MenuDetail";
-import ReservationsList from "./pages/calendario/ReservationsList";
-import ReservationForm from "./pages/calendario/ReservationForm";
-import ClientiList from "./pages/calendario/ClientiList";
-import Comunicazioni from "./pages/calendario/Comunicazioni";
-import PreventiviList from "./pages/calendario/PreventiviList";
-import PreventivoDetail from "./pages/calendario/PreventivoDetail";
-import ClienteDetail from "./pages/calendario/ClienteDetail";
-import SalaEOrari from "./pages/calendario/SalaEOrari";
-import PiantaGiornata from "./pages/calendario/PiantaGiornata";
-import PublicReservationForm from "./pages/public/PublicReservationForm";
-import InformativaPrivacy from "./pages/public/InformativaPrivacy";
-import AgendaList from "./pages/agenda/AgendaList";
-import TaskForm from "./pages/agenda/TaskForm";
-import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
-import RegistraCarico from "./pages/magazzino/RegistraCarico";
-import ListaSpesa from "./pages/magazzino/ListaSpesa";
-import SpesaSpicciola from "./pages/magazzino/SpesaSpicciola";
-import Ordini from "./pages/magazzino/Ordini";
-import Produzioni from "./pages/magazzino/Produzioni";
-import Tracciabilita from "./pages/haccp/Tracciabilita";
-import LottoDestinazioni from "./pages/haccp/LottoDestinazioni";
-import Scadenze from "./pages/magazzino/Scadenze";
-import Fermi from "./pages/magazzino/Fermi";
-import Allineamento from "./pages/magazzino/Allineamento";
-import Cantina from "./pages/magazzino/Cantina";
-import Materiali from "./pages/magazzino/Materiali";
-import FornitoriList from "./pages/magazzino/FornitoriList";
-import FornitoreDetail from "./pages/magazzino/FornitoreDetail";
-import HaccpHome from "./pages/haccp/HaccpHome";
-import TemperatureLog from "./pages/haccp/TemperatureLog";
-import RicevimentoMerci from "./pages/haccp/RicevimentoMerci";
-import PuliziaESanificazione from "./pages/haccp/PuliziaESanificazione";
-import NonConformita from "./pages/haccp/NonConformita";
-import ManualeCompleto from "./pages/haccp/ManualeCompleto";
-import RaccoltaPropria from "./pages/haccp/RaccoltaPropria";
-import StampaAdempimenti from "./pages/agenda/StampaAdempimenti";
-import FattureFornitoriHome from "./pages/fatture/FattureFornitoriHome";
-import CassaHome from "./pages/cassa/CassaHome";
-import PrimaNota from "./pages/cassa/PrimaNota";
-import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
-import Causali from "./pages/cassa/Causali";
-import Previsione from "./pages/cassa/Previsione";
-import SezionePersonale from "./pages/cassa/SezionePersonale";
-import Prestiti from "./pages/cassa/Prestiti";
-import CaparreTenute from "./pages/cassa/CaparreTenute";
-import DaCollocare from "./pages/cassa/DaCollocare";
-import Segnalazioni from "./pages/assistente/Segnalazioni";
-import Scontrinato from "./pages/cassa/Scontrinato";
-import ContiCorrenti from "./pages/cassa/ContiCorrenti";
-import MovimentiBanca from "./pages/cassa/MovimentiBanca";
-import ImportaFatturaElettronica from "./pages/fatture/ImportaFatturaElettronica";
-import CostoProgetto from "./pages/cassa/CostoProgetto";
-import Bar from "./pages/comande/Bar";
-import Cucina from "./pages/comande/Cucina";
-import Scontrini from "./pages/comande/Scontrini";
-import Sala from "./pages/comande/Sala";
-import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
-import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
-import Deducibilita from "./pages/fiscale/Deducibilita";
-import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
-import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
-import Previsioni from "./pages/fiscale/Previsioni";
-import PrevisioneDettaglio from "./pages/fiscale/PrevisioneDettaglio";
-import AndamentoMensile from "./pages/fiscale/AndamentoMensile";
-import ChiusuraAnnuale from "./pages/fiscale/ChiusuraAnnuale";
-import PrevisioneForm from "./pages/fiscale/PrevisioneForm";
-import PersonaleHome from "./pages/personale/PersonaleHome";
-import DipendenteDetail from "./pages/personale/DipendenteDetail";
-import Mance from "./pages/personale/Mance";
-import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
-import DocumentoDetail from "./pages/documenti/DocumentoDetail";
-import PostaInArrivo from "./pages/documenti/PostaInArrivo";
-import ChiediArchivio from "./pages/documenti/ChiediArchivio";
-import EditorMenuHome from "./pages/menu-editor/EditorMenuHome";
-import BevandeVini from "./pages/menu-editor/BevandeVini";
-import PiattiDelGiorno from "./pages/menu-editor/PiattiDelGiorno";
-import AgricoloHome from "./pages/agricolo/AgricoloHome";
-import Cessioni from "./pages/agricolo/Cessioni";
+// IL GESTIONALE SI CARICA A PEZZI — 27/10/2026
+//
+// Fino a oggi ogni schermata era scritta qui con un import fisso, e il
+// telefono scaricava tutto il gestionale (1,29 MB di codice, misurati con la
+// build del 25/10) prima di mostrare la prima pagina. Da qui partono subito
+// solo l'accesso, la Dashboard e la cornice; ogni altra schermata arriva
+// quando la si apre. Le pagine sono le stesse, cambia solo quando arrivano.
+const RicettarioHome = lazy(() => import("./pages/ricettario/RicettarioHome"));
+const IngredientiList = lazy(() => import("./pages/ricettario/IngredientiList"));
+const SchedeProdotti = lazy(() => import("./pages/ricettario/SchedeProdotti"));
+const BozzeList = lazy(() => import("./pages/ricettario/BozzeList"));
+const BozzaDetail = lazy(() => import("./pages/ricettario/BozzaDetail"));
+const Estrapola = lazy(() => import("./pages/ricettario/Estrapola"));
+const AnteprimaDaTesto = lazy(() => import("./pages/ricettario/AnteprimaDaTesto"));
+const Fotografa = lazy(() => import("./pages/assistente/Fotografa"));
+const Detta = lazy(() => import("./pages/assistente/Detta"));
+const IngredienteForm = lazy(() => import("./pages/ricettario/IngredienteForm"));
+const RicetteList = lazy(() => import("./pages/ricettario/RicetteList"));
+const RicettaForm = lazy(() => import("./pages/ricettario/RicettaForm"));
+const RicettaDetail = lazy(() => import("./pages/ricettario/RicettaDetail"));
+const StaffRicettaDetail = lazy(() => import("./pages/ricettario/StaffRicettaDetail"));
+const MenuList = lazy(() => import("./pages/ricettario/MenuList"));
+const MenuForm = lazy(() => import("./pages/ricettario/MenuForm"));
+const MenuDetail = lazy(() => import("./pages/ricettario/MenuDetail"));
+const ReservationsList = lazy(() => import("./pages/calendario/ReservationsList"));
+const ReservationForm = lazy(() => import("./pages/calendario/ReservationForm"));
+const ClientiList = lazy(() => import("./pages/calendario/ClientiList"));
+const Comunicazioni = lazy(() => import("./pages/calendario/Comunicazioni"));
+const PreventiviList = lazy(() => import("./pages/calendario/PreventiviList"));
+const PreventivoDetail = lazy(() => import("./pages/calendario/PreventivoDetail"));
+const ClienteDetail = lazy(() => import("./pages/calendario/ClienteDetail"));
+const SalaEOrari = lazy(() => import("./pages/calendario/SalaEOrari"));
+const PiantaGiornata = lazy(() => import("./pages/calendario/PiantaGiornata"));
+const PublicReservationForm = lazy(() => import("./pages/public/PublicReservationForm"));
+const InformativaPrivacy = lazy(() => import("./pages/public/InformativaPrivacy"));
+const AgendaList = lazy(() => import("./pages/agenda/AgendaList"));
+const TaskForm = lazy(() => import("./pages/agenda/TaskForm"));
+const MagazzinoHome = lazy(() => import("./pages/magazzino/MagazzinoHome"));
+const RegistraCarico = lazy(() => import("./pages/magazzino/RegistraCarico"));
+const ListaSpesa = lazy(() => import("./pages/magazzino/ListaSpesa"));
+const SpesaSpicciola = lazy(() => import("./pages/magazzino/SpesaSpicciola"));
+const Ordini = lazy(() => import("./pages/magazzino/Ordini"));
+const Produzioni = lazy(() => import("./pages/magazzino/Produzioni"));
+const Tracciabilita = lazy(() => import("./pages/haccp/Tracciabilita"));
+const LottoDestinazioni = lazy(() => import("./pages/haccp/LottoDestinazioni"));
+const Scadenze = lazy(() => import("./pages/magazzino/Scadenze"));
+const Fermi = lazy(() => import("./pages/magazzino/Fermi"));
+const Allineamento = lazy(() => import("./pages/magazzino/Allineamento"));
+const Cantina = lazy(() => import("./pages/magazzino/Cantina"));
+const Materiali = lazy(() => import("./pages/magazzino/Materiali"));
+const FornitoriList = lazy(() => import("./pages/magazzino/FornitoriList"));
+const FornitoreDetail = lazy(() => import("./pages/magazzino/FornitoreDetail"));
+const HaccpHome = lazy(() => import("./pages/haccp/HaccpHome"));
+const TemperatureLog = lazy(() => import("./pages/haccp/TemperatureLog"));
+const RicevimentoMerci = lazy(() => import("./pages/haccp/RicevimentoMerci"));
+const PuliziaESanificazione = lazy(() => import("./pages/haccp/PuliziaESanificazione"));
+const NonConformita = lazy(() => import("./pages/haccp/NonConformita"));
+const ManualeCompleto = lazy(() => import("./pages/haccp/ManualeCompleto"));
+const RaccoltaPropria = lazy(() => import("./pages/haccp/RaccoltaPropria"));
+const StampaAdempimenti = lazy(() => import("./pages/agenda/StampaAdempimenti"));
+const FattureFornitoriHome = lazy(() => import("./pages/fatture/FattureFornitoriHome"));
+const CassaHome = lazy(() => import("./pages/cassa/CassaHome"));
+const PrimaNota = lazy(() => import("./pages/cassa/PrimaNota"));
+const ScontiOmaggi = lazy(() => import("./pages/cassa/ScontiOmaggi"));
+const Causali = lazy(() => import("./pages/cassa/Causali"));
+const Previsione = lazy(() => import("./pages/cassa/Previsione"));
+const SezionePersonale = lazy(() => import("./pages/cassa/SezionePersonale"));
+const Prestiti = lazy(() => import("./pages/cassa/Prestiti"));
+const CaparreTenute = lazy(() => import("./pages/cassa/CaparreTenute"));
+const DaCollocare = lazy(() => import("./pages/cassa/DaCollocare"));
+const Segnalazioni = lazy(() => import("./pages/assistente/Segnalazioni"));
+const Scontrinato = lazy(() => import("./pages/cassa/Scontrinato"));
+const ContiCorrenti = lazy(() => import("./pages/cassa/ContiCorrenti"));
+const MovimentiBanca = lazy(() => import("./pages/cassa/MovimentiBanca"));
+const ImportaFatturaElettronica = lazy(() => import("./pages/fatture/ImportaFatturaElettronica"));
+const CostoProgetto = lazy(() => import("./pages/cassa/CostoProgetto"));
+const Bar = lazy(() => import("./pages/comande/Bar"));
+const Cucina = lazy(() => import("./pages/comande/Cucina"));
+const Scontrini = lazy(() => import("./pages/comande/Scontrini"));
+const Sala = lazy(() => import("./pages/comande/Sala"));
+const ProiezioneFiscaleHome = lazy(() => import("./pages/fiscale/ProiezioneFiscaleHome"));
+const DeduzioniFiscali = lazy(() => import("./pages/fiscale/DeduzioniFiscali"));
+const Deducibilita = lazy(() => import("./pages/fiscale/Deducibilita"));
+const CatalogoStrumenti = lazy(() => import("./pages/fiscale/CatalogoStrumenti"));
+const SimulatoreFiscale = lazy(() => import("./pages/fiscale/SimulatoreFiscale"));
+const Previsioni = lazy(() => import("./pages/fiscale/Previsioni"));
+const PrevisioneDettaglio = lazy(() => import("./pages/fiscale/PrevisioneDettaglio"));
+const AndamentoMensile = lazy(() => import("./pages/fiscale/AndamentoMensile"));
+const ChiusuraAnnuale = lazy(() => import("./pages/fiscale/ChiusuraAnnuale"));
+const PrevisioneForm = lazy(() => import("./pages/fiscale/PrevisioneForm"));
+const PersonaleHome = lazy(() => import("./pages/personale/PersonaleHome"));
+const DipendenteDetail = lazy(() => import("./pages/personale/DipendenteDetail"));
+const Mance = lazy(() => import("./pages/personale/Mance"));
+const ArchivioDocumentiHome = lazy(() => import("./pages/documenti/ArchivioDocumentiHome"));
+const DocumentoDetail = lazy(() => import("./pages/documenti/DocumentoDetail"));
+const PostaInArrivo = lazy(() => import("./pages/documenti/PostaInArrivo"));
+const ChiediArchivio = lazy(() => import("./pages/documenti/ChiediArchivio"));
+const EditorMenuHome = lazy(() => import("./pages/menu-editor/EditorMenuHome"));
+const BevandeVini = lazy(() => import("./pages/menu-editor/BevandeVini"));
+const PiattiDelGiorno = lazy(() => import("./pages/menu-editor/PiattiDelGiorno"));
+const AgricoloHome = lazy(() => import("./pages/agricolo/AgricoloHome"));
+const Cessioni = lazy(() => import("./pages/agricolo/Cessioni"));
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -138,6 +147,7 @@ function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
 
   return (
+    <Suspense fallback={<Caricamento />}>
     <Routes>
       <Route
         path="/"
@@ -361,6 +371,7 @@ function AppRoutes() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
