@@ -48,22 +48,25 @@ export async function listShoppingListDisplay() {
   }));
 }
 
-export async function addShoppingListItem({
-  ingredientId,
-  customName,
-  supplierId,
-  quantityNeeded,
-  unit,
-  note,
-}) {
-  const { data, error } = await supabase.rpc("add_shopping_list_item", {
+// 🔴 Con `azioneDettataId` (la schermata è stata aperta da MEMO voce) passa
+// dalla gemella `_da_voce` (20261027000001), che chiude la cosa detta e
+// scrive nella stessa transazione. Senza, la chiamata di sempre.
+export async function addShoppingListItem(
+  { ingredientId, customName, supplierId, quantityNeeded, unit, note },
+  { azioneDettataId = null } = {},
+) {
+  const parametri = {
     p_ingredient_id: ingredientId ?? null,
     p_custom_name: customName ?? null,
     p_supplier_id: supplierId ?? null,
     p_quantity_needed: quantityNeeded ?? null,
     p_unit: unit ?? null,
     p_note: note ?? null,
-  });
+  };
+  if (azioneDettataId) {
+    return eseguiOperazione("add_shopping_list_item_da_voce", { p_azione_dettata_id: azioneDettataId, ...parametri });
+  }
+  const { data, error } = await supabase.rpc("add_shopping_list_item", parametri);
   if (error) throw error;
   return data;
 }

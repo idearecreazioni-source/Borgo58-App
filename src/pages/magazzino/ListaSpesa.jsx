@@ -228,16 +228,21 @@ export default function ListaSpesa() {
     setAdding(true);
     setError("");
     try {
-      await addShoppingListItem({
-        ingredientId: isCustom ? null : addForm.ingredient_id,
-        customName: isCustom ? addForm.custom_name.trim() : null,
-        supplierId: addForm.supplier_id || null,
-        quantityNeeded: addForm.quantity_needed ? Number(addForm.quantity_needed) : null,
-        unit: addForm.unit || null,
-        note: addForm.note || null,
-      });
-      // 🔴 DOPO il salvataggio riuscito, mai prima.
-      await venuto.chiudi();
+      // 🔴 La cosa detta si chiude NELLA STESSA transazione della riga
+      //    (20261027000001), non con una seconda chiamata dopo.
+      const chiudendo = venuto.idDaChiudere;
+      await addShoppingListItem(
+        {
+          ingredientId: isCustom ? null : addForm.ingredient_id,
+          customName: isCustom ? addForm.custom_name.trim() : null,
+          supplierId: addForm.supplier_id || null,
+          quantityNeeded: addForm.quantity_needed ? Number(addForm.quantity_needed) : null,
+          unit: addForm.unit || null,
+          note: addForm.note || null,
+        },
+        { azioneDettataId: chiudendo },
+      );
+      if (chiudendo) venuto.segnaChiusa();
       setAddForm(emptyAddForm);
       await loadAll();
     } catch (e) {

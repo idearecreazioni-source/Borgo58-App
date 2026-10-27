@@ -68,15 +68,17 @@ export default function Allineamento() {
     setErrore("");
     setEsito("");
     try {
-      const esitoVero = await allineaGiacenza(r.ingredient_id, quanto);
+      // 🔴 Solo se è il prodotto che aveva detto: allineandone un altro,
+      //    quella cosa detta non è stata fatta. E si chiude NELLA STESSA
+      //    transazione dell'allineamento (20261027000001).
+      const suo = venuto.azione?.campi?.prodotto;
+      const chiudendo = !suo || suo === r.ingredient_id ? venuto.idDaChiudere : null;
+      const esitoVero = await allineaGiacenza(r.ingredient_id, quanto, undefined, { azioneDettataId: chiudendo });
       // ⚠️ La frase arriva dal database insieme ai numeri: composta qui
       // sarebbe un secondo posto dove dire la stessa cosa, e i due posti
       // prima o poi direbbero due cose diverse.
       setEsito(esitoVero.frase);
-      // 🔴 Solo se è il prodotto che aveva detto: allineandone un altro,
-      //    quella cosa detta non è stata fatta.
-      const suo = venuto.azione?.campi?.prodotto;
-      if (!suo || suo === r.ingredient_id) await venuto.chiudi();
+      if (chiudendo) venuto.segnaChiusa();
       setAperta(null);
       setQuanto("");
       await carica();

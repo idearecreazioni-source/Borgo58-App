@@ -106,17 +106,22 @@ export default function RegistraCarico() {
     setSaving(true);
     setError("");
     try {
-      await registerStockDelivery({
-        ingredientId: form.ingredient_id,
-        quantity: Number(form.quantity),
-        supplierId: form.supplier_id || null,
-        expiryDate: form.expiry_date || null,
-        note: form.note || null,
-        unitCost: isTitolare && form.unit_cost ? Number(form.unit_cost) : null,
-        rigaLista: rigaScelta || null,
-      });
-      // 🔴 DOPO il salvataggio riuscito, mai prima.
-      await venuto.chiudi();
+      // 🔴 La cosa detta si chiude NELLA STESSA transazione del carico
+      //    (20261027000001), non con una seconda chiamata dopo.
+      const chiudendo = venuto.idDaChiudere;
+      await registerStockDelivery(
+        {
+          ingredientId: form.ingredient_id,
+          quantity: Number(form.quantity),
+          supplierId: form.supplier_id || null,
+          expiryDate: form.expiry_date || null,
+          note: form.note || null,
+          unitCost: isTitolare && form.unit_cost ? Number(form.unit_cost) : null,
+          rigaLista: rigaScelta || null,
+        },
+        { azioneDettataId: chiudendo },
+      );
+      if (chiudendo) venuto.segnaChiusa();
       navigate("/magazzino");
     } catch (e) {
       setError(e.message);
