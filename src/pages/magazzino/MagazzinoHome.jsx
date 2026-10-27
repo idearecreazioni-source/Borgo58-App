@@ -137,15 +137,21 @@ export default function MagazzinoHome() {
     setSaving(true);
     setError("");
     try {
-      await recordStockConsumption({
-        ingredientId,
-        quantity: Number(consumptionForm.quantity),
-        reason: consumptionForm.reason,
-        note: consumptionForm.note || null,
-      });
-      // 🔴 Solo se è il prodotto che aveva detto.
+      // 🔴 Solo se è il prodotto che aveva detto. E la cosa detta si chiude
+      //    NELLA STESSA transazione dello scarico (20261027000001), non con
+      //    una seconda chiamata dopo.
       const suoProdotto = venuto.azione?.campi?.prodotto;
-      if (!suoProdotto || suoProdotto === ingredientId) await venuto.chiudi();
+      const chiudendo = !suoProdotto || suoProdotto === ingredientId ? venuto.idDaChiudere : null;
+      await recordStockConsumption(
+        {
+          ingredientId,
+          quantity: Number(consumptionForm.quantity),
+          reason: consumptionForm.reason,
+          note: consumptionForm.note || null,
+        },
+        { azioneDettataId: chiudendo },
+      );
+      if (chiudendo) venuto.segnaChiusa();
       setOpenRow(null);
       setConsumptionForm(emptyConsumptionForm);
       await load();
