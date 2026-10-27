@@ -636,8 +636,13 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
 }
 
 // «30 ago»: dentro «In ritardo» basta il giorno, piccolo e grigio a destra.
+// ⚠️ L'anno solo se non è quest'anno: «30 ago» dell'anno scorso ingannerebbe.
 const giornoBreve = (iso) =>
-  new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" }).format(new Date(`${iso}T12:00:00`));
+  new Intl.DateTimeFormat("it-IT", {
+    day: "numeric",
+    month: "short",
+    ...(iso.slice(0, 4) !== oggiLocale().slice(0, 4) && { year: "numeric" }),
+  }).format(new Date(`${iso}T12:00:00`));
 
 function TaskGroup({ tasks, onComplete, conData = false }) {
   return (

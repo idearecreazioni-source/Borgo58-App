@@ -17,7 +17,11 @@
     var s = localStorage.getItem("b58-tema");
     if (s === "auto") {
       s = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "scuro" : "chiaro";
-      localStorage.setItem("b58-tema", s);
+      try {
+        localStorage.setItem("b58-tema", s);
+      } catch {
+        // Se non si può salvare, per stavolta vale lo stesso.
+      }
     }
     scuro = s === "scuro";
   } catch {

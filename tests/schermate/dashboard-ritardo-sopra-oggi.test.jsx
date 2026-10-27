@@ -70,7 +70,8 @@ describe("la Dashboard e gli scaduti", () => {
     expect(segue(scaduto, diOggiTitolo)).toBe(true);
     expect(segue(diOggiTitolo, diOggi)).toBe(true);
     // la data, piccola e senza «scaduto il»
-    const giorno = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" }).format(d);
+    const stessoAnno = scadenza.slice(0, 4) === oggiLocale().slice(0, 4);
+    const giorno = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", ...(!stessoAnno && { year: "numeric" }) }).format(d);
     expect(screen.getByText(giorno)).toBeTruthy();
     expect(screen.queryAllByText(/scaduto il/)).toHaveLength(0);
   });
