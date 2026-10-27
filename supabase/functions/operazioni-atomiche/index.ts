@@ -355,6 +355,13 @@ const OPERAZIONI = new Set([
   "registra_fattura_elettronica",
   "paga_fattura_da_movimento_banca",
   "registra_movimento_banca",
+  // 🔴 La voce si chiude insieme al dato (20261026000002): una cosa detta a
+  // MEMO e finita a mano sulla sua schermata — il movimento di prima nota o
+  // la voce della spesa spicciola — e la chiusura dell'azione dettata, in
+  // una transazione. Erano due chiamate: a meta' restava il dato scritto e
+  // la cosa ancora da fare, e la volta dopo entrava una seconda volta.
+  "registra_movimento_cassa",
+  "aggiungi_spesa_spicciola",
 ]);
 
 const CORS = {

@@ -165,8 +165,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 106 | 25/10/2026 | una bozza diventa ricetta solo con tutti gli ingredienti collegati al magazzino |
 | 107 | 25/10/2026 | la scheda della ricetta si apre già coi campi da scrivere |
 | 108 | 25/10/2026 | gli allergeni di una ricetta si leggono solo dai prodotti del magazzino |
+| 109 | 27/10/2026 | la spesa spicciola si scrive diretta, senza corridoio |
 
-⚠️ **Righe: 109.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 110.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3910,3 +3911,25 @@ quando questa sezione è stata scritta.
    **non passa** — e appena tutti gli ingredienti sono collegati tornano a
    comandare i prodotti. Il costo di ogni lettura sale: si misura alla
    prima ricetta vera.
+
+## 109 · 27/10/2026 — «la spesa spicciola si scrive diretta, senza corridoio»
+
+1. **Cosa era stato deciso e quando.** Il 23/08/2026 (blocco 8 del mandato
+   del collaudo) la spesa spicciola è nata «categoria A» del Contratto: una
+   tabella sola, scritture dirette con la RLS come barriera, niente
+   corridoio (`src/lib/api/spesaSpicciola.js`).
+
+2. **La ragione di allora.** Nessuna conseguenza altrove: non tocca
+   giacenze, costi, totali.
+
+3. **Cosa si decide adesso** (lavoro notturno del 26-27/10 autorizzato da
+   Alessio, piano P0.1). Quando la voce arriva da MEMO voce, la scrittura
+   passa dal corridoio (`aggiungi_spesa_spicciola`, 20261026000002), che
+   chiude la cosa detta e scrive in una transazione. Senza voce resta
+   diretta.
+
+4. **La ragione di allora vale ancora** per l'inserimento senza voce, che
+   infatti non cambia. Con la voce la conseguenza altrove c'è — la cosa
+   detta da chiudere — e due scritture separate lasciavano la riga detta
+   in sospeso dopo essere stata scritta: la stessa cosa due volte in lista.
+   Il prezzo è un giro in più dal corridoio, solo per le cose dette.
