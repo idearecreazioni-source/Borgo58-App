@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Caricamento from "./components/Caricamento";
+import PezzoMancante from "./components/PezzoMancante";
 import SegnaleDatabase from "./components/SegnaleDatabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -147,6 +148,7 @@ function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
 
   return (
+    <PezzoMancante>
     <Suspense fallback={<Caricamento />}>
     <Routes>
       <Route
@@ -372,6 +374,7 @@ function AppRoutes() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </Suspense>
+    </PezzoMancante>
   );
 }
 
