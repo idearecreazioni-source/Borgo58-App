@@ -133,7 +133,12 @@ export default function Dashboard() {
     if (ok && esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
   };
 
-  const today = tasks.filter((t) => t.due_date);
+  // 🔴 GLI SCADUTI IN UNA SEZIONE LORO, SOPRA «OGGI» — 27/10/2026, sera:
+  //    mescolati a quelli di oggi con «scaduto il …» su ogni riga erano
+  //    «confusionari» (Alessio). Le date sono `AAAA-MM-GG`, quindi il
+  //    confronto fra stringhe è quello fra giorni.
+  const inRitardo = tasks.filter((t) => t.due_date && t.due_date < oggi);
+  const today = tasks.filter((t) => t.due_date && t.due_date >= oggi);
   const undated = tasks.filter((t) => !t.due_date);
   const todayLabel = formatDate(oggi);
   const daGuardare = richieste.length + posta;
@@ -340,6 +345,17 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6 mt-6 2xl:mt-0">
+          {/* ⚠️ Sempre aperta e prima di «Oggi»: «così leggo prima cosa mi
+              sono lasciato indietro». Sparisce solo quando è vuota. */}
+          {inRitardo.length > 0 && (
+            <section data-sezione-ritardo>
+              <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-terracotta-dark-testo mb-2">
+                In ritardo ({inRitardo.length})
+              </h2>
+              <TaskGroup tasks={inRitardo} onComplete={toggleComplete} conData />
+            </section>
+          )}
+
           <section>
             <div className="flex items-baseline justify-between gap-3 mb-2">
               <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">
@@ -355,7 +371,7 @@ export default function Dashboard() {
             {today.length === 0 ? (
               <p className="testo-sala text-b58-charcoal-soft/60">Nessun impegno con scadenza oggi.</p>
             ) : (
-              <TaskGroup tasks={today} onComplete={toggleComplete} oggi={oggi} />
+              <TaskGroup tasks={today} onComplete={toggleComplete} />
             )}
           </section>
 
@@ -619,7 +635,16 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
   );
 }
 
-function TaskGroup({ tasks, onComplete, oggi }) {
+// «30 ago»: dentro «In ritardo» basta il giorno, piccolo e grigio a destra.
+// ⚠️ L'anno solo se non è quest'anno: «30 ago» dell'anno scorso ingannerebbe.
+const giornoBreve = (iso) =>
+  new Intl.DateTimeFormat("it-IT", {
+    day: "numeric",
+    month: "short",
+    ...(iso.slice(0, 4) !== oggiLocale().slice(0, 4) && { year: "numeric" }),
+  }).format(new Date(`${iso}T12:00:00`));
+
+function TaskGroup({ tasks, onComplete, conData = false }) {
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
       {/* ⚠️ MISURATO IL 24/08, e il difetto era qui da prima: la riga di un
@@ -657,14 +682,6 @@ function TaskGroup({ tasks, onComplete, oggi }) {
                     · {labelFor(TASK_CATEGORIES, t.category)}
                   </span>
                 )}
-                {/* ⚠️ Uno scaduto sta fra quelli di oggi finché non si
-                    spunta (27/10/2026): questa è la sola cosa che dice che
-                    il suo giorno è già passato. */}
-                {oggi && t.due_date && t.due_date < oggi && (
-                  <span data-scaduto-impegno className="text-b58-terracotta-dark-testo ml-2">
-                    · scaduto il {formatDate(t.due_date)}
-                  </span>
-                )}
               </span>
             </Link>
             {t.priority === "alta" && <span
@@ -674,6 +691,11 @@ function TaskGroup({ tasks, onComplete, oggi }) {
               Urgente
             </span>}
           </div>
+          {conData && (
+            <span data-scaduto-impegno className="shrink-0 testo-sala text-b58-charcoal-soft">
+              {giornoBreve(t.due_date)}
+            </span>
+          )}
         </div>
       ))}
     </div>

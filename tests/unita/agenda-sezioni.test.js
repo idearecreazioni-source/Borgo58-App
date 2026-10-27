@@ -3,7 +3,6 @@ import {
   SEZIONI,
   campiImpegno,
   fraseRicorrenza,
-  giornoInAgenda,
   provenienzaImpegno,
   daFareAdesso,
   sezioneDi,
@@ -39,40 +38,25 @@ describe("in quale sezione entra un impegno", () => {
     expect(sezioneDi(r({ corsia: "piu_avanti" }))).toBe("piu_avanti");
   });
 
-  // 🔴 27/10/2026, chiesto da Alessio: uno scaduto si ripropone ogni giorno
-  //    sotto «Oggi» finché non lo spunta, invece di finire in una sezione
-  //    chiusa.
-  it("🔴 uno scaduto non ha più una sezione sua: si legge in «Questa settimana»", () => {
-    expect(SEZIONI.some((s) => s.key === "in_ritardo")).toBe(false);
+  // 🔴 27/10/2026, sera, chiesto da Alessio: gli scaduti in una sezione
+  //    loro, sempre aperta, PRIMA di «Questa settimana» (che apre con «Oggi»).
+  it("🔴 «In ritardo» c'è, non si chiude, e viene prima di «Questa settimana»", () => {
+    const i = SEZIONI.findIndex((s) => s.key === "in_ritardo");
+    expect(i).toBeGreaterThan(-1);
+    expect(SEZIONI[i].chiudibile).toBeFalsy();
+    expect(i).toBeLessThan(SEZIONI.findIndex((s) => s.key === "questa_settimana"));
     const t = r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 });
-    expect(sezioneDi(t)).toBe("questa_settimana");
-    expect(sezioniDellAgenda([t]).find((s) => s.key === "questa_settimana").righe).toEqual([t]);
+    expect(sezioneDi(t)).toBe("in_ritardo");
+    expect(sezioniDellAgenda([t]).find((s) => s.key === "in_ritardo").righe).toEqual([t]);
     // e il badge lo conta ancora: scaduto è scaduto
     expect(daFareAdesso([t])).toBe(1);
   });
 
-  it("🔴 uno scaduto sta sotto «Oggi», oggi e domani, con la sua data vera", () => {
-    const t = r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 });
-    expect(giornoInAgenda(t, "2026-10-27")).toBe("2026-10-27");
-    expect(giornoInAgenda(t, "2026-10-28")).toBe("2026-10-28");
-    // il dato non si tocca: la scadenza resta quella scritta
-    expect(t.due_date).toBe("2026-10-20");
-    // quelli non scaduti restano al loro giorno, e senza data non c'è giorno
-    expect(giornoInAgenda(r({ due_date: "2026-10-29" }), "2026-10-27")).toBe("2026-10-29");
-    expect(giornoInAgenda(r({ due_date: "2026-10-27" }), "2026-10-27")).toBe("2026-10-27");
-    expect(giornoInAgenda(r({ due_date: null }), "2026-10-27")).toBe(null);
-  });
-
-  it("il quadrotto di uno scaduto dice da quanto, in forte", () => {
-    const sc = (g) =>
-      campiImpegno(r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: g })).find(
-        (c) => c.chiave === "scadenza",
-      );
-    expect(sc(-7).valore).toMatch(/· scaduto da 7 giorni$/);
-    expect(sc(-1).valore).toMatch(/· scaduto da 1 giorno$/);
-    expect(sc(-7).forte).toBe(true);
-    const nonScaduto = campiImpegno(r({ due_date: "2026-10-29" })).find((c) => c.chiave === "scadenza");
-    expect(nonScaduto.valore).not.toMatch(/scaduto/);
+  it("🔴 il quadrotto di uno scaduto porta solo la data, senza «scaduto da»", () => {
+    const sc = campiImpegno(r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 })).find(
+      (c) => c.chiave === "scadenza",
+    );
+    expect(sc.valore).not.toMatch(/scaduto/);
   });
 
   // ⚠️ Il lavoro si prova IN RITARDO: è il caso in cui la corsia direbbe

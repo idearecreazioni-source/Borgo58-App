@@ -84,8 +84,8 @@ export async function listTasks({ status, priority, category, search } = {}) {
 // Task del giorno + task senza data (§3.12, per la Dashboard home).
 // 🔴 E GLI SCADUTI NON SPUNTATI — 27/10/2026, chiesto da Alessio: uno
 //    scaduto si ripropone ogni giorno fra quelli di oggi finché non lo si
-//    spunta, come nell'Agenda (`giornoInAgenda`). Prima qui non compariva
-//    affatto: il giorno dopo la scadenza spariva dalla Dashboard.
+//    spunta, nella sezione «In ritardo» sopra «Oggi». Prima qui non
+//    compariva affatto: il giorno dopo la scadenza spariva dalla Dashboard.
 export async function listDashboardTasks() {
   const today = oggiLocale();
   const { data, error } = await supabase
