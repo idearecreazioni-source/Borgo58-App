@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Stato | Bozza — in attesa di conferma di Alessio |
+| Stato | Fatta nella sostanza il 10/09/2026 (commit `a06fbc11`): il file si sceglie per primo, la scheda si legge e non entra nell'archivio prima del Salva. Il gesto si chiama «+ Nuovo documento», non «Carica documento»: da confermare con Alessio |
 | Priorità | Da definire |
 | Origine | Osservazione di Alessio sulla schermata Archivio Documenti, 05/09/2026 |
 | Richieste correlate | [`N11`](../RICHIESTE.md) — archivio a sezioni |

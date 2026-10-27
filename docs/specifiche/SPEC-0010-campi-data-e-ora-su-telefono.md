@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Stato | Bozza — rilievo da verificare sul dispositivo |
+| Stato | Fatta l'11/09/2026 (commit `da40817e`): la regola comune sta in `src/index.css` (`riga-campi`, `campo-data`, `campo-ora`). Misure su 37 schermate, a 390 e a 64 punti per cm, dal riepilogo dell'11/09 (`docs/consegne/20260911_telefono_ordinato.md`) |
 | Priorità | Da definire |
 | Origine | Foto e domanda di Alessio, 05/09/2026 |
 | Richieste correlate | Nessuna richiesta esistente da modificare |

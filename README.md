@@ -13,9 +13,9 @@ Chi lavora nel progetto parte da **`CLAUDE.md`** (convenzioni operative, protoco
 
 ## Stato attuale
 
-**Tutti i 15 moduli del brief hanno un'implementazione funzionante** e l'app è online con login reale a due ruoli (titolare/staff, barriera RLS). Dettaglio aggiornato modulo per modulo in `CLAUDE.md` §7 — questo README non lo duplica.
+**Dei 15 moduli del brief ne restano 13.** L'11/10/2026 Alessio ha tolto Ricerca Ricorrente e Monitoraggio Social, che erano segnaposto senza schermate. Tutti i moduli rimasti hanno un'implementazione nel codice, e l'app è online con login reale a due ruoli (titolare/staff, barriera RLS). L'Agricolo/Orto è messo da parte nel menu finché l'azienda agricola non nasce, ma resta raggiungibile. Dettaglio aggiornato modulo per modulo in `CLAUDE.md` §7 — questo README non lo duplica.
 
-Ricettario · Agenda · Fatture Fornitori · Magazzino · Cassa/Prima Nota · Calendario Eventi · HACCP · Agricolo/Orto · Proiezione Fiscale · Ricerca Ricorrente* · Personale & Buste Paga · Monitoraggio Social* · Editor Menu · Assistente AI* · Archivio Documenti — più il modulo **Comande** (Sala e Bar su tablet). *\* = in attesa dell'attivazione dell'account AI.*
+Ricettario · Agenda · Fatture Fornitori · Magazzino · Cassa/Prima Nota · Calendario Eventi · HACCP · Agricolo/Orto (messo da parte) · Proiezione Fiscale · Personale & Buste Paga · Editor Menu · MEMO (foto e voce) · Archivio Documenti — più il modulo **Comande** (Sala e Bar su tablet).
 
 ## Sviluppo — setup di una macchina nuova
 

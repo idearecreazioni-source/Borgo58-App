@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Stato | Bozza — in attesa di conferma di Alessio |
+| Stato | Fatta: schermata Cassa → Da collocare (`src/pages/cassa/DaCollocare.jsx`) e migrazione `20261011000002` (RICHIESTE C12, 11/10/2026) |
 | Priorità | Da definire |
 | Origine | Proposta di Alessio, 05/09/2026 |
 | Richieste correlate | [`C10`](../RICHIESTE.md) — La tasca; [`N11`](../RICHIESTE.md) — Archivio documenti |
