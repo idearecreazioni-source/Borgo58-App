@@ -355,7 +355,7 @@ export default function Dashboard() {
             {today.length === 0 ? (
               <p className="testo-sala text-b58-charcoal-soft/60">Nessun impegno con scadenza oggi.</p>
             ) : (
-              <TaskGroup tasks={today} onComplete={toggleComplete} />
+              <TaskGroup tasks={today} onComplete={toggleComplete} oggi={oggi} />
             )}
           </section>
 
@@ -619,7 +619,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
   );
 }
 
-function TaskGroup({ tasks, onComplete }) {
+function TaskGroup({ tasks, onComplete, oggi }) {
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
       {/* ⚠️ MISURATO IL 24/08, e il difetto era qui da prima: la riga di un
@@ -655,6 +655,14 @@ function TaskGroup({ tasks, onComplete }) {
                 {t.category && t.category !== "altro" && (
                   <span className="text-b58-charcoal-soft ml-2">
                     · {labelFor(TASK_CATEGORIES, t.category)}
+                  </span>
+                )}
+                {/* ⚠️ Uno scaduto sta fra quelli di oggi finché non si
+                    spunta (27/10/2026): questa è la sola cosa che dice che
+                    il suo giorno è già passato. */}
+                {oggi && t.due_date && t.due_date < oggi && (
+                  <span data-scaduto-impegno className="text-b58-terracotta-dark-testo ml-2">
+                    · scaduto il {formatDate(t.due_date)}
                   </span>
                 )}
               </span>

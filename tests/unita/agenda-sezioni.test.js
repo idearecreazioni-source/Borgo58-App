@@ -3,6 +3,7 @@ import {
   SEZIONI,
   campiImpegno,
   fraseRicorrenza,
+  giornoInAgenda,
   provenienzaImpegno,
   daFareAdesso,
   sezioneDi,
@@ -35,7 +36,43 @@ describe("in quale sezione entra un impegno", () => {
   });
 
   it("una riga non stellata resta nella sua corsia", () => {
-    expect(sezioneDi(r({ corsia: "in_ritardo" }))).toBe("in_ritardo");
+    expect(sezioneDi(r({ corsia: "piu_avanti" }))).toBe("piu_avanti");
+  });
+
+  // 🔴 27/10/2026, chiesto da Alessio: uno scaduto si ripropone ogni giorno
+  //    sotto «Oggi» finché non lo spunta, invece di finire in una sezione
+  //    chiusa.
+  it("🔴 uno scaduto non ha più una sezione sua: si legge in «Questa settimana»", () => {
+    expect(SEZIONI.some((s) => s.key === "in_ritardo")).toBe(false);
+    const t = r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 });
+    expect(sezioneDi(t)).toBe("questa_settimana");
+    expect(sezioniDellAgenda([t]).find((s) => s.key === "questa_settimana").righe).toEqual([t]);
+    // e il badge lo conta ancora: scaduto è scaduto
+    expect(daFareAdesso([t])).toBe(1);
+  });
+
+  it("🔴 uno scaduto sta sotto «Oggi», oggi e domani, con la sua data vera", () => {
+    const t = r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 });
+    expect(giornoInAgenda(t, "2026-10-27")).toBe("2026-10-27");
+    expect(giornoInAgenda(t, "2026-10-28")).toBe("2026-10-28");
+    // il dato non si tocca: la scadenza resta quella scritta
+    expect(t.due_date).toBe("2026-10-20");
+    // quelli non scaduti restano al loro giorno, e senza data non c'è giorno
+    expect(giornoInAgenda(r({ due_date: "2026-10-29" }), "2026-10-27")).toBe("2026-10-29");
+    expect(giornoInAgenda(r({ due_date: "2026-10-27" }), "2026-10-27")).toBe("2026-10-27");
+    expect(giornoInAgenda(r({ due_date: null }), "2026-10-27")).toBe(null);
+  });
+
+  it("il quadrotto di uno scaduto dice da quanto, in forte", () => {
+    const sc = (g) =>
+      campiImpegno(r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: g })).find(
+        (c) => c.chiave === "scadenza",
+      );
+    expect(sc(-7).valore).toMatch(/· scaduto da 7 giorni$/);
+    expect(sc(-1).valore).toMatch(/· scaduto da 1 giorno$/);
+    expect(sc(-7).forte).toBe(true);
+    const nonScaduto = campiImpegno(r({ due_date: "2026-10-29" })).find((c) => c.chiave === "scadenza");
+    expect(nonScaduto.valore).not.toMatch(/scaduto/);
   });
 
   // ⚠️ Il lavoro si prova IN RITARDO: è il caso in cui la corsia direbbe
@@ -45,7 +82,7 @@ describe("in quale sezione entra un impegno", () => {
     expect(sezioneDi(t)).toBe("lavori");
     const sezioni = sezioniDellAgenda([t]);
     expect(sezioni.find((s) => s.key === "lavori").righe).toEqual([t]);
-    expect(sezioni.find((s) => s.key === "in_ritardo").righe).toEqual([]);
+    expect(sezioni.find((s) => s.key === "questa_settimana").righe).toEqual([]);
     // e il badge lo conta ancora: scaduto è scaduto
     expect(daFareAdesso([t])).toBe(1);
   });
@@ -66,7 +103,7 @@ describe("in quale sezione entra un impegno", () => {
     const quante = sez.reduce((n, s) => n + s.righe.length, 0);
     expect(quante).toBe(1);
     expect(sez.find((s) => s.key === "per_me_conta").righe).toHaveLength(1);
-    expect(sez.find((s) => s.key === "in_ritardo").righe).toHaveLength(0);
+    expect(sez.find((s) => s.key === "questa_settimana").righe).toHaveLength(0);
   });
 
   it("nessuna riga si perde per strada", () => {
@@ -91,9 +128,9 @@ describe("in quale sezione entra un impegno", () => {
 });
 
 describe("le sezioni che si chiudono", () => {
-  it("si chiudono «in ritardo» e «più avanti», e nascono chiuse", () => {
+  it("si chiude solo «più avanti», e nasce chiusa", () => {
     const chiudibili = SEZIONI.filter((s) => s.chiudibile).map((s) => s.key);
-    expect(chiudibili).toEqual(["in_ritardo", "piu_avanti"]);
+    expect(chiudibili).toEqual(["piu_avanti"]);
     expect(SEZIONI.filter((s) => s.chiudibile).every((s) => s.chiusaDiSuo)).toBe(true);
   });
 

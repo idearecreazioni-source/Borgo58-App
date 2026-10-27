@@ -24,6 +24,7 @@ import {
   campiImpegno,
   daFareAdesso,
   fraseRicorrenza,
+  giornoInAgenda,
   sezioniDellAgenda,
 } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
@@ -556,7 +557,9 @@ export default function AgendaList() {
 
               let gruppi;
               if (c.perGiorno) {
-                gruppi = raggruppa(righe, (r) => r.due_date).map(([k, v]) => [
+                // ⚠️ Uno scaduto si legge sotto «Oggi», in testa: il
+                //    database li manda per primi (27/10/2026).
+                gruppi = raggruppa(righe, (r) => giornoInAgenda(r, oggiISO)).map(([k, v]) => [
                   etichettaGiorno(k, oggiISO),
                   v,
                 ]);
@@ -584,11 +587,7 @@ export default function AgendaList() {
                     }
                     className="tocco-bottone flex items-center gap-2 mb-2"
                   >
-                    <h2
-                      className={`font-display testo-sala-grande ${
-                        c.allarme ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"
-                      }`}
-                    >
+                    <h2 className="font-display testo-sala-grande text-b58-charcoal">
                       {/* 🔴 LA STELLA STA NEL TITOLO — 30/08. Alessio, sulla
                           sua schermata: «due grigie e una gialla, senza che
                           niente dica cosa vogliano dire». La legenda non si
