@@ -29,7 +29,7 @@ function frasiOrigine(origine) {
 }
 
 function coloreOrigine(origine) {
-  return origine ? "text-stone-600" : "text-b58-terracotta-dark";
+  return origine ? "text-stone-600" : "text-b58-terracotta-dark-testo";
 }
 
 const NOMI_CAMPI = {
@@ -136,7 +136,7 @@ export default function SchedeProdotti() {
               </ul>
               <button
                 type="button"
-                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore"
                 disabled={lavorando}
                 onClick={compila}
               >

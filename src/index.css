@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Fraunces", "Georgia", serif;
+  /* I TITOLI IN BRICOLAGE GROTESQUE (27/10/2026, restyling «Osteria
+     raffinata»). Fraunces ad Alessio sembrava «troppo antico/elaborato»;
+     fra quattro caratteri messi a confronto sulla stessa schermata di sala
+     ha scelto questo: moderno, ma con un po' di calore. */
+  --font-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-menu: "Cormorant Garamond", "Georgia", serif;
 
@@ -50,6 +54,139 @@
   --color-b58-turno: #bd301b;
   --color-b58-turno-dark: #8f2414;
   --color-b58-gold-dark: #8a6420;
+
+  /* 🔴 UN COLORE, UNA COSA SOLA — ANCHE AL BUIO (27/10/2026, restyling).
+     Per il tema scuro i colori che facevano due mestieri sono stati
+     separati, con una sostituzione automatica su tutte le schermate:
+     - `campo`: il bianco dei campi e delle schede (era `bg-white`);
+     - `sul-colore`: il testo chiaro SOPRA un pulsante colorato (era
+       `text-b58-parchment`/`text-b58-cream`, che al buio diventano scuri);
+     - `inverso`: i fondi scuri pieni (barre, pulsanti neri), che al buio
+       non devono diventare chiari sotto un testo bianco;
+     - `velo`: il velo dietro le finestre, che al buio non deve schiarire;
+     - `…-testo`: i colori usati come SCRITTA, che al buio si schiariscono
+       per leggersi; come FONDO restano quelli di sempre.
+     Di giorno ognuno vale esattamente quello di prima: niente cambia. */
+  --color-b58-campo: #ffffff;
+  --color-b58-sul-colore: #fffefa;
+  --color-b58-inverso: #2b2621;
+  --color-b58-inverso-soft: #4a4239;
+  --color-b58-velo: #2b2621;
+  --color-b58-terracotta-testo: #b5502e;
+  --color-b58-terracotta-dark-testo: #93401f;
+  --color-b58-azione-testo: #577632;
+  --color-b58-azione-dark-testo: #435b26;
+  --color-b58-olive-testo: #56603c;
+  --color-b58-olive-dark-testo: #3f4a2c;
+  --color-b58-gold-testo: #c99a3d;
+  --color-b58-gold-dark-testo: #8a6420;
+  --color-b58-ambra-testo: #bf7536;
+  --color-b58-ambra-dark-testo: #8f5726;
+  --color-b58-turno-testo: #bd301b;
+  --color-b58-turno-dark-testo: #8f2414;
+}
+
+/* =====================================================================
+   IL TEMA SCURO — 27/10/2026 (richiesta di Alessio col restyling)
+   =====================================================================
+   Si sceglie dal piede del menu: Chiaro, Scuro o Come il telefono. La
+   scelta vive su ogni dispositivo (il tablet di sala e il telefono possono
+   volere cose diverse); senza scelta resta il chiaro di sempre.
+   `public/tema.js` mette `data-tema` su <html> PRIMA che la pagina si
+   disegni, così non c'è il lampo bianco; «Come il telefono» lo risolve lui
+   in «chiaro» o «scuro».
+
+   ⚠️ SOLO A SCHERMO (`@media screen`): la carta esce chiara sempre, senza
+      toccare nessuna delle regole di stampa.
+   ⚠️ SI RIBALTANO I NEUTRI e le scritte colorate; i FONDI colorati
+      (verde dell'azione, terracotta, i colori dei tavoli) restano quelli,
+      col loro testo chiaro sopra.
+   ⚠️ LA SALA E LA CARTA RESTANO CHIARE (`.tema-chiaro`): le distanze fra
+      i colori dei tavoli sono misurate sul fondo chiaro, e le anteprime di
+      ciò che si stampa devono somigliare alla carta. */
+@media screen {
+  :root[data-tema="scuro"] {
+    color-scheme: dark;
+    --color-b58-cream: #161310;
+    --color-b58-cream-dark: #2d2721;
+    --color-b58-parchment: #1f1b17;
+    --color-b58-charcoal: #f0e9dd;
+    --color-b58-charcoal-soft: #c9bfb0;
+    --color-b58-campo: #2a241e;
+    --color-b58-inverso: #3a332b;
+    --color-b58-inverso-soft: #4a4239;
+    --color-b58-velo: #000000;
+    --color-b58-terracotta-testo: #e08a66;
+    --color-b58-terracotta-dark-testo: #f0a888;
+    --color-b58-azione-testo: #a3c77a;
+    --color-b58-azione-dark-testo: #b5d58f;
+    --color-b58-olive-testo: #a9b886;
+    --color-b58-olive-dark-testo: #bfcb9e;
+    --color-b58-gold-testo: #e0b765;
+    --color-b58-gold-dark-testo: #e0b765;
+    --color-b58-ambra-testo: #e2a366;
+    --color-b58-ambra-dark-testo: #e2a366;
+    --color-b58-turno-testo: #f09a8a;
+    --color-b58-turno-dark-testo: #f09a8a;
+    /* I pochi colori di Tailwind rimasti nelle schermate (avvisi, errori,
+       grigi), ribaltati qui invece che file per file. */
+    --color-stone-50: #221d18;
+    --color-stone-100: #2a241e;
+    --color-stone-200: #3a332b;
+    --color-stone-300: #4a4239;
+    --color-stone-400: #a99f91;
+    --color-stone-500: #b3a99b;
+    --color-stone-600: #c9bfb0;
+    --color-stone-700: #ddd3c4;
+    --color-stone-900: #f5efe5;
+    --color-red-50: #3a1a14;
+    --color-red-300: #8a3a2c;
+    --color-red-400: #a04634;
+    --color-red-700: #f2a898;
+    --color-red-800: #f6bcae;
+    --color-amber-50: #33270f;
+    --color-amber-100: #3d2f12;
+    --color-amber-300: #7a5e22;
+    --color-amber-800: #e8c070;
+    --color-amber-900: #f0cf8a;
+    --color-emerald-50: #17271a;
+    --color-emerald-100: #1c3020;
+    --color-emerald-800: #9fd3a8;
+    --color-emerald-900: #b6e0bd;
+    --color-yellow-700: #e0c060;
+    --color-orange-100: #3a2414;
+    --color-orange-700: #f0a870;
+  }
+
+  /* La sala, la sua legenda e le anteprime della carta: chiare sempre.
+     ⚠️ Rimette i colori di Borgo 58, NON quelli di Tailwind ribaltati qui
+     sopra (stone, red, amber, emerald): oggi nessuna di queste quattro parti
+     li usa (revisione ecc:a11y-architect del 27/10). Chi ce li mettesse li
+     troverebbe scuri al buio. */
+  .tema-chiaro {
+    color-scheme: light;
+    color: #2b2621;
+    --color-b58-cream: #fbf8f2;
+    --color-b58-cream-dark: #f0e8da;
+    --color-b58-parchment: #fffefa;
+    --color-b58-charcoal: #2b2621;
+    --color-b58-charcoal-soft: #4a4239;
+    --color-b58-campo: #ffffff;
+    --color-b58-inverso: #2b2621;
+    --color-b58-velo: #2b2621;
+    --color-b58-terracotta-testo: #b5502e;
+    --color-b58-terracotta-dark-testo: #93401f;
+    --color-b58-azione-testo: #577632;
+    --color-b58-azione-dark-testo: #435b26;
+    --color-b58-olive-testo: #56603c;
+    --color-b58-olive-dark-testo: #3f4a2c;
+    --color-b58-gold-testo: #c99a3d;
+    --color-b58-gold-dark-testo: #8a6420;
+    --color-b58-ambra-testo: #bf7536;
+    --color-b58-ambra-dark-testo: #8f5726;
+    --color-b58-turno-testo: #bd301b;
+    --color-b58-turno-dark-testo: #8f2414;
+  }
 }
 
 body {

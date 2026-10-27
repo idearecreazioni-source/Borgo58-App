@@ -132,7 +132,7 @@ export default function SceltaOra({
         aria-haspopup="dialog"
         aria-label={`Scegli l'ora (${nome})`}
         onClick={apri}
-        className={`tocco-campo campo-ora testo-sala rounded-lg border border-b58-sand bg-white px-2 text-left ${
+        className={`tocco-campo campo-ora testo-sala rounded-lg border border-b58-sand bg-b58-campo px-2 text-left ${
           disabled ? "opacity-50" : ""
         }`}
       >
@@ -144,7 +144,7 @@ export default function SceltaOra({
           role="dialog"
           aria-label={`Scegli l'ora (${nome})`}
           data-pannello-ora={dataCampo}
-          className="mt-1 rounded-lg border border-b58-sand bg-white p-2 shadow-lg"
+          className="mt-1 rounded-lg border border-b58-sand bg-b58-campo p-2 shadow-lg"
         >
           {/* 🔴 PRIMA LA FASCIA: dodici voci per ruota invece di ventiquattro.
               ⚠️ Cambiarla sposta l'ora di dodici e lascia stare i minuti —
@@ -160,7 +160,7 @@ export default function SceltaOra({
                 className={`tocco-bottone testo-sala flex-1 rounded-lg border px-2 ${
                   fascia === f.id
                     ? "border-b58-terracotta bg-b58-azione text-white"
-                    : "border-b58-sand bg-white text-b58-charcoal-soft"
+                    : "border-b58-sand bg-b58-campo text-b58-charcoal-soft"
                 }`}
               >
                 {f.etichetta}
@@ -195,7 +195,7 @@ export default function SceltaOra({
               type="button"
               data-annulla-ora
               onClick={() => setAperto(false)}
-              className="tocco-bottone testo-sala flex-1 rounded-lg border border-b58-sand bg-white px-2 text-b58-charcoal-soft"
+              className="tocco-bottone testo-sala flex-1 rounded-lg border border-b58-sand bg-b58-campo px-2 text-b58-charcoal-soft"
             >
               Annulla
             </button>

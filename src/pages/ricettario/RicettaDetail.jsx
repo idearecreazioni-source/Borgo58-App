@@ -436,7 +436,7 @@ export default function RicettaDetail() {
   }
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // Preparazioni e finger: stessa forma (una resa, non delle porzioni).
@@ -906,7 +906,7 @@ export default function RicettaDetail() {
         <Link
           to={indietro.a}
           state={{ percorso: indietro.percorso }}
-          className="tocco-riga inline-flex items-center px-2 -mx-2 rounded-lg testo-sala text-b58-charcoal-soft hover:text-b58-terracotta hover:bg-b58-cream-dark/40 transition-colors"
+          className="tocco-riga inline-flex items-center px-2 -mx-2 rounded-lg testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo hover:bg-b58-cream-dark/40 transition-colors"
         >
           ← {indietro.etichetta}
         </Link>
@@ -915,7 +915,7 @@ export default function RicettaDetail() {
             <button
               type="button"
               onClick={() => setModifica(false)}
-              className="tocco-bottone rounded-lg bg-b58-charcoal px-4 testo-sala-grande text-b58-cream"
+              className="tocco-bottone rounded-lg bg-b58-inverso px-4 testo-sala-grande text-b58-sul-colore"
             >
               Fine modifiche
             </button>
@@ -923,7 +923,7 @@ export default function RicettaDetail() {
           <button
             onClick={handleCopia}
             disabled={copiando}
-            className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+            className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo disabled:opacity-60"
           >
             {copiando ? "Copio…" : "Fai una copia"}
           </button>
@@ -932,7 +932,7 @@ export default function RicettaDetail() {
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -1008,7 +1008,7 @@ export default function RicettaDetail() {
                 ingredienti non ancora collegati non hanno un prezzo, e un
                 totale che li ignora in silenzio sembra il costo vero. */}
             {daCollegare.length > 0 && (
-              <div className="testo-sala text-b58-terracotta mt-1 max-w-[16rem]">
+              <div className="testo-sala text-b58-terracotta-testo mt-1 max-w-[16rem]">
                 Parziale · {daCollegare.length} da collegare
                 <Didascalia>
                   Gli ingredienti non ancora collegati a un prodotto del magazzino non hanno un prezzo: il costo li
@@ -1132,7 +1132,7 @@ export default function RicettaDetail() {
                       <button
                         type="button"
                         onClick={() => handleHeaderChange("prezzo_al_pezzo", String(bis.proposto))}
-                        className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+                        className="underline text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                       >
                         {formatEUR(bis.proposto)}
                       </button>{" "}
@@ -1153,7 +1153,7 @@ export default function RicettaDetail() {
                       className={
                         senzaFoodCost(cost) && !recipe.pronta_per_carta && !recipe.in_carta
                           ? " text-b58-charcoal-soft"
-                          : " text-b58-terracotta-dark"
+                          : " text-b58-terracotta-dark-testo"
                       }
                     >
                       {" "}
@@ -1255,7 +1255,7 @@ export default function RicettaDetail() {
                   title={info.impedito || info.aiuto}
                   className={`tocco-riga rounded-full testo-sala px-3 border transition-colors ${
                     acceso
-                      ? `${s.colorClass} text-b58-parchment border-transparent font-medium`
+                      ? `${s.colorClass} text-b58-sul-colore border-transparent font-medium`
                       : "border-b58-charcoal/15 text-b58-charcoal-soft hover:border-b58-charcoal/40"
                   } ${info.impedito && !acceso ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
@@ -1268,7 +1268,7 @@ export default function RicettaDetail() {
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="tocco-riga testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta ml-auto px-2"
+                className="tocco-riga testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-testo ml-auto px-2"
               >
                 {showHistory ? "Nascondi storico" : "Mostra storico"}
               </button>
@@ -1321,7 +1321,7 @@ export default function RicettaDetail() {
                     type="button"
                     disabled={salvandoMenu === menuChePubblica.id}
                     onClick={() => cambiaMenu(menuChePubblica)}
-                    className="tocco-riga mt-1.5 rounded-lg bg-b58-charcoal text-b58-parchment testo-sala px-3 disabled:opacity-60"
+                    className="tocco-riga mt-1.5 rounded-lg bg-b58-inverso text-b58-sul-colore testo-sala px-3 disabled:opacity-60"
                   >
                     {salvandoMenu === menuChePubblica.id
                       ? "Tolgo…"
@@ -1366,7 +1366,7 @@ export default function RicettaDetail() {
             {erroreMenu ? null : menuDentro.length === 0 ? (
               <p className="testo-sala text-b58-charcoal-soft/70">
                 Non c&rsquo;è ancora nessun menu.{" "}
-                <Link to="/ricettario/menu/nuovo" className="tocco-inline underline text-b58-terracotta">
+                <Link to="/ricettario/menu/nuovo" className="tocco-inline underline text-b58-terracotta-testo">
                   Creane uno
                 </Link>
               </p>
@@ -1393,7 +1393,7 @@ export default function RicettaDetail() {
                     {/* ⚠️ Il menu in servizio si distingue: metterci dentro
                         un piatto lo porta davanti ai clienti, gli altri no. */}
                     {m.is_active && (
-                      <span className="text-b58-olive"> · in servizio</span>
+                      <span className="text-b58-olive-testo"> · in servizio</span>
                     )}
                   </button>
                 ))}
@@ -1405,7 +1405,7 @@ export default function RicettaDetail() {
               </p>
             )}
             {erroreMenu && (
-              <p className="testo-sala text-b58-terracotta-dark mt-1.5">{erroreMenu}</p>
+              <p className="testo-sala text-b58-terracotta-dark-testo mt-1.5">{erroreMenu}</p>
             )}
           </div>
         )}
@@ -1463,7 +1463,7 @@ export default function RicettaDetail() {
                   onClick={() => toggleSeasonality(s.value)}
                   className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                     stagioneAccesa(recipe.seasonality, s.value)
-                      ? "bg-b58-olive text-b58-parchment border-b58-olive"
+                      ? "bg-b58-olive text-b58-sul-colore border-b58-olive"
                       : "border-b58-charcoal/15 text-b58-charcoal-soft"
                   }`}
                 >
@@ -1498,7 +1498,7 @@ export default function RicettaDetail() {
         <button
           onClick={saveHeader}
           disabled={savingHeader}
-          className="print:hidden w-full tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4"
+          className="print:hidden w-full tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4"
         >
           {savingHeader ? "Salvo…" : "Salva modifiche"}
         </button>
@@ -1527,7 +1527,7 @@ export default function RicettaDetail() {
           <div className="print:hidden mb-4">
             <button
               onClick={() => setComponiAperto(!(componiAperto ?? true))}
-              className="w-full flex items-center justify-between rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 testo-sala-grande"
+              className="w-full flex items-center justify-between rounded-lg bg-b58-campo border border-b58-charcoal/10 px-3 py-2 testo-sala-grande"
             >
               <span className="text-b58-charcoal">
                 Finger
@@ -1541,7 +1541,7 @@ export default function RicettaDetail() {
             </button>
 
             {(componiAperto ?? true) && (
-              <div className="mt-2 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
+              <div className="mt-2 rounded-lg bg-b58-campo border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
                 {/* 🔴 I FILTRI (24/08, richiesta di Alessio): *«se un piatto
                     prevede solo finger di carne, vedere anche quelli di
                     pesce confonde e basta»*.
@@ -1569,12 +1569,12 @@ export default function RicettaDetail() {
                     value={cercaFinger}
                     onChange={(e) => setCercaFinger(e.target.value)}
                     placeholder="Cerca un finger…"
-                    className="flex-1 min-w-0 basis-40 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
+                    className="flex-1 min-w-0 basis-40 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande"
                   />
                   <select
                     value={categoriaFinger}
                     onChange={(e) => setCategoriaFinger(e.target.value)}
-                    className="tocco-campo min-w-0 flex-1 basis-32 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
+                    className="tocco-campo min-w-0 flex-1 basis-32 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande"
                   >
                     <option value="">Tutte le categorie</option>
                     {RECIPE_CATEGORIES.map((c) => (
@@ -1585,7 +1585,7 @@ export default function RicettaDetail() {
                     value={senzaAllergeneFinger}
                     onChange={(e) => setSenzaAllergeneFinger(e.target.value)}
                     disabled={!allergeniFinger || nonLetto(allergeniFinger)}
-                    className="tocco-campo min-w-0 flex-1 basis-32 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande disabled:opacity-50"
+                    className="tocco-campo min-w-0 flex-1 basis-32 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala-grande disabled:opacity-50"
                   >
                     <option value="">Qualunque allergene</option>
                     {ALLERGENS.map((a) => (
@@ -1631,7 +1631,7 @@ export default function RicettaDetail() {
                       <span
                         className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center testo-sala ${
                           dentro
-                            ? "bg-b58-olive border-b58-olive text-b58-parchment"
+                            ? "bg-b58-olive border-b58-olive text-b58-sul-colore"
                             : "border-b58-charcoal/25 text-transparent"
                         }`}
                       >
@@ -1689,7 +1689,7 @@ export default function RicettaDetail() {
                        «Capperi di Salina sotto sale» sbordava di 8 punti alla
                        densita' di un mini tablet, e i 8 sono esattamente il
                        `padding-inline` della classe. */
-                    className="tocco-testo max-w-full hover:text-b58-terracotta"
+                    className="tocco-testo max-w-full hover:text-b58-terracotta-testo"
                   >
                     {ri.component ? ri.component.name : ri.ingredient.name}
                   </Link>
@@ -1782,7 +1782,7 @@ export default function RicettaDetail() {
           </div>
         )}
 
-        <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="print:hidden bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           {/* ⚠️ SU UNA SELEZIONE NON SI SCEGLIE FRA INGREDIENTI E PREPARAZIONI
               (24/08): dentro ci vanno solo finger, quindi la scelta non c'è
               — e la ricerca qui sotto guarda solo loro. */}
@@ -1798,7 +1798,7 @@ export default function RicettaDetail() {
                 }}
                 className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   ingredientMode === "ingredient"
-                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
@@ -1812,7 +1812,7 @@ export default function RicettaDetail() {
                 }}
                 className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   ingredientMode === "preparation"
-                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
@@ -1969,7 +1969,7 @@ export default function RicettaDetail() {
             ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity) ? (
               <p
                 data-prova="riga-resa-rifiuto"
-                className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2"
+                className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2"
               >
                 {ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity)}
               </p>
@@ -2008,7 +2008,7 @@ export default function RicettaDetail() {
               }
               onClick={handleAddIngredient}
               data-prova="riga-aggiungi"
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -2033,7 +2033,7 @@ export default function RicettaDetail() {
                   <Link
                     to={`/ricettario/ricette/${u.used_in_recipe_id}`}
                     state={passoDaQui(recipe?.name)}
-                    className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta"
+                    className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta-testo"
                   >
                     {u.used_in_recipe_name}
                   </Link>
@@ -2078,7 +2078,7 @@ export default function RicettaDetail() {
               <li
                 key={s.id}
                 className={`rounded-lg border p-3 ${
-                  s.is_haccp_ccp ? "border-b58-terracotta bg-b58-terracotta/5" : "border-b58-charcoal/10 bg-white"
+                  s.is_haccp_ccp ? "border-b58-terracotta bg-b58-terracotta/5" : "border-b58-charcoal/10 bg-b58-campo"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -2093,7 +2093,7 @@ export default function RicettaDetail() {
                         </span>
                       )}
                       {s.is_haccp_ccp && (
-                        <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
+                        <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
                           CCP HACCP
                         </span>
                       )}
@@ -2106,7 +2106,7 @@ export default function RicettaDetail() {
                       {!s.is_active_time ? " · cottura passiva/riposo" : ""}
                     </p>
                     {s.is_haccp_ccp && (s.haccp_limit || s.haccp_action) && (
-                      <p className="testo-sala text-b58-terracotta-dark mt-1">
+                      <p className="testo-sala text-b58-terracotta-dark-testo mt-1">
                         {s.haccp_limit && <>Limite: {s.haccp_limit}. </>}
                         {s.haccp_action && <>Azione correttiva: {s.haccp_action}.</>}
                       </p>
@@ -2131,21 +2131,21 @@ export default function RicettaDetail() {
                       <button
                         disabled={idx === 0}
                         onClick={() => handleMoveStep(idx, -1)}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-30"
+                        className="text-b58-charcoal-soft hover:text-b58-terracotta-testo disabled:opacity-30"
                       >
                         ↑
                       </button>
                       <button
                         disabled={idx === steps.length - 1}
                         onClick={() => handleMoveStep(idx, 1)}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-30"
+                        className="text-b58-charcoal-soft hover:text-b58-terracotta-testo disabled:opacity-30"
                       >
                         ↓
                       </button>
                     </div>
                     <button
                       onClick={() => handleRemoveStep(s.id)}
-                      className="text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      className="text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                     >
                       Rimuovi
                     </button>
@@ -2156,7 +2156,7 @@ export default function RicettaDetail() {
           </ol>
         )}
 
-        <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3 space-y-2">
+        <div className="print:hidden bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 space-y-2">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <select
               value={stepForm.phase}
@@ -2247,7 +2247,7 @@ export default function RicettaDetail() {
               type="button"
               disabled={addingStep || !stepForm.description.trim()}
               onClick={handleAddStep}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
@@ -2272,14 +2272,14 @@ export default function RicettaDetail() {
             {videos.map((v) => (
               <li
                 key={v.id}
-                className="flex items-center justify-between gap-3 bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
+                className="flex items-center justify-between gap-3 bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2"
               >
                 <div className="min-w-0">
                   <a
                     href={v.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                    className="tocco-testo testo-sala-grande text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo break-all"
                   >
                     {v.url}
                   </a>
@@ -2290,7 +2290,7 @@ export default function RicettaDetail() {
                 </div>
                 <button
                   onClick={() => handleRemoveVideo(v.id)}
-                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
+                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo shrink-0"
                 >
                   Rimuovi
                 </button>
@@ -2299,7 +2299,7 @@ export default function RicettaDetail() {
           </ul>
         )}
 
-        <div className="print:hidden flex flex-wrap gap-2 bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="print:hidden flex flex-wrap gap-2 bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           <input
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
@@ -2316,7 +2316,7 @@ export default function RicettaDetail() {
             type="button"
             disabled={addingVideo || !videoUrl.trim()}
             onClick={handleAddVideo}
-            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
           </button>

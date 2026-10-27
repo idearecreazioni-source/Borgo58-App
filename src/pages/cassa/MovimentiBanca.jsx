@@ -38,11 +38,11 @@ function statoDi(m) {
 }
 
 const campo =
-  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const bottone =
-  "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
+  "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
 const bottonePieno =
-  "tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
+  "tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3 py-1.5 disabled:opacity-60";
 
 async function leggiFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -110,13 +110,13 @@ export default function MovimentiBanca() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Cassa
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">Movimenti della banca</h1>
 
-      <label className="block bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+      <label className="block bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
         <span className="block testo-sala-grande text-b58-charcoal mb-2">
           Carica l&apos;estratto conto (il file della banca, anche dentro lo zip)
         </span>
@@ -130,7 +130,7 @@ export default function MovimentiBanca() {
             e.target.value = "";
             if (files.length) carica(files);
           }}
-          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
+          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-sul-colore hover:file:bg-b58-azione-dark"
         />
       </label>
 
@@ -144,7 +144,7 @@ export default function MovimentiBanca() {
             </p>
           ))}
           {caricamento.errori.length > 0 && (
-            <div className="text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            <div className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
               <p className="font-medium">Non ho caricato niente:</p>
               <ul className="list-disc pl-5">
                 {caricamento.errori.map((e) => (
@@ -157,7 +157,7 @@ export default function MovimentiBanca() {
       )}
 
       {errore && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {errore}
         </p>
       )}
@@ -169,7 +169,7 @@ export default function MovimentiBanca() {
             type="button"
             onClick={() => setStato(k)}
             className={`tocco-bottone rounded-full px-3 py-1 testo-sala ${
-              stato === k ? "bg-b58-charcoal text-b58-parchment" : "bg-white border border-b58-charcoal/15 text-b58-charcoal"
+              stato === k ? "bg-b58-inverso text-b58-sul-colore" : "bg-b58-campo border border-b58-charcoal/15 text-b58-charcoal"
             }`}
           >
             {nome} ({conteggi[k]})
@@ -248,7 +248,7 @@ function RigaMovimento({ m, aperto, apri, fatto }) {
           )}
         </span>
         <span
-          className={`shrink-0 testo-sala-grande font-medium ${importo < 0 ? "text-b58-charcoal" : "text-b58-olive-dark"}`}
+          className={`shrink-0 testo-sala-grande font-medium ${importo < 0 ? "text-b58-charcoal" : "text-b58-olive-dark-testo"}`}
         >
           {importo > 0 ? "+" : ""}
           {formatEUR(importo)}
@@ -278,7 +278,7 @@ function RigaMovimento({ m, aperto, apri, fatto }) {
             </p>
           )}
           {errore && (
-            <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
+            <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
               {errore}
             </p>
           )}
@@ -312,7 +312,7 @@ function Abbina({ m, occupato, esegui }) {
       <div>
         <h3 className="testo-sala font-medium text-b58-charcoal mb-1">Cosa potrebbe essere</h3>
         {erroreProposte ? (
-          <p className="testo-sala text-b58-terracotta-dark">{erroreProposte}</p>
+          <p className="testo-sala text-b58-terracotta-dark-testo">{erroreProposte}</p>
         ) : proposte === null ? (
           <p className="testo-sala text-b58-charcoal-soft">Cerco…</p>
         ) : proposte.length === 0 ? (
@@ -324,7 +324,7 @@ function Abbina({ m, occupato, esegui }) {
             {proposte.map((p) => (
               <li
                 key={`${p.genere}-${p.rif_id}`}
-                className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-lg px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 bg-b58-campo rounded-lg px-3 py-2"
               >
                 <span className="testo-sala text-b58-charcoal min-w-0">
                   {p.titolo}

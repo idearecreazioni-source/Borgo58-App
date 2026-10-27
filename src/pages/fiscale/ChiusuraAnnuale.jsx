@@ -135,13 +135,13 @@ export default function ChiusuraAnnuale() {
   };
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <Link
         to="/fiscale"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Proiezione fiscale
       </Link>
@@ -150,7 +150,7 @@ export default function ChiusuraAnnuale() {
       {error && (
         <p
           data-prova="errore"
-          className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4"
+          className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4"
         >
           {error}
         </p>
@@ -237,7 +237,7 @@ export default function ChiusuraAnnuale() {
               data-prova="avviso-senza-documento"
               className="mt-5 rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-4"
             >
-              <p className="testo-sala-grande text-b58-terracotta-dark font-medium">
+              <p className="testo-sala-grande text-b58-terracotta-dark-testo font-medium">
                 {fraseAvviso(quanti, misure.incasso_senza_documento)}
               </p>
               <p data-prova="quesito-aperto" className="testo-sala text-b58-charcoal-soft mt-2">
@@ -257,7 +257,7 @@ export default function ChiusuraAnnuale() {
                     type="button"
                     data-prova="apri-elenco"
                     onClick={() => setApriElenco((v) => !v)}
-                    className="tocco-bottone testo-sala-grande text-b58-terracotta-dark underline mt-3"
+                    className="tocco-bottone testo-sala-grande text-b58-terracotta-dark-testo underline mt-3"
                   >
                     {apriElenco ? "Nascondi l'elenco" : `Guarda quali sono (${senzaDocumento.length})`}
                   </button>
@@ -305,7 +305,7 @@ export default function ChiusuraAnnuale() {
                   disabilitato={chiudendo}
                   onConferma={() => chiudi(true)}
                   attributi={{ "data-prova": "chiudi-con-avviso" }}
-                  className="rounded-lg bg-b58-azione text-b58-parchment px-4 py-2 testo-sala-grande"
+                  className="rounded-lg bg-b58-azione text-b58-sul-colore px-4 py-2 testo-sala-grande"
                 />
               ) : (
                 <button
@@ -313,7 +313,7 @@ export default function ChiusuraAnnuale() {
                   data-prova="chiudi-pulita"
                   disabled={chiudendo}
                   onClick={() => chiudi(false)}
-                  className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala-grande font-semibold px-6 disabled:opacity-60"
+                  className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala-grande font-semibold px-6 disabled:opacity-60"
                 >
                   {chiudendo ? "Chiudo…" : `Chiudi il ${anno}`}
                 </button>
@@ -341,7 +341,7 @@ export default function ChiusuraAnnuale() {
                     chiuso il {formatDate(r.chiusa_il)}
                   </span>
                   {Number(r.chiusure_precedenti) > 0 && (
-                    <span data-prova="rifatto" className="testo-sala text-b58-terracotta-dark">
+                    <span data-prova="rifatto" className="testo-sala text-b58-terracotta-dark-testo">
                       rifatto — era già stato chiuso {r.chiusure_precedenti}{" "}
                       {Number(r.chiusure_precedenti) === 1 ? "volta" : "volte"}
                       {r.prima_chiusura_il ? `, la prima il ${formatDate(r.prima_chiusura_il)}` : ""}
@@ -356,13 +356,13 @@ export default function ChiusuraAnnuale() {
                 {chiusuraConAvviso(r) ? (
                   <p
                     data-prova="storico-con-avviso"
-                    className="testo-sala text-b58-terracotta-dark mt-2"
+                    className="testo-sala text-b58-terracotta-dark-testo mt-2"
                   >
                     {fraseAvviso(r.conti_senza_documento, r.incasso_senza_documento)}{" "}
                     {fraseRegolarizzazioneSuccessiva(r.conti_senza_documento)}
                   </p>
                 ) : (
-                  <p data-prova="storico-pulita" className="testo-sala text-b58-olive-dark mt-2">
+                  <p data-prova="storico-pulita" className="testo-sala text-b58-olive-dark-testo mt-2">
                     Nessun conto senza documento.
                   </p>
                 )}

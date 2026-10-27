@@ -69,7 +69,7 @@ export default function ConfermaDistruttiva({
         disabled={disabilitato}
         onClick={() => setChiesto(true)}
         {...attributi}
-        className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
+        className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo disabled:opacity-50 ${className}`}
       >
         {etichetta}
       </button>
@@ -88,14 +88,14 @@ export default function ConfermaDistruttiva({
     // dal primo, che e' gia' la ragione per cui questa conferma nasce sul
     // posto invece che in una finestra.
     <span className="inline-flex items-center testo-sala" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
-      <span className="text-b58-terracotta-dark">
+      <span className="text-b58-terracotta-dark-testo">
         {domanda ?? `Elimino ${cosaSparisce}?`}
       </span>
       <button
         type="button"
         onClick={conferma}
         disabled={inCorso}
-        className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment px-3 py-1.5 disabled:opacity-60"
+        className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-sul-colore px-3 py-1.5 disabled:opacity-60"
       >
         {inCorso ? "Elimino…" : etichettaConferma}
       </button>

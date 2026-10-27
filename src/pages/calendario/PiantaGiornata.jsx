@@ -91,9 +91,9 @@ const moduloScritto = (v) =>
 const BOTTONE =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4";
 const PRINCIPALE =
-  "tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-semibold px-4";
+  "tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-semibold px-4";
 const CAMPO =
-  "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const ETICHETTA = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
 // ⚠️ FUORI dal componente, e non è una questione di ordine. Definita
@@ -215,7 +215,7 @@ function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, 
             type="button"
             disabled={salvando || correzione.coperti === ""}
             onClick={() => salva(gruppo)}
-            className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala px-3"
+            className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala px-3"
           >
             Salva
           </button>
@@ -1000,7 +1000,7 @@ export default function PiantaGiornata() {
                 {scelti.length === 0 ? (
                   // Resta possibile solo quando c'è già del lavoro dentro:
                   // senza testo scritto il modulo si chiude da sé.
-                  <em className="text-b58-terracotta-dark">nessun tavolo — toccane uno</em>
+                  <em className="text-b58-terracotta-dark-testo">nessun tavolo — toccane uno</em>
                 ) : (
                   etichetteDelTitolo(scelti).map((t, i) => (
                     <span key={t.id}>
@@ -1070,7 +1070,7 @@ export default function PiantaGiornata() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Calendario Eventi
       </Link>
       {/* ⚠️ QUI C'ERA IL PARAGRAFO CHE SPIEGAVA COSA FA IL TOCCO, tolto da
@@ -1082,7 +1082,7 @@ export default function PiantaGiornata() {
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">La sala</h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
       {avviso && <p className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4">{avviso}</p>}
 
@@ -1093,7 +1093,7 @@ export default function PiantaGiornata() {
           value={data}
           onChange={(e) => setData(e.target.value)}
           aria-label="Giorno della sala"
-          className="tocco-campo campo-data rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
+          className="tocco-campo campo-data rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal"
         />
         <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
@@ -1214,7 +1214,7 @@ export default function PiantaGiornata() {
                 )}
               </div>
               {posto.oltre_soglia && (
-                <p className="testo-sala mt-1.5 font-medium text-b58-terracotta">
+                <p className="testo-sala mt-1.5 font-medium text-b58-terracotta-testo">
                   Sei oltre i {posto.soglia} coperti che ti sei dato per la serata. Puoi accettare
                   lo stesso: è un avviso, non un divieto.
                 </p>
@@ -1263,7 +1263,7 @@ export default function PiantaGiornata() {
                     return;
                   esegui(() => promuoviDisposizione(data));
                 }}
-                className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-4 py-2"
+                className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4 py-2"
               >
                 Questa diventa la sala di sempre
               </button>
@@ -1276,7 +1276,7 @@ export default function PiantaGiornata() {
               proprio perché compare di rado. */}
           {senzaTavolo.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-3 mb-3">
-              <p className="testo-sala uppercase tracking-wide font-semibold text-b58-terracotta-dark mb-1.5">
+              <p className="testo-sala uppercase tracking-wide font-semibold text-b58-terracotta-dark-testo mb-1.5">
                 {senzaTavolo.length === 1 ? "Aspetta un tavolo" : "Aspettano un tavolo"}
               </p>
               <ul className="space-y-2">
@@ -1300,7 +1300,7 @@ export default function PiantaGiornata() {
                             accettata. Chiedono due gesti diversi: un tavolo
                             l'una, una decisione l'altra. */}
                         {p.status === "richiesta_in_attesa" && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
                             da confermare
                           </span>
                         )}
@@ -1469,7 +1469,7 @@ export default function PiantaGiornata() {
                     }
                   })
                 }
-                className="underline hover:text-b58-terracotta-dark"
+                className="underline hover:text-b58-terracotta-dark-testo"
               >
                 rimetti tutti a posto
               </button>
@@ -1532,7 +1532,7 @@ export default function PiantaGiornata() {
               <p className="text-b58-charcoal font-medium mb-1">
                 {aperta.customer_name}
                 {aperta.status === "richiesta_in_attesa" && (
-                  <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+                  <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
                     da confermare
                   </span>
                 )}
@@ -1614,7 +1614,7 @@ export default function PiantaGiornata() {
                       azzera();
                     });
                   }}
-                  className="rounded-lg border border-b58-terracotta/40 text-b58-terracotta-dark hover:bg-b58-terracotta/10 transition-colors testo-sala font-medium px-4 py-2"
+                  className="rounded-lg border border-b58-terracotta/40 text-b58-terracotta-dark-testo hover:bg-b58-terracotta/10 transition-colors testo-sala font-medium px-4 py-2"
                 >
                   Ha disdetto
                 </button>
@@ -1694,11 +1694,11 @@ export default function PiantaGiornata() {
                       </span>
                       <span className="testo-sala">
                         {suoi.length > 0 ? (
-                          <span className="text-b58-olive-dark font-medium">
+                          <span className="text-b58-olive-dark-testo font-medium">
                             {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
                           </span>
                         ) : (
-                          <span className="rounded-full bg-b58-azione text-b58-parchment testo-sala font-medium px-2.5 py-1">
+                          <span className="rounded-full bg-b58-azione text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
                             senza tavolo
                           </span>
                         )}
@@ -1709,7 +1709,7 @@ export default function PiantaGiornata() {
                         </span>
                       )}
                       {p.status === "richiesta_in_attesa" && (
-                        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+                        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
                           da confermare
                         </span>
                       )}
@@ -1766,7 +1766,7 @@ export default function PiantaGiornata() {
                           <button
                             type="button"
                             onClick={() => esegui(() => togliAssegnazione(p.id))}
-                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline"
+                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo underline"
                           >
                             togli il tavolo
                           </button>

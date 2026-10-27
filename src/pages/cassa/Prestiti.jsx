@@ -47,7 +47,7 @@ export default function Prestiti() {
   const [esito, setEsito] = useState("");
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function Prestiti() {
     <div className="testo-sala max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Cassa
       </Link>
@@ -176,7 +176,7 @@ export default function Prestiti() {
       </p>
 
       {errore && (
-        <div className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <p>{errore}</p>
           <button onClick={() => carica()} className="tocco-bottone underline testo-sala mt-1">
             Riprova
@@ -228,7 +228,7 @@ export default function Prestiti() {
                   setErrore(err.message);
                 }
               }}
-              className="tocco-campo w-28 rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-right"
+              className="tocco-campo w-28 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 testo-sala-grande text-right"
             />
             <span className="testo-sala text-b58-charcoal-soft/70">
               vuoto = 5.000 €; zero = nessuna riserva
@@ -272,7 +272,7 @@ export default function Prestiti() {
               </div>
 
               {restituzione?.id === p.id && (
-                <div className="mt-3 rounded-lg bg-white border border-b58-charcoal/10 p-3">
+                <div className="mt-3 rounded-lg bg-b58-campo border border-b58-charcoal/10 p-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className={labelClass}>Quanto</label>
@@ -309,7 +309,7 @@ export default function Prestiti() {
                   <div className="gesti-pericolosi justify-end mt-3">
                     <button
                       type="button" disabled={busy || !causali} onClick={restituisci}
-                      className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment px-4 disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore px-4 disabled:opacity-60"
                     >
                       {busy ? "Registro…" : "Registra la restituzione"}
                     </button>
@@ -395,7 +395,7 @@ export default function Prestiti() {
             type="button"
             disabled={busy || !causali || !form.daChi.trim() || !Number(form.importo)}
             onClick={salva}
-            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment px-4 disabled:opacity-50"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore px-4 disabled:opacity-50"
           >
             {busy ? "Registro…" : "Registra"}
           </button>

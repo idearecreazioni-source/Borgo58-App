@@ -32,7 +32,7 @@ export default function Comunicazioni() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/calendario-eventi/clienti"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Clienti
       </Link>
@@ -61,7 +61,7 @@ export default function Comunicazioni() {
                   <li key={r.customer_id} className="testo-sala-grande text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
-                      className="tocco-testo hover:text-b58-terracotta"
+                      className="tocco-testo hover:text-b58-terracotta-testo"
                     >
                       {r.nome}
                     </Link>{" "}
@@ -84,7 +84,7 @@ export default function Comunicazioni() {
                   <li key={r.customer_id} className="testo-sala text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
-                      className="tocco-testo hover:text-b58-terracotta"
+                      className="tocco-testo hover:text-b58-terracotta-testo"
                     >
                       {r.nome}
                     </Link>
@@ -128,7 +128,7 @@ export default function Comunicazioni() {
                     readOnly
                     value={numeri.numeri}
                     rows={Math.min(8, numeri.quanti)}
-                    className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande font-mono"
+                    className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande font-mono"
                   />
                   <button
                     type="button"

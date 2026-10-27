@@ -390,7 +390,7 @@ export default function ElencoAdattivo({
                       type="button"
                       onClick={gesto.onClick}
                       disabled={gesto.spenta}
-                      className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {gesto.etichetta}
                     </button>
@@ -398,7 +398,7 @@ export default function ElencoAdattivo({
                 )}
               </tr>
               {dentroAperta && (
-                <tr className="bg-white">
+                <tr className="bg-b58-campo">
                   <td colSpan={colonne.length + (azione ? 2 : 1)} className="px-4 py-3">
                     {dentroAperta}
                   </td>

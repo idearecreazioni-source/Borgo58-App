@@ -563,7 +563,7 @@ export default function Detta() {
       {ritorno && (
         <Link
           to={ritorno.da}
-          className="tocco-riga mb-2 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta hover:underline"
+          className="tocco-riga mb-2 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta-testo hover:underline"
         >
           ← {ascolto ? ritorno.annulla : ritorno.frase}
         </Link>
@@ -587,7 +587,7 @@ export default function Detta() {
       </div>
 
       {errore && (
-        <p className="testo-sala text-b58-terracotta-dark mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2">
+        <p className="testo-sala text-b58-terracotta-dark-testo mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2">
           {errore}
         </p>
       )}
@@ -600,7 +600,7 @@ export default function Detta() {
              lontano con le mani occupate: pulsante rosso, pulsazione,
              e la parola scritta accanto.
          ------------------------------------------------------------ */}
-      <div className="rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+      <div className="rounded-xl border border-b58-cream-dark bg-b58-campo p-4 md:p-6">
         {/* 🔴 IL GESTO STA DOVE ARRIVA IL POLLICE — decisione di Alessio del
             27/08. Sul telefono questa è la barra in basso; sul computer resta
             esattamente dov'era.
@@ -620,7 +620,7 @@ export default function Detta() {
           className={`tocco-azione-grande w-full rounded-xl px-4 font-medium transition-colors disabled:opacity-60 ${
             ascolto
               ? "bg-b58-terracotta text-white animate-pulse"
-              : "bg-b58-charcoal text-white hover:bg-b58-charcoal-soft"
+              : "bg-b58-inverso text-white hover:bg-b58-inverso-soft"
           }`}
         >
           <span className="testo-sala-lontano">
@@ -641,7 +641,7 @@ export default function Detta() {
         {ascolto && (
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-b58-terracotta/10 px-3 py-2">
             <span className="inline-block h-4 w-4 shrink-0 rounded-full bg-b58-terracotta animate-pulse" />
-            <span className="testo-sala-lontano font-medium text-b58-terracotta-dark">
+            <span className="testo-sala-lontano font-medium text-b58-terracotta-dark-testo">
               Ti sto ascoltando
             </span>
             <span className="testo-sala text-b58-charcoal-soft">
@@ -691,7 +691,7 @@ export default function Detta() {
         {spesa && !nonLetto(spesa) && spesa.tetto_euro != null && (
           <p className="testo-sala mt-3 text-b58-charcoal-soft">
             MEMO, questo mese: {formatEUR(spesa.speso_euro)} su {formatEUR(spesa.tetto_euro)}.{" "}
-            <Link to="/fotografa" className="text-b58-terracotta hover:underline">
+            <Link to="/fotografa" className="text-b58-terracotta-testo hover:underline">
               Il tetto si cambia da qui →
             </Link>
           </p>
@@ -724,7 +724,7 @@ export default function Detta() {
           IL RISCONTRO — arriva ALLA FINE, e sono due elenchi
          ------------------------------------------------------------ */}
       {riscontro && (
-        <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+        <div className="mt-6 rounded-xl border border-b58-cream-dark bg-b58-campo p-4 md:p-6">
           <h2 className="testo-sala-lontano font-medium text-b58-charcoal">{riscontro.titolo}</h2>
           <p className="testo-sala mt-1 text-b58-charcoal-soft">Hai detto: «{riscontro.testo}»</p>
           {riscontro.messaggio && (
@@ -826,7 +826,7 @@ export default function Detta() {
         <div className="mt-4">
           <Link
             to={ritorno.da}
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-charcoal px-4 testo-sala text-white hover:bg-b58-charcoal-soft"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-inverso px-4 testo-sala text-white hover:bg-b58-inverso-soft"
           >
             ← {ritorno.frase}
           </Link>
@@ -845,7 +845,7 @@ export default function Detta() {
              mostrando invece che cancellando.
          ------------------------------------------------------------ */}
       {nonLetto(attesa) ? (
-        <p className="testo-sala mt-6 text-b58-terracotta-dark">
+        <p className="testo-sala mt-6 text-b58-terracotta-dark-testo">
           Non sono riuscito a leggere le cose che aspettano.{" "}
           <button type="button" onClick={ricarica} className="tocco-inline underline">
             Riprova
@@ -853,7 +853,7 @@ export default function Detta() {
         </p>
       ) : (
         daGuardareOra.length > 0 && (
-          <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+          <div className="mt-6 rounded-xl border border-b58-cream-dark bg-b58-campo p-4 md:p-6">
             <h2 className="testo-sala-lontano font-medium text-b58-charcoal">
               {daGuardareOra.length === 1
                 ? "Un appunto aspetta che tu lo guardi"
@@ -901,7 +901,7 @@ export default function Detta() {
       {/* ------------------------------------------------------------
           LE CHIAVI DELLA SCORCIATOIA
          ------------------------------------------------------------ */}
-      <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+      <div className="mt-6 rounded-xl border border-b58-cream-dark bg-b58-campo p-4 md:p-6">
         <button
           type="button"
           onClick={mostraChiavi}
@@ -937,7 +937,7 @@ export default function Detta() {
               className={`testo-sala mt-2 rounded-lg px-3 py-2 ${
                 ambienteCorrente().produzione
                   ? "bg-b58-charcoal/10 text-b58-charcoal"
-                  : "bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
               }`}
             >
               Quella che crei qui vale per <b>{ambienteCorrente().nome}</b>, e solo per
@@ -955,7 +955,7 @@ export default function Detta() {
             <button
               type="button"
               onClick={() => setApriGuida((g) => !g)}
-              className="tocco-riga mt-1 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta hover:underline"
+              className="tocco-riga mt-1 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta-testo hover:underline"
             >
               {apriGuida ? "Nascondi i passaggi" : "Come si fa, passo per passo →"}
             </button>
@@ -968,7 +968,7 @@ export default function Detta() {
                   Ecco la chiave «{chiaveNuova.nome}» per <b>{ambienteCorrente().nome}</b>.
                   Copiala adesso: non si vedrà più.
                 </p>
-                <code className="mt-2 block break-all rounded bg-white px-2 py-2 testo-sala">
+                <code className="mt-2 block break-all rounded bg-b58-campo px-2 py-2 testo-sala">
                   {chiaveNuova.chiave}
                 </code>
               </div>
@@ -984,7 +984,7 @@ export default function Detta() {
               <button
                 type="button"
                 onClick={nuovaChiave}
-                className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-white"
+                className="tocco-riga rounded-lg bg-b58-inverso px-4 testo-sala text-white"
               >
                 Crea una chiave
               </button>
@@ -1005,7 +1005,7 @@ export default function Detta() {
                       <button
                         type="button"
                         onClick={() => togliChiave(c.id)}
-                        className="tocco-riga rounded-lg px-3 text-b58-terracotta-dark"
+                        className="tocco-riga rounded-lg px-3 text-b58-terracotta-dark-testo"
                       >
                         Togli
                       </button>
@@ -1083,7 +1083,7 @@ function GuidaScorciatoia() {
               Visto guardando, non leggendo il codice. */}
           <b>4.</b> Nell'indirizzo incolla questo. È l'indirizzo di questo
           gestionale, cioè <b>{dove.nome}</b>:
-          <code className="mt-1 block break-all rounded bg-white px-2 py-2">{indirizzo}</code>
+          <code className="mt-1 block break-all rounded bg-b58-campo px-2 py-2">{indirizzo}</code>
         </li>
         <li className="testo-sala text-b58-charcoal">
           <b>5.</b> Apri la freccina <b>▸</b> di quell'azione e metti <b>Metodo: POST</b> e{" "}

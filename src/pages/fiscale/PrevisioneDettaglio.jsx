@@ -21,7 +21,7 @@ const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ot
 function Numero({ v, decimali = 0 }) {
   if (v == null) return <span className="text-b58-charcoal-soft/50">—</span>;
   return (
-    <span className={Number(v) < 0 ? "text-b58-terracotta-dark" : undefined}>
+    <span className={Number(v) < 0 ? "text-b58-terracotta-dark-testo" : undefined}>
       {Number(v).toLocaleString("it-IT", { minimumFractionDigits: decimali, maximumFractionDigits: decimali })}
     </span>
   );
@@ -141,7 +141,7 @@ export default function PrevisioneDettaglio() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Le previsioni
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-4">
@@ -153,14 +153,14 @@ export default function PrevisioneDettaglio() {
           </p>
         </div>
         {scenario.congelato_il ? (
-          <span className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-1.5">
+          <span className="testo-sala text-b58-olive-dark-testo bg-b58-olive/10 rounded-lg px-3 py-1.5">
             Chiusa il {new Date(scenario.congelato_il).toLocaleDateString("it-IT")} — non si cambia più
           </span>
         ) : (
           <button
             onClick={chiudi}
             disabled={congelando}
-            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {congelando ? "Chiudo…" : "Chiudi questa previsione"}
           </button>
@@ -168,7 +168,7 @@ export default function PrevisioneDettaglio() {
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* --- Il confronto col foglio --- */}
@@ -176,13 +176,13 @@ export default function PrevisioneDettaglio() {
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Torna col tuo foglio?</h2>
           {differenze.length === 0 ? (
-            <p className="testo-sala-grande text-b58-olive-dark">
+            <p className="testo-sala-grande text-b58-olive-dark-testo">
               Sì: tutti e {confronto.length} i totali del foglio sono riprodotti esattamente, EBITDA e
               pareggio compresi.
             </p>
           ) : (
             <>
-              <p className="testo-sala-grande text-b58-terracotta-dark mb-2">
+              <p className="testo-sala-grande text-b58-terracotta-dark-testo mb-2">
                 No: {differenze.length} {differenze.length === 1 ? "totale non torna" : "totali non tornano"}.
                 Finché non torna, questa previsione non descrive il tuo piano.
               </p>
@@ -215,7 +215,7 @@ export default function PrevisioneDettaglio() {
 
       {/* --- Il riepilogo dell'anno --- */}
       {riepilogo && (
-        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+        <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">L&apos;anno</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 testo-sala-grande">
             <div>
@@ -281,7 +281,7 @@ export default function PrevisioneDettaglio() {
               </p>
             </div>
           </div>
-          <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-3">
+          <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1.5 mt-3">
             {riepilogo.avvertenza_imposte}
           </p>
         </div>
@@ -289,7 +289,7 @@ export default function PrevisioneDettaglio() {
 
       {/* --- Il calendario degli esborsi --- */}
       {calendario.length > 0 && (
-        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+        <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Quando escono i soldi
             <Didascalia>
@@ -299,7 +299,7 @@ export default function PrevisioneDettaglio() {
           </h2>
           {/* ⚠️ Il limite viaggia col numero: senza le imposte dell'anno
               prima, giugno sembra più leggero di quello che sarà. */}
-          <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
+          <p className="testo-sala text-b58-charcoal-soft bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
             {annoPrima
               ? `Il saldo dell'anno prima è compreso, e viene dalla previsione «${annoPrima.nome}».`
               : precedentiNonLette
@@ -341,7 +341,7 @@ export default function PrevisioneDettaglio() {
           poter leggere. Un sigillo che rende anche illeggibile non
           protegge di più: nasconde. */}
       {costiFissi.length > 0 && (
-        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+        <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Di cosa sono fatti i costi fissi
           </h2>
@@ -399,7 +399,7 @@ export default function PrevisioneDettaglio() {
           Un numero grande senza il suo perché è la stessa famiglia della
           sala disegnata vuota del 18/08: plausibile, e muto. */}
       {linee.length > 0 && (
-        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+        <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Di cosa sono fatti i ricavi accessori
             <Didascalia>
@@ -459,12 +459,12 @@ export default function PrevisioneDettaglio() {
       )}
 
       {/* --- I dodici mesi --- */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 overflow-x-auto">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-5 overflow-x-auto">
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">I dodici mesi</h2>
         <table className="w-full testo-sala min-w-[720px]">
           <thead>
             <tr className="text-b58-charcoal-soft">
-              <th className="text-left font-medium py-1 pr-2 sticky left-0 bg-white">&nbsp;</th>
+              <th className="text-left font-medium py-1 pr-2 sticky left-0 bg-b58-campo">&nbsp;</th>
               {MESI.map((m) => (
                 <th key={m} className="text-right font-medium py-1 px-1">{m}</th>
               ))}
@@ -473,7 +473,7 @@ export default function PrevisioneDettaglio() {
           <tbody>
             {righe.map(([etichetta, campo, dec]) => (
               <tr key={campo} className="border-t border-b58-charcoal/5">
-                <td className="py-1 pr-2 text-b58-charcoal-soft whitespace-nowrap sticky left-0 bg-white">
+                <td className="py-1 pr-2 text-b58-charcoal-soft whitespace-nowrap sticky left-0 bg-b58-campo">
                   {etichetta}
                 </td>
                 {mesi.map((m) => (

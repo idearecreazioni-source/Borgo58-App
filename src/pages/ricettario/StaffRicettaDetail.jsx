@@ -86,14 +86,14 @@ export default function StaffRicettaDetail() {
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Ricette
         </Link>
         <PrintButton />
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -113,7 +113,7 @@ export default function StaffRicettaDetail() {
         {recipe.seasonality?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {stagioniNormalizzate(recipe.seasonality).map((s) => (
-              <span key={s} className="testo-sala bg-b58-olive/10 text-b58-olive-dark rounded-full px-2.5 py-1">
+              <span key={s} className="testo-sala bg-b58-olive/10 text-b58-olive-dark-testo rounded-full px-2.5 py-1">
                 {labelFor(SEASONS, s)}
               </span>
             ))}
@@ -174,7 +174,7 @@ export default function StaffRicettaDetail() {
               <li
                 key={s.id}
                 className={`rounded-lg border p-3 ${
-                  s.is_haccp_ccp ? "border-b58-terracotta bg-b58-terracotta/5" : "border-b58-charcoal/10 bg-white"
+                  s.is_haccp_ccp ? "border-b58-terracotta bg-b58-terracotta/5" : "border-b58-charcoal/10 bg-b58-campo"
                 }`}
               >
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -187,7 +187,7 @@ export default function StaffRicettaDetail() {
                     </span>
                   )}
                   {s.is_haccp_ccp && (
-                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
+                    <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
                       CCP HACCP
                     </span>
                   )}
@@ -199,7 +199,7 @@ export default function StaffRicettaDetail() {
                   {s.equipment ? ` · ${s.equipment}` : ""}
                 </p>
                 {s.is_haccp_ccp && (s.haccp_limit || s.haccp_action) && (
-                  <p className="testo-sala text-b58-terracotta-dark mt-1">
+                  <p className="testo-sala text-b58-terracotta-dark-testo mt-1">
                     {s.haccp_limit && <>Limite: {s.haccp_limit}. </>}
                     {s.haccp_action && <>Azione: {s.haccp_action}.</>}
                   </p>
@@ -216,12 +216,12 @@ export default function StaffRicettaDetail() {
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Video ricetta</h2>
           <ul className="space-y-2">
             {videos.map((v) => (
-              <li key={v.id} className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+              <li key={v.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                 <a
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                  className="tocco-testo testo-sala-grande text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo break-all"
                 >
                   {v.url}
                 </a>
@@ -254,7 +254,7 @@ export default function StaffRicettaDetail() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {allergens.allergens.map((a) => (
-                <span key={a} className="testo-sala bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1">
+                <span key={a} className="testo-sala bg-b58-terracotta/10 text-b58-terracotta-dark-testo rounded-full px-2.5 py-1">
                   {labelFor(ALLERGENS, a)}
                 </span>
               ))}

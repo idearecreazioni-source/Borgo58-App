@@ -43,8 +43,8 @@ const STAMPO =
   "tocco-bottone inline-flex items-center justify-center rounded-lg transition-colors testo-sala font-medium px-4";
 
 const NORMALE = "border border-b58-charcoal/15 text-b58-charcoal hover:bg-b58-cream-dark";
-const PRINCIPALE = "bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment";
-const ACCESO = "bg-b58-azione text-b58-parchment border border-b58-azione-dark";
+const PRINCIPALE = "bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore";
+const ACCESO = "bg-b58-azione text-b58-sul-colore border border-b58-azione-dark";
 
 function classeScorciatoia({ principale = false, acceso = false } = {}) {
   if (acceso) return `${STAMPO} ${ACCESO}`;

@@ -106,12 +106,12 @@ export default function ProiezioneFiscaleHome() {
         </h1>
       </div>
 
-      <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
+      <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
         Tutto in questo modulo è una <strong>stima interna</strong> che assiste le decisioni, mai un dato
         fiscale definitivo: la validazione resta sempre alla commercialista.
       </p>
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">{error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((c) => (
@@ -120,12 +120,12 @@ export default function ProiezioneFiscaleHome() {
             to={c.to}
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name={c.icon} className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">{c.title}</h3>
             <p className="testo-sala-grande text-b58-charcoal-soft mt-1">{c.desc}</p>
-            {c.stat && <p className="testo-sala text-b58-olive-dark mt-2 font-medium">{c.stat}</p>}
+            {c.stat && <p className="testo-sala text-b58-olive-dark-testo mt-2 font-medium">{c.stat}</p>}
           </Link>
         ))}
       </div>

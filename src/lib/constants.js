@@ -197,10 +197,10 @@ export const eComponente = (recipeType) => recipeType !== "piatto_finito";
 // in sviluppo → pronta → in carta → ritirata. Le prime tre si attraversano
 // in avanti, l'ultima è un'uscita di lato.
 export const RECIPE_STATI = [
-  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-inverso-soft" },
   { value: "pronta", label: "Pronta per la carta", colorClass: "bg-b58-gold" },
   { value: "in_carta", label: "In carta", colorClass: "bg-b58-olive" },
-  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-inverso-soft/60" },
 ];
 
 // ⚠️ «Ritirata» VINCE su tutto il resto, e non è una scelta di comodo: il
@@ -238,9 +238,9 @@ export const recipeStatusLabel = (prontaPerCarta, inCarta, ritirataIl) => {
 //    tocchi il database. «In carta» non c'è, perché è il riflesso di un
 //    menu (16/08) e una preparazione in un menu non ci sta.
 export const STATI_PREPARAZIONE = [
-  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-inverso-soft" },
   { value: "pronta", label: "Pronta per l'uso", colorClass: "bg-b58-gold" },
-  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-inverso-soft/60" },
 ];
 
 // Un tipo che non si conosce (una riga letta senza il tipo: uno storico,

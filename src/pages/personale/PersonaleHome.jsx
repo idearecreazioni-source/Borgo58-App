@@ -41,7 +41,7 @@ export default function PersonaleHome() {
   }, [includeInactive]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.first_name.trim() || !form.last_name.trim() || !entities) return;
@@ -83,7 +83,7 @@ export default function PersonaleHome() {
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo dipendente"}
           </button>
@@ -91,11 +91,11 @@ export default function PersonaleHome() {
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {showForm && (
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-6 flex flex-wrap gap-2 items-end">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4 mb-6 flex flex-wrap gap-2 items-end">
           <input
             value={form.first_name}
             onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
@@ -127,7 +127,7 @@ export default function PersonaleHome() {
             type="button"
             disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
             onClick={handleAdd}
-            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Creo…" : "Crea"}
           </button>
@@ -143,10 +143,10 @@ export default function PersonaleHome() {
               const days = daysTo(d.expiry_date);
               return (
                 <li key={d.id} className="testo-sala-grande flex items-center justify-between gap-2">
-                  <Link to={`/personale/${d.employee?.id}`} className="text-b58-charcoal hover:text-b58-terracotta">
+                  <Link to={`/personale/${d.employee?.id}`} className="text-b58-charcoal hover:text-b58-terracotta-testo">
                     {d.employee?.first_name} {d.employee?.last_name} — {labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}
                   </Link>
-                  <span className={days < 0 ? "text-b58-terracotta-dark font-medium" : "text-b58-charcoal-soft"}>
+                  <span className={days < 0 ? "text-b58-terracotta-dark-testo font-medium" : "text-b58-charcoal-soft"}>
                     {days < 0 ? `scaduto (${formatDate(d.expiry_date)})` : `${formatDate(d.expiry_date)} (${days}gg)`}
                   </span>
                 </li>

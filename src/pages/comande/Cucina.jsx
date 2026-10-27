@@ -160,7 +160,7 @@ export default function Cucina() {
       // classe da cui il blocco @media print riconosce che questo foglio
       // va alla termica della cucina e vuole 6,8 mm invece di 3,2 (il
       // preconto, che condivide `stampa-ticket`, non la porta).
-      className={`ticket-cucina ${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-white border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
+      className={`ticket-cucina ${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-b58-campo border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
         g.tipo === "chiamata" ? "border-t-b58-gold-dark" : "border-t-b58-terracotta"
       } ${giaStampato ? "opacity-60" : ""}`}
     >
@@ -280,7 +280,7 @@ export default function Cucina() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
@@ -314,7 +314,7 @@ export default function Cucina() {
               <button
                 type="button"
                 onClick={() => stampa(g, false)}
-                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala-grande font-semibold print:hidden"
+                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala-grande font-semibold print:hidden"
               >
                 🖨 Stampa
               </button>

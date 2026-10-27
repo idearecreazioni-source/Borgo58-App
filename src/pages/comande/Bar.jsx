@@ -146,7 +146,7 @@ export default function Bar() {
 
   const Ticket = ({ g, evaso }) => (
     <div
-      className={`rounded-xl bg-white ring-1 p-3 mb-2 ${
+      className={`rounded-xl bg-b58-campo ring-1 p-3 mb-2 ${
         evaso ? "ring-b58-charcoal/5 opacity-50" : "ring-b58-charcoal/15"
       }`}
     >
@@ -171,7 +171,7 @@ export default function Bar() {
         className={`tocco-azione w-full mt-2 rounded-lg testo-sala font-semibold ${
           evaso
             ? "border border-b58-charcoal/15 text-b58-charcoal-soft"
-            : "bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment"
+            : "bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore"
         }`}
       >
         {evaso ? "↺ Riapri" : "✓ Evaso"}
@@ -201,7 +201,7 @@ export default function Bar() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
@@ -259,7 +259,7 @@ export default function Bar() {
                 // conti aperti non ce l'hanno ancora, domani no.
                 const { items: righe, nonInviate, coperti, total: totale } = orderTotals(o, copertoPrice);
                 return (
-                  <div key={o.id} className="rounded-xl bg-white ring-1 ring-b58-charcoal/15 p-3 mb-2">
+                  <div key={o.id} className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/15 p-3 mb-2">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-display testo-sala-grande text-b58-charcoal">{o.table_label}</span>
                       <span className="testo-sala-grande font-semibold text-b58-charcoal">
@@ -291,7 +291,7 @@ export default function Bar() {
                       <button
                         type="button"
                         onClick={() => apriConto(o.id, "close")}
-                        className="tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-semibold"
+                        className="tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-semibold"
                       >
                         Chiudi conto
                       </button>

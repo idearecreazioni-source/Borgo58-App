@@ -50,7 +50,7 @@ export default function LottoDestinazioni() {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6 print:hidden">
         <Link
           to="/haccp/tracciabilita"
-          className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           ← Tracciabilità lotti
         </Link>
@@ -78,12 +78,12 @@ export default function LottoDestinazioni() {
       </div>
 
       {error ? (
-        <div className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+        <div className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
           <p>Non sono riuscito a leggere dove è finito questo lotto: {error}</p>
           <button
             type="button"
             onClick={() => setGiro((g) => g + 1)}
-            className="tocco-bottone mt-2 px-3 rounded-lg border border-b58-terracotta text-b58-terracotta-dark print:hidden"
+            className="tocco-bottone mt-2 px-3 rounded-lg border border-b58-terracotta text-b58-terracotta-dark-testo print:hidden"
           >
             Riprova
           </button>

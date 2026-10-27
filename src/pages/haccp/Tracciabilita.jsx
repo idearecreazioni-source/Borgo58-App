@@ -26,7 +26,7 @@ export default function Tracciabilita() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6 print:hidden">
-        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← HACCP
         </Link>
         <PrintButton />
@@ -41,7 +41,7 @@ export default function Tracciabilita() {
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">
           {error}
         </p>
       )}
@@ -52,7 +52,7 @@ export default function Tracciabilita() {
         onChange={(e) => setCerca(e.target.value)}
         placeholder="Cerca per prodotto, fornitore o numero di lotto…"
         aria-label="Cerca fra i lotti"
-        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 mb-4 testo-sala-grande print:hidden"
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 mb-4 testo-sala-grande print:hidden"
       />
       {/* ⚠️ Un foglio stampato con la ricerca accesa NON è l'elenco intero:
           lo dice, sul foglio — chi lo riceve non vede la casella. */}

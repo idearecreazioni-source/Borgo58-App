@@ -104,7 +104,7 @@ export default function BozzeList() {
         <button
           type="submit"
           disabled={!link.trim() || importando}
-          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
+          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore disabled:opacity-50"
         >
           {importando ? "Sto leggendo la ricetta e la sistemo…" : "Importa"}
         </button>
@@ -124,7 +124,7 @@ export default function BozzeList() {
         <button
           type="submit"
           disabled={!titolo.trim() || creando}
-          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
+          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-sul-colore disabled:opacity-50"
         >
           {creando ? "Sto creando…" : "Crea la bozza"}
         </button>

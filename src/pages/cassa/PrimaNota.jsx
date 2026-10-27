@@ -249,7 +249,7 @@ export default function PrimaNota() {
   const isForager = form.tipo_documento === "documento_raccoglitore_occasionale";
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // ⚠️ Passando a «entrata», l'etichetta si spegne: il database la rifiuta
@@ -376,7 +376,7 @@ export default function PrimaNota() {
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa
         </Link>
         <div className="flex flex-wrap items-center gap-3">
@@ -417,7 +417,7 @@ export default function PrimaNota() {
           {!inTasca && balance && (
             <span className="testo-sala text-b58-charcoal-soft">
               Banca:{" "}
-              <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
+              <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.saldo_banca)}
               </span>
             </span>
@@ -455,7 +455,7 @@ export default function PrimaNota() {
                   }));
                 }
               }}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -468,14 +468,14 @@ export default function PrimaNota() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-6">Prima nota di cassa</h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Nuovo movimento */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Nuovo movimento</h2>
         <StriscaDallaVoce venuto={venuto} />
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
           {/* ⚠️ Sulla tasca il verso e' uno solo, e la schermata lo DICE invece
               di sembrare rotta: un pulsante che sparisce senza spiegazione si
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
@@ -634,7 +634,7 @@ export default function PrimaNota() {
           </div>
 
           {showSimplifiedInvoiceHint && (
-            <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
+            <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
               Scontrino sotto i {SIMPLIFIED_INVOICE_THRESHOLD}€: hai chiesto la fattura semplificata
               (dando P.IVA/codice fiscale) per poter recuperare l'IVA? Con il solo scontrino l'IVA non è detraibile.
             </p>
@@ -765,7 +765,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>
@@ -823,17 +823,17 @@ export default function PrimaNota() {
             <dl data-totali-periodo className="flex flex-wrap gap-x-6 gap-y-1 testo-sala mb-3">
               <div data-totale="entrate">
                 <dt className="inline text-b58-charcoal-soft">Entrate </dt>
-                <dd className="inline text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</dd>
+                <dd className="inline text-b58-olive-dark-testo font-medium">+{formatEUR(periodTotals.inc)}</dd>
               </div>
               <div data-totale="uscite">
                 <dt className="inline text-b58-charcoal-soft">Uscite </dt>
-                <dd className="inline text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</dd>
+                <dd className="inline text-b58-terracotta-dark-testo font-medium">−{formatEUR(periodTotals.out)}</dd>
               </div>
               <div data-totale="saldo">
                 <dt className="inline text-b58-charcoal-soft">Saldo del periodo </dt>
                 <dd
                   className={`inline font-medium ${
-                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"
+                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-dark-testo"
                   }`}
                 >
                   {periodTotals.saldo < 0 ? "−" : "+"}
@@ -920,7 +920,7 @@ export default function PrimaNota() {
                   <span
                     data-prova="segno-investimento"
                     title="Investimento per il progetto"
-                    className="rounded-full bg-b58-gold/20 text-b58-gold-dark px-2 testo-sala"
+                    className="rounded-full bg-b58-gold/20 text-b58-gold-dark-testo px-2 testo-sala"
                   >
                     investimento
                   </span>
