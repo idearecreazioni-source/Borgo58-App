@@ -89,12 +89,11 @@
 /* =====================================================================
    IL TEMA SCURO — 27/10/2026 (richiesta di Alessio col restyling)
    =====================================================================
-   Si sceglie dal piede del menu: Chiaro, Scuro o Come il telefono. La
+   Si sceglie dal piede del menu: Chiaro o Scuro. La
    scelta vive su ogni dispositivo (il tablet di sala e il telefono possono
    volere cose diverse); senza scelta resta il chiaro di sempre.
    `public/tema.js` mette `data-tema` su <html> PRIMA che la pagina si
-   disegni, così non c'è il lampo bianco; «Come il telefono» lo risolve lui
-   in «chiaro» o «scuro».
+   disegni, così non c'è il lampo bianco.
 
    ⚠️ SOLO A SCHERMO (`@media screen`): la carta esce chiara sempre, senza
       toccare nessuna delle regole di stampa.

@@ -2,10 +2,9 @@ import { MemoryRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// UNO SCADUTO SI RIPROPONE FRA QUELLI DI OGGI — 27/10/2026, chiesto da
-// Alessio: «vorrei che mi vengano riproposti nei giorni a seguire fino a
-// quando non li spunto». Prima, il giorno dopo la scadenza, l'impegno
-// spariva dalla Dashboard.
+// GLI SCADUTI IN «IN RITARDO», SOPRA GLI IMPEGNI DI OGGI — 27/10/2026, sera.
+// Si ripropongono ogni giorno finché non si spuntano, ma in una sezione
+// loro: «scaduto il …» su ogni riga «rende tutto confusionario» (Alessio).
 
 const finte = { compiti: vi.fn() };
 vi.mock("../../src/lib/api/tasks", () => ({
@@ -36,7 +35,7 @@ vi.mock("../../src/context/AuthContext", () => ({
 }));
 
 const { default: Dashboard } = await import("../../src/pages/Dashboard");
-const { oggiLocale, formatDate } = await import("../../src/lib/constants");
+const { oggiLocale } = await import("../../src/lib/constants");
 
 const impegno = (over) => ({
   id: Math.random().toString(36).slice(2),
@@ -47,7 +46,7 @@ const impegno = (over) => ({
 });
 
 describe("la Dashboard e gli scaduti", () => {
-  it("🔴 uno scaduto sta fra gli impegni di oggi, prima, e dice quando era", async () => {
+  it("🔴 uno scaduto sta in «In ritardo», sopra gli impegni di oggi, con la data piccola", async () => {
     // ⚠️ La data si conta da oggi: una data fissa smetterebbe di essere
     //    «passata» se la prova girasse con un orologio diverso.
     const d = new Date(`${oggiLocale()}T12:00:00`);
@@ -64,10 +63,26 @@ describe("la Dashboard e gli scaduti", () => {
     );
     const scaduto = await screen.findByRole("checkbox", { name: "Segna fatto: Chiamare il commercialista" });
     const diOggi = screen.getByRole("checkbox", { name: "Segna fatto: Ordinare il pane" });
-    expect(scaduto.compareDocumentPosition(diOggi) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByText(`· scaduto il ${formatDate(scadenza)}`)).toBeTruthy();
-    // quello di oggi non porta la scritta
-    expect(screen.getAllByText(/scaduto il/)).toHaveLength(1);
-    expect(screen.queryByText("Nessun impegno con scadenza oggi.")).toBeNull();
+    const ritardo = screen.getByRole("heading", { name: "In ritardo (1)" });
+    const diOggiTitolo = screen.getByRole("heading", { name: "Impegni di oggi" });
+    const segue = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(segue(ritardo, scaduto)).toBe(true);
+    expect(segue(scaduto, diOggiTitolo)).toBe(true);
+    expect(segue(diOggiTitolo, diOggi)).toBe(true);
+    // la data, piccola e senza «scaduto il»
+    const giorno = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" }).format(d);
+    expect(screen.getByText(giorno)).toBeTruthy();
+    expect(screen.queryAllByText(/scaduto il/)).toHaveLength(0);
+  });
+
+  it("senza scaduti la sezione non c'è", async () => {
+    finte.compiti.mockResolvedValue([impegno({ title: "Ordinare il pane", due_date: oggiLocale() })]);
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>,
+    );
+    await screen.findByRole("checkbox", { name: "Segna fatto: Ordinare il pane" });
+    expect(screen.queryByRole("heading", { name: /In ritardo/ })).toBeNull();
   });
 });

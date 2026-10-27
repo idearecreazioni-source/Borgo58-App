@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CHIAVE_TEMA, leggiSceltaTema, temaEffettivo } from "../../src/lib/tema";
+import { CHIAVE_TEMA, SCELTE_TEMA, leggiSceltaTema } from "../../src/lib/tema";
 
 // IL TEMA CHIARO O SCURO (27/10/2026, restyling).
 
@@ -13,18 +13,18 @@ describe("la scelta del tema", () => {
     expect(leggiSceltaTema({ getItem: () => { throw new Error("bloccata"); } })).toBe("chiaro");
   });
 
-  it("«Come il telefono» segue il telefono, le altre due no", () => {
-    expect(temaEffettivo("auto", true)).toBe("scuro");
-    expect(temaEffettivo("auto", false)).toBe("chiaro");
-    expect(temaEffettivo("scuro", false)).toBe("scuro");
-    expect(temaEffettivo("chiaro", true)).toBe("chiaro");
+  // 🔴 27/10/2026, sera, chiesto da Alessio: via «Come il telefono».
+  it("🔴 le scelte sono due, Chiaro e Scuro", () => {
+    expect(SCELTE_TEMA.map((s) => s.valore)).toEqual(["chiaro", "scuro"]);
+    expect(leggiSceltaTema(memoria("scuro"))).toBe("scuro");
   });
 
-  it("public/tema.js usa la stessa chiave e le stesse tre scelte", () => {
+  it("public/tema.js usa la stessa chiave, e chi aveva «auto» tiene quello che vedeva", () => {
     const prima = readFileSync("public/tema.js", "utf8");
     expect(prima).toContain(`"${CHIAVE_TEMA}"`);
-    expect(prima).toMatch(/s === "scuro" \|\| s === "auto"/);
+    expect(prima).toContain('s === "auto"');
     expect(prima).toContain("(prefers-color-scheme: dark)");
+    expect(prima).toContain('localStorage.setItem("b58-tema", s)');
   });
 
   it("index.html carica public/tema.js prima del gestionale, e non come modulo", () => {

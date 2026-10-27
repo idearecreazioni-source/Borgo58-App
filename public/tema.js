@@ -9,16 +9,19 @@
 //    sicurezza del sito (public/_headers) ammette solo script da 'self'.
 // ⚠️ La stessa regola sta in src/lib/tema.js, che poi tiene il tema
 //    aggiornato mentre si usa il gestionale: se cambia una, cambia l'altra.
+// 🔴 «Come il telefono» non c'è più (27/10/2026, sera): chi l'aveva scelto
+//    tiene il tema che il telefono mostra adesso, salvato come scelta sua.
 (function () {
-  var scelta = "chiaro";
+  var scuro = false;
   try {
     var s = localStorage.getItem("b58-tema");
-    if (s === "scuro" || s === "auto") scelta = s;
+    if (s === "auto") {
+      s = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "scuro" : "chiaro";
+      localStorage.setItem("b58-tema", s);
+    }
+    scuro = s === "scuro";
   } catch {
     // Senza memoria del browser resta il chiaro di sempre.
   }
-  var scuro =
-    scelta === "scuro" ||
-    (scelta === "auto" && !!window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.setAttribute("data-tema", scuro ? "scuro" : "chiaro");
 })();
