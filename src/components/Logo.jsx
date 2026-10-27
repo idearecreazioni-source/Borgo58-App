@@ -17,7 +17,7 @@ export default function Logo({ size = "md" }) {
         src="/logo-borgo58.png"
         alt="Borgo 58 · Osteria Contemporanea"
         onError={() => setImgOk(false)}
-        className={`${dims.img} w-auto object-contain`}
+        className={`logo-b58 ${dims.img} w-auto object-contain`}
       />
     );
   }

@@ -158,6 +158,15 @@
     --color-orange-700: #f0a870;
   }
 
+  /* Il logo ha la scritta «Borgo» scura: al buio sparirebbe. Sta su una
+     targhetta color panna, come un'etichetta, invece di ridisegnarlo. */
+  :root[data-tema="scuro"] .logo-b58 {
+    background-color: #fbf8f2;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    box-sizing: content-box;
+  }
+
   /* La sala, la sua legenda e le anteprime della carta: chiare sempre.
      ⚠️ Rimette i colori di Borgo 58, NON quelli di Tailwind ribaltati qui
      sopra (stone, red, amber, emerald): oggi nessuna di queste quattro parti
