@@ -1,4 +1,4 @@
-import { formatDate } from "../constants";
+import { TASK_LUOGHI, formatDate, labelFor } from "../constants";
 
 // COME SI LEGGE L'AGENDA — 30/08/2026, Blocco 3 del mandato.
 //
@@ -153,6 +153,8 @@ export function campiImpegno(t) {
     ...(!t.due_date && t.giorni_in_lista > 13
       ? [{ chiave: "eta", etichetta: "In lista da", valore: anzianita(t.giorni_in_lista) }]
       : []),
+    // 28/10/2026: un promemoria per luogo dice dove te lo ricorderò.
+    ...(t.luogo ? [{ chiave: "luogo", etichetta: "Quando arrivo", valore: labelFor(TASK_LUOGHI, t.luogo) }] : []),
   ];
 }
 

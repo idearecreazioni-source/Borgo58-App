@@ -92,6 +92,16 @@ export const SUPPLIER_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+// 🔴 I LUOGHI DEI PROMEMORIA — 28/10/2026, chiesto da Alessio: «ricordami di
+//    fare questo quando arrivo a casa». Lo stesso elenco del vincolo
+//    `luogo_chiuso` (migrazione 20261028000001) e della funzione
+//    `promemoria-luogo`: aggiungerne uno vuol dire toccare tutti e tre.
+export const TASK_LUOGHI = [
+  // `arrivo`: come si dice nella frase «ricordamelo quando arrivo …».
+  { value: "casa", label: "Casa", arrivo: "a casa" },
+  { value: "ristorante", label: "Ristorante", arrivo: "al ristorante" },
+];
+
 // LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
 // docs/mandati/20260824_le_linee_della_previsione.md).
 //
