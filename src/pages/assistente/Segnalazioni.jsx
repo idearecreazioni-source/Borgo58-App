@@ -62,7 +62,7 @@ function Riga({ s, onCambiata, onTolta }) {
     });
 
   return (
-    <li className="rounded-xl bg-white p-4 ring-1 ring-b58-charcoal/10 flex flex-col gap-2">
+    <li className="rounded-xl bg-b58-campo p-4 ring-1 ring-b58-charcoal/10 flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <span className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">
           {etichettaStato(s.stato)}
@@ -81,7 +81,7 @@ function Riga({ s, onCambiata, onTolta }) {
             type="button"
             onClick={() => setVista((v) => !v)}
             aria-expanded={vista}
-            className="tocco-bottone testo-sala text-b58-olive-dark underline"
+            className="tocco-bottone testo-sala text-b58-olive-dark-testo underline"
           >
             {vista ? "Nascondi cosa si vedeva" : "Cosa si vedeva"}
           </button>
@@ -118,12 +118,12 @@ function Riga({ s, onCambiata, onTolta }) {
           type="button"
           disabled={lavoro}
           onClick={togli}
-          className="tocco-bottone rounded-lg px-3 text-b58-turno-dark hover:bg-b58-cream-dark disabled:opacity-50"
+          className="tocco-bottone rounded-lg px-3 text-b58-turno-dark-testo hover:bg-b58-cream-dark disabled:opacity-50"
         >
           Togli
         </button>
       </div>
-      {errore && <p className="testo-sala text-b58-turno-dark">{errore}</p>}
+      {errore && <p className="testo-sala text-b58-turno-dark-testo">{errore}</p>}
     </li>
   );
 }

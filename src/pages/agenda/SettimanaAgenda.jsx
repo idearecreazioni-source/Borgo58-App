@@ -99,7 +99,7 @@ export default function SettimanaAgenda({
           data-settimana-prima
           onClick={onPrima}
           aria-label="Settimana precedente"
-          className="tocco-bottone shrink-0 rounded-lg px-2 text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone shrink-0 rounded-lg px-2 text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           ←
         </button>
@@ -114,7 +114,7 @@ export default function SettimanaAgenda({
               type="button"
               data-settimana-questa
               onClick={onQuesta}
-              className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-testo testo-sala font-medium text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               Torna a questa settimana
             </button>
@@ -125,7 +125,7 @@ export default function SettimanaAgenda({
           data-settimana-dopo
           onClick={onDopo}
           aria-label="Settimana successiva"
-          className="tocco-bottone shrink-0 rounded-lg px-2 text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone shrink-0 rounded-lg px-2 text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           →
         </button>
@@ -138,13 +138,13 @@ export default function SettimanaAgenda({
         //    lettura fallisce non si disegnano sette «niente»: si dice che
         //    non si è letto, con la via d'uscita per riprovare.
         <div data-errore-settimana className="py-2">
-          <p className="testo-sala text-b58-terracotta-dark">
+          <p className="testo-sala text-b58-terracotta-dark-testo">
             Non riesco a leggere i task di questa settimana: {errore}
           </p>
           <button
             type="button"
             onClick={onRiprova}
-            className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+            className="tocco-testo testo-sala font-medium text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
           >
             Riprova
           </button>
@@ -168,7 +168,7 @@ export default function SettimanaAgenda({
                         sul computer a 1280, e resta identico ora che la
                         settimana è a righe dappertutto. */}
                     {n.corto} {n.numero}
-                    {oggi && <span className="text-b58-olive-dark"> · oggi</span>}
+                    {oggi && <span className="text-b58-olive-dark-testo"> · oggi</span>}
                   </p>
                   {/* ⚠️ Discreto e sulla stessa riga del giorno: un giorno
                       libero si dice, ma non si prende lo spazio di uno pieno. */}

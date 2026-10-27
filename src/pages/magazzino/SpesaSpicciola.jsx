@@ -250,7 +250,7 @@ export default function SpesaSpicciola() {
           )}
           <button
             type="button"
-            className="tocco-bottone rounded border border-stone-300 bg-white px-4 font-semibold"
+            className="tocco-bottone rounded border border-stone-300 bg-b58-campo px-4 font-semibold"
             disabled={inCorso || !articolo.trim()}
             onClick={aggiungi}
           >
@@ -281,7 +281,7 @@ export default function SpesaSpicciola() {
             <div className="mb-6">
               <button
                 type="button"
-                className="tocco-azione w-full rounded border border-stone-300 bg-white px-4 testo-sala-grande font-semibold"
+                className="tocco-azione w-full rounded border border-stone-300 bg-b58-campo px-4 testo-sala-grande font-semibold"
                 onClick={mandaSuWhatsApp}
               >
                 Manda la lista su WhatsApp

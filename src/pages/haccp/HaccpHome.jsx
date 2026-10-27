@@ -119,12 +119,12 @@ export default function HaccpHome() {
       </div>
 
       {errore && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           Contatori non aggiornati: {errore}. I numeri qui sotto potrebbero essere incompleti.
         </p>
       )}
 
-      <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
+      <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
         Struttura pronta all'uso, ma le soglie di temperatura e le attività di pulizia vanno
         impostate — e validate con un consulente alimentare/tecnico HACCP — prima di affidarcisi
         in produzione.
@@ -153,11 +153,11 @@ export default function HaccpHome() {
                 scheda: senza, `justify-between` non ha spazio da dividere
                 e i due si accostano. */}
             <div className="flex w-full items-start justify-between">
-              <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+              <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
                 <Icon name={c.icon} className="w-5 h-5" />
               </div>
               {c.alert && (
-                <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5">
+                <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5">
                   {c.alert}
                 </span>
               )}

@@ -79,7 +79,7 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
         </p>
       )}
       {come === "incerto" && (
-        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark-testo">
           <strong>Non sono sicuro di aver capito bene.</strong> Guarda i dati qui sotto prima di
           approvare.
         </p>
@@ -123,7 +123,7 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
           type="button"
           onClick={onScarta}
           disabled={inCorso || fatto || buttato}
-          className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
+          className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark-testo disabled:opacity-60"
         >
           {buttato ? "Buttato" : "Butta l'appunto"}
         </button>
@@ -143,7 +143,7 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
           ⚠️ Per questo la prima riga è il fatto, non il motivo: il motivo lo si
              legge dopo, quando si è già smesso di temere il doppione. */}
       {fallito && (
-        <div className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+        <div className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark-testo">
           <p>
             <strong>Non è stato scritto niente.</strong> L&apos;appunto è ancora qui,
             intero: puoi riprovare.
@@ -195,7 +195,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
           funzioni male. Dirlo prima costa una riga; scoprirlo dopo costa
           la fiducia in tutti gli avvisi. */}
       {avvisoDellElemento(elemento) && (
-        <p className="testo-sala mt-0.5 text-b58-olive-dark">
+        <p className="testo-sala mt-0.5 text-b58-olive-dark-testo">
           📲 Ti mando una notifica su Telegram il{" "}
           <strong>{avvisoDellElemento(elemento).giorno}</strong> alle{" "}
           <strong>{avvisoDellElemento(elemento).ora}</strong> — o entro i cinque minuti dopo.
@@ -279,7 +279,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
         <p className="testo-sala mt-1">
           <Link
             to={indirizzoAMano(elemento.percorso, elemento.id)}
-            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
+            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta-testo hover:underline"
           >
             Fallo a mano →
           </Link>
@@ -303,7 +303,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
               «non c'e' niente». I pulsanti restano — lui puo' saperlo —
               ma non si finge che l'elenco basti. */}
           {gemelli && (
-            <p className="testo-sala mt-0.5 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+            <p className="testo-sala mt-0.5 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark-testo">
               <strong>Da qui non riesco a distinguerli.</strong> Hanno lo stesso nome, lo
               stesso giorno e tutto il resto uguale: se non sei sicuro, aprili in Agenda
               prima di scegliere.
@@ -322,7 +322,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
                    39,7 punti, sotto la soglia del dito. `text-left` e
                    `py-2` servono ai nomi lunghi degli impegni, che vanno a
                    capo invece di uscire dallo schermo. */
-                className="tocco-scelta flex max-w-full items-center rounded-lg bg-b58-charcoal px-4 py-2 text-left testo-sala text-b58-parchment disabled:opacity-60"
+                className="tocco-scelta flex max-w-full items-center rounded-lg bg-b58-inverso px-4 py-2 text-left testo-sala text-b58-sul-colore disabled:opacity-60"
               >
                 {s.nome}
               </button>

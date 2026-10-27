@@ -97,7 +97,7 @@ export default function PuliziaESanificazione() {
   const caricaMese = useCallback((anno, mese) => pulizieDelMese(anno, mese), []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddTask = async () => {
     if (!taskForm.name.trim()) return;
@@ -123,11 +123,13 @@ export default function PuliziaESanificazione() {
     setSaving(true);
     setError("");
     try {
-      await addCleaningLog({ taskId, note: logNote });
       // 🔴 Solo se è il compito che aveva detto: registrandone un altro,
-      //    quella cosa detta non è stata fatta.
+      //    quella cosa detta non è stata fatta. E si chiude NELLA STESSA
+      //    transazione della pulizia (20261027000001).
       const suo = venuto.azione?.campi?.compito;
-      if (!suo || suo === taskId) await venuto.chiudi();
+      const chiudendo = !suo || suo === taskId ? venuto.idDaChiudere : null;
+      await addCleaningLog({ taskId, note: logNote }, { azioneDettataId: chiudendo });
+      if (chiudendo) venuto.segnaChiusa();
       setOpenTaskId(null);
       setLogNote("");
       await load();
@@ -175,7 +177,7 @@ export default function PuliziaESanificazione() {
     <div className="testo-sala max-w-3xl mx-auto pb-16">
       <Link
         to="/haccp"
-        className="tocco-bottone print:hidden inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone print:hidden inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← HACCP
       </Link>
@@ -184,7 +186,7 @@ export default function PuliziaESanificazione() {
       <StriscaDallaVoce venuto={venuto} />
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -199,7 +201,7 @@ export default function PuliziaESanificazione() {
             <button
               type="button"
               onClick={() => setShowTaskForm((v) => !v)}
-              className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               {showTaskForm ? "Annulla" : "+ Nuova attività"}
             </button>
@@ -207,7 +209,7 @@ export default function PuliziaESanificazione() {
         </div>
 
         {isTitolare && showTaskForm && (
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <input
                 value={taskForm.name}
@@ -236,7 +238,7 @@ export default function PuliziaESanificazione() {
                 type="button"
                 disabled={addingTask || !taskForm.name.trim()}
                 onClick={handleAddTask}
-                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
               >
                 {addingTask ? "Aggiungo…" : "+ Aggiungi"}
               </button>
@@ -281,7 +283,7 @@ export default function PuliziaESanificazione() {
             )}
 
             {daFare.length === 0 && (inPari.length > 0 || senzaCadenza.length > 0) && (
-              <p className="testo-sala text-b58-olive-dark mb-5">Oggi non c&apos;è niente in scadenza.</p>
+              <p className="testo-sala text-b58-olive-dark-testo mb-5">Oggi non c&apos;è niente in scadenza.</p>
             )}
 
             {(inPari.length > 0 || senzaCadenza.length > 0) && (
@@ -317,7 +319,7 @@ export default function PuliziaESanificazione() {
       {/* ---------------------------------------------------------------
           L'ARCHIVIO, un mese alla volta
           --------------------------------------------------------------- */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mb-6">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
         <ArchivioMensile
           mesi={mesi}
@@ -340,7 +342,7 @@ export default function PuliziaESanificazione() {
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 print:hidden">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Disinfestazione</h2>
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
             <input
               value={pestForm.performed_by}
@@ -375,7 +377,7 @@ export default function PuliziaESanificazione() {
               type="button"
               disabled={addingPest}
               onClick={handleAddPest}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60 shrink-0"
             >
               {addingPest ? "Registro…" : "+ Registra"}
             </button>
@@ -414,7 +416,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
   return (
     <li
       className={`rounded-lg p-3 ring-1 ${
-        grave ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-white ring-b58-charcoal/10"
+        grave ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-campo ring-b58-charcoal/10"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -424,9 +426,9 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
             {labelFor(CLEANING_FREQUENCIES, riga.frequenza)}
             {riga.area ? ` · ${riga.area}` : ""}
             {riga.mai_fatta ? (
-              <span className="text-b58-terracotta-dark font-medium"> · mai fatta</span>
+              <span className="text-b58-terracotta-dark-testo font-medium"> · mai fatta</span>
             ) : inRitardo ? (
-              <span className="text-b58-terracotta-dark font-medium">
+              <span className="text-b58-terracotta-dark-testo font-medium">
                 {" "}
                 · in ritardo di {riga.giorni_ritardo}{" "}
                 {riga.giorni_ritardo === 1 ? "giorno" : "giorni"}
@@ -439,7 +441,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
         <button
           type="button"
           onClick={onApri}
-          className="tocco-azione shrink-0 rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4"
+          className="tocco-azione shrink-0 rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4"
         >
           {aperta ? "Annulla" : "Fatta"}
         </button>
@@ -452,14 +454,14 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               placeholder="Nota (facoltativa)"
-              className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+              className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
             />
           </div>
           <button
             type="button"
             disabled={salvando}
             onClick={onConferma}
-            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
           >
             {salvando ? "Salvo…" : "Conferma"}
           </button>

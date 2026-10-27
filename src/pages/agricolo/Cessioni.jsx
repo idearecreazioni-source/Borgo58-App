@@ -44,7 +44,7 @@ export default function Cessioni() {
   }, []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const total = useMemo(
@@ -102,10 +102,10 @@ export default function Cessioni() {
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/agricolo" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/agricolo" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Agricolo / Orto
         </Link>
-        <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+        <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2">
           {showForm ? "Annulla" : "+ Nuova cessione"}
         </button>
       </div>
@@ -119,14 +119,14 @@ export default function Cessioni() {
         </Didascalia>
       </h1>
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
       {showForm && entities && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
           <div className="testo-sala text-b58-charcoal-soft mb-3">
             Da <span className="text-b58-charcoal font-medium">{entities.agricola.name}</span> a <span className="text-b58-charcoal font-medium">{entities.srls.name}</span>
           </div>
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               <input value={form.product_description} onChange={(e) => setForm((f) => ({ ...f, product_description: e.target.value }))} placeholder="Descrizione prodotto ceduto" className={`${inputClass} sm:col-span-2`} />
               <select value={form.ingredient_id} onChange={(e) => setForm((f) => ({ ...f, ingredient_id: e.target.value }))} className={inputClass}>
@@ -176,7 +176,7 @@ export default function Cessioni() {
                 <input type="checkbox" checked={Boolean(form.update_cost && form.ingredient_id)} onChange={(e) => setForm((f) => ({ ...f, update_cost: e.target.checked }))} disabled={!form.ingredient_id} />
                 Aggiorna il costo dell'ingrediente collegato a questo prezzo
               </label>
-              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Registro…" : "+ Registra cessione"}
               </button>
             </div>

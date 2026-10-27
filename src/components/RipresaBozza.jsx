@@ -38,7 +38,7 @@ export default function RipresaBozza() {
         <button
           type="button"
           onClick={() => { dimenticaLaBozza(); setRipresa(null); }}
-          className="tocco-bottone underline text-b58-terracotta-dark hover:text-b58-charcoal"
+          className="tocco-bottone underline text-b58-terracotta-dark-testo hover:text-b58-charcoal"
         >
           Non l&apos;avevo scritto io
         </button>

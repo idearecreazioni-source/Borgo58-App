@@ -23,7 +23,7 @@ import DatoNonLetto from "../../components/DatoNonLetto";
 //    unità diversa — si DICE riga per riga, in ambra. Non si inventa una
 //    conversione e non si scrive zero.
 
-const campo = "tocco-riga rounded-lg border border-b58-charcoal/20 bg-white px-3 text-b58-charcoal";
+const campo = "tocco-riga rounded-lg border border-b58-charcoal/20 bg-b58-campo px-3 text-b58-charcoal";
 
 export default function Estrapola() {
   const [ricette, setRicette] = useState(null);
@@ -132,7 +132,7 @@ export default function Estrapola() {
       <h1 className="mt-2 mb-4 font-display text-2xl md:text-3xl text-b58-charcoal">Estrapola la spesa</h1>
 
       {fatto != null && (
-        <p className="mb-4 rounded-xl bg-b58-olive/10 p-3 text-b58-olive-dark">
+        <p className="mb-4 rounded-xl bg-b58-olive/10 p-3 text-b58-olive-dark-testo">
           {fatto === 1 ? "Una riga è entrata" : `${fatto} righe sono entrate`} nella lista della spesa.{" "}
           <Link to="/magazzino/lista-spesa" className="underline">
             Apri la lista
@@ -184,12 +184,12 @@ export default function Estrapola() {
             type="button"
             disabled={!scelteValide.length || sceltaSenzaPorzioni || lavorando}
             onClick={estrapola}
-            className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark disabled:opacity-50"
+            className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark disabled:opacity-50"
           >
             {lavorando && !proposta ? "Sto calcolando…" : "Estrapola"}
           </button>
           {sceltaSenzaPorzioni && (
-            <span className="testo-sala text-b58-ambra-dark">Scrivi per quante porzioni, su ogni ricetta scelta.</span>
+            <span className="testo-sala text-b58-ambra-dark-testo">Scrivi per quante porzioni, su ogni ricetta scelta.</span>
           )}
         </div>
       </section>
@@ -202,7 +202,7 @@ export default function Estrapola() {
           <h2 className="mb-2 font-display font-semibold text-b58-charcoal">Cosa serve</h2>
 
           {intere.length > 0 && (
-            <ul className="mb-3 rounded-lg bg-b58-ambra/10 p-3 text-b58-ambra-dark">
+            <ul className="mb-3 rounded-lg bg-b58-ambra/10 p-3 text-b58-ambra-dark-testo">
               {intere.map((r) => (
                 <li key={r.chiave}>
                   «{r.nome}»: {r.problema}.
@@ -246,7 +246,7 @@ export default function Estrapola() {
                         Già in lista: {qtaConUnita(r.gia_in_lista, r.unita)}.
                       </p>
                     )}
-                    {r.problema && <p className="testo-sala text-b58-ambra-dark">{r.problema}</p>}
+                    {r.problema && <p className="testo-sala text-b58-ambra-dark-testo">{r.problema}</p>}
                   </div>
                 </li>
               ))}
@@ -259,7 +259,7 @@ export default function Estrapola() {
               type="button"
               disabled={!daMettere.length || lavorando}
               onClick={mettiInLista}
-              className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark disabled:opacity-50"
+              className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark disabled:opacity-50"
             >
               {lavorando
                 ? "Sto mettendo in lista…"

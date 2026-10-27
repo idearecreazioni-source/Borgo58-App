@@ -424,7 +424,7 @@ export default function PiantaSala({
     // sposta la vista.
     <div
       ref={contenitoreRef}
-      className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
+      className="tema-chiaro overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
     >
       {/* 🔴 LA SALA TAGLIATA SI DENUNCIA (22/08/2026). Due volte una
           pianta monca è arrivata fino al collaudo, e le due volte nessun
@@ -435,7 +435,7 @@ export default function PiantaSala({
           il dubbio nasce guardando la sala, e lì deve trovare la
           risposta. E non sparisce da sola. */}
       {tagliate.length > 0 && (
-        <p className="testo-sala bg-b58-terracotta/15 text-b58-terracotta-dark px-3 py-2 leading-tight">
+        <p className="testo-sala bg-b58-terracotta/15 text-b58-terracotta-dark-testo px-3 py-2 leading-tight">
           <b>Attenzione: la sala non si vede tutta.</b> Non ci stanno per intero{" "}
           {tagliate.map((t) => t.nome).join(", ")}. Gira il tablet o allarga la
           finestra: quello che non si vede non si può toccare.

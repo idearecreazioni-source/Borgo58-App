@@ -206,7 +206,7 @@ export default function PublicReservationForm() {
   // la colonna torna a comandare. `appearance-none` toglie l'aspetto
   // nativo di Safari, che aggiunge margini suoi e riporta il disallineamento.
   const inputClass =
-    "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   // 🔴 OGNI ETICHETTA E' LEGATA AL SUO CAMPO (`htmlFor` + `id`), dal
   //    01/09/2026. Prima nessuna lo era, e non e' una finezza da manuale:
   //    su un telefono l'etichetta e' un bersaglio grande sopra un campo
@@ -418,7 +418,7 @@ export default function PublicReservationForm() {
                 href="/privacy"
                 target="_blank"
                 rel="noreferrer"
-                className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+                className="underline text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
               >
                 Leggi l'informativa
               </a>
@@ -426,12 +426,12 @@ export default function PublicReservationForm() {
             </span>
           </label>
 
-          {error && <p className="testo-sala-grande text-b58-terracotta-dark">{error}</p>}
+          {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting || giornoChiuso || cercaOrari || (sceltaOrari && !form.time)}
-            className="w-full rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
+            className="w-full rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium py-3"
           >
             {submitting ? "Invio…" : "Invia richiesta"}
           </button>

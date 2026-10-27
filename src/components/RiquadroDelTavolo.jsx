@@ -164,7 +164,7 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
       {/* ⚠️ Non è un riquadro vuoto: è un invito. «Chi paga?» dice insieme
           che il dato manca e che si prende toccando qui. */}
       {order && !cliente && (
-        <p className="testo-riquadro-grande font-semibold text-b58-terracotta-dark">
+        <p className="testo-riquadro-grande font-semibold text-b58-terracotta-dark-testo">
           Chi paga? →
         </p>
       )}

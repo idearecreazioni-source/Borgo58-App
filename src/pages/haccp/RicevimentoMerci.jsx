@@ -74,7 +74,7 @@ export default function RicevimentoMerci() {
   }, [isTitolare]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.product_description.trim()) return;
@@ -135,7 +135,7 @@ export default function RicevimentoMerci() {
 
   return (
     <div className="testo-sala max-w-3xl mx-auto pb-16">
-      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← HACCP
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
@@ -152,15 +152,15 @@ export default function RicevimentoMerci() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
       {avviso && (
-        <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
+        <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
-      <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6">
+      <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
           <input
             value={form.product_description}
@@ -234,7 +234,7 @@ export default function RicevimentoMerci() {
             type="button"
             disabled={saving || !form.product_description.trim()}
             onClick={handleAdd}
-            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60 shrink-0"
           >
             {saving ? "Registro…" : "+ Registra"}
           </button>
@@ -263,7 +263,7 @@ export default function RicevimentoMerci() {
                       l'esito lo dice `esitoRicevimento()`, e dice anche
                       il perché. */}
                   {!esitoRicevimento(l).conforme && (
-                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                    <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                       {esitoRicevimento(l).etichetta}
                     </span>
                   )}
@@ -282,7 +282,7 @@ export default function RicevimentoMerci() {
       {/* ⚠️ Si scarica e si stampa, come gli altri tre registri HACCP: il
           destinatario di quel foglio non è chi sta davanti allo schermo, è
           chi viene a controllare. */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mt-6">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-6 mt-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
         <ArchivioMensile
           mesi={mesi}
@@ -315,7 +315,7 @@ export default function RicevimentoMerci() {
                           finirebbero per dire due cose diverse sullo
                           stesso registro. */}
                       {!esitoRicevimento({ conformity: r.conforme, packaging_ok: r.imballo_ok }).conforme && (
-                        <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                        <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                           {esitoRicevimento({ conformity: r.conforme, packaging_ok: r.imballo_ok }).etichetta}
                         </span>
                       )}

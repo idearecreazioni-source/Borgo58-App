@@ -17,7 +17,7 @@ export function StriscaDallaVoce({ venuto }) {
 
   if (venuto.errore) {
     return (
-      <div className="mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2 testo-sala text-b58-terracotta-dark">
+      <div className="mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2 testo-sala text-b58-terracotta-dark-testo">
         Sei arrivato qui da un appunto, ma non sono riuscito a
         rileggerlo: {venuto.errore} — i campi qui sotto sono vuoti, e l'appunto
         è ancora fra quelli che aspettano.
@@ -29,7 +29,7 @@ export function StriscaDallaVoce({ venuto }) {
     return (
       <div className="mb-4 rounded-lg bg-b58-olive/10 px-3 py-2 testo-sala text-b58-charcoal">
         ✓ Fatto. L'appunto non aspetta più.{" "}
-        <Link to="/detta" className="text-b58-terracotta hover:underline">
+        <Link to="/detta" className="text-b58-terracotta-testo hover:underline">
           Torna a quello che aspetta →
         </Link>
       </div>

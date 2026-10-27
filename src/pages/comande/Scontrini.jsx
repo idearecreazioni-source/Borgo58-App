@@ -83,7 +83,7 @@ export default function Scontrini() {
   return (
     <div className="max-w-2xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4">
-        <Link to="/comande" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/comande" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Sala
         </Link>
       </div>
@@ -95,7 +95,7 @@ export default function Scontrini() {
       )}
 
       {errore && (
-        <div className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <p>{errore}</p>
           <button onClick={carica} className="tocco-bottone underline testo-sala mt-1">
             Riprova

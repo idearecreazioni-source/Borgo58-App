@@ -39,7 +39,7 @@ export default function RaccoltaPropria() {
   }, []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -79,10 +79,10 @@ export default function RaccoltaPropria() {
   return (
     <div className="testo-sala max-w-3xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← HACCP
         </Link>
-        <button onClick={() => setShowForm((v) => !v)} className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
+        <button onClick={() => setShowForm((v) => !v)} className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4">
           {showForm ? "Annulla" : "+ Nuova raccolta"}
         </button>
       </div>
@@ -96,10 +96,10 @@ export default function RaccoltaPropria() {
         </Didascalia>
       </h1>
 
-      {error && <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
       {showForm && (
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-6">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <input value={form.species} onChange={(e) => setForm((f) => ({ ...f, species: e.target.value }))} placeholder="Specie raccolta" className={`${inputClass} sm:col-span-2`} />
             <div>
@@ -123,7 +123,7 @@ export default function RaccoltaPropria() {
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativa)" className={inputClass} />
           </div>
           <div className="flex justify-end">
-            <button type="button" disabled={saving || !form.species.trim()} onClick={handleAdd} className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60">
+            <button type="button" disabled={saving || !form.species.trim()} onClick={handleAdd} className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60">
               {saving ? "Registro…" : "+ Registra raccolta"}
             </button>
           </div>
@@ -155,7 +155,7 @@ export default function RaccoltaPropria() {
                   <div className="testo-sala text-b58-charcoal-soft mt-1">Identificazione: {it.identification_method}</div>
                 )}
                 {it.contamination_risk_note && (
-                  <div className="testo-sala text-b58-terracotta-dark mt-1">Rischio: {it.contamination_risk_note}</div>
+                  <div className="testo-sala text-b58-terracotta-dark-testo mt-1">Rischio: {it.contamination_risk_note}</div>
                 )}
               </div>
               {/* ⚠️ Era l’unico registro HACCP cancellabile a un tocco e

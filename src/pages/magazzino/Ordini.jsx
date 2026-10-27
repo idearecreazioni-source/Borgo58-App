@@ -214,11 +214,11 @@ export default function Ordini() {
     }
   };
 
-  const box = "bg-white rounded-xl border border-b58-charcoal/10 p-4 mb-4";
+  const box = "bg-b58-campo rounded-xl border border-b58-charcoal/10 p-4 mb-4";
 
   return (
     <div className="testo-sala max-w-4xl mx-auto">
-      <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Lista della spesa
       </Link>
       <h1 className="mb-6 font-display text-2xl md:text-3xl text-b58-charcoal mt-2">
@@ -229,7 +229,7 @@ export default function Ordini() {
       </h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -332,7 +332,7 @@ export default function Ordini() {
                               <button
                                 type="button"
                                 onClick={() => mostraConfronto(r.ingredient_id)}
-                                className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark ml-2"
+                                className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo ml-2"
                               >
                                 chi altro lo vende?
                               </button>
@@ -359,7 +359,7 @@ export default function Ordini() {
                         rows={8}
                         value={bozza.testoModificato}
                         onChange={(e) => cambiaTesto(g.supplier_id, e.target.value)}
-                        className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+                        className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
                       />
 
                       <div className="flex items-center justify-between gap-3 flex-wrap mt-3">
@@ -404,7 +404,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, via)}
-                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-medium px-4"
                             >
                               {via === "whatsapp" ? "Registra e apri WhatsApp" : "Registra e apri la posta"}
                             </button>
@@ -414,7 +414,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, "altro")}
-                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-medium px-4"
                             >
                               Registra l&apos;ordine
                             </button>
@@ -478,14 +478,14 @@ export default function Ordini() {
                         <button
                           type="button"
                           onClick={() => handleArrivato(o.id)}
-                          className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                          className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                         >
                           È arrivato
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAnnulla(o.id)}
-                          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                         >
                           {/* ⚠️ «ANNULLA L'ORDINE», non «Annulla» (22/08).
                               Qui il gesto **annulla davvero l'ordine** e le

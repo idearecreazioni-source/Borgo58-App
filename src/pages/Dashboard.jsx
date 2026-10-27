@@ -17,7 +17,7 @@ import Didascalia from "../components/Didascalia";
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
   media: "bg-b58-gold",
-  bassa: "bg-b58-charcoal-soft/50",
+  bassa: "bg-b58-inverso-soft/50",
 };
 
 // Dashboard home (§3.12): non più una griglia di moduli (già nella sidebar,
@@ -203,9 +203,9 @@ export default function Dashboard() {
       </div>
 
       {notice && (
-        <p className="testo-sala text-b58-azione-dark bg-b58-azione/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+        <p className="testo-sala text-b58-azione-dark-testo bg-b58-azione/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
-      {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
@@ -243,7 +243,7 @@ export default function Dashboard() {
               ⚠️ Compare solo se c'è qualcosa, come i due riquadri accanto:
               uno che dice «niente» tutte le mattine diventa arredamento. */}
           {!isStaff && nonLetto(dettate) && (
-            <p className="testo-sala text-b58-terracotta-dark">
+            <p className="testo-sala text-b58-terracotta-dark-testo">
               Non sono riuscito a leggere le cose che hai dettato.{" "}
               <button type="button" onClick={load} className="tocco-inline underline">
                 Riprova
@@ -275,7 +275,7 @@ export default function Dashboard() {
               titolo: «di persona» è la sola cosa che le distingue a colpo
               d'occhio. */}
           {!isStaff && nonLetto(spicciola) && (
-            <p className="testo-sala text-b58-terracotta-dark">
+            <p className="testo-sala text-b58-terracotta-dark-testo">
               Non sono riuscito a leggere la spesa spicciola.{" "}
               <button type="button" onClick={load} className="tocco-inline underline">
                 Riprova
@@ -303,7 +303,7 @@ export default function Dashboard() {
                 </span>{" "}
                 di persona — spesa spicciola
               </span>
-              <span aria-hidden="true" className="testo-sala text-b58-azione-dark shrink-0">
+              <span aria-hidden="true" className="testo-sala text-b58-azione-dark-testo shrink-0">
                 →
               </span>
             </Link>
@@ -347,7 +347,7 @@ export default function Dashboard() {
               </h2>
               <Link
                 to="/agenda"
-                className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
+                className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione-testo hover:text-b58-azione-dark-testo hover:bg-b58-cream-dark/40 transition-colors"
               >
                 Agenda completa →
               </Link>
@@ -372,7 +372,7 @@ export default function Dashboard() {
 
           <Link
             to="/agenda/nuovo"
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 testo-sala"
           >
             + Nuovo impegno
           </Link>
@@ -393,7 +393,7 @@ function RichiesteDeiClienti({ richieste, posta }) {
   return (
     <section className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
       <div className="flex items-center gap-2.5 mb-2">
-        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
           {richieste.length + posta}
         </span>
         <h2 className="font-display testo-sala-grande text-b58-charcoal">
@@ -470,7 +470,7 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span
                       className={`shrink-0 inline-flex items-center justify-center rounded-full ${
                         a.gravita === "alta" ? "bg-b58-terracotta" : "bg-b58-gold"
-                      } text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+                      } text-b58-sul-colore testo-sala font-medium px-2 py-0.5`}
                     >
                       {a.quanti}
                     </span>
@@ -516,7 +516,7 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
               <button
                 type="button"
                 onClick={() => onRiprendi(a.chiave)}
-                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-azione hover:bg-b58-cream-dark/40 transition-colors"
+                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-azione-testo hover:bg-b58-cream-dark/40 transition-colors"
               >
                 Rimettilo
               </button>
@@ -549,7 +549,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
         </h2>
         <Link
           to="/calendario-eventi/pianta"
-          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
+          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione-testo hover:text-b58-azione-dark-testo hover:bg-b58-cream-dark/40 transition-colors"
         >
           La sala →
         </Link>
@@ -564,7 +564,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
           <button
             type="button"
             onClick={onRiprova}
-            className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-medium px-4 transition-colors"
+            className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-medium px-4 transition-colors"
           >
             Riprova
           </button>
@@ -605,7 +605,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
                       può essere vista. */}
                   <span
                     className={`testo-sala ${
-                      tavoli ? "text-b58-charcoal" : "text-b58-terracotta"
+                      tavoli ? "text-b58-charcoal" : "text-b58-terracotta-testo"
                     }`}
                   >
                     {tavoli || "da assegnare"}
@@ -661,7 +661,7 @@ function TaskGroup({ tasks, onComplete }) {
             </Link>
             {t.priority === "alta" && <span
               data-priorita-impegno
-              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-sul-colore testo-sala font-medium px-2 py-0.5`}
             >
               Urgente
             </span>}

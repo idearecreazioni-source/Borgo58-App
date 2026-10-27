@@ -107,7 +107,7 @@ export default function TemperatureLog() {
   const caricaMese = useCallback((anno, mese) => temperatureDelMese(anno, mese), []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddEquipment = async () => {
     if (!equipmentForm.name.trim()) return;
@@ -141,12 +141,22 @@ export default function TemperatureLog() {
     setSaving(true);
     setError("");
     try {
-      const esito = await addTemperatureLog({
-        equipmentId,
-        recordedTempC: Number(readingForm.recordedTempC),
-        note: readingForm.note,
-        correctiveAction: readingForm.correctiveAction,
-      });
+      // 🔴 SI CHIUDE SOLO SE È QUELLA CHE AVEVA DETTO. Se aveva nominato un
+      //    frigo e la lettura finisce su un altro, quella cosa detta NON è
+      //    stata fatta: chiuderla la farebbe sparire dall'elenco senza che
+      //    la misura di quel frigo sia mai stata registrata. E si chiude NELLA
+      //    STESSA transazione della lettura (20261027000001).
+      const suo = venuto.azione?.campi?.attrezzatura;
+      const chiudendo = !suo || suo === equipmentId ? venuto.idDaChiudere : null;
+      const esito = await addTemperatureLog(
+        {
+          equipmentId,
+          recordedTempC: Number(readingForm.recordedTempC),
+          note: readingForm.note,
+          correctiveAction: readingForm.correctiveAction,
+        },
+        { azioneDettataId: chiudendo },
+      );
       // La lettura è salvata comunque. Se era fuori range senza rimedio,
       // resta aperta una non conformità: si dice, non si nasconde.
       setAvviso(
@@ -156,12 +166,7 @@ export default function TemperatureLog() {
             ? "Fuori range: registrata insieme al rimedio che hai scritto."
             : ""
       );
-      // 🔴 SI CHIUDE SOLO SE È QUELLA CHE AVEVA DETTO. Se aveva nominato un
-      //    frigo e la lettura finisce su un altro, quella cosa detta NON è
-      //    stata fatta: chiuderla la farebbe sparire dall'elenco senza che
-      //    la misura di quel frigo sia mai stata registrata.
-      const suo = venuto.azione?.campi?.attrezzatura;
-      if (!suo || suo === equipmentId) await venuto.chiudi();
+      if (chiudendo) venuto.segnaChiusa();
       setOpenRow(null);
       setReadingForm(emptyReadingForm);
       await load();
@@ -183,7 +188,7 @@ export default function TemperatureLog() {
     <div className="testo-sala max-w-4xl mx-auto pb-16">
       <Link
         to="/haccp"
-        className="tocco-bottone print:hidden inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone print:hidden inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← HACCP
       </Link>
@@ -192,12 +197,12 @@ export default function TemperatureLog() {
       <StriscaDallaVoce venuto={venuto} />
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
       {avviso && (
-        <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
+        <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
       {/* ---------------------------------------------------------------
@@ -210,7 +215,7 @@ export default function TemperatureLog() {
             <button
               type="button"
               onClick={() => setShowEquipmentForm((v) => !v)}
-              className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               {showEquipmentForm ? "Annulla" : "+ Nuova attrezzatura"}
             </button>
@@ -218,7 +223,7 @@ export default function TemperatureLog() {
         </div>
 
         {isTitolare && showEquipmentForm && (
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <input
                 value={equipmentForm.name}
@@ -258,7 +263,7 @@ export default function TemperatureLog() {
                 type="button"
                 disabled={addingEquipment || !equipmentForm.name.trim()}
                 onClick={handleAddEquipment}
-                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
               >
                 {addingEquipment ? "Aggiungo…" : "+ Aggiungi"}
               </button>
@@ -282,7 +287,7 @@ export default function TemperatureLog() {
           <>
             {mancanti.length > 0 && (
               <>
-                <p className="testo-sala text-b58-terracotta-dark font-medium mb-2">
+                <p className="testo-sala text-b58-terracotta-dark-testo font-medium mb-2">
                   Ancora da registrare oggi ({mancanti.length})
                 </p>
                 <div className="overflow-x-auto">
@@ -308,7 +313,7 @@ export default function TemperatureLog() {
             )}
 
             {mancanti.length === 0 && (
-              <p className="testo-sala text-b58-olive-dark mb-4">
+              <p className="testo-sala text-b58-olive-dark-testo mb-4">
                 Tutte le attrezzature sono state registrate oggi.
               </p>
             )}
@@ -355,7 +360,7 @@ export default function TemperatureLog() {
       ) : (
         aperte?.length > 0 && (
           <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6 print:hidden">
-            <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-2">
+            <h2 className="font-display testo-sala-grande text-b58-terracotta-dark-testo mb-2">
               Non conformità aperte ({aperte.length})
             </h2>
             <ul className="space-y-1 mb-3">
@@ -375,7 +380,7 @@ export default function TemperatureLog() {
             )}
             <Link
               to="/haccp/non-conformita"
-              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4"
             >
               Vai alle non conformità
             </Link>
@@ -386,7 +391,7 @@ export default function TemperatureLog() {
       {/* ---------------------------------------------------------------
           L'ARCHIVIO
           --------------------------------------------------------------- */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
         <ArchivioMensile
           mesi={mesi}
@@ -430,7 +435,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
               <>
                 ultima {eq.ultima_temp}°C · {formatDate(eq.ultima_ora)}
                 {eq.fuori_range === true && (
-                  <span className="text-b58-terracotta-dark font-medium"> · era fuori range</span>
+                  <span className="text-b58-terracotta-dark-testo font-medium"> · era fuori range</span>
                 )}
                 {/* ⚠️ Senza un range non si dice «conforme»: non si sa. */}
                 {eq.fuori_range === null && (
@@ -448,7 +453,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 ? "text-b58-charcoal-soft"
                 : eq.registrata
                   ? "border border-b58-charcoal/20 text-b58-charcoal"
-                  : "bg-b58-azione text-b58-parchment"
+                  : "bg-b58-azione text-b58-sul-colore"
             }`}
           >
             {aperta ? "Annulla" : eq.registrata ? "+ Registra ancora" : "+ Registra temperatura"}
@@ -456,7 +461,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
         </td>
       </tr>
       {aperta && (
-        <tr className="bg-white">
+        <tr className="bg-b58-campo">
           <td colSpan={2} className="py-3">
             <div className="flex flex-wrap gap-2 items-end">
               <div className="w-24">
@@ -489,7 +494,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 type="button"
                 disabled={salvando || !form.recordedTempC}
                 onClick={onConferma}
-                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
               >
                 {salvando ? "Salvo…" : "Conferma"}
               </button>
@@ -534,7 +539,7 @@ function ArchivioTemperature({ righe, mese }) {
                 <li key={`${r.equipment_id}-${i}`} className="testo-sala text-b58-charcoal-soft">
                   {r.nome} · <span className="text-b58-charcoal">{r.temperatura}°C</span>
                   {r.fuori_range === true && (
-                    <span className="text-b58-terracotta-dark font-medium"> · fuori range</span>
+                    <span className="text-b58-terracotta-dark-testo font-medium"> · fuori range</span>
                   )}
                   {r.fuori_range === null && <span> · nessun range</span>}
                   {" · "}

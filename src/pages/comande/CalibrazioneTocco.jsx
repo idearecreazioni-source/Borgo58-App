@@ -49,14 +49,14 @@ export default function CalibrazioneTocco({ onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala-grande leading-none px-1"
+          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo testo-sala-grande leading-none px-1"
         >
           ×
         </button>
       </div>
 
       <div
-        className="h-6 rounded border border-b58-charcoal bg-white"
+        className="h-6 rounded border border-b58-charcoal bg-b58-campo"
         style={{
           width: "calc(var(--pxcm) * 10)",
           maxWidth: "100%",
@@ -77,7 +77,7 @@ export default function CalibrazioneTocco({ onClose }) {
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        <button type="button" onClick={() => change(pxcm - 0.5)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal">
+        <button type="button" onClick={() => change(pxcm - 0.5)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal">
           −
         </button>
         <input
@@ -85,16 +85,16 @@ export default function CalibrazioneTocco({ onClose }) {
           step="0.1"
           value={Number(pxcm).toFixed(2)}
           onChange={(e) => change(e.target.value)}
-          className="w-24 text-center rounded-lg border border-b58-charcoal/15 bg-white px-2 py-2 testo-sala"
+          className="w-24 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-2 testo-sala"
         />
         <span className="testo-sala text-b58-charcoal-soft">pixel per cm</span>
-        <button type="button" onClick={() => change(pxcm + 0.5)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal">
+        <button type="button" onClick={() => change(pxcm + 0.5)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal">
           +
         </button>
         <button
           type="button"
           onClick={() => setValue(resetPxCm())}
-          className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark"
+          className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark-testo"
         >
           ripristina stima ({PXCM_DEFAULT.toFixed(0)})
         </button>

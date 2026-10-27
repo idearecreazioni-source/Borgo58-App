@@ -48,7 +48,7 @@ export default function FornitoreDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleChange = (field, value) => setSupplier((s) => ({ ...s, [field]: value }));
@@ -113,12 +113,12 @@ export default function FornitoreDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Fornitori
       </Link>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -139,7 +139,7 @@ export default function FornitoreDetail() {
               <button
                 type="button"
                 onClick={handleReactivate}
-                className="testo-sala text-b58-olive-dark hover:text-b58-charcoal"
+                className="testo-sala text-b58-olive-dark-testo hover:text-b58-charcoal"
               >
                 Riaccendilo
               </button>
@@ -192,14 +192,14 @@ export default function FornitoreDetail() {
             //    il menu era largo quanto la sua voce più lunga, e coi
             //    caratteri grandi del tablet usciva dal riquadro e faceva
             //    scorrere di lato tutta la pagina (470 punti su 390).
-            className="tocco-campo max-w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo max-w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 testo-sala-grande text-b58-charcoal"
           >
             <option value="">Non gliel&apos;ho ancora chiesto</option>
             <option value="true">Sì: l&apos;autofattura la faccio io</option>
             <option value="false">No: la fattura la emette lui</option>
           </select>
           {supplier.regime_esonero === true && (
-            <p className="testo-sala text-b58-terracotta-dark mt-1">
+            <p className="testo-sala text-b58-terracotta-dark-testo mt-1">
               ⚠️ Per ogni acquisto da questo fornitore l&apos;autofattura la devi emettere tu.
             </p>
           )}
@@ -340,7 +340,7 @@ export default function FornitoreDetail() {
             <button
               type="button"
               onClick={handleDeactivate}
-              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
             >
               Disattiva fornitore
             </button>
@@ -348,7 +348,7 @@ export default function FornitoreDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2 ml-auto"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2 ml-auto"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -370,7 +370,7 @@ export default function FornitoreDetail() {
               tempo — e le fatture non la sostituiscono. */}
           <Link
             to={`/fatture-fornitori?fornitore=${supplier.id}`}
-            className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
           >
             Le sue fatture →
           </Link>

@@ -68,15 +68,17 @@ export default function Allineamento() {
     setErrore("");
     setEsito("");
     try {
-      const esitoVero = await allineaGiacenza(r.ingredient_id, quanto);
+      // 🔴 Solo se è il prodotto che aveva detto: allineandone un altro,
+      //    quella cosa detta non è stata fatta. E si chiude NELLA STESSA
+      //    transazione dell'allineamento (20261027000001).
+      const suo = venuto.azione?.campi?.prodotto;
+      const chiudendo = !suo || suo === r.ingredient_id ? venuto.idDaChiudere : null;
+      const esitoVero = await allineaGiacenza(r.ingredient_id, quanto, undefined, { azioneDettataId: chiudendo });
       // ⚠️ La frase arriva dal database insieme ai numeri: composta qui
       // sarebbe un secondo posto dove dire la stessa cosa, e i due posti
       // prima o poi direbbero due cose diverse.
       setEsito(esitoVero.frase);
-      // 🔴 Solo se è il prodotto che aveva detto: allineandone un altro,
-      //    quella cosa detta non è stata fatta.
-      const suo = venuto.azione?.campi?.prodotto;
-      if (!suo || suo === r.ingredient_id) await venuto.chiudi();
+      if (chiudendo) venuto.segnaChiusa();
       setAperta(null);
       setQuanto("");
       await carica();
@@ -92,11 +94,11 @@ export default function Allineamento() {
   };
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="testo-sala max-w-3xl mx-auto pb-16">
-      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Magazzino
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Allineamento magazzino</h1>
@@ -111,7 +113,7 @@ export default function Allineamento() {
       <StriscaDallaVoce venuto={venuto} />
 
       {errore && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {errore}
         </p>
       )}
@@ -205,7 +207,7 @@ export default function Allineamento() {
                       type="button"
                       disabled={salvando || quanto === ""}
                       onClick={() => conferma(r)}
-                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment testo-sala px-4 disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
                     >
                       {salvando ? "…" : "È questo"}
                     </button>
@@ -229,7 +231,7 @@ export default function Allineamento() {
       <button
         type="button"
         onClick={() => setMostraTrend((v) => !v)}
-        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta mt-8"
+        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-testo mt-8"
       >
         {mostraTrend ? "Nascondi come sta andando" : "Come sta andando"}
       </button>
@@ -273,7 +275,7 @@ export default function Allineamento() {
                     <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Differenza</div>
                     <div
                       className={
-                        Number(costi.scostamento) > 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"
+                        Number(costi.scostamento) > 0 ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"
                       }
                     >
                       {Number(costi.scostamento) > 0 ? "+" : ""}
@@ -321,7 +323,7 @@ export default function Allineamento() {
                   // in piu': un colore che c'e' sempre smette di segnalare.
                   valore:
                     Number(d.valore) > 0 ? (
-                      <span className="text-b58-terracotta-dark">+{formatEUR(d.valore)}</span>
+                      <span className="text-b58-terracotta-dark-testo">+{formatEUR(d.valore)}</span>
                     ) : (
                       formatEUR(d.valore)
                     ),

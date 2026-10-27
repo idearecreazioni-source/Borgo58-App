@@ -100,7 +100,7 @@ export default function DeduzioniFiscali() {
   }, [expenses]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -180,7 +180,7 @@ export default function DeduzioniFiscali() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4 print:hidden">
-        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Proiezione fiscale
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -196,7 +196,7 @@ export default function DeduzioniFiscali() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -205,7 +205,7 @@ export default function DeduzioniFiscali() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -222,25 +222,25 @@ export default function DeduzioniFiscali() {
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">{error}</p>
       )}
 
       {/* Riepilogo */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Riepilogo {year}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+          <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-charcoal/10">
             <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Speso</div>
             <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(totali.speso)}</div>
           </div>
-          <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+          <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-charcoal/10">
             <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Deducibile (stima)</div>
             <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(totali.deducibile)}</div>
           </div>
           {totali.daClassificare > 0 && (
-            <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-gold-dark/40">
+            <div className="rounded-lg bg-b58-campo px-3 py-2.5 ring-1 ring-b58-gold-dark/40">
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Da classificare</div>
-              <div className="testo-sala-titolo text-b58-gold-dark">{totali.daClassificare}</div>
+              <div className="testo-sala-titolo text-b58-gold-dark-testo">{totali.daClassificare}</div>
               <div className="testo-sala text-b58-charcoal-soft/70 mt-0.5">non contate nel deducibile</div>
             </div>
           )}
@@ -253,7 +253,7 @@ export default function DeduzioniFiscali() {
       {/* Nuova spesa */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6 print:hidden">
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Nuova spesa</h2>
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
           {/* SPEC-0010, 11/09/2026: la data in mezza riga (132 punti) si
               tagliava — chiedeva 181, 260 a 64 punti per cm. */}
           <div className="riga-campi mb-3">
@@ -317,13 +317,13 @@ export default function DeduzioniFiscali() {
             <p className="testo-sala text-b58-charcoal-soft/70 mb-3">{regolaScelta.nota}</p>
           )}
           {regolaScelta && !regolaScelta.verificata_il && (
-            <p className="testo-sala text-b58-gold-dark mb-3">
+            <p className="testo-sala text-b58-gold-dark-testo mb-3">
               Questa regola non è ancora stata confermata dalla commercialista.
             </p>
           )}
 
           {avvisoContante && (
-            <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+            <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
               Pagata in contanti: con questa regola la spesa è <strong>indeducibile</strong>. Se è un biglietto
               di trasporto pubblico di linea o un&apos;indennità chilometrica, spunta l&apos;esenzione qui
               sotto; altrimenti paga con metodo tracciato per poterla dedurre.
@@ -331,7 +331,7 @@ export default function DeduzioniFiscali() {
           )}
 
           {avvisoDocumento && (
-            <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+            <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
               Senza il riferimento al documento questa spesa <strong>non si deduce</strong>, qualunque regola
               le assegni. Puoi registrarla lo stesso — resterà indeducibile finché non aggiungi il documento.
             </p>
@@ -378,7 +378,7 @@ export default function DeduzioniFiscali() {
               type="button"
               disabled={saving || !form.description.trim() || !form.amount}
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>
@@ -441,9 +441,9 @@ export default function DeduzioniFiscali() {
                     <td
                       className={`py-2 text-right whitespace-nowrap ${
                         e.stato === "da_classificare"
-                          ? "text-b58-gold-dark"
+                          ? "text-b58-gold-dark-testo"
                           : e.stato === "indeducibile"
-                            ? "text-b58-terracotta-dark"
+                            ? "text-b58-terracotta-dark-testo"
                             : "text-b58-charcoal"
                       }`}
                     >

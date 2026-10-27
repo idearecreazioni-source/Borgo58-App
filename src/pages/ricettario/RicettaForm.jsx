@@ -98,7 +98,7 @@ export default function RicettaForm() {
   const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -137,14 +137,14 @@ export default function RicettaForm() {
     <div className="max-w-xl mx-auto pb-24">
       <Link
         to={porta.indietro.a}
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← {porta.indietro.etichetta}
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">{porta.titolo}</h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -250,7 +250,7 @@ export default function RicettaForm() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full mt-4 tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 testo-sala-grande"
+          className="w-full mt-4 tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium px-5 testo-sala-grande"
         >
           {saving ? "Creo…" : porta.crea}
         </button>

@@ -110,7 +110,7 @@ const MISURA = `(() => {
     collegamentoLista: r(document.querySelector("[data-collegamento-lista]")),
     provenienze: tutti("button[aria-pressed]").map((b) => ({ testo: b.textContent.trim(), premuto: b.getAttribute("aria-pressed") })),
     inScadenza: tutti("[data-documento-in-scadenza]").map(r),
-    // I titoli in Fraunces, stampati a ogni giro (27/09/2026): e' il modo di
+    // I titoli nel carattere dei titoli (Bricolage dal 27/10/2026), stampati a ogni giro (27/09/2026): e' il modo di
     // confrontare Windows e Linux sul carattere dei titoli, che le misure
     // qui sopra usano solo di sbieco (il saluto della Dashboard).
     // --- 27/09/2026, «niente tagliato, niente nascosto» ---
@@ -167,7 +167,7 @@ const MISURA = `(() => {
     }),
     resaRighe: (() => { const e = tutti("main span").find((x) => /ne restano$/.test(x.textContent.trim())); if (!e) return null; const s = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / (parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.25)); })(),
     testo: main.innerText,
-    titoli: tutti("main h1, main h2").filter((t) => /Fraunces/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
+    titoli: tutti("main h1, main h2").filter((t) => /Bricolage/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
   };
 })()`;
 

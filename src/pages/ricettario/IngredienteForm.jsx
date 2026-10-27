@@ -674,7 +674,7 @@ export default function IngredienteForm() {
         <select
           value={v.fornitore_id ?? ""}
           onChange={(e) => assegnaFornitore(v.articolo_id, e.target.value)}
-          className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 max-w-full"
+          className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-b58-campo px-1.5 max-w-full"
         >
           <option value="">chi la vende?</option>
           {suppliers.map((s) => (
@@ -693,7 +693,7 @@ export default function IngredienteForm() {
       contenuto: (
         <>
           {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
-          {i === 0 && v.prezzo && <span className="testo-sala text-b58-olive"> ↓ la più conveniente</span>}
+          {i === 0 && v.prezzo && <span className="testo-sala text-b58-olive-testo"> ↓ la più conveniente</span>}
         </>
       ),
     },
@@ -724,7 +724,7 @@ export default function IngredienteForm() {
           <select
             value={v.stesso_di ?? ""}
             onChange={(e) => collega(v.articolo_id, e.target.value || null)}
-            className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 max-w-full"
+            className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-b58-campo px-1.5 max-w-full"
           >
             <option value="">— versione a sé —</option>
             {varianti
@@ -837,7 +837,7 @@ export default function IngredienteForm() {
   const eAlimento = form.alimentare !== false;
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   return (
@@ -849,7 +849,7 @@ export default function IngredienteForm() {
           vicolo cieco, che in questo progetto è un difetto a sé. */}
       <Link
         to={eAlimento ? "/ricettario/ingredienti" : "/magazzino/materiali"}
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         {eAlimento ? "← Ingredienti" : "← Materiali di consumo"}
       </Link>
@@ -862,7 +862,7 @@ export default function IngredienteForm() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -967,7 +967,7 @@ export default function IngredienteForm() {
                     {i > 0 && ", "}
                     <Link
                       to={`/ricettario/ingredienti/${o.id}`}
-                      className="underline font-medium hover:text-b58-terracotta-dark"
+                      className="underline font-medium hover:text-b58-terracotta-dark-testo"
                     >
                       {o.name}
                     </Link>
@@ -1033,7 +1033,7 @@ export default function IngredienteForm() {
               <button
                 type="button"
                 onClick={() => setNuovaCategoria("")}
-                className="tocco-inline mt-1 testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta"
+                className="tocco-inline mt-1 testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-testo"
               >
                 Manca la categoria giusta? Aggiungila
               </button>
@@ -1103,7 +1103,7 @@ export default function IngredienteForm() {
               aria-pressed={form.source_type === "fornitore_esterno"}
               className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "fornitore_esterno"
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -1115,7 +1115,7 @@ export default function IngredienteForm() {
               aria-pressed={form.source_type === "produzione_interna"}
               className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "produzione_interna"
-                  ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
+                  ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark-testo"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -1142,12 +1142,12 @@ export default function IngredienteForm() {
                 <button
                   type="button"
                   onClick={() => setShowNewSupplier(true)}
-                  className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark mt-2"
+                  className="tocco-testo testo-sala-grande text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo mt-2"
                 >
                   + Nuovo fornitore
                 </button>
               ) : (
-                <div className="mt-3 tocco-campo rounded-lg border border-b58-charcoal/15 p-3 space-y-2 bg-white">
+                <div className="mt-3 tocco-campo rounded-lg border border-b58-charcoal/15 p-3 space-y-2 bg-b58-campo">
                   <input
                     value={newSupplier.name}
                     onChange={(e) =>
@@ -1175,7 +1175,7 @@ export default function IngredienteForm() {
                       type="button"
                       disabled={creatingSupplier}
                       onClick={handleCreateSupplier}
-                      className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                      className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-3 py-1.5 disabled:opacity-60"
                     >
                       {creatingSupplier ? "Salvo…" : "Salva fornitore"}
                     </button>
@@ -1288,7 +1288,7 @@ export default function IngredienteForm() {
               </p>
             )}
             {rifiutoResaStandard(form.resa_standard) && (
-              <p data-prova="resa-standard-rifiuto" className="mt-1 testo-sala text-b58-terracotta">
+              <p data-prova="resa-standard-rifiuto" className="mt-1 testo-sala text-b58-terracotta-testo">
                 {rifiutoResaStandard(form.resa_standard)}
               </p>
             )}
@@ -1368,7 +1368,7 @@ export default function IngredienteForm() {
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, alimentare: true }))}
-                className="tocco-inline testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta self-start"
+                className="tocco-inline testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-testo self-start"
               >
                 Non è un materiale: rimettilo fra gli ingredienti
               </button>
@@ -1467,7 +1467,7 @@ export default function IngredienteForm() {
                 onClick={() => toggleArrayValue("allergens", a.value)}
                 className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.allergens.includes(a.value)
-                    ? "bg-b58-azione text-b58-parchment border-b58-terracotta"
+                    ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
@@ -1505,7 +1505,7 @@ export default function IngredienteForm() {
                 }
                 className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   meseAcceso(form.seasonality, m.value)
-                    ? "bg-b58-olive text-b58-parchment border-b58-olive"
+                    ? "bg-b58-olive text-b58-sul-colore border-b58-olive"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
@@ -1525,7 +1525,7 @@ export default function IngredienteForm() {
           <button
             type="submit"
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving
               ? "Salvo…"
@@ -1650,7 +1650,7 @@ export default function IngredienteForm() {
             {varianti.map((v, i) => (
               <div
                 key={v.articolo_id}
-                className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 p-3 space-y-2"
+                className="rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/10 p-3 space-y-2"
               >
                 {celleVersione(v, i).map((c) => (
                   <div key={c.chiave} className={c.soloTabella ? "hidden" : ""}>
@@ -1705,7 +1705,7 @@ export default function IngredienteForm() {
       {isEdit && (
         <Link
           to="/magazzino/allineamento"
-          className="inline-block mt-6 testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta"
+          className="inline-block mt-6 testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta-testo"
         >
           Quanto ce n&apos;è davvero? Allinea la dispensa →
         </Link>
@@ -1743,7 +1743,7 @@ export default function IngredienteForm() {
                 : "Nessun carico l'ha ancora misurato, e nessuno l'ha scritto a mano."}
           </p>
 
-          <div className="flex flex-wrap gap-2 items-end mb-5 bg-white rounded-lg p-3 border border-b58-charcoal/10">
+          <div className="flex flex-wrap gap-2 items-end mb-5 bg-b58-campo rounded-lg p-3 border border-b58-charcoal/10">
             <div>
               <label className={labelClass}>Nuovo prezzo</label>
               <input
@@ -1768,7 +1768,7 @@ export default function IngredienteForm() {
               type="button"
               disabled={updatingPrice || !newPrice}
               onClick={handleUpdatePrice}
-              className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande px-4 py-2"
+              className="rounded-lg bg-b58-inverso hover:bg-b58-inverso-soft disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande px-4 py-2"
             >
               {updatingPrice ? "Aggiorno…" : "Aggiorna prezzo"}
             </button>

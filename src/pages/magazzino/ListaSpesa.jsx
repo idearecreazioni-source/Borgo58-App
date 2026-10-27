@@ -174,7 +174,7 @@ export default function ListaSpesa() {
   }, [daComprare]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddThreshold = async () => {
     setAddingThreshold(true);
@@ -228,16 +228,21 @@ export default function ListaSpesa() {
     setAdding(true);
     setError("");
     try {
-      await addShoppingListItem({
-        ingredientId: isCustom ? null : addForm.ingredient_id,
-        customName: isCustom ? addForm.custom_name.trim() : null,
-        supplierId: addForm.supplier_id || null,
-        quantityNeeded: addForm.quantity_needed ? Number(addForm.quantity_needed) : null,
-        unit: addForm.unit || null,
-        note: addForm.note || null,
-      });
-      // 🔴 DOPO il salvataggio riuscito, mai prima.
-      await venuto.chiudi();
+      // 🔴 La cosa detta si chiude NELLA STESSA transazione della riga
+      //    (20261027000001), non con una seconda chiamata dopo.
+      const chiudendo = venuto.idDaChiudere;
+      await addShoppingListItem(
+        {
+          ingredientId: isCustom ? null : addForm.ingredient_id,
+          customName: isCustom ? addForm.custom_name.trim() : null,
+          supplierId: addForm.supplier_id || null,
+          quantityNeeded: addForm.quantity_needed ? Number(addForm.quantity_needed) : null,
+          unit: addForm.unit || null,
+          note: addForm.note || null,
+        },
+        { azioneDettataId: chiudendo },
+      );
+      if (chiudendo) venuto.segnaChiusa();
       setAddForm(emptyAddForm);
       await loadAll();
     } catch (e) {
@@ -354,7 +359,7 @@ export default function ListaSpesa() {
 
   return (
     <div className="testo-sala max-w-3xl mx-auto pb-16">
-      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Magazzino
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-1">
@@ -372,7 +377,7 @@ export default function ListaSpesa() {
           {isTitolare && (
             <Link
               to="/magazzino/ordini"
-              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala font-medium px-4"
             >
               Ordina ai fornitori
             </Link>
@@ -389,7 +394,7 @@ export default function ListaSpesa() {
       <p className="mb-4 testo-sala text-b58-charcoal-soft">
         Quello che si ordina ai fornitori: nasce dalle scorte minime del magazzino e finisce in
         una bozza d&apos;ordine. Per la spesa che fai di persona al supermercato c&apos;è la{" "}
-        <Link to="/magazzino/spesa-spicciola" className="underline hover:text-b58-terracotta">
+        <Link to="/magazzino/spesa-spicciola" className="underline hover:text-b58-terracotta-testo">
           spesa spicciola
         </Link>
         .
@@ -405,7 +410,7 @@ export default function ListaSpesa() {
       )}
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -424,7 +429,7 @@ export default function ListaSpesa() {
               </p>
               <ul className="space-y-2">
                 {groupItems.map((item) => (
-                  <li key={item.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+                  <li key={item.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div>
                         <span className="testo-sala text-b58-charcoal font-medium">
@@ -454,7 +459,7 @@ export default function ListaSpesa() {
                           <span className="testo-sala text-b58-charcoal-soft ml-1">{item.unit}</span>
                         )}
                         {item.source === "soglia_minima" && (
-                          <span className="inline-block whitespace-nowrap testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="inline-block whitespace-nowrap testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto scorta minima
                           </span>
                         )}
@@ -498,7 +503,7 @@ export default function ListaSpesa() {
                               <button
                                 type="button"
                                 onClick={() => handleArrivata(item.id)}
-                                className="tocco-bottone ml-2 text-b58-terracotta hover:text-b58-terracotta-dark"
+                                className="tocco-bottone ml-2 text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                               >
                                 mi bastano, chiudi la riga
                               </button>
@@ -519,7 +524,7 @@ export default function ListaSpesa() {
                           <select
                             value={item.supplier?.id ?? ""}
                             onChange={(e) => handleFornitore(item.id, e.target.value)}
-                            className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal w-full min-w-0"
+                            className="tocco-campo rounded border border-b58-charcoal/15 bg-b58-campo px-1.5 py-1 testo-sala text-b58-charcoal w-full min-w-0"
                           >
                             <option value="">chi lo vende?</option>
                             {suppliers.map((s) => (
@@ -533,7 +538,7 @@ export default function ListaSpesa() {
                           <button
                             type="button"
                             onClick={() => openClose(item.id, item.quantity_needed)}
-                            className="tocco-bottone rounded-lg bg-b58-azione px-3 testo-sala font-medium text-b58-parchment hover:bg-b58-azione-dark"
+                            className="tocco-bottone rounded-lg bg-b58-azione px-3 testo-sala font-medium text-b58-sul-colore hover:bg-b58-azione-dark"
                           >
                             Segna acquistato
                           </button>
@@ -541,7 +546,7 @@ export default function ListaSpesa() {
                         <button
                           type="button"
                           onClick={() => handleRemove(item.id)}
-                          className="tocco-bottone rounded-lg border border-b58-charcoal/20 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone rounded-lg border border-b58-charcoal/20 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                         >
                           Rimuovi
                         </button>
@@ -567,7 +572,7 @@ export default function ListaSpesa() {
                               onClick={() => setCloseForm((f) => ({ ...f, esito: e.value }))}
                               className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                                 closeForm.esito === e.value
-                                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
                               }`}
                             >
@@ -688,7 +693,7 @@ export default function ListaSpesa() {
                         )}
 
                         {!nonLetto(rincaro) && rincaro?.da_segnalare && (
-                          <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
+                          <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
                             ⚠️ Prima lo pagavi {formatEUR(rincaro.prezzo_precedente)}, adesso{" "}
                             {formatEUR(prezzoUnitario)} ({rincaro.variazione > 0 ? "+" : ""}
                             {rincaro.variazione}%)
@@ -716,14 +721,14 @@ export default function ListaSpesa() {
                               (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
                             onClick={() => handleClose(item.id)}
-                            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
+                            className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
                           >
                             {closing ? "Chiudo…" : "Conferma"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setClosingItemId(null)}
-                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                           >
                             Annulla
                           </button>
@@ -738,14 +743,14 @@ export default function ListaSpesa() {
         )}
 
         {/* Aggiungi articolo */}
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mt-2">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mt-2">
           <div className="flex gap-2 mb-2">
             <button
               type="button"
               onClick={() => setAddForm({ ...emptyAddForm, mode: "ingredient" })}
               className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                 addForm.mode === "ingredient"
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -756,7 +761,7 @@ export default function ListaSpesa() {
               onClick={() => setAddForm({ ...emptyAddForm, mode: "custom" })}
               className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                 addForm.mode === "custom"
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -830,7 +835,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>

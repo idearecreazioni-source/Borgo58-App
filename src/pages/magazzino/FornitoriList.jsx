@@ -61,11 +61,11 @@ export default function FornitoriList() {
   };
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Magazzino
       </Link>
 
@@ -74,14 +74,14 @@ export default function FornitoriList() {
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo fornitore"}
         </button>
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}

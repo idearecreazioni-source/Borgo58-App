@@ -85,7 +85,7 @@ export default function CostoProgetto() {
   );
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   return (
@@ -93,7 +93,7 @@ export default function CostoProgetto() {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <Link
           to="/cassa"
-          className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           ← Cassa
         </Link>
@@ -181,7 +181,7 @@ export default function CostoProgetto() {
               <span className="font-display text-b58-charcoal">Totale progetto</span>
               <span
                 data-prova="totale-progetto"
-                className="font-display text-2xl text-b58-terracotta-dark"
+                className="font-display text-2xl text-b58-terracotta-dark-testo"
               >
                 {formatEUR(totali.totale)}
               </span>
@@ -214,7 +214,7 @@ export default function CostoProgetto() {
           {interezza && !interezza.completo && (
             <p
               data-prova="dettaglio-parziale"
-              className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4"
+              className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4"
             >
               I totali qui sopra sono completi, il dettaglio no: sto mostrando{" "}
               {interezza.mostrate} righe delle {interezza.attese} che li compongono. Restringi
@@ -233,7 +233,7 @@ export default function CostoProgetto() {
               </p>
               <p className="testo-sala text-b58-charcoal-soft/80 mt-2">
                 Si fa dalla{" "}
-                <Link to="/cassa/prima-nota" className="text-b58-terracotta-dark underline">
+                <Link to="/cassa/prima-nota" className="text-b58-terracotta-dark-testo underline">
                   Prima nota
                 </Link>
                 : su un'uscita — nuova o gia' scritta — spunta «Investimento per il progetto».
@@ -268,7 +268,7 @@ export default function CostoProgetto() {
                   etichettaFonte(r) ? (
                     <span
                       data-prova="segno-anticipo"
-                      className="rounded-full bg-b58-olive/20 text-b58-olive-dark px-2 testo-sala"
+                      className="rounded-full bg-b58-olive/20 text-b58-olive-dark-testo px-2 testo-sala"
                     >
                       anticipo
                     </span>

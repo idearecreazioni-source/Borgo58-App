@@ -42,7 +42,7 @@ export default function AvvisoAggiornamento() {
         <button
           type="button"
           onClick={prendiLAggiornamento}
-          className="tocco-bottone underline text-b58-terracotta-dark hover:text-b58-charcoal"
+          className="tocco-bottone underline text-b58-terracotta-dark-testo hover:text-b58-charcoal"
         >
           Aggiorna adesso
         </button>{" "}
