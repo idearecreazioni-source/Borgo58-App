@@ -690,14 +690,21 @@ export default function Sala() {
 
   const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
 
+  // 🔴 DICE SE E' ANDATA (notte del 28/10/2026, dalla revisione): prima
+  //    l'errore si fermava qui e chi seguiva con `.then` ripartiva lo stesso
+  //    — senza rete la sala scriveva «Mandato in cucina» per un biglietto mai
+  //    partito, e «Annulla tavolo» chiudeva il pannello di un tavolo ancora
+  //    aperto. Adesso chi segue guarda `ok` prima di fare qualcosa.
   const withBusy = async (fn) => {
     setBusy(true);
     setError("");
     try {
       await fn();
       await reloadOrder();
+      return true;
     } catch (e) {
       setError(e.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -942,7 +949,7 @@ export default function Sala() {
         unitPrice: Number(freeForm.price),
         turno: turnoCorrente,
       })
-    ).then(() => setFreeForm({ name: "", price: "", destination: "bar" }));
+    ).then((ok) => ok && setFreeForm({ name: "", price: "", destination: "bar" }));
   };
 
   const handleCoperti = (n) => withBusy(() => setOrderCoperti(order.id, n));
@@ -962,8 +969,8 @@ export default function Sala() {
   // quale turno stava chiamando e si spegneva alla fine è stata scartata da
   // lui, e non si rimette da qui.
   const handleChiamaTurno = () =>
-    withBusy(() => chiamaProssimoTurno(order.id)).then(() =>
-      setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
+    withBusy(() => chiamaProssimoTurno(order.id)).then((ok) =>
+      ok && setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
     );
 
   const handleSend = () =>
@@ -1214,7 +1221,8 @@ export default function Sala() {
               )
             )
               return;
-            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(() => {
+            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then((ok) => {
+              if (!ok) return;
               setOrder(null);
               setSelezione([]);
               loadBoard();
@@ -1336,7 +1344,8 @@ export default function Sala() {
                 etichettaConferma="Sì, libera il tavolo"
                 disabilitato={busy}
                 onConferma={() =>
-                  withBusy(() => annullaPrenotazione(p.id)).then(() => {
+                  withBusy(() => annullaPrenotazione(p.id)).then((ok) => {
+                    if (!ok) return;
                     setSelezione([]);
                     loadBoard();
                   })
@@ -2148,7 +2157,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         −
                       </button>
@@ -2156,7 +2166,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         +
                       </button>
@@ -2164,7 +2175,11 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => removeDraftItem(it.id))}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-1"
+                        disabled={busy}
+                        aria-label={`Togli ${lineLabel(it)}`}
+                        // ⚠️ Era largo 16 punti accanto al «+»: un tocco
+                        //    mancato toglieva la riga (revisione, 28/10).
+                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-1 disabled:opacity-40"
                       >
                         ✕
                       </button>

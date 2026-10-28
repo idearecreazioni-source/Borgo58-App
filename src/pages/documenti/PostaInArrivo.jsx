@@ -896,7 +896,10 @@ export default function PostaInArrivo() {
         // `alimentare: null` = alimenti E materiali di consumo: su una
         // fattura ci sono tutti e due. Vedi la nota più sopra.
         leggi(listIngredients({ alimentare: null })).then(setIngredienti),
-        leggi(listSuppliers()).then(setFornitori),
+        // ⚠️ CON LA SOCIETA' (notte del 28/10): senza, la lettura falliva e
+        //    dopo ogni conferma il menu Fornitore diceva «non riesco a
+        //    leggere» — lo stesso difetto corretto piu' su, rientrato qui.
+        entities?.srls ? leggi(listSuppliers(entities.srls.id)).then(setFornitori) : null,
       ]);
     } catch (e) {
       // Sulla riga toccata, mai in cima: e' li' che si sta guardando.

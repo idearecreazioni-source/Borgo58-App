@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, formatDate, oggiLocale } from "../../lib/constants";
+import { CROP_STATUSES, formatDate, giorniDaOggi, oggiLocale } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
 import { useUnita } from "../../lib/unita";
 
@@ -19,7 +19,8 @@ const emptyForm = {
   name: "", variety: "", plot: "", sowing_date: "", expected_harvest_date: "", ingredient_id: "",
 };
 
-const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function AgricoloHome() {
   // Le unita' si chiedono al database, non a un elenco scritto qui: la

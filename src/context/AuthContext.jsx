@@ -41,30 +41,51 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  // 🔴 «NON SO CHI SEI» NON E' «NON SEI NESSUNO» (notte del 28/10/2026,
+  //    dalla revisione): se la lettura del ruolo falliva per la rete, il
+  //    ruolo diventava vuoto e il titolare, gia' dentro, si ritrovava senza
+  //    permessi e senza nessun messaggio. Adesso un ruolo gia' noto resta, e
+  //    il Layout dice che non si e' riusciti a verificarlo, con «Riprova».
+  const [ruoloNonLetto, setRuoloNonLetto] = useState(false);
+  const [sessioneAttuale, setSessioneAttuale] = useState(null);
 
   const fetchRole = async (activeSession) => {
     if (!activeSession) {
       setRole(null);
+      setRuoloNonLetto(false);
       return;
     }
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", activeSession.user.id)
-      .maybeSingle();
-    setRole(data?.role ?? null);
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", activeSession.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      setRole(data?.role ?? null);
+      setRuoloNonLetto(false);
+    } catch {
+      setRuoloNonLetto(true);
+    }
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      await fetchRole(data.session);
-      setLoading(false);
-    });
+    // ⚠️ `finally`: senza, un errore qui lasciava il gestionale sul
+    //    «Caricamento…» per sempre, senza una via d'uscita.
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        setSession(data.session);
+        setSessioneAttuale(data.session);
+        await fetchRole(data.session);
+      })
+      .catch(() => setRuoloNonLetto(true))
+      .finally(() => setLoading(false));
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         setSession(newSession);
+        setSessioneAttuale(newSession);
         await fetchRole(newSession);
       }
     );
@@ -98,6 +119,8 @@ export function AuthProvider({ children }) {
         isTitolare: role === "titolare",
         isStaff: role === "staff",
         loading,
+        ruoloNonLetto,
+        riprovaRuolo: () => fetchRole(sessioneAttuale),
         login,
         logout,
       }}

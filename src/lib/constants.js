@@ -759,6 +759,15 @@ export const dataLocale = (d = new Date()) =>
 
 export const oggiLocale = () => dataLocale();
 
+// 🔴 QUANTI GIORNI MANCANO A UNA DATA «AAAA-MM-GG», contati sul calendario
+//    italiano (notte del 28/10/2026). Era `(new Date(data) - new Date())`
+//    in tre schermate: la data valeva la mezzanotte di Greenwich, quindi una
+//    scadenza di oggi risultava «scaduta» dal pomeriggio e domani diventava
+//    «0 giorni». Qui le due date sono tutt'e due a mezzogiorno di Greenwich:
+//    la differenza e' sempre un numero intero di giorni, ora legale compresa.
+export const giorniDaOggi = (data, oggi = oggiLocale()) =>
+  Math.round((Date.parse(`${data}T12:00:00Z`) - Date.parse(`${oggi}T12:00:00Z`)) / 86400000);
+
 export const meseLocale = (d = new Date()) => dataLocale(d).slice(0, 7);
 
 // Primo giorno del mese corrente, in locale.

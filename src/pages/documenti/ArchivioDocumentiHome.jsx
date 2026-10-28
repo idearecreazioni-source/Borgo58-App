@@ -19,7 +19,7 @@ import {
   dateDaDistinguere,
 } from "../../lib/calcoli/propostaDocumento";
 import { contaPostaInAttesa } from "../../lib/api/posta";
-import { formatDate, formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR, giorniDaOggi } from "../../lib/constants";
 
 // 🔴 L'ELENCO DEI TIPI E' CHIUSO DAL 30/08/2026, e non vive piu' qui.
 // Prima erano otto SUGGERIMENTI su un campo di testo libero: si potevano
@@ -34,7 +34,8 @@ const emptyForm = {
   title: "", doc_type: "", document_date: "", counterparties: "", amount: "", expiry_date: "", note: "",
 };
 
-const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function ArchivioDocumentiHome() {
   const navigate = useNavigate();
