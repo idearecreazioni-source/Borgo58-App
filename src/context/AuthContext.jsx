@@ -64,8 +64,8 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       setRole(data?.role ?? null);
       setRuoloNonLetto(false);
-    } catch {
-      setRuoloNonLetto(true);
+    } catch (e) {
+      setRuoloNonLetto(e?.message || true);
     }
   };
 
@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         setSessioneAttuale(data.session);
         await fetchRole(data.session);
       })
-      .catch(() => setRuoloNonLetto(true))
+      .catch((e) => setRuoloNonLetto(e?.message || true))
       .finally(() => setLoading(false));
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
