@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 // IL TEMA CHIARO O SCURO — 27/10/2026 (restyling, richiesta di Alessio)
 //
@@ -33,21 +33,37 @@ function applica(scelta) {
   document.documentElement.setAttribute("data-tema", scelta === "scuro" ? "scuro" : "chiaro");
 }
 
+// 🔴 UNA SCELTA SOLA PER TUTTO IL GESTIONALE (notte del 28/10/2026, dalla
+//    revisione): il menu e' montato due volte (quello del telefono e quello
+//    del computer), e ognuno teneva la sua copia. Scelto «Scuro» dal menu del
+//    telefono e girato il tablet, quello del computer mostrava ancora
+//    «Chiaro» premuto — e toccarlo non faceva niente. Adesso la scelta vive
+//    qui, fuori dai componenti, e tutti la leggono da qui.
+let sceltaCorrente = null;
+const chiAscolta = new Set();
+
+const leggiCorrente = () => {
+  if (sceltaCorrente === null) sceltaCorrente = leggiSceltaTema();
+  return sceltaCorrente;
+};
+
+const ascolta = (avvisa) => {
+  chiAscolta.add(avvisa);
+  return () => chiAscolta.delete(avvisa);
+};
+
+export function scegliTema(nuova) {
+  try {
+    localStorage.setItem(CHIAVE_TEMA, nuova);
+  } catch {
+    // Senza memoria vale finché la pagina resta aperta: meglio di niente.
+  }
+  sceltaCorrente = nuova;
+  applica(nuova);
+  chiAscolta.forEach((avvisa) => avvisa());
+}
+
 export function useTema() {
-  const [scelta, setScelta] = useState(leggiSceltaTema);
-
-  useEffect(() => {
-    applica(scelta);
-  }, [scelta]);
-
-  const scegli = (nuova) => {
-    try {
-      localStorage.setItem(CHIAVE_TEMA, nuova);
-    } catch {
-      // Senza memoria vale finché la pagina resta aperta: meglio di niente.
-    }
-    setScelta(nuova);
-  };
-
-  return [scelta, scegli];
+  const scelta = useSyncExternalStore(ascolta, leggiCorrente, () => "chiaro");
+  return [scelta, scegliTema];
 }
