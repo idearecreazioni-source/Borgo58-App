@@ -84,7 +84,10 @@ export default function TemperatureLog() {
   const load = useCallback(
     () =>
       Promise.all([
-        listEquipment(),
+        // ⚠️ Anche le attrezzature col segno «non letto» (notte del 28/10):
+        //    senza, una lettura fallita diceva «Nessuna attrezzatura ancora»
+        //    a chi aveva il frigo da registrare.
+        leggi(listEquipment()),
         leggi(temperatureDiOggi()),
         leggi(listNonConformities()),
         leggi(temperatureMesiConDati()),
@@ -273,7 +276,9 @@ export default function TemperatureLog() {
 
         {/* 🔴 Se la lista non si è letta NON si disegna «tutto fatto»: una
             schermata che tace quando non sa è una rassicurazione falsa. */}
-        {nonLetto(oggi) ? (
+        {nonLetto(equipment) ? (
+          <DatoNonLetto cosa="le attrezzature" onRiprova={() => load().catch((e) => setError(e.message))} />
+        ) : nonLetto(oggi) ? (
           <DatoNonLetto
             cosa="le temperature registrate oggi"
             nonVuolDire="Non vuol dire che non ne è stata registrata nessuna: vuol dire che non lo so."

@@ -15,6 +15,7 @@ import ArchivioMensile from "../../components/ArchivioMensile";
 import { NOMI_MESI } from "../../lib/nomiMesi";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import GiornataDiServizio from "../../components/GiornataDiServizio";
+import DatoNonLetto from "../../components/DatoNonLetto";
 
 // Le non conformità: le APERTE in evidenza, le risolte in archivio.
 //
@@ -57,7 +58,10 @@ export default function NonConformita() {
 
   const load = useCallback(
     () =>
-      Promise.all([listNonConformities(), leggi(nonConformitaMesiConDati())]).then(([nc, ms]) => {
+      // ⚠️ Anche l'elenco col segno «non letto» (notte del 28/10): senza, una
+      //    lettura fallita scriveva «Nessuna non conformità aperta» sotto
+      //    l'errore — la frase che un controllo leggerebbe come «tutto a posto».
+      Promise.all([leggi(listNonConformities()), leggi(nonConformitaMesiConDati())]).then(([nc, ms]) => {
         setItems(nc);
         setMesi(nonLetto(ms) ? [] : ms);
       }),
@@ -80,7 +84,7 @@ export default function NonConformita() {
     [ricarica]
   );
 
-  const open = useMemo(() => items.filter((i) => !i.resolved), [items]);
+  const open = useMemo(() => (nonLetto(items) ? null : items.filter((i) => !i.resolved)), [items]);
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -181,7 +185,9 @@ export default function NonConformita() {
           </div>
         </div>
 
-        {open.length === 0 ? (
+        {open === null ? (
+          <DatoNonLetto cosa="le non conformità aperte" onRiprova={load} />
+        ) : open.length === 0 ? (
           <p className="testo-sala text-b58-charcoal-soft/60">Nessuna non conformità aperta.</p>
         ) : (
           <ul className="space-y-2">
