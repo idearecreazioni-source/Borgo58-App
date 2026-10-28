@@ -480,7 +480,7 @@ export default function AgendaList() {
               entra mai: un numero fermo su venti smette di essere
               un'informazione e si impara a ignorarlo. */}
           {quanti > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-b58-azione text-b58-sul-colore testo-sala font-medium px-2 py-0.5 align-middle">
+            <span data-contatore className="ml-2 inline-flex items-center rounded-full bg-b58-azione text-b58-sul-colore testo-sala font-medium px-2 py-0.5 align-middle">
               {quanti}
             </span>
           )}
