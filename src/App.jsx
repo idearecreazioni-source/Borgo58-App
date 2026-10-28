@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
@@ -35,7 +36,10 @@ import PublicReservationForm from "./pages/public/PublicReservationForm";
 import InformativaPrivacy from "./pages/public/InformativaPrivacy";
 import AgendaList from "./pages/agenda/AgendaList";
 import TaskForm from "./pages/agenda/TaskForm";
-import PromemoriaLuogo from "./pages/agenda/PromemoriaLuogo";
+// ⚠️ Si scarica solo quando la si apre (28/10/2026): e' una pagina che si
+//    usa una volta per preparare il telefono, e caricata con tutto il resto
+//    portava il gestionale oltre il tetto di `scripts/peso-pacchetto.mjs`.
+const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
@@ -217,7 +221,9 @@ function AppRoutes() {
           path="/agenda/luoghi"
           element={
             <RequireTitolare>
-              <PromemoriaLuogo />
+              <Suspense fallback={<p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}>
+                <PromemoriaLuogo />
+              </Suspense>
             </RequireTitolare>
           }
         />
