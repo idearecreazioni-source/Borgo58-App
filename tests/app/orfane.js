@@ -154,8 +154,13 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261010000003",
     perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
   },
-  // ⚠️ Le tre porte del programma ponte sul mini-PC (28/10/2026): le chiama
+  // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
   //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
+  //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
+  //    `src/lib/calcoli/vocabolari.js` (le sue tre guardie sono fra le
+  //    GUARDIE_ESENTI), e per questa rete un nome in `src/` è una porta. È
+  //    il limite dichiarato in cima a `funzioni-senza-schermata.test.js`:
+  //    la sua porta vera resta il ponte.
   ponte_battito: {
     versione: "20261028000005",
     perche: "chiamata dal ponte del mini-PC: «ci sono», e riceve gli apparecchi",
@@ -163,10 +168,6 @@ export const ORFANE_PIANIFICATE = {
   ponte_prendi_lavori: {
     versione: "20261028000005",
     perche: "chiamata dal ponte del mini-PC: prende i lavori di stampa in coda",
-  },
-  ponte_esito_lavoro: {
-    versione: "20261028000005",
-    perche: "chiamata dal ponte del mini-PC: scrive com'e' andato un lavoro di stampa",
   },
 };
 
