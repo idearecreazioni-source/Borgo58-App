@@ -33,16 +33,28 @@ export const PORTA_REGISTRATORE = 18080;
 const CARTELLA = path.join(path.dirname(fileURLToPath(import.meta.url)), "uscita");
 
 /** I byte ESC/POS resi leggibili: il testo resta, i comandi diventano parole. */
+// ⚠️ Si leggono i byte uno per uno, non con espressioni regolari: quelle con
+//    dentro i caratteri di controllo il controllo del codice le segnala, e
+//    il progetto non ammette avvisi.
 export function leggibile(byte) {
-  return Buffer.from(byte)
-    .toString("latin1")
-    .replace(/\x1b@/g, "")
-    .replace(/\x1ba[\x00-\x02]/g, "")
-    .replace(/\x1bE\x01/g, "**")
-    .replace(/\x1bE\x00/g, "**")
-    .replace(/\x1bd[\s\S]/g, "\n")
-    .replace(/\x1dVB\x00/g, "\n----- taglio -----\n")
-    .replace(/[\x00-\x09\x0b-\x1f]/g, "");
+  const b = Buffer.from(byte);
+  let testo = "";
+  for (let i = 0; i < b.length; i++) {
+    const c = b[i];
+    if (c === 0x1b) {
+      const cosa = b[i + 1];
+      if (cosa === 0x45) testo += "**"; // grassetto acceso o spento
+      else if (cosa === 0x64) testo += "\n"; // avanti di qualche riga
+      // ESC @ ha un byte solo dopo ESC; ESC a, ESC E, ESC d ne hanno due.
+      i += cosa === 0x40 ? 1 : 2;
+    } else if (c === 0x1d && b[i + 1] === 0x56) {
+      testo += "\n----- taglio -----\n";
+      i += 3;
+    } else if (c === 0x0a || c >= 0x20) {
+      testo += String.fromCharCode(c);
+    }
+  }
+  return testo;
 }
 
 function scrivi(cartella, nome, testo) {

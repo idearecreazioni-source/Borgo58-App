@@ -22,6 +22,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { eseguiLavoro } from "./esegui.mjs";
 import { gestionale } from "./gestionale.mjs";
+import { senzaControlli } from "./protocolli/testo.mjs";
 
 export const VERSIONE = "0.1.0";
 const CARTELLA = path.dirname(fileURLToPath(import.meta.url));
@@ -116,7 +117,7 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
 export const LIMITE_DI_UN_LAVORO_MS = 45000;
 
 // Un nome con un a capo dentro non deve spezzare una riga del registro.
-const perIlRegistro = (t) => String(t ?? "").replace(/[\u0000-\u001f\u007f]/g, " ");
+const perIlRegistro = (t) => senzaControlli(t);
 
 export async function avvia(config = leggiConfigurazione()) {
   const scrivi = registro(config.registro);

@@ -7,11 +7,24 @@
 // passa da qui prima di entrare in un protocollo, qualunque cosa ci sia
 // scritto.
 
+/**
+ * Ogni carattere di controllo (C0, DEL e C1) diventa `sostituto`.
+ * ⚠️ Per codice e non con un'espressione regolare: quelle con dentro i
+ *    caratteri di controllo il controllo del codice le segnala, e il
+ *    progetto non ammette avvisi.
+ */
+export function senzaControlli(testo, sostituto = " ") {
+  let fuori = "";
+  for (const c of String(testo ?? "")) {
+    const n = c.codePointAt(0);
+    fuori += n < 0x20 || (n >= 0x7f && n <= 0x9f) ? sostituto : c;
+  }
+  return fuori;
+}
+
 /** Toglie i caratteri di controllo e taglia la riga alla larghezza data. */
 export function rigaPulita(testo, larghezza = 42) {
-  return String(testo ?? "")
-    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
-    .slice(0, larghezza);
+  return senzaControlli(testo).slice(0, larghezza);
 }
 
 // ⚠️ Le stampanti termiche, così come escono dalla scatola, non sanno le
