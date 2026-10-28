@@ -76,7 +76,9 @@ export default function CassaHome() {
       getCashBalance(entityId),
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
-      listCashMovements({ entityId, from: monthStart }),
+      // ⚠️ Fino a oggi (notte del 28/10): un pagamento postdatato e' scritto
+      //    ma non e' ancora uscito, e la scheda «In cassa» accanto lo dice gia'.
+      listCashMovements({ entityId, from: monthStart, to: oggiLocale() }),
       leggi(listDiscountsGifts({ entityId, from: monthStart })),
       leggi(getQuadraturaFiscale(entityId, monthStart, oggiLocale())),
       listQuadraturaPagamenti(),
