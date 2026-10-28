@@ -71,8 +71,11 @@ export default function Dashboard() {
       .catch((e) => setError(e.message));
   };
 
-  const load = () =>
-    Promise.all([
+  // ⚠️ L'errore di prima si toglie a ogni nuova lettura (notte del 28/10):
+  //    dopo un «Riprova» riuscito restava il riquadro «Errore: …».
+  const load = () => {
+    setError("");
+    return Promise.all([
       listDashboardTasks()
         .then(setTasks)
         .catch((e) => setError(e.message)),
@@ -105,6 +108,7 @@ export default function Dashboard() {
       //    c'è niente da comprare».
       isStaff ? Promise.resolve() : leggi(listSpesaSpicciola()).then(setSpicciola),
     ]).finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     load();

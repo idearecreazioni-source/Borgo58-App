@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createEmployee, listEmployees, listExpiringDocuments } from "../../lib/api/personale";
 import { getEntities } from "../../lib/api/entities";
-import { CONTRACT_TYPES, EMPLOYEE_STATUSES, COMPLIANCE_DOC_TYPES, formatDate, labelFor } from "../../lib/constants";
+import { CONTRACT_TYPES, EMPLOYEE_STATUSES, COMPLIANCE_DOC_TYPES, formatDate, giorniDaOggi, labelFor } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import Didascalia from "../../components/Didascalia";
 
 const emptyForm = { first_name: "", last_name: "", role: "", contract_type: "indeterminato" };
 
-const daysTo = (dateStr) => Math.round((new Date(dateStr) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function PersonaleHome() {
   const navigate = useNavigate();

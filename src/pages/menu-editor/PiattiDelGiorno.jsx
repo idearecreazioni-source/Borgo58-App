@@ -13,6 +13,7 @@ import { listRecipes } from "../../lib/api/recipes";
 import { RECIPE_CATEGORIES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 import Didascalia from "../../components/Didascalia";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const today = oggiLocale;
 
@@ -135,7 +136,7 @@ export default function PiattiDelGiorno() {
         <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4 flex flex-wrap gap-2 items-end">
           <div>
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Data</label>
-            <input type="date" value={newForm.service_date} onChange={(e) => setNewForm((f) => ({ ...f, service_date: e.target.value }))} className={inputClass + " w-40"} />
+            <input type="date" value={newForm.service_date} onChange={(e) => setNewForm((f) => ({ ...f, service_date: e.target.value }))} className={inputClass + " campo-data"} />
           </div>
           <div className="flex-1 min-w-[160px]">
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo</label>
@@ -174,9 +175,13 @@ export default function PiattiDelGiorno() {
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display testo-sala-grande text-b58-charcoal">{selected.title || "Piatti del giorno"} · {formatDate(selected.service_date)}</h2>
-              <button onClick={() => handleDeleteMenu(selected.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo">
-                Elimina questo giorno
-              </button>
+              {/* ⚠️ Chiede prima (notte del 28/10): cancella il giorno e tutti i
+                  suoi piatti, e partiva con un tocco solo. */}
+              <ConfermaDistruttiva
+                etichetta="Elimina questo giorno"
+                cosaSparisce={`il menu del ${formatDate(selected.service_date)} con tutti i suoi piatti`}
+                onConferma={() => handleDeleteMenu(selected.id)}
+              />
             </div>
 
             {items.length > 0 && (

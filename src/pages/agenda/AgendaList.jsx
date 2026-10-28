@@ -214,7 +214,10 @@ function CasellaRimanda({ giorno, onGiorno }) {
     <input
       type="date"
       defaultValue={giorno ?? ""}
-      onChange={(e) => onGiorno(e.target.value)}
+      // ⚠️ Solo un anno intero (notte del 28/10, dalla revisione): al
+      //    computer, scrivendo l'anno a mano, la data e' gia' «valida» alla
+      //    prima cifra (0002) e l'impegno finiva rimandato di duemila anni.
+      onChange={(e) => Number(e.target.value.slice(0, 4)) >= 2000 && onGiorno(e.target.value)}
       className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
     />
   );
@@ -421,7 +424,13 @@ export default function AgendaList() {
     });
     if (!ok) return; // `togliSubito` l'ha già rimessa al suo posto e l'ha detto
     if (esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
-    await ricarica();
+    // ⚠️ Fatto e' fatto; se la rilettura fallisce si dice (notte del 28/10):
+    //    prima restava un errore non gestito e l'elenco vecchio.
+    try {
+      await ricarica();
+    } catch (e) {
+      setError(`Fatto, ma non riesco a rileggere l'elenco: ${e.message}`);
+    }
   };
 
   const sposta = async (task, data) => {

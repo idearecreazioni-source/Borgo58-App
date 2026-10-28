@@ -443,10 +443,12 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             <input type="number" step="0.01" value={r.costo_unitario ?? ""}
               onChange={(e) => patchRiga(i, { costo_unitario: e.target.value })} className={campo} />
           </div>
-          <div>
+          {/* ⚠️ Su tutta la riga al telefono (notte del 28/10): in mezza
+              colonna da 150 punti la data si tagliava. */}
+          <div className="col-span-2 sm:col-span-1">
             <label className={etichetta}>Scadenza</label>
             <input type="date" value={r.scadenza ?? ""}
-              onChange={(e) => patchRiga(i, { scadenza: e.target.value })} className={campo} />
+              onChange={(e) => patchRiga(i, { scadenza: e.target.value })} className={`${campo} campo-data`} />
           </div>
           <div>
             <label className={etichetta}>N° lotto</label>
@@ -896,7 +898,10 @@ export default function PostaInArrivo() {
         // `alimentare: null` = alimenti E materiali di consumo: su una
         // fattura ci sono tutti e due. Vedi la nota più sopra.
         leggi(listIngredients({ alimentare: null })).then(setIngredienti),
-        leggi(listSuppliers()).then(setFornitori),
+        // ⚠️ CON LA SOCIETA' (notte del 28/10): senza, la lettura falliva e
+        //    dopo ogni conferma il menu Fornitore diceva «non riesco a
+        //    leggere» — lo stesso difetto corretto piu' su, rientrato qui.
+        entities?.srls ? leggi(listSuppliers(entities.srls.id)).then(setFornitori) : null,
       ]);
     } catch (e) {
       // Sulla riga toccata, mai in cima: e' li' che si sta guardando.

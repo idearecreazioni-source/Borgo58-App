@@ -8,7 +8,10 @@ import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
-const emptyForm = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const emptyFormOggi = () => ({
   species: "",
   harvest_date: today(),
   harvest_location: "",
@@ -17,7 +20,7 @@ const emptyForm = {
   contamination_risk_note: "",
   ingredient_id: "",
   note: "",
-};
+});
 
 export default function RaccoltaPropria() {
   const [items, setItems] = useState([]);
@@ -25,7 +28,7 @@ export default function RaccoltaPropria() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
 
   const reload = () => Promise.all([listForagedItems(), listIngredients()]).then(([it, ing]) => {
@@ -57,7 +60,7 @@ export default function RaccoltaPropria() {
         ingredient_id: form.ingredient_id || null,
         note: form.note || null,
       });
-      setForm(emptyForm);
+      setForm(emptyFormOggi());
       setShowForm(false);
       await reload();
     } catch (e) {

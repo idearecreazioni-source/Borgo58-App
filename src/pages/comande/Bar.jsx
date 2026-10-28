@@ -68,10 +68,34 @@ export default function Bar() {
     return () => clearInterval(interval);
   }, []);
 
+  // 🔴 IL PREZZO DEL COPERTO NON SI DA' PER ZERO (notte del 28/10, dalla
+  //    revisione): se questa lettura falliva, il giro successivo cancellava
+  //    l'avviso e il conto si chiudeva con il coperto a zero, senza che
+  //    nessuno lo vedesse. Adesso si riprova a ogni giro finche' non si legge,
+  //    l'avviso resta suo, e «Chiudi conto» aspetta.
+  const [copertoNonLetto, setCopertoNonLetto] = useState("");
   useEffect(() => {
-    getServiceSettings()
-      .then((s) => setCopertoPrice(Number(s.coperto_price)))
-      .catch((e) => setError(e.message));
+    const leggiCoperto = () =>
+      getServiceSettings()
+        .then((s) => {
+          setCopertoPrice(Number(s.coperto_price));
+          setCopertoNonLetto("");
+          return true;
+        })
+        .catch((e) => {
+          setCopertoNonLetto(e.message);
+          return false;
+        });
+    let interval = null;
+    let annullato = false;
+    leggiCoperto().then((ok) => {
+      if (annullato) return;
+      if (!ok) interval = setInterval(() => leggiCoperto().then((ok2) => ok2 && clearInterval(interval)), POLL_MS);
+    });
+    return () => {
+      annullato = true;
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   // Un "ticket" e' un invio: tutte le righe partite dalla sala nello stesso
@@ -205,6 +229,11 @@ export default function Bar() {
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
+      {copertoNonLetto && (
+        <p role="alert" className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
+          Non riesco a leggere il prezzo del coperto ({copertoNonLetto}): i totali sono senza coperto e i conti non si chiudono finché non lo leggo. Riprovo da solo.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* DA PREPARARE ---------------------------------------------- */}
@@ -290,8 +319,10 @@ export default function Bar() {
                       </button>
                       <button
                         type="button"
+                        disabled={copertoPrice === null}
+                        title={copertoPrice === null ? "Non so ancora il prezzo del coperto: riprovo da solo." : undefined}
                         onClick={() => apriConto(o.id, "close")}
-                        className="tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-semibold"
+                        className="tocco-azione flex-1 rounded-lg disabled:opacity-50 bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-semibold"
                       >
                         Chiudi conto
                       </button>

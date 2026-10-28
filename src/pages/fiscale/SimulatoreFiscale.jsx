@@ -21,6 +21,11 @@ export default function SimulatoreFiscale() {
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [settings, setSettings] = useState(VUOTE);
+  // 🔴 SI SALVA SOLO CIO' CHE SI E' LETTO (notte del 28/10, dalla revisione):
+  //    se la lettura del soggetto falliva, nel modulo restavano i parametri
+  //    dell'altro soggetto (o quelli di partenza), e «Salva» li scriveva sul
+  //    soggetto sbagliato — aliquote fiscali vere sovrascritte senza saperlo.
+  const [impostazioniLette, setImpostazioniLette] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
@@ -51,8 +56,10 @@ export default function SimulatoreFiscale() {
   useEffect(() => {
     if (!entityId) return;
     setLoading(true);
+    setImpostazioniLette(false);
     getFiscalSettings(entityId)
       .then((s) => {
+        setImpostazioniLette(true);
         setSettings(s ? { ...VUOTE, ...s, annual_revenue_estimate: s.annual_revenue_estimate ?? "",
                           parametri_confermati_da_laura: s.parametri_confermati_da_laura ?? "" } : VUOTE);
       })
@@ -255,11 +262,17 @@ export default function SimulatoreFiscale() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSaveSettings}
-            disabled={saving}
+            disabled={saving || !impostazioniLette}
+            title={impostazioniLette ? undefined : "Non ho letto i parametri di questo soggetto: ricarica la pagina prima di salvare."}
             className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Salvo…" : "Salva parametri"}
           </button>
+          {!impostazioniLette && !loading && (
+            <span className="testo-sala text-b58-terracotta-dark-testo">
+              Non ho letto i parametri di questo soggetto: non li salvo.
+            </span>
+          )}
           {savedMsg && <span className="testo-sala text-b58-olive-dark-testo">{savedMsg}</span>}
         </div>
       </div>

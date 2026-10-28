@@ -37,13 +37,17 @@ export default function DocumentoDetail() {
   //    una sezione poi spenta, aprire la scheda e salvare gliela
   //    cambierebbe — e il difetto sarebbe indistinguibile da una scelta.
   // ⚠️ Si aspetta il documento, perche' la sua sezione e' il parametro.
+  // ⚠️ `haDoc` e non `doc` (notte del 28/10): `doc` cambia a ogni lettera
+  //    scritta nella scheda, e ogni lettera rifaceva questa lettura.
+  const haDoc = Boolean(doc);
   useEffect(() => {
     if (!doc) return;
     // ⚠️ `leggi` invece di un `catch` che svuota: se la lettura fallisce il
     //    valore resta il segno «non letto», e la schermata lo dichiara invece
     //    di mostrare un menu vuoto che si legge «non ce ne sono».
     leggi(sezioniArchivio(doc.doc_type ?? null)).then(setSezioni);
-  }, [doc?.doc_type, doc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.doc_type, haDoc]);
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";

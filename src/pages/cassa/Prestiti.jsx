@@ -25,13 +25,16 @@ import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 // quando restituire»*. Qui non c'è nessun promemoria, nessuna rata, nessun
 // avviso: solo quanto si deve e quanto si può.
 
-const vuoto = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const vuotoOggi = () => ({
   daChi: "",
   importo: "",
   mezzo: "banca",
   ricevutoIl: oggiLocale(),
   nota: "",
-};
+});
 
 export default function Prestiti() {
   const [entityId, setEntityId] = useState("");
@@ -40,7 +43,7 @@ export default function Prestiti() {
   // ⚠️ `null` e non `[]`: «non ho letto le causali» e «non ce ne sono» non
   // sono la stessa cosa, e qui la differenza si paga in prima nota.
   const [causali, setCausali] = useState(null);
-  const [form, setForm] = useState(vuoto);
+  const [form, setForm] = useState(vuotoOggi);
   const [restituzione, setRestituzione] = useState(null);
   const [busy, setBusy] = useState(false);
   const [errore, setErrore] = useState("");
@@ -118,7 +121,7 @@ export default function Prestiti() {
         nota: form.nota,
       });
       setEsito(r.messaggio);
-      setForm(vuoto);
+      setForm(vuotoOggi());
       await carica();
     } catch (e) {
       setErrore(e.message);

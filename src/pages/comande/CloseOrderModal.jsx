@@ -58,7 +58,11 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   });
 
   useEffect(() => {
-    listCausali("sconto_omaggio").then(setCausali);
+    // ⚠️ Un errore si dice (notte del 28/10): senza, il menu delle causali
+    //    restava vuoto e sconto e omaggio non si potevano confermare, muti.
+    listCausali("sconto_omaggio")
+      .then(setCausali)
+      .catch((e) => setError(`Non riesco a leggere le causali di sconto e omaggio: ${e.message}`));
   }, []);
 
   // ⚠️ SI CHIEDE AL DATABASE, non si deduce dalla prenotazione: la regola su

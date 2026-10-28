@@ -46,7 +46,12 @@ export default function Scontrinato() {
   // è la stessa voce aperta di «chi comanda sui ricavi».
   const { serata, oraFineSerata } = useGiornataOperativa();
   useEffect(() => {
-    if (serata) setAl((a) => (a === oggiLocale() ? serata : a));
+    if (!serata) return;
+    setAl((a) => (a === oggiLocale() ? serata : a));
+    // ⚠️ La notte del primo del mese la serata e' ancora quella del mese
+    //    prima: senza questa riga il periodo era al rovescio (dal 1° al 31
+    //    del mese passato) e tutto risultava zero (notte del 28/10).
+    setDal((d) => (d === primoDelMeseLocale() && serata < d ? `${serata.slice(0, 7)}-01` : d));
   }, [serata]);
 
   useEffect(() => {
@@ -55,7 +60,11 @@ export default function Scontrinato() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const ricarica = () => {

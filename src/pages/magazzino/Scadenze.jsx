@@ -170,7 +170,7 @@ export default function Scadenze() {
           </button>
           <button
             type="button"
-            className="tocco-bottone rounded-lg border border-red-700 bg-red-600 px-4 leading-tight text-white shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
+            className="tocco-bottone rounded-lg border border-transparent bg-red-600 px-4 leading-tight text-white shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "buttata")}
           >
@@ -248,7 +248,7 @@ export default function Scadenze() {
             onClick={() => setPosizione(p.chiave)}
             className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
               posizione === p.chiave
-                ? "bg-stone-800 text-white"
+                ? "bg-b58-charcoal text-b58-cream"
                 : "border border-stone-300 text-stone-600"
             }`}
           >

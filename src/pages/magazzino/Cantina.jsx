@@ -246,7 +246,10 @@ export default function Cantina() {
                   </label>
                   <button
                     type="button"
-                    disabled={inCorso === b.id}
+                    // ⚠️ Senza il numero dei calici rimasti non si butta
+                    //    niente (notte del 28/10): «vuoto» diventava 0, e uno
+                    //    spreco vero si registrava come zero.
+                    disabled={inCorso === b.id || calici === ""}
                     onClick={() => chiudi(b, "buttata")}
                     className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 text-b58-sul-colore testo-sala-grande px-3 py-1.5"
                   >

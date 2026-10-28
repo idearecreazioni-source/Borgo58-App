@@ -489,6 +489,14 @@ export default function IngredienteForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // ⚠️ Una resa che il campo stesso dice sbagliata non si salva (notte
+    //    del 28/10): prima si salvava vuota, e cancellava in silenzio quella
+    //    che c'era.
+    const rifiuto = rifiutoResaStandard(form.resa_standard);
+    if (rifiuto) {
+      setError(rifiuto);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
