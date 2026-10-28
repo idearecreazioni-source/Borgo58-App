@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addTemperatureLog,
@@ -75,9 +75,14 @@ export default function TemperatureLog() {
   //    proprio quello in cui il frigo NON è stato detto — il database si
   //    rifiuta di indovinarlo, perché quel registro va all'ASP — quindi
   //    spesso qui arriva solo il numero e la riga da aprire la sceglie lui.
+  // ⚠️ IL NUMERO DETTATO NON SI PERDE APRENDO LA RIGA (notte del 28/10,
+  //    dalla revisione): quando la voce porta solo il numero, la riga la
+  //    sceglie lui — e aprirla lo cancellava. Resta finche' non lo si usa.
+  const numeroDettato = useRef(false);
   const venuto = useDaVoce((c) => {
     if (c.attrezzatura) setOpenRow(c.attrezzatura);
     setReadingForm((f) => conCampi(f, c, DA_VOCE));
+    numeroDettato.current = !c.attrezzatura;
   });
   const [saving, setSaving] = useState(false);
 
@@ -135,7 +140,8 @@ export default function TemperatureLog() {
 
   const toggleRow = (equipmentId) => {
     setOpenRow((r) => (r === equipmentId ? null : equipmentId));
-    setReadingForm(emptyReadingForm);
+    if (numeroDettato.current) numeroDettato.current = false;
+    else setReadingForm(emptyReadingForm);
     setError("");
   };
 

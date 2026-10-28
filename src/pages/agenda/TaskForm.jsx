@@ -128,6 +128,11 @@ export default function TaskForm() {
   const [initialRemindAt, setInitialRemindAt] = useState(null);
   const [loading, setLoading] = useState(isEdit);
   const [notFound, setNotFound] = useState(false);
+  // 🔴 UN IMPEGNO NON LETTO NON SI MOSTRA VUOTO (notte del 28/10, dalla
+  //    revisione): se la lettura falliva per la rete compariva il modulo
+  //    vuoto, e salvandolo si sovrascrivevano data, promemoria e ricorrenza
+  //    dell'impegno vero con i valori di partenza.
+  const [nonLetto, setNonLetto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -163,7 +168,10 @@ export default function TaskForm() {
       })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
-        else if (!cancelled) setError(e.message);
+        else if (!cancelled) {
+          setError(e.message);
+          setNonLetto(true);
+        }
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
@@ -174,6 +182,18 @@ export default function TaskForm() {
   if (notFound) return <Navigate to="/agenda" replace />;
   if (loading) {
     return <p className="testo-sala-grande text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
+  }
+  if (nonLetto) {
+    return (
+      <div className="max-w-xl mx-auto space-y-3">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo">
+          Non riesco a leggere questo impegno: {error}
+        </p>
+        <button type="button" onClick={() => window.location.reload()} className="tocco-bottone rounded-lg bg-b58-azione px-4 testo-sala text-b58-sul-colore">
+          Riprova
+        </button>
+      </div>
+    );
   }
 
   const inputClass =

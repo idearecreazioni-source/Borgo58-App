@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   listProdottiTroppoPiccoli,
@@ -48,7 +48,12 @@ export default function MagazzinoHome() {
   //    prodotto, con la quantità e il motivo già scritti. Il motivo è
   //    «spreco» perché è ciò che quel tipo di comando SIGNIFICA, non un
   //    valore indovinato.
+  // ⚠️ IL NUMERO DETTATO NON SI PERDE APRENDO LA RIGA (notte del 28/10,
+  //    dalla revisione): quando la voce porta solo il numero, la riga la
+  //    sceglie lui — e aprirla lo cancellava. Resta finche' non lo si usa.
+  const numeroDettato = useRef(false);
   const venuto = useDaVoce((c) => {
+    numeroDettato.current = !c.prodotto;
     if (c.prodotto) setOpenRow(c.prodotto);
     setConsumptionForm((f) => ({
       ...f,
@@ -128,7 +133,8 @@ export default function MagazzinoHome() {
 
   const toggleRow = (ingredientId) => {
     setOpenRow((r) => (r === ingredientId ? null : ingredientId));
-    setConsumptionForm(emptyConsumptionForm);
+    if (numeroDettato.current) numeroDettato.current = false;
+    else setConsumptionForm(emptyConsumptionForm);
     setError("");
   };
 
