@@ -208,7 +208,13 @@ describe("🔴 le ruote girano: dito, rotella, tastiera", () => {
       ruota.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
       ruota.dispatchEvent(new window.Event("scroll"));
     });
-    // Mentre gira non si sceglie: solo quando si ferma.
+    // ⚠️ Col dito ancora giu', anche fermo, non si sceglie (revisione ECC).
+    await new Promise((r) => setTimeout(r, 200));
+    expect(scelto(ruota)).toBe("30");
+    await act(async () => {
+      ruota.dispatchEvent(new window.Event("pointerup", { bubbles: true }));
+    });
+    // Appena alzato il dito non si sceglie ancora: si aspetta che si fermi.
     expect(scelto(ruota)).toBe("30");
     await waitFor(() => expect(scelto(ruotaMinuti())).toBe("45"));
     // e resta una bozza finche' non si conferma

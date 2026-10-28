@@ -68,26 +68,52 @@ function voceAlCentro(ruota) {
 function Ruota({ etichetta, dataCampo, voci, valore, onScegli }) {
   const riferimento = useRef(null);
   const attesa = useRef(null);
+  // `toccata`: c'e' stato un gesto suo; `dito`: il dito e' ancora giu'.
+  // ⚠️ Col dito fermo a meta' giro non si sceglie: si aspetta che lo alzi
+  //    (revisione `ecc:react-reviewer`, 28/10).
   const toccata = useRef(false);
+  const dito = useRef(false);
+  // ⚠️ Il valore e la funzione si leggono da qui dentro l'attesa: quelli
+  //    del momento in cui la ruota ha cominciato a girare possono essere
+  //    vecchi quando si ferma.
+  const ultimo = useRef({ valore, onScegli });
+  ultimo.current = { valore, onScegli };
 
   useEffect(() => () => clearTimeout(attesa.current), []);
 
-  const alloScorrere = () => {
+  const aspettaCheSiFermi = () => {
     clearTimeout(attesa.current);
     if (!toccata.current) return;
     attesa.current = setTimeout(() => {
+      if (dito.current) return;
       toccata.current = false;
       const v = voceAlCentro(riferimento.current);
-      if (v && v !== valore) onScegli(v);
+      if (v && v !== ultimo.current.valore) ultimo.current.onScegli(v);
     }, ATTESA_FERMA);
+  };
+  const ditoGiu = () => {
+    toccata.current = true;
+    dito.current = true;
+  };
+  const ditoSu = () => {
+    dito.current = false;
+    aspettaCheSiFermi();
   };
 
   useEffect(() => {
     const scelta = riferimento.current?.querySelector('[aria-selected="true"]');
     // ⚠️ `scrollIntoView` non esiste in jsdom: si chiama solo se c'è, così le
     //    prove di schermata non si rompono su una cosa che non riguarda loro.
-    if (scelta?.scrollIntoView) scelta.scrollIntoView({ block: "center", behavior: "instant" });
-  }, [valore, voci]);
+    if (!scelta?.scrollIntoView) return;
+    try {
+      scelta.scrollIntoView({ block: "center", behavior: "instant" });
+    } catch {
+      scelta.scrollIntoView({ block: "center" });
+    }
+    // ⚠️ Non `voci`: e' un elenco nuovo a ogni disegno, e la ruota tornerebbe
+    //    al centro mentre si gira l'altra. Cambia davvero solo con la fascia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valore, voci.length, voci[0]?.valore]);
 
   const valori = voci.map((v) => v.valore);
 
@@ -116,9 +142,13 @@ function Ruota({ etichetta, dataCampo, voci, valore, onScegli }) {
       tabIndex={0}
       onKeyDown={daTastiera}
       onWheel={(e) => onScegli(scorriCircolare(valori, valore, e.deltaY > 0 ? 1 : -1))}
-      onScroll={alloScorrere}
-      onPointerDown={() => (toccata.current = true)}
-      onTouchStart={() => (toccata.current = true)}
+      onScroll={aspettaCheSiFermi}
+      onPointerDown={ditoGiu}
+      onTouchStart={ditoGiu}
+      onPointerUp={ditoSu}
+      onPointerCancel={ditoSu}
+      onTouchEnd={ditoSu}
+      onTouchCancel={ditoSu}
       ref={riferimento}
       className="ruota-ora"
     >
@@ -228,7 +258,7 @@ export default function SceltaOra({
               dataCampo={dataCampo ? `${dataCampo}-ore` : undefined}
               voci={oreDellaFascia(fascia).map((h) => ({ valore: h, etichetta: h }))}
               valore={ore}
-              onScegli={(h) => setBozza(oraComposta(h, minuti || "00"))}
+              onScegli={(h) => setBozza((b) => oraComposta(h, b.slice(3, 5) || "00"))}
             />
             <span aria-hidden="true" className="self-center text-b58-charcoal-soft">
               :
@@ -238,7 +268,7 @@ export default function SceltaOra({
               dataCampo={dataCampo ? `${dataCampo}-minuti` : undefined}
               voci={minutiDaOfferire(minuti)}
               valore={minuti}
-              onScegli={(m) => setBozza(oraComposta(ore, m))}
+              onScegli={(m) => setBozza((b) => oraComposta(b.slice(0, 2), m))}
             />
           </div>
 
