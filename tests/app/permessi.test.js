@@ -179,7 +179,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // portiere e' la chiave del luogo (impronta, revoca in un tocco), il freno
   // e' dentro `luogo_promemoria` (30 letture all'ora per chiave), e la
   // funzione LEGGE soltanto i titoli degli impegni aperti di quel luogo.
-  it("solo 14 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  it("solo 17 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
@@ -187,6 +187,15 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       "is_titolare",
       "luogo_promemoria",
       "normalize_phone",
+      // ⚠️ LE TRE DEL PONTE (28/10/2026, 20261028000005): il programma sul
+      //    mini-PC del ristorante non fa il login, quindi entra da qui. Il
+      //    portiere e' la chiave del ponte (chiavi_ponte), che deve essere
+      //    del titolare, con un freno di 300 chiamate al minuto. Leggono gli
+      //    apparecchi attivi, prendono la coda di stampa e ne scrivono
+      //    l'esito: nessun conto, nessun prezzo, nessun cliente.
+      "ponte_battito",
+      "ponte_esito_lavoro",
+      "ponte_prendi_lavori",
       "public_reservation_options",
       "registra_dettatura_da_chiave",
       "set_aggiornato_il",

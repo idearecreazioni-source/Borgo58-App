@@ -154,6 +154,20 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261010000003",
     perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
   },
+  // ⚠️ Le tre porte del programma ponte sul mini-PC (28/10/2026): le chiama
+  //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
+  ponte_battito: {
+    versione: "20261028000005",
+    perche: "chiamata dal ponte del mini-PC: «ci sono», e riceve gli apparecchi",
+  },
+  ponte_prendi_lavori: {
+    versione: "20261028000005",
+    perche: "chiamata dal ponte del mini-PC: prende i lavori di stampa in coda",
+  },
+  ponte_esito_lavoro: {
+    versione: "20261028000005",
+    perche: "chiamata dal ponte del mini-PC: scrive com'e' andato un lavoro di stampa",
+  },
 };
 
 /**
