@@ -38,6 +38,7 @@ export const ORFANE_SEMPRE = {
   registra_dettatura_da_chiave: "chiamata da ascolta-voce (la Scorciatoia)",
   registra_lettura_foto: "chiamata da leggi-foto",
   voce_apri_sessione: "chiamata da ascolta-voce",
+  luogo_promemoria: "chiamata da promemoria-luogo (l'automazione «quando arrivo a…» dell'iPhone)",
 
   // Sono RETI: esistono per essere interrogate da una prova, non da una
   // schermata. Una porta a schermo non avrebbe senso.

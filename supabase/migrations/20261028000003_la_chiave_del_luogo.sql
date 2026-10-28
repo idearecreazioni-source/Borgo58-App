@@ -56,6 +56,9 @@ comment on column chiavi_luogo.usi is
 comment on column chiavi_luogo.finestra_da is
   'Inizio dell''ora in cui si contano le letture per il freno (30 all''ora).';
 
+comment on constraint chiavi_luogo_impronta_key on chiavi_luogo is
+  'Due chiavi non possono avere la stessa impronta: se succedesse, una chiave aprirebbe anche l''altra.';
+
 create index if not exists idx_chiavi_luogo_attive on chiavi_luogo (impronta) where revocata_il is null;
 
 alter table chiavi_luogo enable row level security;
