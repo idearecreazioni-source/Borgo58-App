@@ -1703,6 +1703,9 @@ export default function Sala() {
           <Scorciatoia to="/comande/scontrini">
             Scontrini
           </Scorciatoia>
+          {/* Le stampanti e il registratore (28/10/2026): indirizzi e
+              prove, quindi solo del titolare. */}
+          {isTitolare && <Scorciatoia to="/comande/stampanti">Stampanti</Scorciatoia>}
           {isTitolare && (
             <Scorciatoia onClick={() => setPanel((p) => (p ? null : "tavoli"))} premuto={Boolean(panel)}>
               {/* ⚠️ «CHIUDI IMPOSTAZIONI», non «Chiudi» (22/08). In sala

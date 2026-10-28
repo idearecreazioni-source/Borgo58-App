@@ -393,7 +393,7 @@ async function toccaIlPerche(manda, forma) {
 // che trova un tentativo è ROSSA.
 
 // --- Il giro -----------------------------------------------------------
-export const PAGINE = ["dashboard", "agenda", "primanota", "causali", "salaorari", "spesa", "ingrediente", "archivio"];
+export const PAGINE = ["dashboard", "agenda", "primanota", "causali", "salaorari", "spesa", "ingrediente", "archivio", "stampanti"];
 
 async function principale() {
   // Si possono chiedere solo alcune schermate: `node scripts/prova-visiva-schermate.mjs agenda causali`.
