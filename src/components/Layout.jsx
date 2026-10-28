@@ -251,9 +251,16 @@ export default function Layout() {
           <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
           </div>
+          {/* ⚠️ `data-fuori-dalla-foto` (28/10/2026): il riquadro si apre
+              mentre si fa l'immagine della pagina, e non deve finirci. */}
           {segnala.aperto && (
-            <div className="print:hidden mb-4">
-              <RiquadroSegnala momento={segnala.momento} onChiudi={segnala.chiudi} />
+            <div data-fuori-dalla-foto className="print:hidden mb-4">
+              <RiquadroSegnala
+                momento={segnala.momento}
+                scatto={segnala.scatto}
+                onTogliImmagine={segnala.togliImmagine}
+                onChiudi={segnala.chiudi}
+              />
             </div>
           )}
           {ruoloNonLetto && (

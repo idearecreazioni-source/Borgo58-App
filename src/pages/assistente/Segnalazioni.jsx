@@ -6,6 +6,7 @@ import {
   cambiaStatoSegnalazione,
   eliminaSegnalazione,
   listSegnalazioni,
+  urlImmagineSegnalazione,
 } from "../../lib/api/segnalazioni";
 import { STATI_SEGNALAZIONE, etichettaStato } from "../../lib/calcoli/segnalazioni";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
@@ -33,6 +34,7 @@ function Riga({ s, onCambiata, onTolta }) {
   const [errore, setErrore] = useState(null);
   const [vista, setVista] = useState(false);
   const [lavoro, setLavoro] = useState(false);
+  const [immagine, setImmagine] = useState(null);
   const guardia = useRef(unaVoltaSola());
 
   async function fai(chiave, azione) {
@@ -57,8 +59,20 @@ function Riga({ s, onCambiata, onTolta }) {
 
   const togli = () =>
     fai("togli", async () => {
-      await eliminaSegnalazione(s.id);
-      onTolta(s.id);
+      const esito = await eliminaSegnalazione(s.id);
+      onTolta(s.id, esito?.immagineRimasta);
+    });
+
+  // L'immagine si chiede al deposito solo quando la si vuole vedere: un
+  // indirizzo firmato dura un'ora, e aprirne venti a ogni visita sarebbe
+  // lavoro buttato.
+  const vediImmagine = () =>
+    fai("immagine", async () => {
+      if (immagine) {
+        setImmagine(null);
+        return;
+      }
+      setImmagine(await urlImmagineSegnalazione(s.immagine_path));
     });
 
   return (
@@ -74,6 +88,28 @@ function Riga({ s, onCambiata, onTolta }) {
         <p className="testo-sala text-b58-charcoal-soft">
           Da: <Link to={s.schermata} className="underline">{s.titolo_schermata || s.schermata}</Link>
         </p>
+      )}
+      {s.immagine_path && (
+        <div>
+          <button
+            type="button"
+            onClick={vediImmagine}
+            disabled={lavoro}
+            aria-expanded={!!immagine}
+            className="tocco-bottone testo-sala text-b58-olive-dark-testo underline disabled:opacity-50"
+          >
+            {immagine ? "Nascondi l'immagine della pagina" : "Immagine della pagina"}
+          </button>
+          {immagine && (
+            <a href={immagine} target="_blank" rel="noreferrer" className="mt-1 block">
+              <img
+                src={immagine}
+                alt="La pagina nel momento della segnalazione"
+                className="max-h-96 w-auto rounded-lg ring-1 ring-b58-charcoal/15 object-contain object-top bg-white"
+              />
+            </a>
+          )}
+        </div>
       )}
       {s.cosa_si_vedeva && (
         <div>
@@ -146,7 +182,11 @@ export default function Segnalazioni() {
   const aperte = righe?.filter((s) => s.stato === "nuova" || s.stato === "in_lavorazione") ?? [];
   const chiuse = righe?.filter((s) => s.stato === "corretta" || s.stato === "scartata") ?? [];
   const cambiata = (id, campi) => setRighe((r) => r.map((s) => (s.id === id ? { ...s, ...campi } : s)));
-  const tolta = (id) => setRighe((r) => r.filter((s) => s.id !== id));
+  const [avviso, setAvviso] = useState(null);
+  const tolta = (id, rimasta) => {
+    setRighe((r) => r.filter((s) => s.id !== id));
+    setAvviso(rimasta ?? null);
+  };
 
   return (
     <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
@@ -157,6 +197,8 @@ export default function Segnalazioni() {
           punto sono.
         </Didascalia>
       </h1>
+
+      {avviso && <p className="mt-3 testo-sala text-b58-turno-dark-testo">{avviso}</p>}
 
       {errore ? (
         <DatoNonLetto cosa="le segnalazioni" onRiprova={carica} className="mt-4" />
