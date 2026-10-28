@@ -32,7 +32,9 @@ Questo è il primo passo del collegamento delle stampanti. Alessio ha fatto la r
 
 ## Le reti aggiornate
 - `tests/app/permessi.test.js`: le funzioni eseguibili con la sola chiave pubblica passano da **14 a 17** (le tre del ponte), con la ragione scritta accanto.
-- `tests/app/orfane.js`: le tre del ponte sono fra le `ORFANE_PIANIFICATE` della 20261028000005. Le chiama `ponte/`, che sta fuori da `src/`.
+- `tests/app/orfane.js`: `ponte_battito` e `ponte_prendi_lavori` sono fra le `ORFANE_PIANIFICATE` della 20261028000005. Le chiama `ponte/`, che sta fuori da `src/`.
+  - `ponte_esito_lavoro` no: il suo nome compare in `src/lib/calcoli/vocabolari.js`, e per quella rete basta. È il limite dichiarato in cima a `funzioni-senza-schermata.test.js`.
+- `src/lib/calcoli/vocabolari.js`: tre `GUARDIE_ESENTI` per `ponte_esito_lavoro` (`p_stato`, `p_stato_dispositivo`, `p_errore_codice`). Sono sottoinsiemi voluti dei vocabolari, perché il ponte non scrive i valori che spettano al gestionale. Le ha trovate la rete dei vocabolari al primo giro su GitHub.
 - Prova visiva: aggiunta la schermata `stampanti`, con dati finti scelti per andare a capo.
 
 ## Revisione ECC
@@ -53,7 +55,7 @@ Questo è il primo passo del collegamento delle stampanti. Alessio ha fatto la r
 
 ## Numeri, misurati
 - **Su Prova:** applicata e riapplicata dopo la revisione, con la verifica passata, fino a «Provato e annullato: zero residui». Prova ha 447 migrazioni.
-- **`npm run test:app`** su `stampanti`, `permessi`, `funzioni-senza-schermata`, `migrazioni-senza-portieri`, `scritture-dal-corridoio` e `giornata-operativa`: 6 file, **47 prove passate**. Le prove nuove in `tests/app/stampanti.test.js` sono 8, e fanno il giro intero del ponte con la sola chiave pubblica.
+- **`npm run test:app`, la serie intera su Prova:** 90 file, **644 prove**, tutte passate dopo le due correzioni qui sopra. Le prove nuove in `tests/app/stampanti.test.js` sono 8, e fanno il giro intero del ponte con la sola chiave pubblica.
 - **Prova visiva `stampanti`:** 6 misure su 6, a 360, 390 e 430 (telefono), 768 (tablet), 1280 e 1920 (computer).
 - **Peso del gestionale:** 443,49 kB compressi su un tetto di 450. La pagina si carica solo quando la si apre.
 
