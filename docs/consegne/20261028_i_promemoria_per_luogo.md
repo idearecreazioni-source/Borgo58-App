@@ -1,6 +1,6 @@
 # I promemoria per luogo — 28/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** `7819de6a`, sul ramo `claude/promemoria-luogo` aperto da `origin/master` `63612900`. Questo riepilogo è l'ultimo commit della consegna. Working tree pulito, a parte `.env` (ignorato, copia temporanea, tolta a fine lavoro).
+**HEAD dichiarato sotto questo riepilogo:** `9cd4e718`, sul ramo `claude/promemoria-luogo` aperto da `origin/master` `63612900`. Questo riepilogo è l'ultimo commit della consegna. Working tree pulito, a parte `.env` (ignorato, copia temporanea, tolta a fine lavoro).
 
 ## Origine
 Alessio, il 27/10: *«esiste un modo per legare un task ad una posizione? del tipo "ricordami di fare questo quando arrivo a casa"»*.
@@ -45,7 +45,7 @@ Il gestionale è un sito, e un sito chiuso non sa dove si trova il telefono. Lo 
 - **Prove:**
   - unità: `luogo-promemoria` (10 prove nuove) e `vocabolari` (con `TASK_LUOGHI` dichiarato);
   - schermate: `agenda-luogo-nella-scheda` e `elenco-colonne-di-tutte-le-righe`. Le schermate sono 60 file, 462 prove, tutte verdi;
-  - `npm run test:app -- tests/app/permessi.test.js` contro Prova: 23 prove verdi.
+  - `npm run test:app` contro Prova: `permessi` (23 prove verdi); `funzioni-senza-schermata` e `vincoli-che-parlano` (7 verdi, dopo averle viste rosse sui controlli della PR: `luogo_promemoria` va fra le funzioni chiamate da una funzione online in `tests/app/orfane.js`, e il vincolo `chiavi_luogo_impronta_key` ha ora il suo commento).
 - **Revisioni ECC:**
   - `ecc:security-reviewer`: nessun problema grave. Applicati:
     - errori inattesi non detti fuori;
