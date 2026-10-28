@@ -24,7 +24,10 @@ import Didascalia from "../../components/Didascalia";
 const currentYear = new Date().getFullYear();
 const today = oggiLocale;
 
-const emptyForm = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const emptyFormOggi = () => ({
   regola_deducibilita_id: "",
   description: "",
   amount: "",
@@ -35,7 +38,7 @@ const emptyForm = {
   document_reference: "",
   business_purpose: "",
   note: "",
-};
+});
 
 export default function DeduzioniFiscali() {
   const [entities, setEntities] = useState(null);
@@ -45,7 +48,7 @@ export default function DeduzioniFiscali() {
   const [regole, setRegole] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -54,7 +57,11 @@ export default function DeduzioniFiscali() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const reload = () => {
@@ -122,7 +129,7 @@ export default function DeduzioniFiscali() {
         note: form.note || null,
       });
       setForm({
-        ...emptyForm,
+        ...emptyFormOggi(),
         regola_deducibilita_id: form.regola_deducibilita_id,
         expense_date: form.expense_date,
       });
@@ -171,11 +178,13 @@ export default function DeduzioniFiscali() {
     ]);
   };
 
+  // ⚠️ Gli anni non si deducono dalle spese (notte del 28/10): l'elenco ha
+  //    solo quelle dell'anno scelto, quindi il menu offriva sempre e solo
+  //    l'anno in corso e gli anni passati non si potevano aprire.
   const years = useMemo(() => {
-    const set = new Set([currentYear]);
-    expenses.forEach((e) => set.add(Number(e.expense_date.slice(0, 4))));
+    const set = new Set([currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3, year]);
     return Array.from(set).sort((a, b) => b - a);
-  }, [expenses]);
+  }, [year]);
 
   return (
     <div className="max-w-5xl mx-auto pb-16">

@@ -5,6 +5,7 @@ import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
 import { CROP_STATUSES, formatDate, giorniDaOggi, oggiLocale } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useUnita } from "../../lib/unita";
 
 const STATUS_BADGE = {
@@ -256,13 +257,19 @@ export default function AgricoloHome() {
                           accanto (22/08). Quello registra il raccolto,
                           questo **cancella la coltura** — e la cancella
                           senza chiedere niente. */}
-                      <button
-                        onClick={() => deleteCrop(c.id).then(reload)}
-                        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
-                        style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }}
-                      >
-                        Rimuovi
-                      </button>
+                      {/* ⚠️ E adesso chiede (notte del 28/10), come le cessioni:
+                          un tocco impreciso sul telefono la cancellava. */}
+                      <span style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }} className="inline-block">
+                        <ConfermaDistruttiva
+                          etichetta="Rimuovi"
+                          cosaSparisce={`la coltura «${c.name}»`}
+                          onConferma={() =>
+                            deleteCrop(c.id)
+                              .then(reload)
+                              .catch((e) => setError(e.message))
+                          }
+                        />
+                      </span>
                     </td>
                   </tr>
                   {harvestFor === c.id && (

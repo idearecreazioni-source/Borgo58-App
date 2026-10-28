@@ -41,7 +41,10 @@ const ORIZZONTI = [
 ];
 
 // ⚠️ CALENDARIO: una scadenza cade in un giorno, non in una serata.
-const formaVuota = { descrizione: "", importo: "", scadeIl: oggiLocale(), ogniMesi: "0", mezzo: "banca" };
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const formaVuotaOggi = () => ({ descrizione: "", importo: "", scadeIl: oggiLocale(), ogniMesi: "0", mezzo: "banca" });
 
 export default function Previsione() {
   const [entities, setEntities] = useState(null);
@@ -57,7 +60,7 @@ export default function Previsione() {
   const [impostazioni, setImpostazioni] = useState({ giorniAccredito: "", commissione: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState(formaVuota);
+  const [form, setForm] = useState(formaVuotaOggi);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -66,7 +69,11 @@ export default function Previsione() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const finoAl = () => traGiorniLocale(giorni);
@@ -145,7 +152,7 @@ export default function Previsione() {
     setError("");
     try {
       await createScadenzaPrevista({ ...form, entityId });
-      setForm({ ...formaVuota, scadeIl: form.scadeIl });
+      setForm({ ...formaVuotaOggi(), scadeIl: form.scadeIl });
       await ricarica();
     } catch (e) {
       setError(e.message);
@@ -409,10 +416,16 @@ export default function Previsione() {
                         step="0.01"
                         min="0"
                         defaultValue={s.importo}
-                        onBlur={(e) =>
-                          Number(e.target.value) !== Number(s.importo) &&
-                          correggi(s, "importo", e.target.value)
-                        }
+                        // ⚠️ Un campo svuotato non e' «zero euro» (notte del
+                        //    28/10): scriveva 0 e la scadenza usciva dalla
+                        //    previsione. Vuoto o zero, si torna al valore di prima.
+                        onBlur={(e) => {
+                          if (!(Number(e.target.value) > 0)) {
+                            e.target.value = s.importo;
+                            return;
+                          }
+                          if (Number(e.target.value) !== Number(s.importo)) correggi(s, "importo", e.target.value);
+                        }}
                         className="w-24 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                       />
                       {s.chiusa_il ? (

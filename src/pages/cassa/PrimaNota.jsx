@@ -41,7 +41,10 @@ import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investi
 
 const today = oggiLocale;
 
-const emptyForm = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const emptyFormOggi = () => ({
   direction: "uscita",
   amount: "",
   movement_date: today(),
@@ -58,7 +61,7 @@ const emptyForm = {
   //    dalla causale o dalle parole della descrizione.
   e_investimento: false,
   note: "",
-};
+});
 
 // 🔴 ARRIVATO QUI DA UNA COSA DETTA A VOCE — è l'esempio di Alessio parola
 //    per parola: *«se ti dico segna trenta euro pagati al fornitore, mi
@@ -93,7 +96,7 @@ export default function PrimaNota() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
   // 🔴 IL PERIODO PARTE DAL MESE IN CORSO, e prima partiva VUOTO (19/08/2026).
   // Con i campi vuoti questa schermata chiedeva TUTTI i movimenti — e su
@@ -146,7 +149,11 @@ export default function PrimaNota() {
         setCausaliEntrata(cin);
         setCausaliUscita(cout);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -291,7 +298,7 @@ export default function PrimaNota() {
       //    fare, e la volta dopo lo stesso movimento entrava due volte.
       await createCashMovement(movimento, { azioneDettataId: chiudendo });
       if (chiudendo) venuto.segnaChiusa();
-      setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
+      setForm({ ...emptyFormOggi(), movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
       await reload();
     } catch (e) {
       setError(e.message);

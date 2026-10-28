@@ -37,6 +37,8 @@ export default function Previsioni() {
         setEntityId(ent.srls.id);
       } catch (e) {
         setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
       }
     })();
   }, []);

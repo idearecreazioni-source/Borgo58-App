@@ -61,7 +61,11 @@ export default function CassaHome() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -316,7 +320,10 @@ export default function CassaHome() {
                       regalata: omaggi «Altro» sul venduto a listino (incassato
                       + tutti gli omaggi). Senza niente di servito non è zero
                       per cento — è «non lo so», e si tace. */}
-                  {percentuale === null ? (
+                  {nonLetto(fiscale) ? (
+                    // ⚠️ Non letto non e' «non servito» (notte del 28/10).
+                    <DatoNonLetto cosa="l'incassato del mese" />
+                  ) : percentuale === null ? (
                     <div className="testo-sala text-b58-charcoal-soft mt-1">
                       Questo mese non è ancora stato servito niente.
                     </div>

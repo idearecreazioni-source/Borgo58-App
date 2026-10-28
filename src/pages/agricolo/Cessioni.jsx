@@ -10,11 +10,14 @@ import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
-const emptyForm = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const emptyFormOggi = () => ({
   ingredient_id: "", product_description: "", quantity: "", unit: "kg", unit_price: "",
   vat_rate: "", cession_date: today(), fiscal_document_type: "", invoice_reference: "", notes: "",
   update_cost: true,
-};
+});
 
 export default function Cessioni() {
   // Le unita' si chiedono al database, non a un elenco scritto qui: la
@@ -26,7 +29,7 @@ export default function Cessioni() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function Cessioni() {
         },
         { updateIngredientCost: form.update_cost }
       );
-      setForm(emptyForm);
+      setForm(emptyFormOggi());
       setShowForm(false);
       await reload();
     } catch (e) {
