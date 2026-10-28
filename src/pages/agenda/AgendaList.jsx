@@ -214,7 +214,10 @@ function CasellaRimanda({ giorno, onGiorno }) {
     <input
       type="date"
       defaultValue={giorno ?? ""}
-      onChange={(e) => onGiorno(e.target.value)}
+      // ⚠️ Solo un anno intero (notte del 28/10, dalla revisione): al
+      //    computer, scrivendo l'anno a mano, la data e' gia' «valida» alla
+      //    prima cifra (0002) e l'impegno finiva rimandato di duemila anni.
+      onChange={(e) => Number(e.target.value.slice(0, 4)) >= 2000 && onGiorno(e.target.value)}
       className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
     />
   );

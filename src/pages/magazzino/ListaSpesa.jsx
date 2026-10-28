@@ -836,7 +836,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
+              className="tocco-campo come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>

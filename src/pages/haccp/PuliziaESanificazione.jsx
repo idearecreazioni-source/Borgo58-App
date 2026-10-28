@@ -461,7 +461,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
             type="button"
             disabled={salvando}
             onClick={onConferma}
-            className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
+            className="tocco-bottone come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
           >
             {salvando ? "Salvo…" : "Conferma"}
           </button>

@@ -216,7 +216,7 @@ export default function Allineamento() {
                       type="button"
                       disabled={salvando || quanto === ""}
                       onClick={() => conferma(r)}
-                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
+                      className="tocco-bottone come-campo rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
                     >
                       {salvando ? "…" : "È questo"}
                     </button>

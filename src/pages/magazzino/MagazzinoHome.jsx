@@ -661,7 +661,7 @@ export default function MagazzinoHome() {
                   type="button"
                   disabled={saving || !consumptionForm.quantity}
                   onClick={() => handleConsumption(l.ingredient_id)}
-                  className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
+                  className="tocco-bottone come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "Conferma"}
                 </button>

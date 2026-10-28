@@ -241,7 +241,7 @@ export default function NonConformita() {
                       onClick={() => handleResolve(item.id)}
                       // ⚠️ `self-start`: allineato al campo, non alla riga
                       //    d'aiuto che gli sta sotto (notte del 28/10).
-                      className="tocco-bottone self-start rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
+                      className="tocco-bottone come-campo self-start rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                     >
                       {resolving ? "Confermo…" : "Conferma risoluzione"}
                     </button>

@@ -505,7 +505,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 type="button"
                 disabled={salvando || !form.recordedTempC}
                 onClick={onConferma}
-                className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
               >
                 {salvando ? "Salvo…" : "Conferma"}
               </button>
