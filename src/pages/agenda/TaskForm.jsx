@@ -657,7 +657,10 @@ export default function TaskForm() {
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        {/* ⚠️ flex-wrap (28/10/2026): quando «Elimina» diventa la riga di
+            conferma, al telefono non sta accanto a «Salva modifiche» e va
+            sotto, invece di schiacciarsi e uscire dallo schermo. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <button
             type="submit"
             disabled={saving}
