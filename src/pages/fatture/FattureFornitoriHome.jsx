@@ -1038,13 +1038,13 @@ export default function FattureFornitoriHome() {
                             cui registri (17/08). Con un assegno a 30 giorni
                             le due date sono diverse, e prima la cassa
                             scendeva un mese prima del dovuto. */}
-                        <div className="w-40">
+                        <div>
                           <label className={labelClass}>Quando escono i soldi</label>
                           <input
                             type="date"
                             value={dataUscita}
                             onChange={(e) => setDataUscita(e.target.value)}
-                            className={inputClass}
+                            className={`${inputClass} campo-data`}
                           />
                         </div>
                         <div className="w-44">

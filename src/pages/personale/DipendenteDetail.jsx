@@ -398,8 +398,8 @@ export default function DipendenteDetail() {
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          <input type="date" value={leaveForm.start_date} onChange={(e) => setLeaveForm((f) => ({ ...f, start_date: e.target.value }))} className={inputClass + " w-40"} />
-          <input type="date" value={leaveForm.end_date} onChange={(e) => setLeaveForm((f) => ({ ...f, end_date: e.target.value }))} className={inputClass + " w-40"} />
+          <input type="date" value={leaveForm.start_date} onChange={(e) => setLeaveForm((f) => ({ ...f, start_date: e.target.value }))} aria-label="Dal" className={inputClass + " campo-data"} />
+          <input type="date" value={leaveForm.end_date} onChange={(e) => setLeaveForm((f) => ({ ...f, end_date: e.target.value }))} aria-label="Al" className={inputClass + " campo-data"} />
           <input type="number" step="0.5" value={leaveForm.days} onChange={(e) => setLeaveForm((f) => ({ ...f, days: e.target.value }))} placeholder="Giorni" className={inputClass + " w-24"} />
           <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Aggiungi

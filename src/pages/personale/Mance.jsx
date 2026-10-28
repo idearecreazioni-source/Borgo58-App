@@ -261,7 +261,7 @@ export default function Mance() {
             <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Raccolta</h2>
             <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 flex flex-wrap gap-2 items-end mb-4">
               <input type="number" step="0.01" min="0" value={collectForm.amount} onChange={(e) => setCollectForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Importo €" className={inputClass + " w-32"} />
-              <input type="date" value={collectForm.collected_date} onChange={(e) => setCollectForm((f) => ({ ...f, collected_date: e.target.value }))} className={inputClass + " w-40"} />
+              <input type="date" value={collectForm.collected_date} onChange={(e) => setCollectForm((f) => ({ ...f, collected_date: e.target.value }))} aria-label="Data" className={inputClass + " campo-data"} />
               {/* ⚠️ Dove sono finiti quei soldi: in contanti restano nel
                   cassetto, su carta arrivano in banca con gli incassi.
                   Senza, il conteggio del cassetto mostrerebbe

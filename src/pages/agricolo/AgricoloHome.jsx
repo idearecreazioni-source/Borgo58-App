@@ -276,7 +276,7 @@ export default function AgricoloHome() {
                     <tr className="bg-b58-campo">
                       <td colSpan={5} className="px-4 py-3">
                         <div className="flex flex-wrap gap-2 items-end">
-                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} className={inputClass + " w-40"} />
+                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} aria-label="Data del raccolto" className={inputClass + " campo-data"} />
                           <input type="number" step="0.001" value={harvest.harvested_quantity} onChange={(e) => setHarvest((h) => ({ ...h, harvested_quantity: e.target.value }))} placeholder="Quantità raccolta" className={inputClass + " w-40"} />
                           <select value={harvest.unit} onChange={(e) => setHarvest((h) => ({ ...h, unit: e.target.value }))} className={inputClass + " w-28"}>
                             {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}

@@ -136,7 +136,7 @@ export default function PiattiDelGiorno() {
         <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4 flex flex-wrap gap-2 items-end">
           <div>
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Data</label>
-            <input type="date" value={newForm.service_date} onChange={(e) => setNewForm((f) => ({ ...f, service_date: e.target.value }))} className={inputClass + " w-40"} />
+            <input type="date" value={newForm.service_date} onChange={(e) => setNewForm((f) => ({ ...f, service_date: e.target.value }))} className={inputClass + " campo-data"} />
           </div>
           <div className="flex-1 min-w-[160px]">
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo</label>

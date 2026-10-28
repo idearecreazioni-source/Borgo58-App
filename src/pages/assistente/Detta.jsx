@@ -978,7 +978,10 @@ export default function Detta() {
               <input
                 value={nomeChiave}
                 onChange={(e) => setNomeChiave(e.target.value)}
-                className="tocco-riga flex-1 min-w-[12rem] rounded-lg border border-b58-cream-dark px-3 testo-sala"
+                // ⚠️ Bordo e fondo dei campi (notte del 28/10): il bordo color crema
+                //    spariva sul fondo, e il campo non si vedeva.
+                aria-label="A che dispositivo la dai"
+                className="tocco-riga flex-1 min-w-0 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 testo-sala text-b58-charcoal"
                 placeholder="A che dispositivo la dai"
               />
               <button

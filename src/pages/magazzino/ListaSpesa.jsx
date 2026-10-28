@@ -658,14 +658,15 @@ export default function ListaSpesa() {
                                     className={inputClass}
                                   />
                                 </div>
-                                <div className="w-36">
+                                <div>
                                   <input
                                     type="date"
+                                    aria-label="Scadenza"
                                     value={closeForm.expiry_date}
                                     onChange={(e) =>
                                       setCloseForm((f) => ({ ...f, expiry_date: e.target.value }))
                                     }
-                                    className={inputClass}
+                                    className={`${inputClass} campo-data`}
                                   />
                                 </div>
                               </>

@@ -61,7 +61,9 @@ export default function CalibrazioneTocco({ onClose }) {
           width: "calc(var(--pxcm) * 10)",
           maxWidth: "100%",
           backgroundImage:
-            "repeating-linear-gradient(to right, #2b2621 0, #2b2621 1px, transparent 1px, transparent calc(var(--pxcm) / 2)), repeating-linear-gradient(to right, #2b2621 0, #2b2621 2px, transparent 2px, transparent var(--pxcm))",
+            // ⚠️ Il colore del tema e non un codice fisso (notte del 28/10): al buio
+          //    le tacche scure sparivano sul fondo scuro, e il righello con loro.
+          "repeating-linear-gradient(to right, var(--color-b58-charcoal) 0, var(--color-b58-charcoal) 1px, transparent 1px, transparent calc(var(--pxcm) / 2)), repeating-linear-gradient(to right, var(--color-b58-charcoal) 0, var(--color-b58-charcoal) 2px, transparent 2px, transparent var(--pxcm))",
         }}
       />
 
