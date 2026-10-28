@@ -210,6 +210,13 @@ export default function TaskForm() {
   //    no: decide lo spazio vero, non una soglia di larghezza.
   const rigaCompatta = "flex flex-wrap items-end gap-x-3 gap-y-2";
   const contenitoreCampo = "min-w-0 max-w-full testo-sala";
+  // 🔴 GIORNO E ORA ALLINEATI DALL'ALTO — 28/10/2026, dal collaudo: con le
+  //    righe allineate in basso, aprire la ruota dell'ora spingeva giu' il
+  //    campo del giorno. Le due etichette hanno la stessa altezza (le due
+  //    icone non sono alte uguali), cosi' i due campi partono alla pari.
+  const rigaDataOra = "flex flex-wrap items-start gap-x-3 gap-y-2";
+  const etichettaDataOra =
+    "flex items-center h-[1.6em] testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
   const campoCompatto =
     "block max-w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
   // 🔴 L'ALTEZZA TORNA QUELLA DEGLI ALTRI CAMPI — 25/09/2026, dal
@@ -330,9 +337,9 @@ export default function TaskForm() {
           />
         </div>
 
-        <div className={rigaCompatta}>
+        <div className={rigaDataOra}>
           <div className={contenitoreCampo}>
-            <label className={labelClass}>📅 Giorno</label>
+            <label className={etichettaDataOra}>📅 Giorno</label>
             <input
               type="date"
               value={form.due_date}
@@ -342,7 +349,7 @@ export default function TaskForm() {
             />
           </div>
           <div className={contenitoreCampo}>
-            <label className={labelClass}>🕒 Ora</label>
+            <label className={etichettaDataOra}>🕒 Ora</label>
             <SceltaOra
               data-campo="scadenza"
               nome="scadenza"
@@ -472,8 +479,11 @@ export default function TaskForm() {
           </div>
         </div>
 
+        {/* ⚠️ Niente linea sopra (28/10/2026, dal collaudo: «c'è una linea di
+            troppo»): la casella sta con le altre caselle, e la linea che
+            separa resta una sola, quella del promemoria qui sotto. */}
         {isTitolare && !origineModulo && (
-          <div className="border-t border-b58-charcoal/10 pt-4">
+          <div>
             {/* 🔴 IL BERSAGLIO È QUELLO DI «PER ME CONTA» — 25/09/2026.
                 Era alto 5,0 mm contro 8,5: è la casella che decide chi
                 vede l'impegno, e un tocco mancato lo cambia. */}
@@ -507,9 +517,9 @@ export default function TaskForm() {
               c'è scritto sopra le caselle è ingombro. Che il promemoria sia
               indipendente dalla scadenza si vede compilandolo. */}
           <label className={labelClass}>Promemoria Telegram (facoltativo)</label>
-          <div className={rigaCompatta}>
+          <div className={rigaDataOra}>
             <div className={contenitoreCampo}>
-              <label className={labelClass}>📅 Giorno</label>
+              <label className={etichettaDataOra}>📅 Giorno</label>
               <input
                 type="date"
                 value={form.remind_date}
@@ -519,7 +529,7 @@ export default function TaskForm() {
               />
             </div>
             <div className={contenitoreCampo}>
-              <label className={labelClass}>🕒 Ora</label>
+              <label className={etichettaDataOra}>🕒 Ora</label>
               <SceltaOra
                 data-campo="avviso"
                 nome="avviso"
