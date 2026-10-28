@@ -1,6 +1,6 @@
 # La notte dei difetti — 28/10/2026
 
-**HEAD dichiarato sotto questo riepilogo:** il commit che contiene questa riga, sul ramo `claude/notte-difetti`. Il ramo è aperto da `origin/slave` `36cdcbb6` e contiene già la #260 (`claude/scheda-ora-rifinita`). Working tree pulito.
+**HEAD dichiarato sotto questo riepilogo:** il commit che contiene questa riga (il secondo «Riepilogo» corregge il primo: il peso finale), sul ramo `claude/notte-difetti`. Il ramo è aperto da `origin/slave` `36cdcbb6` e contiene già la #260 (`claude/scheda-ora-rifinita`). Working tree pulito.
 **Nessun database e nessuna funzione online toccati.**
 
 ## Origine
@@ -101,7 +101,7 @@ Hanno trovato circa 100 rilievi. Ogni rilievo corretto qui l'ho prima riletto ne
 3. **I pagamenti dei conti li può cancellare anche lo staff:** la regola su `order_payments` è «per tutti», mentre il commento dice «la cancellazione resta al titolare». Va verificata sul progetto di prova e chiusa con una migrazione.
 4. **Un allegato «bomba»** (un file compresso piccolo che diventa enorme) potrebbe fermare la lettura della posta a ogni giro. È una correzione nelle funzioni `posta-leggi` e `documento-leggi`, da installare.
 5. **Il CSV per la commercialista** usa la virgola come separatore: Excel in italiano lo apre tutto in una colonna. Si può passare al punto e virgola, se la commercialista lo apre con Excel.
-6. **Il tetto del peso del gestionale** è salito da 440 a 450 kB, con le misure scritte in `scripts/peso-pacchetto.mjs`.
+6. **Il tetto del peso del gestionale** è salito da 440 a 450 kB: con queste correzioni il gestionale pesa 441,24 kB. Le misure sono scritte in `scripts/peso-pacchetto.mjs`.
 7. **Fattura elettronica con più fatture nello stesso file:** si registra solo la prima. Serve una migrazione.
 
 ## Rimasti (minori, per un altro giro)
