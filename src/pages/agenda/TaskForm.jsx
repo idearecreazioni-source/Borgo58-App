@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
+import { TASK_LUOGHI, TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
@@ -37,6 +37,7 @@ const DA_VOCE = {
   ora: "due_time",
   priorita: "priority",
   categoria: "category",
+  luogo: "luogo",
   avviso_data: "remind_date",
   avviso_ora: "remind_time",
 };
@@ -79,6 +80,7 @@ const emptyForm = {
   //    e un impegno scritto dallo staff il DB lo rende comunque visibile
   //    (§3.18), perché lo staff la casella non la vede.
   visibile_staff: false,
+  luogo: "",
 };
 
 // Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
@@ -107,7 +109,16 @@ export default function TaskForm() {
   const [form, setForm] = useState(emptyForm);
   // ⚠️ Solo su un promemoria NUOVO: aprendo uno esistente i campi sono i
   //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
-  const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
+  // ⚠️ Un luogo che non e' fra quelli ammessi (la voce che sente «garage») si
+  //    lascia cadere qui, come fa il database sull'approvazione diretta:
+  //    altrimenti nessun pulsante sarebbe acceso e il salvataggio verrebbe
+  //    respinto dal vincolo con un errore che non si capisce (28/10/2026).
+  const venuto = useDaVoce((c) => {
+    if (isEdit) return;
+    const luogo = String(c?.luogo ?? "").trim().toLowerCase();
+    const noto = TASK_LUOGHI.some((l) => l.value === luogo);
+    setForm((f) => conCampi(f, { ...c, luogo: noto ? luogo : undefined }, DA_VOCE));
+  });
   const [origineModulo, setOrigineModulo] = useState(null);
   // ⚠️ La categoria con cui l'impegno è arrivato: togliendo la casella dei
   //    lavori torna QUELLA, non «altro» — un impegno nato dall'Archivio
@@ -143,6 +154,7 @@ export default function TaskForm() {
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
+          luogo: t.luogo ?? "",
         });
         setOrigineModulo(t.origine_modulo);
         setCategoriaPrima(t.category && t.category !== "lavori" ? t.category : "altro");
@@ -233,6 +245,7 @@ export default function TaskForm() {
         status: form.status,
         category: form.category || "altro",
         preferito: form.preferito,
+        luogo: form.luogo || null,
         // ⚠️ Le due caselle vanno insieme o non vanno: mandarne una sola
         //    il database lo rifiuta (vincolo `ricorrenza_intera`), ed è
         //    giusto — un numero senza unità non dice ogni quanto.
@@ -433,6 +446,31 @@ export default function TaskForm() {
           />
           È un lavoro da fare
         </label>
+
+        {/* 🔴 DOVE TE LO RICORDO — 28/10/2026, chiesto da Alessio: «quando
+            arrivo a casa ricordami di pesare la mamma». Arrivando in quel
+            posto il telefono lo mostra in una notifica, finché non lo
+            spunti (`/agenda/luoghi` spiega come si prepara il telefono). */}
+        <div role="group" aria-labelledby="titolo-luogo" data-scelta-luogo>
+          <p id="titolo-luogo" className={labelClass}>Ricordamelo quando arrivo</p>
+          <div className="flex flex-wrap gap-2">
+            {[{ value: "", label: "Da nessuna parte" }, ...TASK_LUOGHI].map((l) => (
+              <button
+                key={l.value || "nessuno"}
+                type="button"
+                aria-pressed={form.luogo === l.value}
+                onClick={() => setForm((f) => ({ ...f, luogo: l.value }))}
+                className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
+                  form.luogo === l.value
+                    ? "bg-b58-azione text-b58-sul-colore"
+                    : "text-b58-charcoal ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark"
+                }`}
+              >
+                {l.arrivo ?? l.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {isTitolare && !origineModulo && (
           <div className="border-t border-b58-charcoal/10 pt-4">

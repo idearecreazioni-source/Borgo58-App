@@ -118,7 +118,15 @@ export default function ElencoAdattivo({
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
-  const colonne = campi(righe[0]);
+  // ⚠️ LE COLONNE SONO QUELLE DI TUTTE LE RIGHE, non della prima (revisione,
+  //    28/10/2026): un campo che c'e' solo su alcune righe — «In lista da»,
+  //    «Quando arrivo» — spostava le celle sotto l'intestazione sbagliata e
+  //    il pulsante della riga sotto un'altra colonna. Dove manca, la cella
+  //    resta vuota.
+  const colonne = [];
+  for (const r of righe) {
+    for (const c of campi(r)) if (!colonne.some((x) => x.chiave === c.chiave)) colonne.push(c);
+  }
 
   // 🔴 IL QUADROTTO INTERO SI APRE, E I SUOI COMANDI RESTANO INDIPENDENTI
   //    — 10/09/2026, Blocco 2 del mandato.
@@ -374,7 +382,9 @@ export default function ElencoAdattivo({
                   )}
                   </>)}
                 </td>
-                {campi(r).map((c) => (
+                {colonne
+                  .map((col) => campi(r).find((x) => x.chiave === col.chiave) ?? { chiave: col.chiave, valore: "", vuoto: "" })
+                  .map((c) => (
                   <td
                     key={c.chiave}
                     className={`px-4 py-3 ${c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal-soft"}`}

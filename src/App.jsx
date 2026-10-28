@@ -35,6 +35,7 @@ import PublicReservationForm from "./pages/public/PublicReservationForm";
 import InformativaPrivacy from "./pages/public/InformativaPrivacy";
 import AgendaList from "./pages/agenda/AgendaList";
 import TaskForm from "./pages/agenda/TaskForm";
+import PromemoriaLuogo from "./pages/agenda/PromemoriaLuogo";
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
@@ -211,6 +212,15 @@ function AppRoutes() {
         {/* Agenda (condivisa titolare/staff) */}
         <Route path="/agenda" element={<AgendaList />} />
         <Route path="/agenda/nuovo" element={<TaskForm />} />
+        {/* Le chiavi dei promemoria per luogo: solo del titolare (28/10/2026) */}
+        <Route
+          path="/agenda/luoghi"
+          element={
+            <RequireTitolare>
+              <PromemoriaLuogo />
+            </RequireTitolare>
+          }
+        />
         {/* Adempimenti societari: riservati al titolare (§3.5/§3.18) */}
         <Route
           path="/agenda/adempimenti"

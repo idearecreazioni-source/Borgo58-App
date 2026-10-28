@@ -62,6 +62,7 @@ import {
   STORAGE_TYPES,
   SUPPLIER_CATEGORIES,
   TASK_CATEGORIES,
+  TASK_LUOGHI,
   TASK_PRIORITIES,
   TASK_RICORRENZA_UNITA,
   TASK_SOLLECITO_UNITA,
@@ -167,6 +168,7 @@ export const SPECCHIATI = [
   { costante: "RESERVATION_TYPES", valori: RESERVATION_TYPES, tabella: "reservations", colonna: "type" },
   { costante: "RESERVATION_STATUSES", valori: RESERVATION_STATUSES, tabella: "reservations", colonna: "status" },
   { costante: "TASK_CATEGORIES", valori: TASK_CATEGORIES, tabella: "tasks", colonna: "category" },
+  { costante: "TASK_LUOGHI", valori: TASK_LUOGHI, tabella: "tasks", colonna: "luogo" },
   { costante: "TASK_PRIORITIES", valori: TASK_PRIORITIES, tabella: "tasks", colonna: "priority" },
   { costante: "TASK_STATUSES", valori: TASK_STATUSES, tabella: "tasks", colonna: "status" },
   // 🔴 LA RICORRENZA HA CAMBIATO FORMA — 10/09/2026. Era una parola sola

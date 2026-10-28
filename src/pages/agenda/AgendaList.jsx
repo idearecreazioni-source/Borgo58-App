@@ -488,6 +488,14 @@ export default function AgendaList() {
               Scadenze da stampare
             </Link>
           )}
+          {isTitolare && (
+            <Link
+              to="/agenda/luoghi"
+              className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+            >
+              Quando arrivo…
+            </Link>
+          )}
           <Link
             to="/agenda/nuovo"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4  testo-sala"

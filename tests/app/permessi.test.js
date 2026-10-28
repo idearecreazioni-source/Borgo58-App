@@ -173,12 +173,19 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // un ristorante scrive sulla porta. **Il motivo NON esce**: quello e'
   // un appunto che Alessio scrive per se', e resta dentro
   // `public_reservation_options`, che gia' lo mostrava.
-  it("solo 13 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SALITO DA 13 A 14 il 28/10/2026 coi promemoria per luogo, e la nuova
+  // e' aperta ad `anon` per la stessa ragione di `voce_apri_sessione`:
+  // l'automazione «quando arrivo a…» dell'iPhone non ha un accesso. Il
+  // portiere e' la chiave del luogo (impronta, revoca in un tocco), il freno
+  // e' dentro `luogo_promemoria` (30 letture all'ora per chiave), e la
+  // funzione LEGGE soltanto i titoli degli impegni aperti di quel luogo.
+  it("solo 14 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
       "giorni_chiusi_prenotabili",
       "is_titolare",
+      "luogo_promemoria",
       "normalize_phone",
       "public_reservation_options",
       "registra_dettatura_da_chiave",
