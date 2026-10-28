@@ -40,21 +40,32 @@ export default function ReservationsList() {
   const navigate = useNavigate();
   const { isTitolare } = useAuth();
 
+  // ⚠️ Solo l'ultima risposta conta, e la ricerca aspetta che si smetta di
+  //    scrivere (notte del 28/10, dalla revisione): a ogni lettera partiva
+  //    una richiesta, e scrivendo «ros» potevano restare a schermo i
+  //    risultati di «ro» — con il totale dei coperti sbagliato.
   useEffect(() => {
-    setLoading(true);
-    listReservations({
-      search: search || undefined,
-      status: status || undefined,
-      type: type || undefined,
-      date: date || undefined,
-    })
-      .then(setReservations)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    let vivo = true;
+    const t = setTimeout(() => {
+      setLoading(true);
+      listReservations({
+        search: search || undefined,
+        status: status || undefined,
+        type: type || undefined,
+        date: date || undefined,
+      })
+        .then((r) => vivo && setReservations(r))
+        .catch((e) => vivo && setError(e.message))
+        .finally(() => vivo && setLoading(false));
 
-    listRichiesteDaConfermare()
-      .then(setDaConfermare)
-      .catch((e) => setError(e.message));
+      listRichiesteDaConfermare()
+        .then((r) => vivo && setDaConfermare(r))
+        .catch((e) => vivo && setError(e.message));
+    }, search ? 250 : 0);
+    return () => {
+      vivo = false;
+      clearTimeout(t);
+    };
   }, [search, status, type, date]);
 
   // Totale coperti del giorno filtrato (escluse rifiutate/annullate) — utile

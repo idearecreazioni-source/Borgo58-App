@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addTemperatureLog,
@@ -75,16 +75,24 @@ export default function TemperatureLog() {
   //    proprio quello in cui il frigo NON è stato detto — il database si
   //    rifiuta di indovinarlo, perché quel registro va all'ASP — quindi
   //    spesso qui arriva solo il numero e la riga da aprire la sceglie lui.
+  // ⚠️ IL NUMERO DETTATO NON SI PERDE APRENDO LA RIGA (notte del 28/10,
+  //    dalla revisione): quando la voce porta solo il numero, la riga la
+  //    sceglie lui — e aprirla lo cancellava. Resta finche' non lo si usa.
+  const numeroDettato = useRef(false);
   const venuto = useDaVoce((c) => {
     if (c.attrezzatura) setOpenRow(c.attrezzatura);
     setReadingForm((f) => conCampi(f, c, DA_VOCE));
+    numeroDettato.current = !c.attrezzatura;
   });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(
     () =>
       Promise.all([
-        listEquipment(),
+        // ⚠️ Anche le attrezzature col segno «non letto» (notte del 28/10):
+        //    senza, una lettura fallita diceva «Nessuna attrezzatura ancora»
+        //    a chi aveva il frigo da registrare.
+        leggi(listEquipment()),
         leggi(temperatureDiOggi()),
         leggi(listNonConformities()),
         leggi(temperatureMesiConDati()),
@@ -132,7 +140,8 @@ export default function TemperatureLog() {
 
   const toggleRow = (equipmentId) => {
     setOpenRow((r) => (r === equipmentId ? null : equipmentId));
-    setReadingForm(emptyReadingForm);
+    if (numeroDettato.current) numeroDettato.current = false;
+    else setReadingForm(emptyReadingForm);
     setError("");
   };
 
@@ -273,7 +282,9 @@ export default function TemperatureLog() {
 
         {/* 🔴 Se la lista non si è letta NON si disegna «tutto fatto»: una
             schermata che tace quando non sa è una rassicurazione falsa. */}
-        {nonLetto(oggi) ? (
+        {nonLetto(equipment) ? (
+          <DatoNonLetto cosa="le attrezzature" onRiprova={() => load().catch((e) => setError(e.message))} />
+        ) : nonLetto(oggi) ? (
           <DatoNonLetto
             cosa="le temperature registrate oggi"
             nonVuolDire="Non vuol dire che non ne è stata registrata nessuna: vuol dire che non lo so."
@@ -494,7 +505,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 type="button"
                 disabled={salvando || !form.recordedTempC}
                 onClick={onConferma}
-                className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
               >
                 {salvando ? "Salvo…" : "Conferma"}
               </button>

@@ -61,7 +61,11 @@ export default function CassaHome() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -72,7 +76,9 @@ export default function CassaHome() {
       getCashBalance(entityId),
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
-      listCashMovements({ entityId, from: monthStart }),
+      // ⚠️ Fino a oggi (notte del 28/10): un pagamento postdatato e' scritto
+      //    ma non e' ancora uscito, e la scheda «In cassa» accanto lo dice gia'.
+      listCashMovements({ entityId, from: monthStart, to: oggiLocale() }),
       leggi(listDiscountsGifts({ entityId, from: monthStart })),
       leggi(getQuadraturaFiscale(entityId, monthStart, oggiLocale())),
       listQuadraturaPagamenti(),
@@ -316,7 +322,10 @@ export default function CassaHome() {
                       regalata: omaggi «Altro» sul venduto a listino (incassato
                       + tutti gli omaggi). Senza niente di servito non è zero
                       per cento — è «non lo so», e si tace. */}
-                  {percentuale === null ? (
+                  {nonLetto(fiscale) ? (
+                    // ⚠️ Non letto non e' «non servito» (notte del 28/10).
+                    <DatoNonLetto cosa="l'incassato del mese" />
+                  ) : percentuale === null ? (
                     <div className="testo-sala text-b58-charcoal-soft mt-1">
                       Questo mese non è ancora stato servito niente.
                     </div>

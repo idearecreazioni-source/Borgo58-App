@@ -639,6 +639,24 @@ body {
   textarea:not([type="checkbox"]):not([type="radio"]) {
     font-size: max(16px, 1em);
   }
+  /* 28/10/2026: il pulsante dell'ora sta accanto a un campo data e deve
+     sembrarne il gemello — stessa taglia, quindi lo stesso pavimento. */
+  .campo-ora {
+    font-size: max(16px, 1em);
+  }
+  /* 28/10/2026, notte: il pulsante che chiude una riga di campi (Conferma,
+     Aggiungi) ha la stessa taglia dei campi accanto, non una piu' piccola. */
+  .come-campo {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Il pulsante accanto ai campi: stesso bordo (trasparente) e stessi margini
+   verticali di un campo, cosi' e' alto uguale (notte del 28/10/2026). */
+.come-campo {
+  border: 1px solid transparent;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 /* 🔴 IL TELAIO DESKTOP (05/09/2026, segnalazione: su un monitor 1920×1080

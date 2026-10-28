@@ -37,15 +37,83 @@ import {
 //    Una sola strada, la stessa dappertutto, ed è anche l'unica che si può
 //    provare senza un telefono in mano.
 
+// 🔴 LA VOCE CHE SI FERMA SOTTO I «:» E' QUELLA SCELTA — 28/10/2026, dal
+//    collaudo di Alessio sull'iPhone: girando la ruota col dito l'ora non
+//    cambiava finche' non si toccava la voce. Adesso, quando la ruota si
+//    ferma, si sceglie da sola la voce piu' vicina alla riga centrale.
+//    ⚠️ Si aspetta che la ruota stia ferma (ATTESA_FERMA ms senza
+//       scorrimento) invece di scegliere a ogni movimento: durante il giro
+//       la bozza non salta da una voce all'altra sotto il dito.
+//    ⚠️ SOLO DOPO UN GESTO SUO (dito, mouse, rotella): anche il gestionale
+//       fa scorrere la ruota, per portare al centro l'ora proposta quando
+//       il riquadro si apre — e misurato in Chrome, aprendolo l'ora 09
+//       diventava 00 perche' quello scorrimento veniva preso per una scelta.
+const ATTESA_FERMA = 120;
+
+function voceAlCentro(ruota) {
+  if (!ruota) return null;
+  const centro = ruota.scrollTop + ruota.clientHeight / 2;
+  let migliore = null;
+  let distanza = Infinity;
+  for (const v of ruota.querySelectorAll('[role="option"]')) {
+    const d = Math.abs(v.offsetTop + v.offsetHeight / 2 - centro);
+    if (d < distanza) {
+      distanza = d;
+      migliore = v;
+    }
+  }
+  return migliore?.dataset.valore ?? null;
+}
+
 function Ruota({ etichetta, dataCampo, voci, valore, onScegli }) {
   const riferimento = useRef(null);
+  const attesa = useRef(null);
+  // `toccata`: c'e' stato un gesto suo; `dito`: il dito e' ancora giu'.
+  // ⚠️ Col dito fermo a meta' giro non si sceglie: si aspetta che lo alzi
+  //    (revisione `ecc:react-reviewer`, 28/10).
+  const toccata = useRef(false);
+  const dito = useRef(false);
+  // ⚠️ Il valore e la funzione si leggono da qui dentro l'attesa: quelli
+  //    del momento in cui la ruota ha cominciato a girare possono essere
+  //    vecchi quando si ferma.
+  const ultimo = useRef({ valore, onScegli });
+  ultimo.current = { valore, onScegli };
+
+  useEffect(() => () => clearTimeout(attesa.current), []);
+
+  const aspettaCheSiFermi = () => {
+    clearTimeout(attesa.current);
+    if (!toccata.current) return;
+    attesa.current = setTimeout(() => {
+      if (dito.current) return;
+      toccata.current = false;
+      const v = voceAlCentro(riferimento.current);
+      if (v && v !== ultimo.current.valore) ultimo.current.onScegli(v);
+    }, ATTESA_FERMA);
+  };
+  const ditoGiu = () => {
+    toccata.current = true;
+    dito.current = true;
+  };
+  const ditoSu = () => {
+    dito.current = false;
+    aspettaCheSiFermi();
+  };
 
   useEffect(() => {
     const scelta = riferimento.current?.querySelector('[aria-selected="true"]');
     // ⚠️ `scrollIntoView` non esiste in jsdom: si chiama solo se c'è, così le
     //    prove di schermata non si rompono su una cosa che non riguarda loro.
-    if (scelta?.scrollIntoView) scelta.scrollIntoView({ block: "center" });
-  }, [valore, voci]);
+    if (!scelta?.scrollIntoView) return;
+    try {
+      scelta.scrollIntoView({ block: "center", behavior: "instant" });
+    } catch {
+      scelta.scrollIntoView({ block: "center" });
+    }
+    // ⚠️ Non `voci`: e' un elenco nuovo a ogni disegno, e la ruota tornerebbe
+    //    al centro mentre si gira l'altra. Cambia davvero solo con la fascia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valore, voci.length, voci[0]?.valore]);
 
   const valori = voci.map((v) => v.valore);
 
@@ -74,6 +142,13 @@ function Ruota({ etichetta, dataCampo, voci, valore, onScegli }) {
       tabIndex={0}
       onKeyDown={daTastiera}
       onWheel={(e) => onScegli(scorriCircolare(valori, valore, e.deltaY > 0 ? 1 : -1))}
+      onScroll={aspettaCheSiFermi}
+      onPointerDown={ditoGiu}
+      onTouchStart={ditoGiu}
+      onPointerUp={ditoSu}
+      onPointerCancel={ditoSu}
+      onTouchEnd={ditoSu}
+      onTouchCancel={ditoSu}
       ref={riferimento}
       className="ruota-ora"
     >
@@ -132,7 +207,11 @@ export default function SceltaOra({
         aria-haspopup="dialog"
         aria-label={`Scegli l'ora (${nome})`}
         onClick={apri}
-        className={`tocco-campo campo-ora testo-sala rounded-lg border border-b58-sand bg-b58-campo px-2 text-left ${
+        // ⚠️ Stessa forma dei campi accanto (28/10/2026, dal collaudo:
+        //    «giorno e ora sono diversi e disallineati»): bordo, margini e,
+        //    sul telefono, lo stesso pavimento dei 16 punti (`.campo-ora`
+        //    in index.css) che Safari impone ai campi veri.
+        className={`tocco-campo campo-ora testo-sala rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-0.5 text-left text-b58-charcoal ${
           disabled ? "opacity-50" : ""
         }`}
       >
@@ -157,7 +236,10 @@ export default function SceltaOra({
                 data-fascia={f.id}
                 aria-pressed={fascia === f.id}
                 onClick={() => setBozza(convertiFascia(bozza, f.id))}
-                className={`tocco-bottone testo-sala flex-1 rounded-lg border px-2 ${
+                // ⚠️ `flex-auto` e non `flex-1` (28/10/2026, «Pomeriggio va
+                //    fuori dal rettangolo»): con base zero Safari divide il
+                //    riquadro a meta' senza guardare la parola.
+                className={`tocco-bottone testo-sala flex-auto whitespace-nowrap rounded-lg border px-2 ${
                   fascia === f.id
                     ? "border-b58-terracotta bg-b58-azione text-white"
                     : "border-b58-sand bg-b58-campo text-b58-charcoal-soft"
@@ -176,7 +258,7 @@ export default function SceltaOra({
               dataCampo={dataCampo ? `${dataCampo}-ore` : undefined}
               voci={oreDellaFascia(fascia).map((h) => ({ valore: h, etichetta: h }))}
               valore={ore}
-              onScegli={(h) => setBozza(oraComposta(h, minuti || "00"))}
+              onScegli={(h) => setBozza((b) => oraComposta(h, b.slice(3, 5) || "00"))}
             />
             <span aria-hidden="true" className="self-center text-b58-charcoal-soft">
               :
@@ -186,7 +268,7 @@ export default function SceltaOra({
               dataCampo={dataCampo ? `${dataCampo}-minuti` : undefined}
               voci={minutiDaOfferire(minuti)}
               valore={minuti}
-              onScegli={(m) => setBozza(oraComposta(ore, m))}
+              onScegli={(m) => setBozza((b) => oraComposta(b.slice(0, 2), m))}
             />
           </div>
 
@@ -195,7 +277,7 @@ export default function SceltaOra({
               type="button"
               data-annulla-ora
               onClick={() => setAperto(false)}
-              className="tocco-bottone testo-sala flex-1 rounded-lg border border-b58-sand bg-b58-campo px-2 text-b58-charcoal-soft"
+              className="tocco-bottone testo-sala flex-auto whitespace-nowrap rounded-lg border border-b58-sand bg-b58-campo px-2 text-b58-charcoal-soft"
             >
               Annulla
             </button>
@@ -206,7 +288,7 @@ export default function SceltaOra({
                 onChange(bozza);
                 setAperto(false);
               }}
-              className="tocco-bottone testo-sala flex-1 rounded-lg bg-b58-azione px-2 text-white"
+              className="tocco-bottone testo-sala flex-auto whitespace-nowrap rounded-lg bg-b58-azione px-2 text-white"
             >
               Conferma
             </button>

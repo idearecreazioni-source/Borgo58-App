@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
+import { TASK_LUOGHI, TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
@@ -37,6 +37,7 @@ const DA_VOCE = {
   ora: "due_time",
   priorita: "priority",
   categoria: "category",
+  luogo: "luogo",
   avviso_data: "remind_date",
   avviso_ora: "remind_time",
 };
@@ -79,6 +80,7 @@ const emptyForm = {
   //    e un impegno scritto dallo staff il DB lo rende comunque visibile
   //    (§3.18), perché lo staff la casella non la vede.
   visibile_staff: false,
+  luogo: "",
 };
 
 // Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
@@ -107,7 +109,16 @@ export default function TaskForm() {
   const [form, setForm] = useState(emptyForm);
   // ⚠️ Solo su un promemoria NUOVO: aprendo uno esistente i campi sono i
   //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
-  const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
+  // ⚠️ Un luogo che non e' fra quelli ammessi (la voce che sente «garage») si
+  //    lascia cadere qui, come fa il database sull'approvazione diretta:
+  //    altrimenti nessun pulsante sarebbe acceso e il salvataggio verrebbe
+  //    respinto dal vincolo con un errore che non si capisce (28/10/2026).
+  const venuto = useDaVoce((c) => {
+    if (isEdit) return;
+    const luogo = String(c?.luogo ?? "").trim().toLowerCase();
+    const noto = TASK_LUOGHI.some((l) => l.value === luogo);
+    setForm((f) => conCampi(f, { ...c, luogo: noto ? luogo : undefined }, DA_VOCE));
+  });
   const [origineModulo, setOrigineModulo] = useState(null);
   // ⚠️ La categoria con cui l'impegno è arrivato: togliendo la casella dei
   //    lavori torna QUELLA, non «altro» — un impegno nato dall'Archivio
@@ -117,6 +128,11 @@ export default function TaskForm() {
   const [initialRemindAt, setInitialRemindAt] = useState(null);
   const [loading, setLoading] = useState(isEdit);
   const [notFound, setNotFound] = useState(false);
+  // 🔴 UN IMPEGNO NON LETTO NON SI MOSTRA VUOTO (notte del 28/10, dalla
+  //    revisione): se la lettura falliva per la rete compariva il modulo
+  //    vuoto, e salvandolo si sovrascrivevano data, promemoria e ricorrenza
+  //    dell'impegno vero con i valori di partenza.
+  const [nonLetto, setNonLetto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -143,6 +159,7 @@ export default function TaskForm() {
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
+          luogo: t.luogo ?? "",
         });
         setOrigineModulo(t.origine_modulo);
         setCategoriaPrima(t.category && t.category !== "lavori" ? t.category : "altro");
@@ -151,7 +168,10 @@ export default function TaskForm() {
       })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
-        else if (!cancelled) setError(e.message);
+        else if (!cancelled) {
+          setError(e.message);
+          setNonLetto(true);
+        }
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
@@ -162,6 +182,18 @@ export default function TaskForm() {
   if (notFound) return <Navigate to="/agenda" replace />;
   if (loading) {
     return <p className="testo-sala-grande text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
+  }
+  if (nonLetto) {
+    return (
+      <div className="max-w-xl mx-auto space-y-3">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo">
+          Non riesco a leggere questo impegno: {error}
+        </p>
+        <button type="button" onClick={() => window.location.reload()} className="tocco-bottone rounded-lg bg-b58-azione px-4 testo-sala text-b58-sul-colore">
+          Riprova
+        </button>
+      </div>
+    );
   }
 
   const inputClass =
@@ -198,6 +230,13 @@ export default function TaskForm() {
   //    no: decide lo spazio vero, non una soglia di larghezza.
   const rigaCompatta = "flex flex-wrap items-end gap-x-3 gap-y-2";
   const contenitoreCampo = "min-w-0 max-w-full testo-sala";
+  // 🔴 GIORNO E ORA ALLINEATI DALL'ALTO — 28/10/2026, dal collaudo: con le
+  //    righe allineate in basso, aprire la ruota dell'ora spingeva giu' il
+  //    campo del giorno. Le due etichette hanno la stessa altezza (le due
+  //    icone non sono alte uguali), cosi' i due campi partono alla pari.
+  const rigaDataOra = "flex flex-wrap items-start gap-x-3 gap-y-2";
+  const etichettaDataOra =
+    "flex items-center h-[1.6em] testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
   const campoCompatto =
     "block max-w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
   // 🔴 L'ALTEZZA TORNA QUELLA DEGLI ALTRI CAMPI — 25/09/2026, dal
@@ -233,6 +272,7 @@ export default function TaskForm() {
         status: form.status,
         category: form.category || "altro",
         preferito: form.preferito,
+        luogo: form.luogo || null,
         // ⚠️ Le due caselle vanno insieme o non vanno: mandarne una sola
         //    il database lo rifiuta (vincolo `ricorrenza_intera`), ed è
         //    giusto — un numero senza unità non dice ogni quanto.
@@ -317,9 +357,9 @@ export default function TaskForm() {
           />
         </div>
 
-        <div className={rigaCompatta}>
+        <div className={rigaDataOra}>
           <div className={contenitoreCampo}>
-            <label className={labelClass}>📅 Giorno</label>
+            <label className={etichettaDataOra}>📅 Giorno</label>
             <input
               type="date"
               value={form.due_date}
@@ -329,7 +369,7 @@ export default function TaskForm() {
             />
           </div>
           <div className={contenitoreCampo}>
-            <label className={labelClass}>🕒 Ora</label>
+            <label className={etichettaDataOra}>🕒 Ora</label>
             <SceltaOra
               data-campo="scadenza"
               nome="scadenza"
@@ -434,8 +474,36 @@ export default function TaskForm() {
           È un lavoro da fare
         </label>
 
+        {/* 🔴 DOVE TE LO RICORDO — 28/10/2026, chiesto da Alessio: «quando
+            arrivo a casa ricordami di pesare la mamma». Arrivando in quel
+            posto il telefono lo mostra in una notifica, finché non lo
+            spunti (`/agenda/luoghi` spiega come si prepara il telefono). */}
+        <div role="group" aria-labelledby="titolo-luogo" data-scelta-luogo>
+          <p id="titolo-luogo" className={labelClass}>Ricordamelo quando arrivo</p>
+          <div className="flex flex-wrap gap-2">
+            {[{ value: "", label: "Da nessuna parte" }, ...TASK_LUOGHI].map((l) => (
+              <button
+                key={l.value || "nessuno"}
+                type="button"
+                aria-pressed={form.luogo === l.value}
+                onClick={() => setForm((f) => ({ ...f, luogo: l.value }))}
+                className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
+                  form.luogo === l.value
+                    ? "bg-b58-azione text-b58-sul-colore"
+                    : "text-b58-charcoal ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark"
+                }`}
+              >
+                {l.arrivo ?? l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ⚠️ Niente linea sopra (28/10/2026, dal collaudo: «c'è una linea di
+            troppo»): la casella sta con le altre caselle, e la linea che
+            separa resta una sola, quella del promemoria qui sotto. */}
         {isTitolare && !origineModulo && (
-          <div className="border-t border-b58-charcoal/10 pt-4">
+          <div>
             {/* 🔴 IL BERSAGLIO È QUELLO DI «PER ME CONTA» — 25/09/2026.
                 Era alto 5,0 mm contro 8,5: è la casella che decide chi
                 vede l'impegno, e un tocco mancato lo cambia. */}
@@ -469,9 +537,9 @@ export default function TaskForm() {
               c'è scritto sopra le caselle è ingombro. Che il promemoria sia
               indipendente dalla scadenza si vede compilandolo. */}
           <label className={labelClass}>Promemoria Telegram (facoltativo)</label>
-          <div className={rigaCompatta}>
+          <div className={rigaDataOra}>
             <div className={contenitoreCampo}>
-              <label className={labelClass}>📅 Giorno</label>
+              <label className={etichettaDataOra}>📅 Giorno</label>
               <input
                 type="date"
                 value={form.remind_date}
@@ -481,7 +549,7 @@ export default function TaskForm() {
               />
             </div>
             <div className={contenitoreCampo}>
-              <label className={labelClass}>🕒 Ora</label>
+              <label className={etichettaDataOra}>🕒 Ora</label>
               <SceltaOra
                 data-campo="avviso"
                 nome="avviso"
@@ -589,7 +657,10 @@ export default function TaskForm() {
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        {/* ⚠️ flex-wrap (28/10/2026): quando «Elimina» diventa la riga di
+            conferma, al telefono non sta accanto a «Salva modifiche» e va
+            sotto, invece di schiacciarsi e uscire dallo schermo. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <button
             type="submit"
             disabled={saving}

@@ -108,6 +108,8 @@ const ETICHETTE = {
   fornitore_nome: "fornitore",
   ogni_mesi: "si ripete ogni (mesi)",
   telefono_non_capito: "telefono non capito (non lo scrivo)",
+  // 28/10/2026: il promemoria per luogo, letto come lo si e' detto.
+  luogo: "ricordamelo quando arrivo a",
 };
 
 // ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una

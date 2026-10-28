@@ -14,6 +14,7 @@ import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
+import DatoNonLetto from "../../components/DatoNonLetto";
 
 const emptyForm = {
   supplier_id: "",
@@ -56,7 +57,9 @@ export default function RicevimentoMerci() {
   // database, che è l'unico posto dove quella regola vive.
   const load = () =>
     Promise.all([
-      ricevimentiDiOggi(),
+      // ⚠️ Col segno «non letto» (notte del 28/10): una lettura fallita
+      //    diceva «Stasera non è ancora arrivato niente».
+      leggi(ricevimentiDiOggi()),
       leggi(ricevimentiMesiConDati()),
       isTitolare ? getEntities().then((e) => listSuppliers(e.srls.id)) : listSuppliersDisplay(),
     ]).then(([oggi, ms, sup]) => {
@@ -242,7 +245,9 @@ export default function RicevimentoMerci() {
       </div>
 
       <h2 className="font-display testo-sala-grande text-b58-charcoal mb-2">Arrivato oggi</h2>
-      {logs.length === 0 ? (
+      {nonLetto(logs) ? (
+        <DatoNonLetto cosa="le consegne di stasera" onRiprova={() => load().catch((e) => setError(e.message))} className="mb-6" />
+      ) : logs.length === 0 ? (
         <p className="testo-sala text-b58-charcoal-soft/60 mb-6">
           Stasera non è ancora arrivato niente.
         </p>

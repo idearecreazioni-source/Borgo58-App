@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   allineaGiacenza,
@@ -40,9 +40,17 @@ export default function Allineamento() {
   // 🔴 ARRIVATO QUI DA UNA GIACENZA DETTATA: si apre la riga di quel
   //    prodotto col numero già scritto. Quando il prodotto non è stato
   //    riconosciuto arriva solo il numero, e la riga la sceglie lui.
+  // ⚠️ IL NUMERO DETTATO NON SI PERDE APRENDO LA RIGA (notte del 28/10,
+  //    dalla revisione): quando la voce porta solo il numero, la riga la
+  //    sceglie lui — e aprirla lo cancellava. Resta finche' non lo si usa.
+  const numeroDettato = useRef(false);
   const venuto = useDaVoce((c) => {
     if (c.prodotto) setAperta(c.prodotto);
-    if (c.quanto) setQuanto(String(c.quanto));
+    if (c.quanto) {
+      setQuanto(String(c.quanto));
+      // solo quando la riga non e' stata riconosciuta: la sceglie lui
+      numeroDettato.current = !c.prodotto;
+    }
   });
 
   const carica = () => leggi(daAllineare()).then(setRighe);
@@ -155,7 +163,8 @@ export default function Allineamento() {
                     // chi deve solo confermare non riscrive niente, e chi
                     // corregge parte da lì. Scriverlo vuoto farebbe ridigitare
                     // un numero che è già a schermo.
-                    setQuanto(propostaLeggibile(r.atteso, r.unita));
+                    if (numeroDettato.current) numeroDettato.current = false;
+                    else setQuanto(propostaLeggibile(r.atteso, r.unita));
                     setEsito("");
                   }}
                   className="tocco-riga w-full flex items-center justify-between gap-3 text-left"
@@ -207,7 +216,7 @@ export default function Allineamento() {
                       type="button"
                       disabled={salvando || quanto === ""}
                       onClick={() => conferma(r)}
-                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
+                      className="tocco-bottone come-campo rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore testo-sala px-4 disabled:opacity-60"
                     >
                       {salvando ? "…" : "È questo"}
                     </button>

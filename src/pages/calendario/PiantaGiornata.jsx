@@ -338,6 +338,13 @@ export default function PiantaGiornata() {
   const moduloRef = useRef(null);
 
 
+  // ⚠️ Solo la risposta del giorno a schermo si disegna (notte del 28/10,
+  //    dalla revisione): cambiando data in fretta la risposta del giorno
+  //    prima poteva arrivare per ultima, e sotto la data nuova restavano i
+  //    tavoli di quell'altro giorno — proprio il caso che il commento piu'
+  //    giu' dice di evitare, ma da un'altra strada.
+  const dataViva = useRef(data);
+  dataViva.current = data;
   const ricarica = useCallback(async () => {
     const [p, r, a, s, g, po, tu, reg, ch] = await Promise.all([
       getPiantaDelGiorno(data),
@@ -350,6 +357,9 @@ export default function PiantaGiornata() {
       getRegolePrenotazione(),
       getPercheChiuso(data),
     ]);
+    if (dataViva.current !== data) return;
+    const conti = await listContiPerPrenotazioni([...new Set(tu.map((t) => t.reservation_id))]);
+    if (dataViva.current !== data) return;
     setSagome(p);
     setGruppi(g);
     setPosto(po);
@@ -359,7 +369,7 @@ export default function PiantaGiornata() {
     // I conti che nominano le prenotazioni di questa giornata: è così che si
     // sa chi è già arrivato, senza chiedere a nessuno di segnarlo. La stessa
     // domanda che si fa la sala, con la stessa risposta.
-    setContiDellaSerata(await listContiPerPrenotazioni([...new Set(tu.map((t) => t.reservation_id))]));
+    setContiDellaSerata(conti);
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
@@ -1091,7 +1101,8 @@ export default function PiantaGiornata() {
         <input
           type="date"
           value={data}
-          onChange={(e) => setData(e.target.value)}
+          // ⚠️ Una casella svuotata non e' un giorno (notte del 28/10).
+          onChange={(e) => e.target.value && setData(e.target.value)}
           aria-label="Giorno della sala"
           className="tocco-campo campo-data rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal"
         />

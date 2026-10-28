@@ -84,6 +84,38 @@ import {
 // Le misure dei tocchi sono in CENTIMETRI REALI (classi .tocco-*), non in
 // pixel: durante un servizio pieno la differenza fra 1 cm e 6 mm e'
 // mandare in cucina il piatto sbagliato.
+// 🔴 I COPERTI SI SALVANO QUANDO SI E' FINITO DI SCRIVERE (notte del
+//    28/10/2026, dalla revisione): il campo scriveva nel database a ogni
+//    tasto — «12» erano due scritture, che potevano arrivare al contrario e
+//    lasciare 1 nel conto mentre a schermo c'era 12. Adesso si scrive
+//    uscendo dal campo o con Invio, e solo un numero intero.
+function CampoCoperti({ valore, busy, onSalva }) {
+  const [bozza, setBozza] = useState(String(valore));
+  useEffect(() => setBozza(String(valore)), [valore]);
+  const salva = () => {
+    const n = Math.round(Number(bozza));
+    if (bozza === "" || !Number.isFinite(n) || n < 0) return setBozza(String(valore));
+    // Se il salvataggio fallisce si torna al numero vero del conto.
+    if (n !== valore) Promise.resolve(onSalva(n)).then((ok) => ok === false && setBozza(String(valore)));
+    else setBozza(String(valore));
+  };
+  return (
+    <input
+      type="number"
+      min="0"
+      step="1"
+      inputMode="numeric"
+      aria-label="Coperti"
+      value={bozza}
+      disabled={busy}
+      onChange={(e) => setBozza(e.target.value)}
+      onBlur={salva}
+      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala-grande"
+    />
+  );
+}
+
 export default function Sala() {
   const { isTitolare } = useAuth();
 
@@ -688,16 +720,35 @@ export default function Sala() {
     setScendiAlMenu(false);
   }, [scendiAlMenu, order]);
 
-  const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
+  // ⚠️ La rilettura si applica solo se il tavolo aperto e' ancora quello
+  //    (notte del 28/10): toccando un altro tavolo mentre la prima azione
+  //    finiva, il pannello del primo tornava al posto del secondo, e il «+»
+  //    dopo andava al tavolo sbagliato.
+  const ordineAperto = useRef(null);
+  ordineAperto.current = order?.id ?? null;
+  const reloadOrder = () => {
+    if (!order) return Promise.resolve();
+    const id = order.id;
+    return getOrder(id).then((o) => {
+      if (ordineAperto.current === id) setOrder(o);
+    });
+  };
 
+  // 🔴 DICE SE E' ANDATA (notte del 28/10/2026, dalla revisione): prima
+  //    l'errore si fermava qui e chi seguiva con `.then` ripartiva lo stesso
+  //    — senza rete la sala scriveva «Mandato in cucina» per un biglietto mai
+  //    partito, e «Annulla tavolo» chiudeva il pannello di un tavolo ancora
+  //    aperto. Adesso chi segue guarda `ok` prima di fare qualcosa.
   const withBusy = async (fn) => {
     setBusy(true);
     setError("");
     try {
       await fn();
       await reloadOrder();
+      return true;
     } catch (e) {
       setError(e.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -942,7 +993,7 @@ export default function Sala() {
         unitPrice: Number(freeForm.price),
         turno: turnoCorrente,
       })
-    ).then(() => setFreeForm({ name: "", price: "", destination: "bar" }));
+    ).then((ok) => ok && setFreeForm({ name: "", price: "", destination: "bar" }));
   };
 
   const handleCoperti = (n) => withBusy(() => setOrderCoperti(order.id, n));
@@ -962,8 +1013,8 @@ export default function Sala() {
   // quale turno stava chiamando e si spegneva alla fine è stata scartata da
   // lui, e non si rimette da qui.
   const handleChiamaTurno = () =>
-    withBusy(() => chiamaProssimoTurno(order.id)).then(() =>
-      setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
+    withBusy(() => chiamaProssimoTurno(order.id)).then((ok) =>
+      ok && setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
     );
 
   const handleSend = () =>
@@ -1214,7 +1265,8 @@ export default function Sala() {
               )
             )
               return;
-            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(() => {
+            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then((ok) => {
+              if (!ok) return;
               setOrder(null);
               setSelezione([]);
               loadBoard();
@@ -1336,7 +1388,8 @@ export default function Sala() {
                 etichettaConferma="Sì, libera il tavolo"
                 disabilitato={busy}
                 onConferma={() =>
-                  withBusy(() => annullaPrenotazione(p.id)).then(() => {
+                  withBusy(() => annullaPrenotazione(p.id)).then((ok) => {
+                    if (!ok) return;
                     setSelezione([]);
                     loadBoard();
                   })
@@ -1980,13 +2033,7 @@ export default function Sala() {
             >
               −
             </button>
-            <input
-              type="number"
-              min="0"
-              value={coperti}
-              onChange={(e) => handleCoperti(e.target.value)}
-              className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala-grande"
-            />
+            <CampoCoperti valore={coperti} busy={busy} onSalva={handleCoperti} />
             <button
               type="button"
               disabled={busy}
@@ -2148,7 +2195,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         −
                       </button>
@@ -2156,7 +2204,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         +
                       </button>
@@ -2164,7 +2213,11 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => removeDraftItem(it.id))}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-1"
+                        disabled={busy}
+                        aria-label={`Togli ${lineLabel(it)}`}
+                        // ⚠️ Era largo 16 punti accanto al «+»: un tocco
+                        //    mancato toglieva la riga (revisione, 28/10).
+                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-1 disabled:opacity-40"
                       >
                         ✕
                       </button>

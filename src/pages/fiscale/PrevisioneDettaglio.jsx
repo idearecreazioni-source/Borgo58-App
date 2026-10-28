@@ -120,6 +120,16 @@ export default function PrevisioneDettaglio() {
   };
 
   if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
+  // ⚠️ Una lettura fallita non e' una previsione sparita (notte del 28/10).
+  if (!scenario && error)
+    return (
+      <p className="testo-sala-grande text-b58-terracotta-dark-testo max-w-5xl mx-auto">
+        Non riesco a leggere questa previsione: {error}{" "}
+        <button type="button" onClick={() => window.location.reload()} className="tocco-riga underline">
+          Riprova
+        </button>
+      </p>
+    );
   if (!scenario) return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Non trovata.</p>;
 
   const differenze = confronto.filter((c) => Math.abs(Number(c.differenza)) > 0.01);

@@ -92,6 +92,16 @@ export const SUPPLIER_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+// 🔴 I LUOGHI DEI PROMEMORIA — 28/10/2026, chiesto da Alessio: «ricordami di
+//    fare questo quando arrivo a casa». Lo stesso elenco del vincolo
+//    `luogo_chiuso` (migrazione 20261028000001) e della funzione
+//    `promemoria-luogo`: aggiungerne uno vuol dire toccare tutti e tre.
+export const TASK_LUOGHI = [
+  // `arrivo`: come si dice nella frase «ricordamelo quando arrivo …».
+  { value: "casa", label: "Casa", arrivo: "a casa" },
+  { value: "ristorante", label: "Ristorante", arrivo: "al ristorante" },
+];
+
 // LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
 // docs/mandati/20260824_le_linee_della_previsione.md).
 //
@@ -748,6 +758,15 @@ export const dataLocale = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export const oggiLocale = () => dataLocale();
+
+// 🔴 QUANTI GIORNI MANCANO A UNA DATA «AAAA-MM-GG», contati sul calendario
+//    italiano (notte del 28/10/2026). Era `(new Date(data) - new Date())`
+//    in tre schermate: la data valeva la mezzanotte di Greenwich, quindi una
+//    scadenza di oggi risultava «scaduta» dal pomeriggio e domani diventava
+//    «0 giorni». Qui le due date sono tutt'e due a mezzogiorno di Greenwich:
+//    la differenza e' sempre un numero intero di giorni, ora legale compresa.
+export const giorniDaOggi = (data, oggi = oggiLocale()) =>
+  Math.round((Date.parse(`${data}T12:00:00Z`) - Date.parse(`${oggi}T12:00:00Z`)) / 86400000);
 
 export const meseLocale = (d = new Date()) => dataLocale(d).slice(0, 7);
 

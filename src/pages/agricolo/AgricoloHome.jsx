@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, formatDate, oggiLocale } from "../../lib/constants";
+import { CROP_STATUSES, formatDate, giorniDaOggi, oggiLocale } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useUnita } from "../../lib/unita";
 
 const STATUS_BADGE = {
@@ -19,7 +20,8 @@ const emptyForm = {
   name: "", variety: "", plot: "", sowing_date: "", expected_harvest_date: "", ingredient_id: "",
 };
 
-const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function AgricoloHome() {
   // Le unita' si chiedono al database, non a un elenco scritto qui: la
@@ -255,20 +257,26 @@ export default function AgricoloHome() {
                           accanto (22/08). Quello registra il raccolto,
                           questo **cancella la coltura** — e la cancella
                           senza chiedere niente. */}
-                      <button
-                        onClick={() => deleteCrop(c.id).then(reload)}
-                        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
-                        style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }}
-                      >
-                        Rimuovi
-                      </button>
+                      {/* ⚠️ E adesso chiede (notte del 28/10), come le cessioni:
+                          un tocco impreciso sul telefono la cancellava. */}
+                      <span style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }} className="inline-block">
+                        <ConfermaDistruttiva
+                          etichetta="Rimuovi"
+                          cosaSparisce={`la coltura «${c.name}»`}
+                          onConferma={() =>
+                            deleteCrop(c.id)
+                              .then(reload)
+                              .catch((e) => setError(e.message))
+                          }
+                        />
+                      </span>
                     </td>
                   </tr>
                   {harvestFor === c.id && (
                     <tr className="bg-b58-campo">
                       <td colSpan={5} className="px-4 py-3">
                         <div className="flex flex-wrap gap-2 items-end">
-                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} className={inputClass + " w-40"} />
+                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} aria-label="Data del raccolto" className={inputClass + " campo-data"} />
                           <input type="number" step="0.001" value={harvest.harvested_quantity} onChange={(e) => setHarvest((h) => ({ ...h, harvested_quantity: e.target.value }))} placeholder="Quantità raccolta" className={inputClass + " w-40"} />
                           <select value={harvest.unit} onChange={(e) => setHarvest((h) => ({ ...h, unit: e.target.value }))} className={inputClass + " w-28"}>
                             {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}

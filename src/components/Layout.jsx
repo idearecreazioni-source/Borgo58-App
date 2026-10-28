@@ -35,7 +35,7 @@ export default function Layout() {
   //    ⚠️ Sta nella fase di cattura: la voce del menu non riceve il tocco,
   //       quindi non naviga e non chiude il menu.
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, ruoloNonLetto, riprovaRuolo } = useAuth();
   // `da` dice dove si è toccato — il menu del telefono, la barra del
   // computer o la testata (il logo) — perché la domanda compaia lì.
   // ⚠️ IL LOGO CHIEDE ANCHE LUI (decisione di Alessio del 12/09/2026): porta
@@ -251,10 +251,25 @@ export default function Layout() {
           <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
           </div>
+          {/* ⚠️ `data-fuori-dalla-foto` (28/10/2026): il riquadro si apre
+              mentre si fa l'immagine della pagina, e non deve finirci. */}
           {segnala.aperto && (
-            <div className="print:hidden mb-4">
-              <RiquadroSegnala momento={segnala.momento} onChiudi={segnala.chiudi} />
+            <div data-fuori-dalla-foto className="print:hidden mb-4">
+              <RiquadroSegnala
+                momento={segnala.momento}
+                scatto={segnala.scatto}
+                onTogliImmagine={segnala.togliImmagine}
+                onChiudi={segnala.chiudi}
+              />
             </div>
+          )}
+          {ruoloNonLetto && (
+            <p role="alert" className="print:hidden mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2 testo-sala text-b58-terracotta-dark-testo">
+              Non riesco a verificare il tuo accesso: alcune parti potrebbero mancare.{" "}
+              <button type="button" onClick={riprovaRuolo} className="tocco-riga underline font-medium">
+                Riprova
+              </button>
+            </p>
           )}
           <AvvisoLettureTagliate />
           <AvvisoAggiornamento />

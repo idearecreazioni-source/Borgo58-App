@@ -73,6 +73,13 @@ const SENZA_TOKEN = {
   //    grosso, il freno va aggiunto.
   "ascolta-voce":
     "la chiama la Scorciatoia dell'orologio, che non ha nessun accesso: la sua barriera e' la chiave, controllata dentro prima di spendere",
+  // 28/10/2026 — i promemoria per luogo. Stessa ragione di `ascolta-voce`:
+  //    l'automazione dell'iPhone non ha un accesso, e il token che il
+  //    gateway pretenderebbe e' la chiave anon, pubblica. La guardia vera e'
+  //    la chiave del luogo, controllata in `luogo_promemoria` (impronta,
+  //    revoca, 30 letture all'ora). Legge soltanto: non scrive e non spende.
+  "promemoria-luogo":
+    "la chiama l'automazione «quando arrivo a…» dell'iPhone, che non ha nessun accesso: la sua barriera e' la chiave del luogo, e legge soltanto",
 };
 
 const nome = process.argv[2];

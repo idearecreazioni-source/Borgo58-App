@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   fabbisognoEvento,
   annullaPrenotazione,
@@ -71,6 +71,7 @@ export default function ReservationForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const { isTitolare } = useAuth();
 
   const [form, setForm] = useState(emptyForm);
@@ -222,7 +223,20 @@ export default function ReservationForm() {
       const targetId = isEdit ? id : (await createReservation({ ...payload, source: "interno" })).id;
       if (isEdit) await updateReservation(id, payload);
       // La caparra vive in una tabella separata (solo titolare).
-      if (isTitolare && isEvent) await setReservationDeposit(targetId, deposit);
+      // 🔴 SE LA CAPARRA FALLISCE DOPO AVER CREATO, SI VA LO STESSO ALLA
+      //    PRENOTAZIONE NATA (notte del 28/10, dalla revisione): restando
+      //    sul modulo «nuova», un secondo «Crea» ne faceva un doppione.
+      if (isTitolare && isEvent) {
+        try {
+          await setReservationDeposit(targetId, deposit);
+        } catch (e) {
+          if (isEdit) throw e;
+          navigate(`/calendario-eventi/${targetId}`, {
+            state: { avviso: `La prenotazione è creata, ma la caparra no: ${e.message} Rimettila qui e salva.` },
+          });
+          return;
+        }
+      }
       navigate(`/calendario-eventi/${targetId}`);
     } catch (e) {
       setError(e.message);
@@ -299,6 +313,11 @@ export default function ReservationForm() {
         {isEdit ? "Prenotazione" : "Nuova prenotazione"}
       </h1>
 
+      {location.state?.avviso && !error && (
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+          {location.state.avviso}
+        </p>
+      )}
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}

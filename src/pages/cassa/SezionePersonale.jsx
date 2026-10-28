@@ -29,14 +29,15 @@ import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 // della società. Il verso opposto — prendere dalla cassa per spese
 // personali — è escluso per decisione di Alessio, e infatti qui non c'è.
 
-const annoCorrente = new Date().getFullYear();
-const meseCorrente = new Date().getMonth() + 1;
 
 // ⚠️ CALENDARIO, e non serata: una nota pagata di tasca propria è una
 // spesa fatta in un giorno, non in un servizio. Dichiarato qui perché non
 // venga «uniformato» alla cassa: il perimetro della serata è di due gesti
 // soli (19/08).
-const formaVuota = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const formaVuotaOggi = () => ({
   importo: "",
   pagataIl: oggiLocale(),
   tagId: "",
@@ -48,9 +49,14 @@ const formaVuota = {
   //    nota non e' un investimento. Nessuna regola lo deduce dal motivo,
   //    dall'importo o dal testo.
   eInvestimento: false,
-};
+});
 
 export default function SezionePersonale() {
+  // ⚠️ Dentro la schermata (notte del 28/10): calcolati all'apertura del
+  //    gestionale, dopo il cambio di mese «da dire alla commercialista»
+  //    restava quello del mese prima.
+  const annoCorrente = new Date().getFullYear();
+  const meseCorrente = new Date().getMonth() + 1;
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [saldo, setSaldo] = useState(null);
@@ -61,7 +67,7 @@ export default function SezionePersonale() {
   const [fatture, setFatture] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState(formaVuota);
+  const [form, setForm] = useState(formaVuotaOggi);
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
   // 🔴 L'ESITO VA SULLA RIGA TOCCATA, non in cima alla pagina: un rifiuto
@@ -76,7 +82,11 @@ export default function SezionePersonale() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const ricarica = () => {
@@ -133,7 +143,7 @@ export default function SezionePersonale() {
     setError("");
     try {
       await createAnticipazione({ ...form, entityId });
-      setForm({ ...formaVuota, tagId: form.tagId, pagataIl: form.pagataIl });
+      setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
       await ricarica();
     } catch (e) {
       setError(e.message);
