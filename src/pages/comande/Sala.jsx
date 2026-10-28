@@ -84,6 +84,37 @@ import {
 // Le misure dei tocchi sono in CENTIMETRI REALI (classi .tocco-*), non in
 // pixel: durante un servizio pieno la differenza fra 1 cm e 6 mm e'
 // mandare in cucina il piatto sbagliato.
+// 🔴 I COPERTI SI SALVANO QUANDO SI E' FINITO DI SCRIVERE (notte del
+//    28/10/2026, dalla revisione): il campo scriveva nel database a ogni
+//    tasto — «12» erano due scritture, che potevano arrivare al contrario e
+//    lasciare 1 nel conto mentre a schermo c'era 12. Adesso si scrive
+//    uscendo dal campo o con Invio, e solo un numero intero.
+function CampoCoperti({ valore, busy, onSalva }) {
+  const [bozza, setBozza] = useState(String(valore));
+  useEffect(() => setBozza(String(valore)), [valore]);
+  const salva = () => {
+    const n = Math.round(Number(bozza));
+    if (bozza === "" || !Number.isFinite(n) || n < 0) return setBozza(String(valore));
+    if (n !== valore) onSalva(n);
+    else setBozza(String(valore));
+  };
+  return (
+    <input
+      type="number"
+      min="0"
+      step="1"
+      inputMode="numeric"
+      aria-label="Coperti"
+      value={bozza}
+      disabled={busy}
+      onChange={(e) => setBozza(e.target.value)}
+      onBlur={salva}
+      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala-grande"
+    />
+  );
+}
+
 export default function Sala() {
   const { isTitolare } = useAuth();
 
@@ -688,7 +719,19 @@ export default function Sala() {
     setScendiAlMenu(false);
   }, [scendiAlMenu, order]);
 
-  const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
+  // ⚠️ La rilettura si applica solo se il tavolo aperto e' ancora quello
+  //    (notte del 28/10): toccando un altro tavolo mentre la prima azione
+  //    finiva, il pannello del primo tornava al posto del secondo, e il «+»
+  //    dopo andava al tavolo sbagliato.
+  const ordineAperto = useRef(null);
+  ordineAperto.current = order?.id ?? null;
+  const reloadOrder = () => {
+    if (!order) return Promise.resolve();
+    const id = order.id;
+    return getOrder(id).then((o) => {
+      if (ordineAperto.current === id) setOrder(o);
+    });
+  };
 
   // 🔴 DICE SE E' ANDATA (notte del 28/10/2026, dalla revisione): prima
   //    l'errore si fermava qui e chi seguiva con `.then` ripartiva lo stesso
@@ -1989,13 +2032,7 @@ export default function Sala() {
             >
               −
             </button>
-            <input
-              type="number"
-              min="0"
-              value={coperti}
-              onChange={(e) => handleCoperti(e.target.value)}
-              className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala-grande"
-            />
+            <CampoCoperti valore={coperti} busy={busy} onSalva={handleCoperti} />
             <button
               type="button"
               disabled={busy}
