@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createDocument,
@@ -154,7 +154,13 @@ export default function ArchivioDocumentiHome() {
   //    deposito e non tocca il database. È una **proprietà**, non un
   //    controllo — non c'è nessun posto da cui togliere qualcosa se poi
   //    Alessio cambia idea.
+  // ⚠️ Conta le letture (notte del 28/10, dalla revisione): scelto un file
+  //    lento e poi un altro, se il primo rispondeva per ultimo il suo testo
+  //    finiva sulla scheda del secondo — e «Chiedi all'archivio» avrebbe
+  //    risposto col contenuto sbagliato, senza nessun errore.
+  const giroLettura = useRef(0);
   const scegliFile = async (scelto) => {
+    const giro = ++giroLettura.current;
     setFile(scelto);
     setProposta(null);
     setTesto(null);
@@ -163,6 +169,7 @@ export default function ArchivioDocumentiHome() {
     setLeggendo(true);
     try {
       const r = await leggiFileDaArchiviare(scelto);
+      if (giro !== giroLettura.current) return;
       setProposta(r?.proposta ?? null);
       setTesto(r?.testo ?? null);
       const campi = campiProposti(r?.proposta, elencoSezioni);
@@ -180,11 +187,12 @@ export default function ArchivioDocumentiHome() {
         expiry_date: f.expiry_date || campi.expiry_date,
       }));
     } catch (e) {
+      if (giro !== giroLettura.current) return;
       // ⚠️ Una lettura fallita NON impedisce di archiviare: la scheda si
       //    compila a mano come si è sempre fatto, e lo si dice.
       setError(`Non sono riuscito a leggere il file: ${e.message} — la scheda si compila a mano.`);
     } finally {
-      setLeggendo(false);
+      if (giro === giroLettura.current) setLeggendo(false);
     }
   };
 
