@@ -87,10 +87,15 @@ export default function Bar() {
           return false;
         });
     let interval = null;
+    let annullato = false;
     leggiCoperto().then((ok) => {
+      if (annullato) return;
       if (!ok) interval = setInterval(() => leggiCoperto().then((ok2) => ok2 && clearInterval(interval)), POLL_MS);
     });
-    return () => interval && clearInterval(interval);
+    return () => {
+      annullato = true;
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   // Un "ticket" e' un invio: tutte le righe partite dalla sala nello stesso

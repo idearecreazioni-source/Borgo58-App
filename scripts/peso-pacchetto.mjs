@@ -57,8 +57,8 @@ const CARTELLA = path.join(process.cwd(), "dist", "assets");
  *     caricare dopo. La strada pubblica non cambia (tetto 160 invariato).
  *   · 28/10/2026 — gestionale 440 → 450: misurato da questo comando,
  *     439,99 su slave dopo i promemoria per luogo (#258), 439,31 con la
- *     pagina «Quando arrivo…» caricata a parte (#260), 440,17 con le
- *     correzioni della notte del 28/10 (+0,86 kB: errori che ora si dicono
+ *     pagina «Quando arrivo…» caricata a parte (#260), 441,24 con le
+ *     correzioni della notte del 28/10 (+1,93 kB: errori che ora si dicono
  *     invece di tacere, conferme prima di cancellare, l'avviso «non riesco
  *     a verificare il tuo accesso»). Provato a caricare a parte anche le due
  *     pagine da stampa (manuale HACCP, scadenze): 440,01, perche' i pezzi

@@ -95,7 +95,8 @@ function CampoCoperti({ valore, busy, onSalva }) {
   const salva = () => {
     const n = Math.round(Number(bozza));
     if (bozza === "" || !Number.isFinite(n) || n < 0) return setBozza(String(valore));
-    if (n !== valore) onSalva(n);
+    // Se il salvataggio fallisce si torna al numero vero del conto.
+    if (n !== valore) Promise.resolve(onSalva(n)).then((ok) => ok === false && setBozza(String(valore)));
     else setBozza(String(valore));
   };
   return (
