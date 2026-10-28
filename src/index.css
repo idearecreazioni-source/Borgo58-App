@@ -639,6 +639,11 @@ body {
   textarea:not([type="checkbox"]):not([type="radio"]) {
     font-size: max(16px, 1em);
   }
+  /* 28/10/2026: il pulsante dell'ora sta accanto a un campo data e deve
+     sembrarne il gemello — stessa taglia, quindi lo stesso pavimento. */
+  .campo-ora {
+    font-size: max(16px, 1em);
+  }
 }
 
 /* 🔴 IL TELAIO DESKTOP (05/09/2026, segnalazione: su un monitor 1920×1080
