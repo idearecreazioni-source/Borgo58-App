@@ -241,6 +241,28 @@ export const SPECCHI_ESENTI = [
 // ⚠️ Una rete che grida su un caso legittimo viene spenta. Ma un'eccezione
 // senza la sua ragione scritta si allarga da sola, quindi ognuna ha la sua.
 export const GUARDIE_ESENTI = [
+  // ⚠️ LE TRE DEL PONTE (28/10/2026, 20261028000005): sono sottoinsiemi
+  //    VOLUTI dei vocabolari di `lavori_stampa` e `dispositivi`, e la
+  //    ragione è la stessa per tutte e tre — il ponte non può scrivere i
+  //    valori che appartengono al gestionale.
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_stato",
+    perche:
+      "il ponte chiude un lavoro come stampato, fallito o incerto: «in_coda» e «in_corso» li scrive il gestionale quando lo accoda e quando il ponte lo prende, e «annullato» solo il titolare. Sono tre dei sei stati di lavoro_stato_noto, apposta",
+  },
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_stato_dispositivo",
+    perche:
+      "non è una guardia che rifiuta ma una normalizzazione: i cinque stati che il ponte sa leggere da un apparecchio passano, tutto il resto diventa «sconosciuto» — il sesto valore di dispositivo_stato_noto, che il ponte non deve dichiarare da sé. Un valore inatteso non deve far fallire l'esito di un foglio uscito bene",
+  },
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_errore_codice",
+    perche:
+      "normalizzazione come per lo stato dell'apparecchio: i sei codici che il ponte sa riconoscere passano, il resto diventa «sconosciuto», il settimo valore di lavoro_errore_noto. Rifiutare un codice nuovo lascerebbe il lavoro in corso, e dopo cinque minuti incerto",
+  },
   {
     funzione: "azione_domanda",
     parametro: "p_stato",
