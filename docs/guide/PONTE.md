@@ -9,6 +9,8 @@ Il gestionale è un sito, e un sito non può parlare con le stampanti del ristor
 
 Se internet cade, il ponte aspetta e riprova da solo.
 
+> **Collaudo dal fornitore, prima del mini-PC:** si fa col portatile, a mano e collegato a Prova. È una guida a parte: [il collaudo col portatile](COLLAUDO_PORTATILE.md).
+
 ---
 
 ## Prima del collaudo
@@ -100,5 +102,5 @@ Per ogni apparecchio:
 - **Le prove automatiche:**
   - `tests/unita/ponte.test.js`: contro il simulatore, senza rete;
   - `tests/app/ponte-dal-vivo.test.js`: contro Prova.
-- **Il registro** è in `ponte/ponte.log`. La chiave del ponte non ci finisce mai.
+- **Il registro** è in `ponte/ponte.log`. Quando un apparecchio risponde, c'è anche la sua risposta grezza («risposta dell'apparecchio: …»). La chiave del ponte non ci finisce mai.
 - **Per togliere il servizio:** `powershell -ExecutionPolicy Bypass -File .\installa.ps1 -Togli`.

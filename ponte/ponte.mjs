@@ -54,7 +54,14 @@ export function leggiConfigurazione(file = process.env.PONTE_CONFIG ?? path.join
   if (!existsSync(file)) {
     throw new Error(`Non trovo la configurazione del ponte in ${file}. Copia config.esempio.json in config.json e riempila.`);
   }
-  const c = JSON.parse(readFileSync(file, "utf8"));
+  // ⚠️ Il messaggio di JSON.parse può riportare un pezzo del file, cioè
+  //    della chiave: a schermo va solo la frase nostra (revisione, 29/10).
+  let c;
+  try {
+    c = JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    throw new Error(`${path.basename(file)} non è scritto bene: controlla virgole e virgolette, come in config.esempio.json.`);
+  }
   return {
     indirizzo: c.indirizzo,
     chiavePubblica: c.chiavePubblica,
@@ -96,6 +103,10 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
       clearTimeout(orologio);
     }
     scrivi(`lavoro ${lavoro.id} (${lavoro.tipo}) su «${perIlRegistro(lavoro.dispositivo?.nome)}»: ${e.stato}${e.errore_testo ? ` — ${perIlRegistro(e.errore_testo)}` : ""}`);
+    // La risposta grezza dell'apparecchio anche nel registro, non solo in
+    // `lavori_stampa.esito`: al collaudo si legge sul portatile, subito, ed
+    // è quella che serve per correggere `protocolli/` (29/10/2026).
+    if (e.esito) scrivi(`  risposta dell'apparecchio: ${perIlRegistro(JSON.stringify(e.esito)).slice(0, 2000)}`);
     try {
       await g.esito(lavoro.id, e);
     } catch (errore) {
@@ -178,6 +189,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     else await avvia();
   } catch (e) {
     console.error(e.message);
-    process.exit(1);
+    // ⚠️ `exitCode` e non `process.exit(1)`: su Windows, con una chiamata di
+    //    rete appena chiusa, Node 24 stampava «Assertion failed … async.c»
+    //    sotto il messaggio, ed è la prima cosa che Alessio leggeva (29/10).
+    process.exitCode = 1;
   }
 }
