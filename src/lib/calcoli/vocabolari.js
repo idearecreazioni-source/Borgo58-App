@@ -264,6 +264,12 @@ export const GUARDIE_ESENTI = [
       "normalizzazione come per lo stato dell'apparecchio: i sei codici che il ponte sa riconoscere passano, il resto diventa «sconosciuto», il settimo valore di lavoro_errore_noto. Rifiutare un codice nuovo lascerebbe il lavoro in corso, e dopo cinque minuti incerto",
   },
   {
+    funzione: "chiedi_lavoro_dispositivo",
+    parametro: "p_tipo",
+    perche:
+      "il titolare dalla pagina Stampanti chiede solo una prova di stampa o una lettura di stato: «comanda» e «biglietto del turno» li accoda il database quando il tablet invia, legati alle loro righe, e chiederli a mano darebbe un foglio senza niente dentro. Sono due dei quattro tipi di lavoro_tipo_di_questo_passo, apposta (29/10/2026, 20261029000001)",
+  },
+  {
     funzione: "azione_domanda",
     parametro: "p_stato",
     perche:
