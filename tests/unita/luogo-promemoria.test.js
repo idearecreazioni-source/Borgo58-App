@@ -13,7 +13,9 @@ import {
 // casa ricordami di pesare la mamma».
 
 const leggi = (p) => readFileSync(p, "utf8").replace(/\r\n/g, "\n");
-const MIGRAZIONE = "supabase/migrations/20261028000001_un_promemoria_aspetta_che_arrivo_a_casa.sql";
+// ⚠️ Il vincolo vivo è quello dell'ultima migrazione che lo riscrive: dal
+//    28/10/2026 la 20261028000006, quando il ristorante è diventato cantina.
+const MIGRAZIONE = "supabase/migrations/20261028000006_il_ristorante_diventa_cantina.sql";
 
 describe("il testo della notifica", () => {
   it("🔴 niente da fare = testo vuoto, cioè nessuna notifica (scelta di Alessio)", () => {
@@ -28,8 +30,8 @@ describe("il testo della notifica", () => {
 
   it("oltre le prime otto dice quante altre, invece di tagliare in silenzio", () => {
     const tante = Array.from({ length: 12 }, (_, i) => ({ titolo: `cosa ${i + 1}` }));
-    const righe = testoNotifica("ristorante", tante, 15).split("\n");
-    expect(righe[0]).toBe("Ristorante: 15 cose da fare");
+    const righe = testoNotifica("cantina", tante, 15).split("\n");
+    expect(righe[0]).toBe("Cantina: 15 cose da fare");
     expect(righe).toHaveLength(1 + RIGHE_MASSIME + 1);
     expect(righe.at(-1)).toBe("…e altre 7");
   });
