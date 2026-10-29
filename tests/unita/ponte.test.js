@@ -253,3 +253,22 @@ describe("un guasto del ponte non ferma gli altri lavori", () => {
     expect((await eseguiLavoro(registratore("stato"), { simulatore: true, rete })).stato).toBe("fallito");
   });
 });
+
+describe("il registro del portatile tiene la risposta grezza (collaudo, 29/10/2026)", () => {
+  it("una riga con la risposta dell'apparecchio, su una riga sola e tagliata", async () => {
+    const righe = [];
+    const g = { prendiLavori: async () => [{ id: "uno", tipo: "stato", dispositivo: { nome: "Cassa" } }], esito: async () => {} };
+    const lunga = `<response success="true">\n${"x".repeat(5000)}</response>`;
+    await unGiro(g, { scrivi: (r) => righe.push(r), esegui: async () => ({ stato: "stampato", esito: { lingua: "fpmate", risposta: lunga } }) });
+    const grezza = righe.find((r) => r.includes("risposta dell'apparecchio"));
+    expect(grezza).toContain('success=\\"true\\"');
+    expect(grezza).not.toContain("\n");
+    expect(grezza.length).toBeLessThan(2100);
+  });
+  it("senza risposta (apparecchio spento) nessuna riga in più", async () => {
+    const righe = [];
+    const g = { prendiLavori: async () => [{ id: "due", tipo: "prova", dispositivo: {} }], esito: async () => {} };
+    await unGiro(g, { scrivi: (r) => righe.push(r), esegui: async () => ({ stato: "fallito", esito: null }) });
+    expect(righe).toHaveLength(1);
+  });
+});
