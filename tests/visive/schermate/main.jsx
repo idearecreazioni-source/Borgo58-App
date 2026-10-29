@@ -30,6 +30,14 @@ import Stampanti from "../../../src/pages/comande/Stampanti";
 import { agendaCorsie } from "../finti/tasks.js";
 
 applyPxCm();
+// Lo schermo dell'apparecchio (29/10/2026): come lo propone il gestionale,
+// guardando la larghezza della finestra di prova — sul banco il puntatore non
+// dice niente. `?schermo=…` lo forza, per le foto «prima / dopo».
+document.documentElement.setAttribute(
+  "data-schermo",
+  new URLSearchParams(location.search).get("schermo") ??
+    (innerWidth >= 1024 ? "computer" : innerWidth < 768 ? "telefono" : "tablet"),
+);
 
 const impegno = (id, title, category, priority) => ({
   id,
@@ -80,6 +88,11 @@ const movimento = (n, direction, amount, etichetta, mezzo, extra = {}) => {
     ...resto,
   };
 };
+
+// Un'ora fissa e non quella del momento: le foto «prima / dopo» del
+// 29/10 si confrontano byte per byte, e un orologio che cambia le farebbe
+// diverse sempre.
+const ORA_FISSA = "2026-10-28T20:30:00.000Z";
 
 const DATI = {
   dashboard: {
@@ -193,17 +206,17 @@ const DATI = {
   stampanti: {
     tabelle: {
       dispositivi: [
-        { id: "s1", nome: "Registratore telematico della cassa", tipo: "registratore_fiscale", protocollo: "fpmate_http", indirizzo: "192.168.100.250", porta: 8043, reparto: null, attivo: true, ultimo_contatto_il: new Date().toISOString(), ultimo_stato: "pronto", ultimo_stato_testo: null },
-        { id: "s2", nome: "Stampante cucina", tipo: "stampante_comande", protocollo: "escpos_tcp", indirizzo: "192.168.1.51", porta: 9100, reparto: "cucina", attivo: true, ultimo_contatto_il: new Date().toISOString(), ultimo_stato: "carta_finita", ultimo_stato_testo: "La stampante dice che la carta è finita: cambia il rotolo e riprova." },
+        { id: "s1", nome: "Registratore telematico della cassa", tipo: "registratore_fiscale", protocollo: "fpmate_http", indirizzo: "192.168.100.250", porta: 8043, reparto: null, attivo: true, ultimo_contatto_il: ORA_FISSA, ultimo_stato: "pronto", ultimo_stato_testo: null },
+        { id: "s2", nome: "Stampante cucina", tipo: "stampante_comande", protocollo: "escpos_tcp", indirizzo: "192.168.1.51", porta: 9100, reparto: "cucina", attivo: true, ultimo_contatto_il: ORA_FISSA, ultimo_stato: "carta_finita", ultimo_stato_testo: "La stampante dice che la carta è finita: cambia il rotolo e riprova." },
       ],
       lavori_stampa: [
-        { id: "l1", dispositivo_id: "s2", tipo: "prova", stato: "incerto", tentativi: 1, creato_il: new Date().toISOString(), finito_il: new Date().toISOString(), errore_codice: "interrotto", errore_testo: "Il ponte ha preso questo lavoro e non ha più risposto: forse è uscito, forse no. Guarda la stampante e decidi tu." },
-        { id: "l2", dispositivo_id: "s1", tipo: "stato", stato: "stampato", tentativi: 1, creato_il: new Date().toISOString(), finito_il: new Date().toISOString(), errore_codice: null, errore_testo: null },
+        { id: "l1", dispositivo_id: "s2", tipo: "prova", stato: "incerto", tentativi: 1, creato_il: ORA_FISSA, finito_il: ORA_FISSA, errore_codice: "interrotto", errore_testo: "Il ponte ha preso questo lavoro e non ha più risposto: forse è uscito, forse no. Guarda la stampante e decidi tu." },
+        { id: "l2", dispositivo_id: "s1", tipo: "stato", stato: "stampato", tentativi: 1, creato_il: ORA_FISSA, finito_il: ORA_FISSA, errore_codice: null, errore_testo: null },
       ],
     },
     rpc: {
       chiavi_ponte_elenco: [
-        { id: "k1", nome: "Mini-PC ristorante", creata_il: new Date().toISOString(), ultimo_battito: new Date().toISOString(), versione: "0.1.0", host: "MINIPC-BORGO58", acceso: true, revocata_il: null },
+        { id: "k1", nome: "Mini-PC ristorante", creata_il: ORA_FISSA, ultimo_battito: ORA_FISSA, versione: "0.1.0", host: "MINIPC-BORGO58", acceso: true, revocata_il: null },
       ],
     },
   },

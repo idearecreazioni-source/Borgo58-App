@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { applyPxCm } from './lib/touch'
+import { applicaSchermo } from './lib/schermo'
 import { pubblica } from './lib/calcoli/pubblico'
 import { accendiLaBozza } from './lib/bozza'
 import { accendiLaSorveglianzaVersione } from './lib/versione'
@@ -10,6 +11,10 @@ import { accendiLaSorveglianzaVersione } from './lib/versione'
 // render, cosi' nessuna schermata compare per un istante con i pulsanti
 // della misura sbagliata.
 applyPxCm()
+// Lo schermo di questo apparecchio (29/10/2026): anche lui prima del primo
+// disegno, per la stessa ragione. ⚠️ Solo nel gestionale: le pagine dei
+// clienti (prenotare, l'informativa) restano come sono su ogni schermo.
+if (!pubblica(window.location.pathname)) applicaSchermo()
 
 // Quello che si sta scrivendo sopravvive a una ricarica della pagina.
 // Il perche sta per esteso in src/lib/calcoli/bozza.js.
