@@ -9,6 +9,8 @@ Il gestionale è un sito, e un sito non può parlare con le stampanti del ristor
 
 Se internet cade, il ponte aspetta e riprova da solo.
 
+**Le comande (dal 29/10/2026).** Se in «Stampanti» c'è una stampante attiva per la **cucina** o per il **bar**, ogni comanda inviata dal tablet esce da sola su quella stampante, e così il biglietto «avanti col prossimo turno». La pagina **Cucina** diventa il controllo: per ogni foglio dice se è in coda, uscito, non uscito o se non si sa. Se il ponte è spento compare un avviso rosso, e si stampa dalla pagina con «Stampa da qui»: quello che esce da lì lascia la coda, così non esce due volte. Senza stampanti tutto resta come prima.
+
 > **Collaudo dal fornitore, prima del mini-PC:** si fa col portatile, a mano e collegato a Prova. È una guida a parte: [il collaudo col portatile](COLLAUDO_PORTATILE.md).
 
 ---
@@ -88,6 +90,16 @@ Per ogni apparecchio:
 | Non riuscito | Non è partito niente, oppure l'apparecchio ha detto di no (carta, coperchio, spento) | Leggi la frase, sistema, riprova |
 | **Non si sa se è uscito** | Il ponte ha mandato, ma la risposta non è arrivata | **Guarda la stampante.** Poi premi «Ho guardato, chiudi». Non si riprova da solo, apposta |
 
+| Nella pagina **Cucina**, sotto un foglio | Cosa fare |
+|---|---|
+| In coda: esce fra poco | Niente |
+| In coda: aspetta il ponte | Il ponte è spento: accendi il mini-PC, oppure «Stampa da qui» |
+| Non è uscito: … | Sistema (carta, coperchio, corrente) e premi «Riprova sulla stampante» |
+| **Non si sa se è uscito** | **Guarda la stampante.** «È uscito» se il foglio c'è, «Ristampa» se non c'è |
+| Non è nella coda della stampante | Un foglio di prima, o mandato quando la stampante era spenta: «Mandalo alla stampante» o «Stampa da qui» |
+
+⚠️ Una comanda ferma in coda per più di tre ore non esce più da sola, e nemmeno una di un conto già chiuso.
+
 ⚠️ **Per ora niente scontrini.** Il registratore stampa solo il foglio di prova **non fiscale**, che non è un incasso e non va all'Agenzia delle Entrate. Gli scontrini veri saranno un passo a parte.
 
 ⚠️ **Un foglio bianco con «Fatto» resta possibile.** Nessun apparecchio sa dire che il foglio è uscito vuoto: se lo vedi, è un guasto della stampante.
@@ -101,6 +113,8 @@ Per ogni apparecchio:
   - Nel gestionale scegli il modello «Apparecchio finto», e in `config.json` metti `"simulatore": true`.
 - **Le prove automatiche:**
   - `tests/unita/ponte.test.js`: contro il simulatore, senza rete;
-  - `tests/app/ponte-dal-vivo.test.js`: contro Prova.
+  - `tests/unita/ponte-comande.test.js`: il foglio della comanda;
+  - `tests/app/ponte-dal-vivo.test.js` e `tests/app/comande-dal-ponte.test.js`: contro Prova.
+- **Il foglio della comanda** lo compone il database (`componi_comanda`, migrazione 20261029000001) come dati, e il ponte lo impagina (`ponte/protocolli/testo.mjs`, `righeDellaComanda`). Deve dire le stesse cose della pagina Cucina: se cambia una, cambia l'altra.
 - **Il registro** è in `ponte/ponte.log`. Quando un apparecchio risponde, c'è anche la sua risposta grezza («risposta dell'apparecchio: …»). La chiave del ponte non ci finisce mai.
 - **Per togliere il servizio:** `powershell -ExecutionPolicy Bypass -File .\installa.ps1 -Togli`.

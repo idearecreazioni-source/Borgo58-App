@@ -110,7 +110,7 @@ Ci sono due finestre nere:
 Si spengono chiudendole con la **X** in alto a destra.
 
 ### B1 · Accendere tutto
-1. Doppio clic su **`2-accendi-il-ponte.cmd`**. Si apre la finestra del ponte, che dice «ponte 0.1.0 acceso». **Lasciala aperta**: il ponte vive finché la finestra è aperta.
+1. Doppio clic su **`2-accendi-il-ponte.cmd`**. Si apre la finestra del ponte, che dice «ponte 0.2.0 acceso». **Lasciala aperta**: il ponte vive finché la finestra è aperta.
 2. Doppio clic su **`3-apparecchio-finto.cmd`**, scrivi **1** (normale) e premi Invio. Lascia aperta anche questa.
 3. Nel sito di Prova, in **Comande → Stampanti**, entro mezzo minuto il riquadro del ponte deve dire **● Acceso — «Mini-PC ristorante» su …**, seguito dal nome del tuo portatile. «Mini-PC ristorante» è il nome della chiave, ed è giusto anche se è un portatile.
 
@@ -142,6 +142,17 @@ Per cambiare comportamento all'apparecchio finto: chiudi la sua finestra, riapri
 | 8 | **1** normale, poi chiudi la **finestra del ponte** | Prova di stampa sulla stampante | Resta **Aspetta il ponte**. Entro due minuti il riquadro del ponte dice **● Spento**. Riapri `2-accendi-il-ponte.cmd`: la prova parte da sola e diventa **Fatto** |
 
 Se tutte e otto vanno come scritto, il portatile è pronto per il negozio.
+
+### B4 · Una comanda dal tablet, a casa
+È il giro che si proverà al collaudo, con l'apparecchio finto al posto della stampante. Ponte e apparecchio finto accesi (**1** normale).
+
+1. In **Comande → Stampanti**, sulla riga di **Stampante finta** premi **Modifica**, cambia **Stampa i biglietti di** in **Cucina** e premi **Salva le modifiche**.
+2. Sul tablet (o sul computer), nel sito di **Prova**: **Comande → Sala**, apri un tavolo, aggiungi un piatto della cucina e premi **Invia**.
+3. Apri **Comande → Cucina**. Entro pochi secondi il foglio passa in **Già stampati**. In `C:\Borgo58\ponte\uscita` c'è un file nuovo: dentro, «CUCINA - » con il tavolo, il turno, il piatto.
+4. **Il ponte spento:** chiudi la finestra del ponte e manda un altro piatto. In **Cucina** il foglio dice «In coda: aspetta il ponte», ed entro due minuti compare l'avviso rosso **«Il ponte è spento o senza rete»**. Riapri `2-accendi-il-ponte.cmd`: il foglio esce da solo.
+5. **La carta finita:** riapri l'apparecchio finto con **2** e manda un piatto. In **Cucina** il foglio dice **«Non è uscito: la carta è finita»**. Riapri l'apparecchio finto con **1** e premi **Riprova sulla stampante**: esce.
+6. **Il bar:** rimetti **Stampante finta** su **Bar** e manda una bevanda. Esce un foglio «BAR - » con il tavolo. La pagina **Bar** resta quella di sempre: il giro si segna pronto a mano, come oggi.
+7. Chiudi il conto del tavolo di prova.
 
 **Alla fine della prova generale:**
 - chiudi le due finestre nere;
@@ -210,14 +221,25 @@ Il gestionale e il ponte accettano **solo** questi apparecchi. È voluto, perch�
    1. aggiungila con **Stampa i biglietti di: Cucina** e premi **Prova di stampa**: deve dire **Fatto**;
    2. premi **Modifica**, cambia in **Bar**, premi **Salva le modifiche** e rifai **Prova di stampa**: di nuovo **Fatto**.
 
-   ⚠️ Oggi la prova di stampa va **dritta all'apparecchio** che hai scelto. Così si controlla che la stampante risponde con tutte e due le impostazioni e che il cambio si salva. Che una comanda di cucina finisca sulla stampante di cucina e una del bar su quella del bar si potrà vedere solo col passo delle comande (punto 9).
+   ⚠️ La prova di stampa va **dritta all'apparecchio** che hai scelto. Che una comanda di cucina esca sulla stampante della cucina e una del bar su quella del bar lo controlla il punto 9.
 8. ⚠️ **Il registratore stampa solo il foglio non fiscale.** Non è uno scontrino e non va all'Agenzia delle Entrate. Se il display del registratore resta con un documento aperto, chiedi al fornitore di chiuderlo.
-9. **Il tablet: la prova arriva qui.** Oggi il gestionale manda alle stampanti solo la prova di stampa e la lettura dello stato. Si vuole provare al collaudo anche il giro intero: una comanda presa dal tablet su Prova esce dalla TM, una volta su «Cucina» e una su «Bar». Si potrà fare quando sarà pronta la stampa delle comande dal ponte, che si costruisce **prima** del collaudo. Quando è pronta, la prova si aggiunge a questa tabella.
+9. **Il tablet, con la stampante vera.** Come in B4, ma con la TM del fornitore. Sul tablet, nel sito di **Prova**:
+
+| # | Stampante TM su | Fai | Deve succedere |
+|---|---|---|---|
+| 1 | **Cucina** | apri un tavolo, segna due piatti in due turni diversi, **Invia** | Esce **un** foglio: «CUCINA - » e il tavolo, l'ora, «1o turno» e «2o turno» con i loro piatti. In **Comande → Cucina** il foglio passa in **Già stampati** |
+| 2 | **Cucina** | un piatto con una sostituzione per allergene, **Invia** | Sul foglio, sotto il piatto, **SENZA** e l'allergene in grande, poi la frase della sostituzione |
+| 3 | **Cucina** | **Avanti prossimo turno** sullo stesso tavolo | Esce il biglietto con il tavolo e «AVANTI COL PROSSIMO TURNO» |
+| 4 | **Cucina** | togli la carta, manda un piatto | Non esce niente. In **Cucina**: «Non è uscito: la carta è finita». Rimetti la carta e premi **Riprova sulla stampante**: esce **una volta** |
+| 5 | **Bar** (Modifica → Bar → Salva le modifiche) | una bevanda, **Invia** | Esce un foglio «BAR - » e il tavolo, senza turni. Nella pagina **Bar** il giro resta da preparare, come sempre |
+| 6 | **Bar** | un piatto della cucina, **Invia** | **Non** esce niente: la cucina non ha più una stampante. In **Cucina** il foglio è da stampare a mano, come oggi |
+
+   Alla fine chiudi il conto del tavolo di prova. Gli scontrini restano fuori: questi sono tutti fogli **non fiscali**.
 10. Per ogni prova che va **diversa** dalla tabella:
     - scrivi a mano quale apparecchio, quale prova e che cosa è uscito (anche niente);
     - **non rifarla dieci volte**: una o due bastano.
 
-**Se la rete del negozio cade a metà:** non fare niente al portatile. Il ponte riprova da solo ogni 15 secondi, e le prove restano «Aspetta il ponte» finché la rete torna. Se resta «Non si sa se è uscito», guarda la stampante e premi «Ho guardato, chiudi».
+**Se la rete del negozio cade a metà:** non fare niente al portatile. Il ponte riprova da solo ogni 15 secondi, e le prove restano «Aspetta il ponte» finché la rete torna. Se resta «Non si sa se è uscito», guarda la stampante e premi «Ho guardato, chiudi». Per una comanda, in **Cucina**: **È uscito** se il foglio c'è, **Ristampa** se non c'è. Il gestionale non la ristampa mai da solo.
 
 ### C4 · Dove resta la risposta dell'apparecchio
 Quando un apparecchio **risponde**, il ponte tiene quello che ha detto, parola per parola. Serve a me per sistemare il ponte se il registratore o le stampanti parlano in modo un po' diverso dal previsto. Resta in due posti:

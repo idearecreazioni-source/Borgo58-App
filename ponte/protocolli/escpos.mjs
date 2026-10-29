@@ -10,7 +10,7 @@
 //    vera: si confermano il giorno del collaudo, aprendo il coperchio e
 //    togliendo la carta davanti alla stampante.
 
-import { righeDelLavoro, soloAscii } from "./testo.mjs";
+import { righeDelLavoro, righeImpaginate, soloAscii, STILI } from "./testo.mjs";
 
 const ESC = 0x1b;
 const GS = 0x1d;
@@ -32,6 +32,27 @@ export function foglioDiProva(contenuto) {
     Buffer.from([ESC, 0x64, 4]), // avanti di quattro righe
     Buffer.from([GS, 0x56, 66, 0]), // taglio, dopo aver avanzato fino alla lama
   ];
+  return Buffer.concat(pezzi);
+}
+
+/**
+ * Il foglio di una comanda (29/10/2026): a sinistra, i piatti in doppia
+ * altezza perché si leggono da lontano, SENZA in grassetto. Gli stili
+ * vengono da `righeImpaginate`: qui solo i byte che li dicono.
+ */
+export function foglioComanda(contenuto) {
+  const pezzi = [Buffer.from([ESC, 0x40])];
+  let prima = null;
+  for (const { stile, testo } of righeImpaginate(contenuto, LARGHEZZA)) {
+    const s = STILI[stile] ?? STILI.normale;
+    // Una riga di stacco prima di ogni turno, come a schermo.
+    if (stile === "turno" && prima !== "turno") pezzi.push(Buffer.from([ESC, 0x21, 0, ESC, 0x61, 0]), Buffer.from(`${"-".repeat(LARGHEZZA)}\n`, "ascii"));
+    // ESC ! n: 0x08 grassetto, 0x10 doppia altezza, 0x20 doppia larghezza.
+    const modo = (s.grassetto ? 0x08 : 0) | (s.doppiaAltezza ? 0x10 : 0) | (s.doppiaLarghezza ? 0x20 : 0);
+    pezzi.push(Buffer.from([ESC, 0x61, s.centrato ? 1 : 0, ESC, 0x21, modo]), Buffer.from(`${testo}\n`, "ascii"));
+    prima = stile;
+  }
+  pezzi.push(Buffer.from([ESC, 0x21, 0, ESC, 0x61, 0]), Buffer.from([ESC, 0x64, 4]), Buffer.from([GS, 0x56, 66, 0]));
   return Buffer.concat(pezzi);
 }
 

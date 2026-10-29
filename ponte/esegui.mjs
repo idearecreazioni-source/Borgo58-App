@@ -63,7 +63,8 @@ async function inEscpos(lavoro, d, rete) {
     return esito("fallito", { codice: stato.stato === "errore" ? "sconosciuto" : stato.stato, testo: stato.testo, statoApparecchio: stato.stato, dettaglio });
   }
   try {
-    await rete.scambioTcp(d.indirizzo, d.porta, escpos.foglioDiProva(lavoro.contenuto), { byteAttesi: 0 });
+    const foglio = lavoro.tipo === "prova" ? escpos.foglioDiProva(lavoro.contenuto) : escpos.foglioComanda(lavoro.contenuto);
+    await rete.scambioTcp(d.indirizzo, d.porta, foglio, { byteAttesi: 0 });
   } catch (e) {
     return { ...dallErrore(e, { puoEssereIncerto: true }), esito: dettaglio };
   }
@@ -71,9 +72,12 @@ async function inEscpos(lavoro, d, rete) {
 }
 
 async function inXml(lavoro, d, rete, modulo, lingua) {
-  const corpo = lavoro.tipo === "prova"
-    ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
-    : modulo.DOMANDA_STATO;
+  const stampa = lavoro.tipo !== "stato";
+  const corpo = !stampa
+    ? modulo.DOMANDA_STATO
+    : lavoro.tipo === "prova"
+      ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
+      : modulo.foglioComanda(lavoro.contenuto);
   let testo;
   try {
     testo = await rete.postHttp({
@@ -84,7 +88,7 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
       corpo,
     });
   } catch (e) {
-    return dallErrore(e, { puoEssereIncerto: lavoro.tipo === "prova" });
+    return dallErrore(e, { puoEssereIncerto: stampa });
   }
   const r = modulo.leggiRisposta(testo);
   const dettaglio = { lingua, risposta: r.grezzo };
@@ -95,7 +99,7 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
   //    dubbio. Il registratore, se si è fermato a metà di un documento non
   //    fiscale, può restare con il documento aperto: si guarda il display.
   const nonCapita = !/<response\b/i.test(testo ?? "") || /TIMEOUT/i.test(r.grezzo.match(/code="([^"]*)"/)?.[1] ?? "");
-  if (nonCapita && lavoro.tipo === "prova") {
+  if (nonCapita && stampa) {
     return esito("incerto", {
       codice: "risposta_a_meta",
       testo: `L'apparecchio ha risposto qualcosa che non dice com'è andata: forse il foglio è uscito, forse no. Guarda la stampante${lingua === "fpmate" ? " e il display del registratore" : ""}.`,
@@ -114,10 +118,16 @@ export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambi
   const d = lavoro?.dispositivo ?? {};
   const no = perchéNonSiChiama(d, { simulatore });
   if (no) return esito("fallito", { codice: "rifiutato", testo: no });
-  if (!["prova", "stato"].includes(lavoro.tipo)) {
+  if (!["prova", "stato", "comanda", "chiamata"].includes(lavoro.tipo)) {
     return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa fare lavori «${lavoro.tipo}».` });
   }
   const lingua = linguaDi(d);
+  // 🔴 Una comanda va solo a una stampante delle comande: il registratore
+  //    non stampa comande (e sul registratore un foglio in più è carta
+  //    fiscale sprecata, o peggio).
+  if (["comanda", "chiamata"].includes(lavoro.tipo) && lingua === "fpmate") {
+    return esito("fallito", { codice: "rifiutato", testo: "Una comanda non si stampa sul registratore: scegli una stampante delle comande." });
+  }
   if (lingua === "escpos") return inEscpos(lavoro, d, rete);
   if (lingua === "fpmate") return inXml(lavoro, d, rete, fpmate, "fpmate");
   if (lingua === "epos") return inXml(lavoro, d, rete, epos, "epos");

@@ -40,6 +40,9 @@ const PROTOCOLLI = {
   ],
 };
 
+// Le comande e i biglietti del turno passano dalla stessa coda (29/10).
+const NOMI_DEI_LAVORI = { prova: "prova di stampa", stato: "stato", comanda: "comanda", chiamata: "biglietto del turno" };
+
 const TIPI = [
   { value: "registratore_fiscale", label: "Registratore telematico" },
   { value: "stampante_comande", label: "Stampante delle comande" },
@@ -316,7 +319,7 @@ export default function Stampanti() {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-b58-cream px-3 py-2 text-b58-charcoal"
               >
                 <span className="min-w-0">
-                  {ora(l.creato_il)} · {nomeDi(l.dispositivo_id)} · {l.tipo === "prova" ? "prova di stampa" : "stato"} —{" "}
+                  {ora(l.creato_il)} · {nomeDi(l.dispositivo_id)} · {NOMI_DEI_LAVORI[l.tipo] ?? l.tipo} —{" "}
                   <b>{STATI_LAVORO[l.stato] ?? l.stato}</b>
                   {l.errore_testo && <span className="block text-b58-terracotta-dark-testo">{l.errore_testo}</span>}
                 </span>

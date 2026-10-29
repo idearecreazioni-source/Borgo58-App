@@ -24,7 +24,7 @@ import { eseguiLavoro } from "./esegui.mjs";
 import { gestionale } from "./gestionale.mjs";
 import { senzaControlli } from "./protocolli/testo.mjs";
 
-export const VERSIONE = "0.1.0";
+export const VERSIONE = "0.2.0";
 const CARTELLA = path.dirname(fileURLToPath(import.meta.url));
 
 export const OGNI_QUANTO = {
