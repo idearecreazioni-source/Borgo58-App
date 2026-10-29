@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   if (!chiave) return risposta(401, "Manca la chiave.");
-  if (!LUOGHI[luogo]) return risposta(400, "Questo luogo non lo conosco: i luoghi sono casa e ristorante.");
+  if (!LUOGHI[luogo]) return risposta(400, "Questo luogo non lo conosco: i luoghi sono casa e cantina.");
 
   const supabase = createClient(supabaseUrl, supabaseAnon);
   const { data, error } = await supabase.rpc("luogo_promemoria", { p_chiave: chiave, p_luogo: luogo });

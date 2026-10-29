@@ -115,7 +115,10 @@ export default function TaskForm() {
   //    respinto dal vincolo con un errore che non si capisce (28/10/2026).
   const venuto = useDaVoce((c) => {
     if (isEdit) return;
-    const luogo = String(c?.luogo ?? "").trim().toLowerCase();
+    // «ristorante» è il nome di prima della cantina (28/10/2026): una voce
+    // che lo dice ancora va nello stesso posto.
+    const detto = String(c?.luogo ?? "").trim().toLowerCase();
+    const luogo = detto === "ristorante" ? "cantina" : detto;
     const noto = TASK_LUOGHI.some((l) => l.value === luogo);
     setForm((f) => conCampi(f, { ...c, luogo: noto ? luogo : undefined }, DA_VOCE));
   });
@@ -477,16 +480,19 @@ export default function TaskForm() {
         {/* 🔴 DOVE TE LO RICORDO — 28/10/2026, chiesto da Alessio: «quando
             arrivo a casa ricordami di pesare la mamma». Arrivando in quel
             posto il telefono lo mostra in una notifica, finché non lo
-            spunti (`/agenda/luoghi` spiega come si prepara il telefono). */}
+            spunti (`/agenda/luoghi` spiega come si prepara il telefono).
+            ⚠️ NIENTE «DA NESSUNA PARTE» (28/10/2026, Alessio: «trovo inutile
+            il tasto "da nessuna parte" preselezionato»): di partenza nessun
+            luogo è acceso, e toccare di nuovo quello acceso lo spegne. */}
         <div role="group" aria-labelledby="titolo-luogo" data-scelta-luogo>
           <p id="titolo-luogo" className={labelClass}>Ricordamelo quando arrivo</p>
           <div className="flex flex-wrap gap-2">
-            {[{ value: "", label: "Da nessuna parte" }, ...TASK_LUOGHI].map((l) => (
+            {TASK_LUOGHI.map((l) => (
               <button
-                key={l.value || "nessuno"}
+                key={l.value}
                 type="button"
                 aria-pressed={form.luogo === l.value}
-                onClick={() => setForm((f) => ({ ...f, luogo: l.value }))}
+                onClick={() => setForm((f) => ({ ...f, luogo: f.luogo === l.value ? "" : l.value }))}
                 className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
                   form.luogo === l.value
                     ? "bg-b58-azione text-b58-sul-colore"

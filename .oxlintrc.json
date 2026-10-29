@@ -25,6 +25,7 @@
     {
       "files": [
         "scripts/**",
+        "ponte/**",
         "*.config.js",
         "tests/**"
       ],

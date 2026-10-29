@@ -47,8 +47,12 @@ beforeEach(() => {
 describe("il luogo nella scheda dell'impegno", () => {
   it("🔴 «a casa» arriva nel salvataggio; senza toccare niente il luogo è vuoto", async () => {
     mostra("/agenda/nuovo");
-    const nessuno = screen.getByRole("button", { name: "Da nessuna parte" });
-    expect(nessuno.getAttribute("aria-pressed")).toBe("true");
+    // 28/10/2026: niente più «Da nessuna parte» — di partenza nessun luogo
+    // è acceso, e ci sono solo i due luoghi.
+    expect(screen.queryByRole("button", { name: "Da nessuna parte" })).toBeNull();
+    for (const nome of ["a casa", "in cantina"]) {
+      expect(screen.getByRole("button", { name: nome }).getAttribute("aria-pressed")).toBe("false");
+    }
 
     fireEvent.change(screen.getByText("Titolo").parentElement.querySelector("input"), {
       target: { value: "Pesare la mamma" },
@@ -61,7 +65,7 @@ describe("il luogo nella scheda dell'impegno", () => {
     expect(finte.createTask.mock.calls[0][0]).toMatchObject({ title: "Pesare la mamma", luogo: "casa" });
   });
 
-  it("un impegno del ristorante si riapre col ristorante acceso", async () => {
+  it("un impegno della cantina si riapre con la cantina accesa", async () => {
     finte.getTask.mockResolvedValue({
       id: "t-1",
       title: "Chiamare il fornitore",
@@ -76,10 +80,26 @@ describe("il luogo nella scheda dell'impegno", () => {
       visibile_staff: false,
       preferito: false,
       origine_modulo: null,
-      luogo: "ristorante",
+      luogo: "cantina",
     });
     mostra("/agenda/t-1");
-    const bottone = await screen.findByRole("button", { name: "al ristorante" });
+    const bottone = await screen.findByRole("button", { name: "in cantina" });
     expect(bottone.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("toccare di nuovo il luogo acceso lo spegne, e si salva senza luogo", async () => {
+    mostra("/agenda/nuovo");
+    fireEvent.change(screen.getByText("Titolo").parentElement.querySelector("input"), {
+      target: { value: "Niente luogo" },
+    });
+    const cantina = screen.getByRole("button", { name: "in cantina" });
+    await act(async () => fireEvent.click(cantina));
+    expect(cantina.getAttribute("aria-pressed")).toBe("true");
+    await act(async () => fireEvent.click(cantina));
+    expect(cantina.getAttribute("aria-pressed")).toBe("false");
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Crea task" })));
+    await waitFor(() => expect(finte.createTask).toHaveBeenCalled());
+    expect(finte.createTask.mock.calls[0][0]).toMatchObject({ title: "Niente luogo", luogo: null });
   });
 });
