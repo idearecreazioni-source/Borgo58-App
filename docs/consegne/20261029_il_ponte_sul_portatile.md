@@ -99,7 +99,7 @@ La prova generale girava su Prova mentre partivano le prove di slave dopo l'unio
   - un tablet.
 - **Dove vanno le due TM non è ancora deciso.** La guida non lo scrive.
 - **Con una TM sola** la guida fa provare la stampante su «Cucina» e poi su «Bar». Oggi però la prova di stampa va dritta all'apparecchio scelto, quindi questo controlla solo che l'impostazione si salvi e che la stampante risponda. Che i biglietti vadano a destinazione per reparto si vede col passo delle comande dalla coda.
-- **Il giro del tablet** (una comanda che esce dalla TM) **si fa più avanti**: oggi `lavori_stampa.tipo` ammette solo `prova` e `stato`. È il passo 2 della consegna di #266.
+- **Il giro del tablet** (una comanda che esce dalla TM) Alessio lo vuole **provare al collaudo**. Oggi `lavori_stampa.tipo` ammette solo `prova` e `stato`, quindi il passo 2 della consegna di #266 (le comande dalla coda) va costruito prima. Il piano è stato mandato ad Alessio, e si costruisce dopo il suo sì. La guida ne tiene il posto, al punto 9 di C3.
 
 ## Per dopo
 - Se il fornitore dà porte diverse da 9100 o da 80/443/8008/8043, si allargano insieme il vincolo `dispositivo_porta_del_protocollo` e `ponte/sicurezza.mjs`: è una migrazione.

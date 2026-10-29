@@ -212,7 +212,7 @@ Il gestionale e il ponte accettano **solo** questi apparecchi. È voluto, perch�
 
    ⚠️ Oggi la prova di stampa va **dritta all'apparecchio** che hai scelto. Così si controlla che la stampante risponde con tutte e due le impostazioni e che il cambio si salva. Che una comanda di cucina finisca sulla stampante di cucina e una del bar su quella del bar si potrà vedere solo col passo delle comande (punto 9).
 8. ⚠️ **Il registratore stampa solo il foglio non fiscale.** Non è uno scontrino e non va all'Agenzia delle Entrate. Se il display del registratore resta con un documento aperto, chiedi al fornitore di chiuderlo.
-9. **Il tablet: non ancora.** Per ora il gestionale manda alle stampanti solo la prova di stampa e la lettura dello stato. Le comande vere, prese dal tablet, passeranno dal ponte col passo dopo il collaudo, quando la Cucina smetterà di stampare dal browser. Quindi la prova «una comanda presa dal tablet esce dalla TM» **si fa più avanti**: al collaudo il tablet, se c'è, non serve.
+9. **Il tablet: la prova arriva qui.** Oggi il gestionale manda alle stampanti solo la prova di stampa e la lettura dello stato. Si vuole provare al collaudo anche il giro intero: una comanda presa dal tablet su Prova esce dalla TM, una volta su «Cucina» e una su «Bar». Si potrà fare quando sarà pronta la stampa delle comande dal ponte, che si costruisce **prima** del collaudo. Quando è pronta, la prova si aggiunge a questa tabella.
 10. Per ogni prova che va **diversa** dalla tabella:
     - scrivi a mano quale apparecchio, quale prova e che cosa è uscito (anche niente);
     - **non rifarla dieci volte**: una o due bastano.
