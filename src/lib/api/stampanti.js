@@ -79,3 +79,26 @@ export async function revocaChiavePonte(id) {
   const { error } = await supabase.rpc("revoca_chiave_ponte", { p_id: id });
   if (error) throw error;
 }
+
+// --- La pagina Cucina (29/10/2026) ---
+// ⚠️ Queste due sono per chiunque lavori, non solo per il titolare: lo
+//    staff non legge la coda, ma deve sapere se il foglio è uscito
+//    (migrazione 20261029000001).
+
+/** La stampante attiva della cucina (o null), se il ponte è acceso, e i fogli dei conti aperti nella coda. */
+export async function statoStampaCucina() {
+  const { data, error } = await supabase.rpc("stato_stampa_cucina");
+  if (error) throw error;
+  return data;
+}
+
+/** Rimette in coda un foglio: le sue righe, oppure un biglietto del turno. */
+export async function mandaAllaStampante({ righe = null, chiamata = null, aggiunta = false }) {
+  const { data, error } = await supabase.rpc("manda_alla_stampante", {
+    p_righe: righe,
+    p_chiamata: chiamata,
+    p_aggiunta: aggiunta,
+  });
+  if (error) throw error;
+  return data;
+}

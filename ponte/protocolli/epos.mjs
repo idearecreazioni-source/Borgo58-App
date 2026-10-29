@@ -8,7 +8,7 @@
 //    da confermare il giorno del collaudo: la risposta intera finisce in
 //    `lavori_stampa.esito`.
 
-import { perXml, righeDelLavoro } from "./testo.mjs";
+import { perXml, righeDelLavoro, righeImpaginate, STILI } from "./testo.mjs";
 
 export const PERCORSO = "/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000";
 const SPAZIO = "http://www.epson-pos.com/schemas/2011/03/epos-print";
@@ -23,6 +23,30 @@ export function foglioDiProva(contenuto) {
       righe.map((r) => `<text>${perXml(r)}&#10;</text>`).join("") +
       `<feed line="3"/><cut type="feed"/>`,
   );
+}
+
+/** Il foglio di una comanda, con gli stessi stili di ESC/POS (29/10/2026). */
+export function foglioComanda(contenuto) {
+  let prima = null;
+  const corpo = righeImpaginate(contenuto, 42)
+    .map(({ stile, testo }) => {
+      const s = STILI[stile] ?? STILI.normale;
+      // La riga di stacco prima di ogni turno, come in ESC/POS.
+      const stacco =
+        stile === "turno" && prima !== "turno"
+          ? `<text align="left"/><text width="1" height="1"/><text em="false"/><text>${"-".repeat(42)}&#10;</text>`
+          : "";
+      prima = stile;
+      return (
+        stacco +
+        `<text align="${s.centrato ? "center" : "left"}"/>` +
+        `<text width="${s.doppiaLarghezza ? 2 : 1}" height="${s.doppiaAltezza ? 2 : 1}"/>` +
+        `<text em="${s.grassetto ? "true" : "false"}"/>` +
+        `<text>${perXml(testo)}&#10;</text>`
+      );
+    })
+    .join("");
+  return busta(`${corpo}<text width="1" height="1"/><text em="false"/><feed line="3"/><cut type="feed"/>`);
 }
 
 /** Un documento vuoto: non stampa niente, e la risposta dice come sta. */
