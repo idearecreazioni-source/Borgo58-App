@@ -99,7 +99,8 @@ export const SUPPLIER_CATEGORIES = [
 export const TASK_LUOGHI = [
   // `arrivo`: come si dice nella frase «ricordamelo quando arrivo …».
   { value: "casa", label: "Casa", arrivo: "a casa" },
-  { value: "ristorante", label: "Ristorante", arrivo: "al ristorante" },
+  // ⚠️ Era «ristorante» fino al 28/10/2026: Alessio l'ha chiamata cantina.
+  { value: "cantina", label: "Cantina", arrivo: "in cantina" },
 ];
 
 // LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
