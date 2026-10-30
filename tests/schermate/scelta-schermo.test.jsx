@@ -59,4 +59,17 @@ describe("il piede del menu", () => {
     const esci = screen.getByRole("button", { name: "Esci" });
     expect(link.parentElement).toBe(esci.parentElement);
   });
+
+  it("«Impostazioni» non diventa verde quando è aperta: è vestita come «Esci»", () => {
+    render(
+      <MemoryRouter initialEntries={["/impostazioni"]}>
+        <Sidebar />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole("link", { name: "Impostazioni" });
+    const esci = screen.getByRole("button", { name: "Esci" });
+    expect(link.className).not.toMatch(/bg-b58-azione/);
+    const vestito = (el) => el.className.split(/s+/).filter((c) => /^(bg-|text-b58|hover:)/.test(c)).sort();
+    expect(vestito(link)).toEqual(vestito(esci));
+  });
 });
