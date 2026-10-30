@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
 import {
   contenutoDellaChiave,
+  pretendiProgetto,
   problemiDiProgetto,
   REF_PRODUZIONE,
   REF_PROVA,
@@ -129,4 +131,47 @@ describe("contenutoDellaChiave", () => {
       expect(contenutoDellaChiave(c)).toBeNull();
     }
   });
+});
+
+describe("pretendiProgetto ferma davvero il programma", () => {
+  it("🔴 con credenziali miste esce con codice 1, con tutto coerente non esce", () => {
+    const esci = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("uscita");
+    });
+    const scrivi = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(() =>
+        pretendiProgetto(REF_PRODUZIONE, { ...tuttoProduzione, chiave: servizioDi(REF_PROVA) }, "La prova")
+      ).toThrow("uscita");
+      expect(esci).toHaveBeenCalledWith(1);
+      esci.mockClear();
+      pretendiProgetto(REF_PRODUZIONE, tuttoProduzione, "La prova");
+      expect(esci).not.toHaveBeenCalled();
+    } finally {
+      esci.mockRestore();
+      scrivi.mockRestore();
+    }
+  });
+});
+
+// ⚠️ Il controllo serve solo se gli script lo CHIAMANO, e prima di toccare
+// qualunque cosa: qui si legge il sorgente, senza eseguirlo (eseguirlo
+// vorrebbe dire collegarsi alla produzione).
+describe("i comandi che parlano con la produzione chiamano il controllo per primo", () => {
+  const casi = [
+    ["scripts/backup.mjs", ["mkdirSync(", "strumento(", "createClient("]],
+    ["scripts/deposito-orfani.mjs", ["createClient(", "interroga(", ".remove("]],
+    ["scripts/backup-verifica.mjs", ["interroga(url"]],
+  ];
+  for (const [file, dopo] of casi) {
+    it(file, () => {
+      const testo = readFileSync(file, "utf8");
+      const controllo = testo.search(/pretendiProgetto\(\s*REF_PRODUZIONE/);
+      expect(controllo).toBeGreaterThan(-1);
+      for (const azione of dopo) {
+        const dove = testo.indexOf(azione, testo.indexOf('from "./comune.mjs"'));
+        expect(dove, azione).toBeGreaterThan(controllo);
+      }
+    });
+  }
 });
