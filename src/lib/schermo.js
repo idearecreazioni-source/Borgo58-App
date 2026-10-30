@@ -20,7 +20,8 @@ import { useSyncExternalStore } from "react";
 // ⚠️ LA PRIMA VOLTA la propone il gestionale: un puntatore fine (mouse o
 //    trackpad) su uno schermo da almeno 1024 punti è un computer; un dito
 //    sotto i 768 è un telefono; il resto è un tablet. Poi decide Alessio,
-//    dal piede del menu.
+//    dalla pagina Impostazioni (dal 29/10/2026; prima stava nel piede del
+//    menu e rubava spazio).
 
 export const CHIAVE_SCHERMO = "b58-schermo";
 export const SCELTE_SCHERMO = [
