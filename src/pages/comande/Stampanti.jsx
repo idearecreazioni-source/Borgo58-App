@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { ambienteCorrente } from "../../lib/ambiente";
 import {
@@ -81,6 +81,9 @@ const ora = (t) =>
   t ? new Date(t).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "mai";
 
 export default function Stampanti() {
+  // Si arriva da due porte: la Sala e le Impostazioni (30/10/2026). Il
+  // tasto per tornare riporta da dove si è venuti.
+  const daImpostazioni = useLocation().state?.da === "impostazioni";
   const [apparecchi, setApparecchi] = useState(null);
   const [lavori, setLavori] = useState([]);
   const [chiavi, setChiavi] = useState(null);
@@ -135,8 +138,11 @@ export default function Stampanti() {
   return (
     <div className="testo-sala max-w-3xl mx-auto space-y-6">
       <div>
-        <Link to="/comande" className="tocco-riga inline-flex items-center testo-sala text-b58-azione-testo hover:underline">
-          ← Sala
+        <Link
+          to={daImpostazioni ? "/impostazioni" : "/comande"}
+          className="tocco-riga inline-flex items-center testo-sala text-b58-azione-testo hover:underline"
+        >
+          {daImpostazioni ? "← Impostazioni" : "← Sala"}
         </Link>
         <h1 className="font-display text-2xl text-b58-charcoal mt-1">Stampanti e registratore</h1>
         <p className="testo-sala text-b58-charcoal-soft mt-1">

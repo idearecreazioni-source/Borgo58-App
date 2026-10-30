@@ -1,4 +1,6 @@
 import { useId } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { SCELTE_SCHERMO, useSchermo } from "../lib/schermo";
 
 // LE IMPOSTAZIONI — 29/10/2026, decisione di Alessio dopo aver visto la
@@ -10,6 +12,14 @@ import { SCELTE_SCHERMO, useSchermo } from "../lib/schermo";
 //    cambia anche a metà serata, quindi resta a portata di mano.
 // ⚠️ Per tutti, non solo per il titolare: i tablet della sala li usa lo
 //    staff, ed è lì che la scelta serve.
+//
+// 🔴 DUE PARTI, E NON SI MESCOLANO (30/10/2026, «non sarebbe più corretto
+//    mettere questa sezione in impostazioni?» — sì, con la sua porta):
+//    · «Questo apparecchio» vale solo qui e la sceglie chiunque;
+//    · «Il locale» vale per tutti gli apparecchi e la vede SOLO il
+//      titolare: un indirizzo sbagliato lascia la cucina senza comande.
+//    La pagina delle stampanti resta la sua (`/comande/stampanti`): da qui
+//    si apre, non ci si copia dentro.
 
 function SceltaSchermo() {
   const [scelta, scegli] = useSchermo();
@@ -52,11 +62,44 @@ function SceltaSchermo() {
   );
 }
 
+function IlLocale() {
+  const idTitolo = useId();
+  return (
+    <section
+      aria-labelledby={idTitolo}
+      className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 space-y-3"
+    >
+      <h2 id={idTitolo} className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">
+        Il locale
+      </h2>
+      <p className="testo-sala text-b58-charcoal-soft">
+        Vale per tutti gli apparecchi del ristorante. Lo vedi solo tu.
+      </p>
+      {/* `state`: la pagina delle stampanti torna qui, e non in Sala. */}
+      <Link
+        to="/comande/stampanti"
+        state={{ da: "impostazioni" }}
+        className="tocco-bottone flex items-center justify-between gap-3 rounded-lg px-3 testo-sala text-b58-charcoal ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors"
+      >
+        <span>
+          Stampanti e registratore
+          <span className="block text-b58-charcoal-soft">
+            Gli indirizzi IP e le prove di stampa
+          </span>
+        </span>
+        <span aria-hidden="true">→</span>
+      </Link>
+    </section>
+  );
+}
+
 export default function Impostazioni() {
+  const { isTitolare } = useAuth();
   return (
     <div className="testo-sala max-w-2xl mx-auto space-y-6">
       <h1 className="font-display text-2xl text-b58-charcoal">Impostazioni</h1>
       <SceltaSchermo />
+      {isTitolare && <IlLocale />}
     </div>
   );
 }

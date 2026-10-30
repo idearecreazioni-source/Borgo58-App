@@ -1,17 +1,23 @@
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // LO SCHERMO DI QUESTO APPARECCHIO (29/10/2026, decisione di Alessio del
 // 28/10): si ricorda su questo apparecchio. Dal 29/10 sera sta nella pagina
 // Impostazioni — «Sposta nelle Impostazioni solo la scelta dello schermo,
 // chiaro/scuro resta nel piede del menu».
 
-vi.mock("../../src/context/AuthContext", () => ({ useAuth: () => ({ isTitolare: true, logout: () => {} }) }));
+const auth = vi.hoisted(() => ({ isTitolare: true }));
+vi.mock("../../src/context/AuthContext", () => ({ useAuth: () => ({ isTitolare: auth.isTitolare, logout: () => {} }) }));
 
 import Sidebar from "../../src/components/Sidebar";
 import Impostazioni from "../../src/pages/Impostazioni";
 import { CHIAVE_SCHERMO } from "../../src/lib/schermo";
+
+// Ogni prova parte come titolare, qualunque sia l'ordine in cui girano.
+afterEach(() => {
+  auth.isTitolare = true;
+});
 
 const mostra = (pagina) => render(<MemoryRouter>{pagina}</MemoryRouter>);
 
@@ -71,5 +77,38 @@ describe("il piede del menu", () => {
     expect(link.className).not.toMatch(/bg-b58-azione/);
     const vestito = (el) => el.className.split(/s+/).filter((c) => /^(bg-|text-b58|hover:)/.test(c)).sort();
     expect(vestito(link)).toEqual(vestito(esci));
+  });
+});
+
+describe("«Il locale» nelle Impostazioni", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("il titolare trova le stampanti, e la pagina sa di tornare qui", async () => {
+    // Al posto della pagina vera delle stampanti, una che dice con che
+    // biglietto si è arrivati: è quello che legge il suo tasto «←».
+    function Arrivo() {
+      return <p data-testid="arrivo">{useLocation().state?.da ?? "nessuno"}</p>;
+    }
+    render(
+      <MemoryRouter initialEntries={["/impostazioni"]}>
+        <Routes>
+          <Route path="/impostazioni" element={<Impostazioni />} />
+          <Route path="/comande/stampanti" element={<Arrivo />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const parte = screen.getByRole("region", { name: "Il locale" });
+    const link = within(parte).getByRole("link", { name: /^Stampanti e registratore/ });
+    expect(link.getAttribute("href")).toBe("/comande/stampanti");
+    await act(async () => fireEvent.click(link));
+    expect(screen.getByTestId("arrivo").textContent).toBe("impostazioni");
+  });
+
+  it("🔴 lo staff non vede «Il locale»: un indirizzo sbagliato lascia la cucina senza comande", () => {
+    auth.isTitolare = false;
+    mostra(<Impostazioni />);
+    expect(screen.queryByRole("region", { name: "Il locale" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Stampanti/ })).toBeNull();
+    expect(screen.getByRole("group", { name: "Questo apparecchio" })).toBeTruthy();
   });
 });
