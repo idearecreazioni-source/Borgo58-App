@@ -946,6 +946,56 @@ body {
   }
 }
 
+/* --------------------------------------------------------------------
+   🔴 IL COMPUTER È PIÙ DENSO — 29/10/2026, decisione di Alessio del 28/10
+   --------------------------------------------------------------------
+   «i task sono molto grandi e non mi piace, preferirei delle scritte più
+   piccole e pulite […] su pc praticamente. Su iphone invece sono perfette».
+
+   LA CAUSA, misurata sul banco delle schermate a 1280 punti: una riga
+   dell'Agenda era alta circa 70 punti. Le misure di questo file sono in
+   centimetri veri, pensate per il dito: la spunta 1,2 cm (45 punti su un
+   monitor), la riga 1,05 cm (40), e in più 12 punti sopra e sotto ogni
+   cella. Col mouse ne basta la metà.
+
+   🔴 SOLO COL PROFILO «COMPUTER» (`data-schermo`, scelto per apparecchio:
+      `src/lib/schermo.js`). Telefono, mini tablet e tablet non leggono
+      niente di qui: per loro le regole sono quelle di sempre, e il
+      telefono resta identico per costruzione.
+   ⚠️ SOLO A SCHERMO: la stampa ha le sue misure in punti più giù, e una
+      pagina stampata dal computer deve uscire uguale a quella stampata dal
+      tablet.
+   ⚠️ SOLO DENTRO IL GESTIONALE (`main.contenuto-ampio`) E NEL MENU: le
+      Comande non hanno quella classe, e restano calibrate sul tablet di
+      sala anche se le apre un computer.
+   ⚠️ IN PUNTI FISSI e non in centimetri: col mouse la misura giusta è
+      quella dell'occhio, non quella del dito. Il minimo di un bersaglio del
+      mouse è 24 punti (WCAG 2.2, criterio 2.5.8): qui il più piccolo è 32,
+      che è anche la misura dei pulsantini di oggi (0,85 cm su un monitor),
+      lasciata com'è. */
+@media screen {
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) {
+    font-size: 14px;
+  }
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) .testo-sala-grande {
+    font-size: 14px;
+  }
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) .testo-sala-titolo {
+    font-size: 17px;
+  }
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) :is(.tocco-riga, .tocco-azione, .tocco-scelta) {
+    min-height: 32px;
+  }
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) .tocco-scelta {
+    min-width: 32px;
+  }
+  /* Le celle delle tabelle: 6 punti sopra e sotto invece di 12. */
+  :root[data-schermo="computer"] main.contenuto-ampio table :is(td, th) {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+}
+
 /* 🔴 UNA SCHEDA CHE SI STAMPA È UN DOCUMENTO, NON UN MODULO (22/08/2026).
    Misurato sulla carta: il dossier del dipendente usciva con le caselle di
    testo disegnate e i menu a tendina con la loro freccina — la fotografia di

@@ -40,6 +40,8 @@ import TaskForm from "./pages/agenda/TaskForm";
 //    usa una volta per preparare il telefono, e caricata con tutto il resto
 //    portava il gestionale oltre il tetto di `scripts/peso-pacchetto.mjs`.
 const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
+const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
+const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
@@ -164,6 +166,16 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        {/* Le impostazioni di questo apparecchio: per tutti, perché i tablet
+            della sala li usa lo staff (29/10/2026). */}
+        <Route
+          path="/impostazioni"
+          element={
+            <Suspense fallback={<p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}>
+              <Impostazioni />
+            </Suspense>
+          }
+        />
 
         {/* Ricettario */}
         <Route path="/ricettario" element={<RicettarioHome />} />
@@ -332,6 +344,18 @@ function AppRoutes() {
         <Route path="/comande/bar" element={<Bar />} />
         <Route path="/comande/cucina" element={<Cucina />} />
         <Route path="/comande/scontrini" element={<Scontrini />} />
+        {/* Le stampanti e il registratore: indirizzi e prove, solo del
+            titolare (28/10/2026). */}
+        <Route
+          path="/comande/stampanti"
+          element={
+            <RequireTitolare>
+              <Suspense fallback={<p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}>
+                <Stampanti />
+              </Suspense>
+            </RequireTitolare>
+          }
+        />
         {/* Il vecchio indirizzo resta come reindirizzo: qualche tablet
             potrebbe averlo ancora nei preferiti. */}
         <Route path="/comande/reparti" element={<Navigate to="/comande/cucina" replace />} />

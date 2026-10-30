@@ -13,7 +13,7 @@
 //    otto si dice quante altre ce ne sono, invece di tagliare in silenzio.
 // Separato da index.ts perche' le prove lo leggano senza Deno.
 
-export const LUOGHI: Record<string, string> = { casa: "Casa", ristorante: "Ristorante" };
+export const LUOGHI: Record<string, string> = { casa: "Casa", cantina: "Cantina" };
 
 export const RIGHE_MASSIME = 8;
 export const CARATTERI_TITOLO = 60;
