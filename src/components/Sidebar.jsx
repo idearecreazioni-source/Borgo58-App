@@ -1,4 +1,3 @@
-import { useId } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import Logo from "./Logo";
 import Icon from "./Icon";
@@ -6,11 +5,13 @@ import { MODULES } from "../data/modules";
 import { useAuth } from "../context/AuthContext";
 import { INDIRIZZO_MEMO, statoVersoMemo } from "../lib/calcoli/ritornoMemo";
 import { SCELTE_TEMA, useTema } from "../lib/tema";
-import { SCELTE_SCHERMO, useSchermo } from "../lib/schermo";
 
-// Chiaro o scuro (27/10/2026): sta nel piede del menu,
-// accanto a «Esci», perché non c'è una pagina delle impostazioni e qui la
-// si trova da ogni schermata, sul tablet come sul telefono.
+// Chiaro o scuro (27/10/2026): sta nel piede del menu, accanto a «Esci»,
+// perché qui la si trova da ogni schermata e si cambia anche a metà serata.
+// ⚠️ Dal 29/10/2026 la pagina delle impostazioni c'è (`/impostazioni`), ma
+//    Alessio ci ha spostato SOLO lo schermo dell'apparecchio: «chiaro/scuro
+//    resta nel piede del menu». Lo schermo si sceglie una volta sola e fisso
+//    qui rubava spazio.
 function SceltaTema() {
   const [scelta, scegli] = useTema();
   return (
@@ -32,42 +33,6 @@ function SceltaTema() {
             }`}
           >
             {t.etichetta}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Lo schermo di questo apparecchio (29/10/2026): stesso posto e stessa forma
-// della scelta del tema, perché è della stessa famiglia — una preferenza
-// dell'apparecchio, non dell'utente. Il gestionale la propone da sé la
-// prima volta (`src/lib/schermo.js`).
-function SceltaSchermo() {
-  const [scelta, scegli] = useSchermo();
-  // Il menu è montato due volte (telefono e computer): un nome fisso
-  // comparirebbe due volte nella pagina, e il secondo gruppo perderebbe la
-  // sua etichetta (revisione ecc:a11y-architect, 29/10).
-  const idTitolo = useId();
-  return (
-    <div role="group" aria-labelledby={idTitolo} className="mb-3 px-3" data-scelta-schermo>
-      <p id={idTitolo} className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/80 mb-1">
-        Questo apparecchio
-      </p>
-      <div className="flex flex-wrap gap-1">
-        {SCELTE_SCHERMO.map((s) => (
-          <button
-            key={s.valore}
-            type="button"
-            aria-pressed={scelta === s.valore}
-            onClick={() => scegli(s.valore)}
-            className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
-              scelta === s.valore
-                ? "bg-b58-azione text-b58-sul-colore"
-                : "text-b58-charcoal-soft ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark"
-            }`}
-          >
-            {s.etichetta}
           </button>
         ))}
       </div>
@@ -192,16 +157,31 @@ export default function Sidebar({ onNavigate, sopra = null }) {
 
       <div className="px-3 py-4 border-t border-b58-charcoal/10">
         <SceltaTema />
-        <SceltaSchermo />
-        {/* `data-esci`: anche uscire chiude MEMO, quindi a microfono acceso
-            il telaio chiede prima (12/09/2026). */}
-        <button
-          data-esci=""
-          onClick={logout}
-          className="tocco-bottone w-full text-left flex items-center gap-3 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
-        >
-          Esci
-        </button>
+        {/* Impostazioni ed Esci sulla stessa riga: due voci piccole, che si
+            toccano di rado (29/10/2026). Il link passa dal controllo del
+            microfono del telaio come ogni altra voce del menu. */}
+        <div className="flex gap-1">
+          <NavLink
+            to="/impostazioni"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `tocco-bottone flex-1 min-w-0 flex items-center rounded-lg px-3 testo-sala transition-colors ${
+                isActive ? "bg-b58-azione text-b58-sul-colore" : "text-b58-charcoal-soft hover:bg-b58-cream-dark"
+              }`
+            }
+          >
+            Impostazioni
+          </NavLink>
+          {/* `data-esci`: anche uscire chiude MEMO, quindi a microfono acceso
+              il telaio chiede prima (12/09/2026). */}
+          <button
+            data-esci=""
+            onClick={logout}
+            className="tocco-bottone flex-1 min-w-0 text-left flex items-center rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          >
+            Esci
+          </button>
+        </div>
       </div>
     </div>
   );
