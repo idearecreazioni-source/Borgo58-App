@@ -164,11 +164,10 @@ export default function Sidebar({ onNavigate, sopra = null }) {
           <NavLink
             to="/impostazioni"
             onClick={onNavigate}
-            className={({ isActive }) =>
-              `tocco-bottone flex-1 min-w-0 flex items-center rounded-lg px-3 testo-sala transition-colors ${
-                isActive ? "bg-b58-azione text-b58-sul-colore" : "text-b58-charcoal-soft hover:bg-b58-cream-dark"
-              }`
-            }
+            // ⚠️ Mai verde, nemmeno quando la pagina è aperta: Alessio la
+            //    vuole uguale a «Esci» (30/10/2026). È una voce di servizio,
+            //    non un modulo del menu.
+            className="tocco-bottone flex-1 min-w-0 flex items-center rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
           >
             Impostazioni
           </NavLink>
