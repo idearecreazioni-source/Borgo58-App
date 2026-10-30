@@ -75,7 +75,9 @@ describe("il piede del menu", () => {
     const link = screen.getByRole("link", { name: "Impostazioni" });
     const esci = screen.getByRole("button", { name: "Esci" });
     expect(link.className).not.toMatch(/bg-b58-azione/);
-    const vestito = (el) => el.className.split(/s+/).filter((c) => /^(bg-|text-b58|hover:)/.test(c)).sort();
+    const vestito = (el) => el.className.split(/\s+/).filter((c) => /^(bg-|text-b58|hover:)/.test(c)).sort();
+    // Due liste vuote sarebbero «uguali» e la prova non controllerebbe niente.
+    expect(vestito(esci)).toEqual(["hover:bg-b58-cream-dark", "text-b58-charcoal-soft"]);
     expect(vestito(link)).toEqual(vestito(esci));
   });
 });
