@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { ambienteCorrente } from "../../lib/ambiente";
@@ -90,17 +90,29 @@ export default function Stampanti() {
   const [nuovaChiave, setNuovaChiave] = useState(null);
   const [scheda, setScheda] = useState(null);
   const [errore, setErrore] = useState("");
+  // ⚠️ L'errore di una lettura è separato da quello di un gesto: una lettura
+  // riuscita cancella il primo, ma non deve far sparire dopo pochi secondi il
+  // secondo (es. un «Togli» non riuscito).
+  const [erroreLettura, setErroreLettura] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const dove = ambienteCorrente();
 
+  // ⚠️ Le letture si numerano, come in Cucina: una partita prima e tornata
+  // dopo non deve coprirne una più nuova, né col risultato né con l'errore
+  // (revisione, 1/11/2026).
+  const ultimaLettura = useRef(0);
   const rileggi = useCallback(async () => {
+    const questa = ++ultimaLettura.current;
     try {
       const [a, l, c] = await Promise.all([elencoDispositivi(), ultimiLavori(), chiaviPonte()]);
+      if (questa !== ultimaLettura.current) return; // ne è già partita una più nuova
       setApparecchi(a);
       setLavori(l);
       setChiavi(c);
+      setErroreLettura("");
     } catch (e) {
-      setErrore(e.message);
+      if (questa !== ultimaLettura.current) return;
+      setErroreLettura(e.message);
     }
   }, []);
 
@@ -151,9 +163,9 @@ export default function Stampanti() {
         </p>
       </div>
 
-      {errore && (
+      {(errore || erroreLettura) && (
         <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
-          Errore: {errore}
+          Errore: {errore || erroreLettura}
         </p>
       )}
 

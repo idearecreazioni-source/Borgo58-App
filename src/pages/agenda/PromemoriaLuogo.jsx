@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { TASK_LUOGHI } from "../../lib/constants";
 import { ambienteCorrente } from "../../lib/ambiente";
 import {
@@ -38,13 +39,24 @@ export default function PromemoriaLuogo() {
     rileggi();
   }, []);
 
+  // ⚠️ La chiave si vede una volta sola: un doppio tocco ne creava due e la
+  // prima andava persa. Il ref ferma anche il secondo tocco arrivato prima
+  // che lo schermo si ridisegni; lo stato disabilita il tasto.
+  const creando = useRef(false);
+  const [inCreazione, setInCreazione] = useState(false);
   const crea = async () => {
+    if (creando.current) return;
+    creando.current = true;
+    setInCreazione(true);
     setErrore("");
     try {
       setNuova(await creaChiaveLuogo(nome));
       rileggi();
     } catch (e) {
       setErrore(e.message);
+    } finally {
+      creando.current = false;
+      setInCreazione(false);
     }
   };
 
@@ -107,7 +119,8 @@ export default function PromemoriaLuogo() {
           <button
             type="button"
             onClick={crea}
-            className="tocco-riga rounded-lg bg-b58-azione hover:bg-b58-azione-dark px-4 testo-sala font-medium text-b58-sul-colore"
+            disabled={inCreazione}
+            className="tocco-riga rounded-lg bg-b58-azione hover:bg-b58-azione-dark px-4 testo-sala font-medium text-b58-sul-colore disabled:opacity-50"
           >
             Crea una chiave
           </button>
@@ -123,13 +136,13 @@ export default function PromemoriaLuogo() {
                 <span>
                   {c.nome} — {c.usi === 0 ? "mai usata" : `usata ${c.usi} volte`}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => togli(c.id)}
-                  className="tocco-riga rounded-lg px-3 text-b58-terracotta-dark-testo"
-                >
-                  Togli
-                </button>
+                <ConfermaDistruttiva
+                  etichetta="Togli"
+                  cosaSparisce={`la chiave «${c.nome}»: il telefono che la usa smette di funzionare`}
+                  etichettaConferma="Sì, togli"
+                  disabilitato={inCreazione}
+                  onConferma={() => togli(c.id)}
+                />
               </li>
             ))}
           </ul>
