@@ -80,14 +80,14 @@ export async function revocaChiavePonte(id) {
   if (error) throw error;
 }
 
-// --- La pagina Cucina (29/10/2026) ---
+// --- Le pagine Cucina e Bar (29/10 e 31/10/2026) ---
 // ⚠️ Queste due sono per chiunque lavori, non solo per il titolare: lo
 //    staff non legge la coda, ma deve sapere se il foglio è uscito
-//    (migrazione 20261029000001).
+//    (migrazioni 20261029000001 e 20261031000001).
 
-/** La stampante attiva della cucina (o null), se il ponte è acceso, e i fogli dei conti aperti nella coda. */
-export async function statoStampaCucina() {
-  const { data, error } = await supabase.rpc("stato_stampa_cucina");
+/** La stampante attiva del reparto («cucina» o «bar», o null), se il ponte è acceso, e i fogli dei conti aperti nella coda. */
+export async function statoStampa(reparto) {
+  const { data, error } = await supabase.rpc("stato_stampa", { p_reparto: reparto });
   if (error) throw error;
   return data;
 }

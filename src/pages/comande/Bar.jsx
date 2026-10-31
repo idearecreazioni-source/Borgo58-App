@@ -14,6 +14,10 @@ import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
 import Didascalia from "../../components/Didascalia";
 import Scorciatoia from "../../components/Scorciatoia";
+import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
+import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
+import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
+import { AvvisiDellaStampante, InCoda } from "./StampaInCoda";
 
 // Schermata BAR — tablet 11" in orizzontale, su supporto fisso (§3.2.1).
 //
@@ -25,7 +29,16 @@ import Scorciatoia from "../../components/Scorciatoia";
 //
 // Il ticket di carta esce comunque dalla stampante del bar: questo schermo
 // serve al colpo d'occhio e a segnare "evaso", non a sostituirlo.
+//
+// 🔴 DAL 31/10/2026 IL BAR SA SE IL SUO FOGLIO È USCITO (controllo finale
+// del 30/10, A3). Se in «Stampanti» c'è una stampante attiva per il bar,
+// sotto ogni ticket da preparare c'è lo stesso riquadro della Cucina (in
+// coda, uscito, non uscito, incerto) e in testa gli stessi avvisi rossi.
+// Prima un foglio che non usciva non lo vedeva nessuno.
+// ⚠️ Niente «Stampa da qui» e niente «È uscito»: al bar il ticket si legge
+//    da questo schermo, ed «Evaso» vuol dire preparato, non stampato.
 const POLL_MS = 10000;
+const POLL_CON_STAMPANTE_MS = 4000;
 
 export default function Bar() {
   const [tickets, setTickets] = useState([]);
@@ -34,6 +47,10 @@ export default function Bar() {
   const [order, setOrder] = useState(null);
   const [mode, setMode] = useState(null); // "precon" | "close"
   const [error, setError] = useState("");
+  const [coda, setCoda] = useState(null);
+  const [codaNonLetta, setCodaNonLetta] = useState(false);
+  const [mandando, setMandando] = useState(() => new Set());
+  const [erroreTasto, setErroreTasto] = useState("");
 
   // ⚠️ Quanti salvataggi sono in volo adesso. Finché è > 0 il ricarico
   // periodico NON applica quello che legge: il database non ha ancora
@@ -50,23 +67,62 @@ export default function Bar() {
     }
   };
 
-  const load = () =>
-    Promise.all([listRepartoTickets("bar"), listOpenOrders()])
-      .then(([t, o]) => {
+  // ⚠️ Le letture si numerano, come in Cucina: una partita prima di
+  // «Riprova» e tornata dopo riporterebbe il ticket a «non uscito».
+  const ultimaLettura = useRef(0);
+  const load = () => {
+    const questa = ++ultimaLettura.current;
+    return Promise.all([
+      listRepartoTickets("bar"),
+      listOpenOrders(),
+      // La coda è un di più: se non risponde, i ticket si vedono lo stesso.
+      statoStampa("bar").catch(() => NON_LETTO),
+    ])
+      .then(([t, o, q]) => {
         if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
+        if (questa !== ultimaLettura.current) return; // ne è già partita una più nuova
         setTickets(t);
         setOpenOrders(o);
+        if (nonLetto(q)) setCodaNonLetta(true);
+        else {
+          setCoda(q);
+          setCodaNonLetta(false);
+        }
         setError("");
       })
       // Un errore qui non va ingoiato: uno schermo vuoto per un problema di
       // rete e' indistinguibile da un bar senza ordini.
       .catch((e) => setError(e.message));
+  };
+
+  const stampante = coda?.stampante ?? null;
+  const pontePronto = Boolean(coda?.ponte_acceso);
+  const conStampante = Boolean(stampante);
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, POLL_MS);
+    const interval = setInterval(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
     return () => clearInterval(interval);
-  }, []);
+  }, [conStampante]);
+
+  // «Riprova», «Ristampa», «Mandalo alla stampante»: il ticket di nuovo in
+  // coda, al posto di quello fallito o incerto. Solo a un tocco.
+  const manda = async (g) => {
+    setMandando((m) => new Set(m).add(g.key));
+    setErroreTasto("");
+    try {
+      await mandaAllaStampante({ righe: g.items.map((i) => i.id) });
+      await load();
+    } catch (e) {
+      setErroreTasto(e.message);
+    } finally {
+      setMandando((m) => {
+        const n = new Set(m);
+        n.delete(g.key);
+        return n;
+      });
+    }
+  };
 
   // 🔴 IL PREZZO DEL COPERTO NON SI DA' PER ZERO (notte del 28/10, dalla
   //    revisione): se questa lettura falliva, il giro successivo cancellava
@@ -184,6 +240,14 @@ export default function Bar() {
           {i.note && <div className="testo-sala italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
         </div>
       ))}
+      {stampante && !evaso && (
+        <InCoda
+          come={lavoroDelFoglio(g, coda?.lavori)}
+          pontePronto={pontePronto}
+          occupato={mandando.has(g.key)}
+          onManda={() => manda(g)}
+        />
+      )}
       {/* ⚠️ NIENTE `disabled`: un pulsante che si spegne per trecento
           millisecondi, al banco, si legge «non ha preso» — e la mano
           tocca una seconda volta, che qui vuol dire riaprire un ticket
@@ -229,6 +293,13 @@ export default function Bar() {
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
+      <AvvisiDellaStampante
+        stampante={stampante}
+        pontePronto={pontePronto}
+        codaNonLetta={codaNonLetta}
+        erroreTasto={erroreTasto}
+        senzaPonte="Leggi i ticket da questo schermo."
+      />
       {copertoNonLetto && (
         <p role="alert" className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
           Non riesco a leggere il prezzo del coperto ({copertoNonLetto}): i totali sono senza coperto e i conti non si chiudono finché non lo leggo. Riprovo da solo.
