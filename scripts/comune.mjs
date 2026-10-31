@@ -202,6 +202,137 @@ export function soloProva(url) {
 }
 
 /**
+ * 🔴 UN PROGETTO SOLO PER COMANDO (30/10/2026). Un comando che usa insieme
+ * la stringa del database, l'indirizzo dell'API e la chiave di servizio
+ * deve trovarle TUTTE del progetto che si aspetta. Il difetto che chiude:
+ * `npm run backup` leggeva DB_URL_PRODUZIONE senza guardarla, e per i
+ * documenti metteva insieme VITE_SUPABASE_URL (che in sviluppo puo'
+ * puntare a Prova) con SERVICE_ROLE_PRODUZIONE — un indirizzo e una chiave
+ * di due progetti diversi. `npm run deposito:orfani`, che CANCELLA, non
+ * guardava niente.
+ *
+ * ⚠️ La parte che DECIDE e' pura, come `backupTroppoVecchio`: si prova a
+ * tavolino senza toccare nessun database. Restituisce cosa non torna,
+ * vuoto se e' tutto a posto. Si controlla cio' che viene passato: chi non
+ * usa la chiave non la passa.
+ *
+ * @param {string} ref il progetto atteso
+ * @param {{dbUrl?: string, apiUrl?: string, chiave?: string}} parti
+ * @returns {string[]}
+ */
+export function problemiDiProgetto(ref, { dbUrl, apiUrl, chiave } = {}) {
+  const problemi = [];
+  if (dbUrl !== undefined) {
+    // ⚠️ Si guarda CHI si collega e DOVE, non se il riferimento compare da
+    //    qualche parte: dentro la password o i parametri non conta niente
+    //    (revisione ecc:security-reviewer, 30/10). Pooler: l'utente e'
+    //    `postgres.<ref>`; collegamento diretto: l'host e' `db.<ref>.supabase.co`.
+    let utente = null;
+    let host = null;
+    try {
+      const u = new URL(String(dbUrl));
+      utente = decodeURIComponent(u.username);
+      host = u.hostname;
+    } catch {
+      // restano null: una stringa illeggibile e' un rifiuto
+    }
+    if (utente !== `postgres.${ref}` && host !== `db.${ref}.supabase.co`) {
+      problemi.push(`La stringa del database non e' quella del progetto ${ref}.`);
+    }
+  }
+  if (apiUrl !== undefined) {
+    let indirizzo = null;
+    try {
+      indirizzo = new URL(String(apiUrl));
+    } catch {
+      // resta null: un indirizzo illeggibile e' un rifiuto, non un via libera
+    }
+    if (indirizzo?.protocol !== "https:" || indirizzo.host !== `${ref}.supabase.co`) {
+      problemi.push(`L'indirizzo dell'API non e' quello del progetto ${ref}.`);
+    }
+  }
+  if (chiave !== undefined) {
+    const dentro = contenutoDellaChiave(chiave);
+    if (!dentro) {
+      // ⚠️ Le chiavi nuove (`sb_secret_…`) non dicono di che progetto sono:
+      //    non si possono controllare, quindi non si accettano.
+      problemi.push("La chiave di servizio non dice a quale progetto appartiene: serve la service_role in forma eyJ….");
+    } else if (dentro.ref !== ref) {
+      problemi.push(`La chiave di servizio e' di un altro progetto, non di ${ref}.`);
+    } else if (dentro.role !== "service_role") {
+      problemi.push("La chiave non e' quella di servizio (service_role).");
+    }
+  }
+  return problemi;
+}
+
+/**
+ * Il contenuto di una chiave Supabase in forma JWT, o null se non lo e'.
+ *
+ * ⚠️ La firma NON si verifica, apposta: questo e' un controllo contro gli
+ * errori di copia-incolla, non contro chi falsifica. Verificarla
+ * chiederebbe il segreto JWT del progetto nel .env; e una chiave finta
+ * il server la rifiuta comunque.
+ */
+export function contenutoDellaChiave(chiave) {
+  const pezzi = String(chiave ?? "").split(".");
+  if (pezzi.length !== 3 || !pezzi[0].startsWith("eyJ")) return null;
+  try {
+    const dentro = JSON.parse(Buffer.from(pezzi[1], "base64url").toString("utf8"));
+    return dentro && typeof dentro === "object" ? dentro : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * L'indirizzo dell'API di un progetto, ricavato dal riferimento e non da
+ * .env: VITE_SUPABASE_URL serve al gestionale e puo' puntare a Prova.
+ */
+export const urlApiDi = (ref) => `https://${ref}.supabase.co`;
+
+/** Come `problemiDiProgetto`, ma ferma il programma se qualcosa non torna. */
+export function pretendiProgetto(ref, parti, nome) {
+  const problemi = problemiDiProgetto(ref, parti);
+  if (problemi.length > 0) {
+    fermati(
+      `FERMO: ${nome} non parte: le credenziali in .env non sono tutte del progetto ${ref}.`,
+      ...problemi,
+      "Non ho letto, scritto ne' cancellato niente. Controlla .env."
+    );
+  }
+}
+
+/**
+ * Tutti i file di una cartella del deposito, sottocartelle comprese.
+ *
+ * 🔴 A PAGINE (31/10/2026). Il deposito restituisce al massimo `pagina`
+ * voci per richiesta: fino a oggi il backup ne chiedeva una sola, e una
+ * cartella con piu' di 1000 file finiva nella copia **a meta', senza che
+ * nessuno lo dicesse**. Si chiede la pagina dopo finche' ne arriva una
+ * corta.
+ *
+ * `leggiPagina(prefisso, { limit, offset })` e' la `list` del deposito
+ * (`sb.storage.from(bucket).list`): passarla da fuori permette di provare
+ * il conto senza un deposito vero. Se una lettura fallisce si LANCIA un
+ * errore: un elenco corto e' esattamente il guasto da evitare.
+ */
+export async function elencaTuttoIlDeposito(leggiPagina, prefisso = "", { pagina = 1000 } = {}) {
+  const trovati = [];
+  for (let offset = 0; ; offset += pagina) {
+    const { data, error } = await leggiPagina(prefisso, { limit: pagina, offset });
+    if (error) throw new Error(`Non riesco a elencare ${prefisso || "(radice)"}: ${error.message}`);
+    for (const voce of data) {
+      const completo = prefisso ? `${prefisso}/${voce.name}` : voce.name;
+      // Una "cartella" non ha metadati: si riconosce cosi'.
+      if (voce.id === null) trovati.push(...(await elencaTuttoIlDeposito(leggiPagina, completo, { pagina })));
+      else trovati.push(completo);
+    }
+    if (data.length < pagina) return trovati;
+  }
+}
+
+/**
  * Trova pg_dump/psql: prima nel PATH, poi nelle cartelle standard di
  * PostgreSQL su Windows (l'installazione non aggiunge il PATH da sola).
  */

@@ -19,13 +19,24 @@
 // «i file che non compaiono in un elenco che non sono riuscito a leggere»
 // è il modo di perdere un documento vero.
 import { createClient } from "@supabase/supabase-js";
-import { fermati, interroga, leggiConfigurazione, obbligatorio, titolo } from "./comune.mjs";
+import {
+  fermati,
+  interroga,
+  leggiConfigurazione,
+  obbligatorio,
+  pretendiProgetto,
+  REF_PRODUZIONE,
+  titolo,
+  urlApiDi,
+} from "./comune.mjs";
 
 const BUCKET = "documents";
 const conferma = process.argv.includes("--conferma");
 
 const config = leggiConfigurazione();
-const url = obbligatorio(config, "VITE_SUPABASE_URL", "docs/BACKUP.md §2");
+// ⚠️ L'indirizzo si ricava dal progetto, non da VITE_SUPABASE_URL: quella
+//    serve al gestionale e puo' puntare a Prova (30/10/2026).
+const url = urlApiDi(REF_PRODUZIONE);
 const service = obbligatorio(config, "SERVICE_ROLE_PRODUZIONE", "docs/BACKUP.md §2");
 // ⚠️ L'archivio si legge da psql e NON con la chiave di servizio, e la
 // ragione è una misura del 20/08: in questo progetto `service_role` **non ha
@@ -33,6 +44,11 @@ const service = obbligatorio(config, "SERVICE_ROLE_PRODUZIONE", "docs/BACKUP.md 
 // `authenticated`, e sopra c'è la RLS. È una postura difensiva voluta, non
 // un guasto: chi scrive uno script che legge dati passa da qui.
 const dbUrl = obbligatorio(config, "DB_URL_PRODUZIONE", "docs/BACKUP.md §2");
+// 🔴 Questo comando CANCELLA: prima di leggere qualunque elenco, la chiave,
+//    l'indirizzo e la stringa del database devono essere tutti della
+//    produzione. Un elenco letto da un progetto e una cancellazione fatta
+//    su un altro toglierebbero file veri (vedi problemiDiProgetto).
+pretendiProgetto(REF_PRODUZIONE, { dbUrl, apiUrl: url, chiave: service }, "Il controllo del deposito");
 
 const sb = createClient(url, service, { auth: { persistSession: false } });
 
@@ -64,9 +80,16 @@ const righe = interroga(
   // 🔴 E LE IMMAGINI DELLE SEGNALAZIONI (28/10/2026, 20261028000004): per
   //    la stessa ragione, senza questa riga `--conferma` toglierebbe
   //    l'immagine di un difetto ancora da correggere.
+  // 🔴 E GLI ALLEGATI DELLA POSTA (31/10/2026): `posta-in-arrivo` li salva
+  //    nello stesso deposito (`documents/posta/…`) e li nomina solo in
+  //    `posta_allegati`. Senza questa riga `--conferma` toglierebbe gli
+  //    allegati delle e-mail ancora da archiviare. Una prova
+  //    (`tests/unita/deposito-orfani.test.js`) controlla che ogni colonna
+  //    `*_path` delle migrazioni sia nominata qui.
   "select storage_path from documents where storage_path is not null " +
     "union select foto_path from spese_da_collocare where foto_path is not null " +
-    "union select immagine_path from segnalazioni where immagine_path is not null;"
+    "union select immagine_path from segnalazioni where immagine_path is not null " +
+    "union select storage_path from posta_allegati where storage_path is not null;"
 )
   .split(String.fromCharCode(10))
   .map((r) => r.trim())
@@ -74,6 +97,17 @@ const righe = interroga(
 
 const nominati = new Set(righe);
 const orfani = files.filter((f) => !nominati.has(f));
+
+// ⚠️ Un deposito pieno che nessuno nomina non è «tutto orfano»: è una
+// lettura sbagliata (un altro database, una tabella svuotata per errore).
+// Ci si ferma invece di proporre di togliere tutto.
+if (files.length > 0 && nominati.size === 0) {
+  fermati(
+    `Il deposito ha ${files.length} file ma nessuna riga del database ne nomina uno.`,
+    "Non e' credibile: mi fermo invece di considerarli tutti orfani.",
+    "Non ho tolto niente."
+  );
+}
 
 console.log(`  file nel deposito: ${files.length}`);
 console.log(`  documenti che ne nominano uno: ${nominati.size}`);

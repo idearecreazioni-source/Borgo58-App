@@ -36,6 +36,9 @@ applyPxCm();
 document.documentElement.setAttribute(
   "data-schermo",
   new URLSearchParams(location.search).get("schermo") ??
+    // La scelta salvata, come nel gestionale (31/10/2026): la forma
+    // «computer 900 calibrato» la scrive prima che la pagina parta.
+    localStorage.getItem("b58-schermo") ??
     (innerWidth >= 1024 ? "computer" : innerWidth < 768 ? "telefono" : "tablet"),
 );
 
@@ -235,6 +238,25 @@ const PAGINE = {
 };
 
 const nome = new URLSearchParams(location.search).get("pagina") ?? "dashboard";
+
+// 🔴 LA BARRA IN ALTO E IL MENU A CASSETTO (31/10/2026, M14): il banco non
+//    monta il Layout vero (chiede login e quaderno dei difetti), quindi ne
+//    rifà i due pezzi con le stesse classi: quelle che contano per il
+//    profilo «Computer». Solo a finestra stretta col profilo «Computer»:
+//    sulle altre forme il banco resta quello di sempre.
+const conTelaio = document.documentElement.dataset.schermo === "computer" && innerWidth < 1024;
+const telaio = conTelaio && (
+  <>
+    <header className="telaio-del-gestionale lg:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
+      <span className="tocco-bottone inline-flex items-center rounded-lg pr-2 testo-sala">Borgo 58</span>
+      <button type="button" aria-label="Apri menu" className="tocco-bottone inline-flex items-center justify-center rounded-lg">☰</button>
+    </header>
+    <div className="telaio-del-gestionale lg:hidden fixed bottom-0 right-0 w-72 bg-b58-parchment shadow-xl" data-cassetto>
+      <a className="tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala">Agenda</a>
+      <a className="tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala">Prima nota</a>
+    </div>
+  </>
+);
 window.__DATI_FINTI = DATI[nome] ?? {};
 const [percorso, schermata] = PAGINE[nome] ?? PAGINE.dashboard;
 
@@ -243,6 +265,7 @@ createRoot(document.getElementById("root")).render(
     <div className="min-h-screen bg-b58-cream flex">
       <aside className="hidden lg:block lg:w-64 xl:w-80 shrink-0 border-r border-b58-charcoal/10" />
       <div className="flex-1 min-w-0 flex flex-col">
+        {telaio}
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8 contenuto-ampio" data-pagina={nome}>
           <Routes>
             <Route path={percorso} element={schermata} />

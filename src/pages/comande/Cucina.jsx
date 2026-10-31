@@ -10,7 +10,8 @@ import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 import Scorciatoia from "../../components/Scorciatoia";
-import { mandaAllaStampante, statoStampaCucina } from "../../lib/api/stampanti";
+import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
+import { AvvisiDellaStampante, InCoda } from "./StampaInCoda";
 import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
 import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 
@@ -47,7 +48,7 @@ import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 // foglio dice se è in coda, uscito, non uscito o incerto. «Stampa da qui»
 // resta, ed è la strada quando il ponte è spento: quello che si stampa da
 // qui esce dalla coda (il database lo toglie), così non esce due volte.
-// ⚠️ «Non si sa se è uscito» non si ristampa mai da solo: decide chi
+// ⚠️ Un foglio incerto non si ristampa mai da solo: decide chi
 // guarda la stampante («È uscito» o «Ristampa»).
 // ⚠️ Senza stampante la pagina è quella di prima, pulsante per pulsante.
 const POLL_MS = 10000;
@@ -96,7 +97,7 @@ export default function Cucina() {
       // stesso. E una lettura storta NON cancella quello che si sapeva della
       // stampante: la pagina non deve saltare fra «con stampante» e
       // «senza» a ogni guasto di rete. Lo dice, e tiene l'ultimo stato letto.
-      statoStampaCucina().catch(() => NON_LETTO),
+      statoStampa("cucina").catch(() => NON_LETTO),
     ])
       .then(([r, c, q]) => {
         if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
@@ -128,7 +129,6 @@ export default function Cucina() {
   }, [conStampante]);
 
   const pontePronto = Boolean(coda?.ponte_acceso);
-  const stampanteFerma = ["carta_finita", "coperchio_aperto", "non_risponde", "errore"].includes(stampante?.stato);
 
   // «Riprova», «Ristampa», «Mandalo alla stampante»: il foglio di nuovo in
   // coda, al posto di quello fallito o incerto.
@@ -357,40 +357,13 @@ export default function Cucina() {
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
-      {conStampante && codaNonLetta && (
-        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
-          Non riesco a leggere la coda della stampante: quello che vedi sotto ogni foglio potrebbe essere vecchio.
-        </p>
-      )}
-      {erroreTasto && (
-        <p
-          role="alert"
-          className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden"
-        >
-          Non l'ho rimandato alla stampante: {erroreTasto}
-        </p>
-      )}
-
-      {/* 🔴 IL PONTE SPENTO SI VEDE (piano del 29/10): dopo 90 secondi senza
-          il suo «ci sono» le comande restano in coda e non escono. Si
-          stampa da qui, e quello che esce da qui lascia la coda. */}
-      {conStampante && !pontePronto && (
-        <p
-          role="alert"
-          className="testo-sala-grande font-semibold text-b58-sul-colore bg-b58-terracotta-dark rounded-lg px-3 py-2.5 mb-3 print:hidden"
-        >
-          Il ponte è spento o senza rete: le comande restano in coda e non escono. Stampale da qui con «Stampa
-          da qui».
-        </p>
-      )}
-      {conStampante && pontePronto && stampanteFerma && (
-        <p
-          role="alert"
-          className="testo-sala font-semibold text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden"
-        >
-          «{stampante.nome}»: {stampante.testo ?? "non risponde"}
-        </p>
-      )}
+      <AvvisiDellaStampante
+        stampante={stampante}
+        pontePronto={pontePronto}
+        codaNonLetta={codaNonLetta}
+        erroreTasto={erroreTasto}
+        senzaPonte="Stampali da qui con «Stampa da qui»."
+      />
 
       {/* 🔴 QUI C'ERA UNA DIDASCALIA (tolta il 22/08): «La cucina lavora di
           carta (§3.2.1)… Quando arriverà il mini-PC, la stampa partirà da
@@ -477,68 +450,6 @@ export default function Cucina() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// Sotto un foglio da stampare, quando c'è la stampante: come sta nella coda
-// e cosa si può fare. ⚠️ Fuori dal componente della pagina, come deve
-// essere un componente: dentro, React lo rifarebbe nuovo a ogni lettura.
-const BOTTONE_PIENO =
-  "tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala-grande font-semibold disabled:opacity-50";
-const BOTTONE_VUOTO =
-  "tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium disabled:opacity-50";
-
-function InCoda({ come, pontePronto, occupato, onManda, onUscito, onStampaQui }) {
-  const frase = {
-    in_coda: pontePronto ? "In coda: esce fra poco dalla stampante." : "In coda: aspetta il ponte, che è spento.",
-    in_corso: "Sta uscendo dalla stampante…",
-    stampato: "Uscito dalla stampante.",
-    fallito: `Non è uscito${come.errore ? `: ${come.errore}` : "."}`,
-    incerto: "Non si sa se è uscito: guarda la stampante.",
-    fuori: "Non è nella coda della stampante.",
-  }[come.stato];
-  const allarme = ["fallito", "incerto", "fuori"].includes(come.stato);
-  // ⚠️ Mentre la stampante lo sta stampando, «Stampa da qui» lo farebbe
-  //    uscire due volte: si aspetta (al massimo 45 secondi, poi è incerto).
-  const qui = (
-    <button type="button" onClick={onStampaQui} disabled={come.stato === "in_corso"} className={BOTTONE_VUOTO}>
-      <span aria-hidden="true">🖨</span> Stampa da qui
-    </button>
-  );
-  return (
-    <div className="mt-1.5 space-y-1.5 print:hidden">
-      {/* L'annuncio forte solo quando il foglio non è uscito o non si sa:
-          «non è in coda» è anche il caso dei fogli di prima. */}
-      <p
-        role={["fallito", "incerto"].includes(come.stato) ? "alert" : "status"}
-        className={`testo-sala rounded-lg px-3 py-1.5 ${
-          allarme
-            ? "font-semibold text-b58-terracotta-dark-testo bg-b58-terracotta/10"
-            : "text-b58-charcoal-soft bg-b58-cream-dark/60"
-        }`}
-      >
-        {frase}
-        {come.stato === "incerto" && come.errore && <span className="block font-normal">{come.errore}</span>}
-      </p>
-      <div className="flex gap-2">
-        {come.stato === "incerto" && (
-          <>
-            <button type="button" onClick={onUscito} className={BOTTONE_PIENO}>
-              È uscito
-            </button>
-            <button type="button" disabled={occupato} onClick={onManda} className={BOTTONE_VUOTO}>
-              Ristampa
-            </button>
-          </>
-        )}
-        {(come.stato === "fallito" || come.stato === "fuori") && (
-          <button type="button" disabled={occupato} onClick={onManda} className={BOTTONE_PIENO}>
-            {come.stato === "fallito" ? "Riprova sulla stampante" : "Mandalo alla stampante"}
-          </button>
-        )}
-        {qui}
-      </div>
     </div>
   );
 }
