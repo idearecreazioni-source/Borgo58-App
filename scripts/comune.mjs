@@ -304,6 +304,35 @@ export function pretendiProgetto(ref, parti, nome) {
 }
 
 /**
+ * Tutti i file di una cartella del deposito, sottocartelle comprese.
+ *
+ * 🔴 A PAGINE (31/10/2026). Il deposito restituisce al massimo `pagina`
+ * voci per richiesta: fino a oggi il backup ne chiedeva una sola, e una
+ * cartella con piu' di 1000 file finiva nella copia **a meta', senza che
+ * nessuno lo dicesse**. Si chiede la pagina dopo finche' ne arriva una
+ * corta.
+ *
+ * `leggiPagina(prefisso, { limit, offset })` e' la `list` del deposito
+ * (`sb.storage.from(bucket).list`): passarla da fuori permette di provare
+ * il conto senza un deposito vero. Se una lettura fallisce si LANCIA un
+ * errore: un elenco corto e' esattamente il guasto da evitare.
+ */
+export async function elencaTuttoIlDeposito(leggiPagina, prefisso = "", { pagina = 1000 } = {}) {
+  const trovati = [];
+  for (let offset = 0; ; offset += pagina) {
+    const { data, error } = await leggiPagina(prefisso, { limit: pagina, offset });
+    if (error) throw new Error(`Non riesco a elencare ${prefisso || "(radice)"}: ${error.message}`);
+    for (const voce of data) {
+      const completo = prefisso ? `${prefisso}/${voce.name}` : voce.name;
+      // Una "cartella" non ha metadati: si riconosce cosi'.
+      if (voce.id === null) trovati.push(...(await elencaTuttoIlDeposito(leggiPagina, completo, { pagina })));
+      else trovati.push(completo);
+    }
+    if (data.length < pagina) return trovati;
+  }
+}
+
+/**
  * Trova pg_dump/psql: prima nel PATH, poi nelle cartelle standard di
  * PostgreSQL su Windows (l'installazione non aggiunge il PATH da sola).
  */
