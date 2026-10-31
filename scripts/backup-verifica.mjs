@@ -15,6 +15,9 @@
 //      database dichiarava nel momento della copia;
 //   4. e coincide con quello che il database vero dice ADESSO (con
 //      `--adesso`), cosi' si vede anche se la copia e' vecchia.
+// E, per utenti e documenti che non stanno nelle tabelle del gestionale,
+// confronta quanti ce ne sono nella copia con quanti erano dichiarati
+// (`08_accessi_conteggi.txt`, `09_file_conteggi.txt`).
 //
 // ⚠️ COSA NON DIMOSTRA, dichiarato perche' non si scambi per altro: che il
 // file **giri** dentro un database. Per quello serve un ripristino vero, e
@@ -105,6 +108,34 @@ export function righeDiCopy(sql, tabella) {
     quante += 1;
   }
   return quante;
+}
+
+/**
+ * Quanti file ci sono DAVVERO nella cartella `file/` della copia, per
+ * cartella del deposito (il primo livello sotto `file/`). Contati sul
+ * disco, sottocartelle comprese. Una cartella `file/` che non c'e' vale
+ * zero file: e' proprio il caso da far gridare.
+ */
+export function fileNellaCopia(radiceFile) {
+  const per = new Map();
+  if (!existsSync(radiceFile)) return per;
+  const conta = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).reduce(
+      (n, v) => n + (v.isDirectory() ? conta(path.join(dir, v.name)) : 1),
+      0
+    );
+  for (const voce of readdirSync(radiceFile, { withFileTypes: true })) {
+    if (!voce.isDirectory()) continue;
+    const quanti = conta(path.join(radiceFile, voce.name));
+    if (quanti > 0) per.set(voce.name, quanti);
+  }
+  return per;
+}
+
+/** Vero per le copie fatte dal 31/10/2026: il loro LEGGIMI nomina il conteggio dei documenti. */
+export function dichiaraIDocumenti(cartella) {
+  const leggimi = path.join(cartella, "LEGGIMI.txt");
+  return existsSync(leggimi) && readFileSync(leggimi, "utf8").includes("09_file_conteggi.txt");
 }
 
 /** I conteggi dichiarati al momento della copia. */
@@ -240,6 +271,37 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     );
   } else if (existsSync(fUtenti)) {
     console.log("  ⚠️ questa copia non dichiara quanti utenti conteneva: non si puo' controllarli");
+  }
+
+  // --- 3-ter. E I DOCUMENTI, che stanno fuori dal database ------------
+  // 🔴 31/10/2026: fino a oggi la cartella `file/` non la guardava nessuno,
+  // e una copia senza PDF e foto passava questo controllo. Le copie fatte
+  // prima di oggi non hanno `09_file_conteggi.txt`: lo si dice, e non si
+  // finge di averle controllate.
+  const fFile = path.join(cartella, "09_file_conteggi.txt");
+  if (existsSync(fFile)) {
+    const dichiarati = conteggiDichiarati(readFileSync(fFile, "utf8"));
+    const contati = fileNellaCopia(path.join(cartella, "file"));
+    const fuoriFile = differenze(dichiarati, contati);
+    if (fuoriFile.length > 0) {
+      fermati(
+        "I DOCUMENTI nella copia non sono quelli che il database dichiarava.",
+        ...fuoriFile.map((d) => `  ${d.tabella}: nella copia ${d.trovate}, dichiarati ${d.attese}`),
+        "",
+        "Una copia senza tutti i documenti non rimette in piedi l'archivio."
+      );
+    }
+    const totale = [...contati.values()].reduce((a, b) => a + b, 0);
+    console.log(`  documenti: ${totale} file nella copia, come dichiarato`);
+  } else if (dichiaraIDocumenti(cartella)) {
+    // Una copia fatta da oggi in poi che ha perso il suo conteggio: e'
+    // stata toccata dopo, e non si puo' dire che sia intera.
+    fermati(
+      "Nella copia manca 09_file_conteggi.txt, che LEGGIMI.txt dice di aver scritto.",
+      "Non si puo' controllare se i documenti ci sono tutti: rifai npm run backup."
+    );
+  } else {
+    console.log("  ⚠️ questa copia non dichiara quanti documenti conteneva: non si possono controllare");
   }
 
   // --- 4. E il database vero, adesso -----------------------------------

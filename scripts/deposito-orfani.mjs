@@ -80,9 +80,16 @@ const righe = interroga(
   // 🔴 E LE IMMAGINI DELLE SEGNALAZIONI (28/10/2026, 20261028000004): per
   //    la stessa ragione, senza questa riga `--conferma` toglierebbe
   //    l'immagine di un difetto ancora da correggere.
+  // 🔴 E GLI ALLEGATI DELLA POSTA (31/10/2026): `posta-in-arrivo` li salva
+  //    nello stesso deposito (`documents/posta/…`) e li nomina solo in
+  //    `posta_allegati`. Senza questa riga `--conferma` toglierebbe gli
+  //    allegati delle e-mail ancora da archiviare. Una prova
+  //    (`tests/unita/deposito-orfani.test.js`) controlla che ogni colonna
+  //    `*_path` delle migrazioni sia nominata qui.
   "select storage_path from documents where storage_path is not null " +
     "union select foto_path from spese_da_collocare where foto_path is not null " +
-    "union select immagine_path from segnalazioni where immagine_path is not null;"
+    "union select immagine_path from segnalazioni where immagine_path is not null " +
+    "union select storage_path from posta_allegati where storage_path is not null;"
 )
   .split(String.fromCharCode(10))
   .map((r) => r.trim())
@@ -90,6 +97,17 @@ const righe = interroga(
 
 const nominati = new Set(righe);
 const orfani = files.filter((f) => !nominati.has(f));
+
+// ⚠️ Un deposito pieno che nessuno nomina non è «tutto orfano»: è una
+// lettura sbagliata (un altro database, una tabella svuotata per errore).
+// Ci si ferma invece di proporre di togliere tutto.
+if (files.length > 0 && nominati.size === 0) {
+  fermati(
+    `Il deposito ha ${files.length} file ma nessuna riga del database ne nomina uno.`,
+    "Non e' credibile: mi fermo invece di considerarli tutti orfani.",
+    "Non ho tolto niente."
+  );
+}
 
 console.log(`  file nel deposito: ${files.length}`);
 console.log(`  documenti che ne nominano uno: ${nominati.size}`);
