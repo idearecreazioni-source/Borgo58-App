@@ -169,6 +169,14 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261028000005",
     perche: "chiamata dal ponte del mini-PC: prende i lavori di stampa in coda",
   },
+  // ⚠️ La vecchia porta della pagina Cucina (31/10/2026): da oggi Cucina e
+  //    Bar chiamano `stato_stampa(reparto)`. Resta per il gestionale già
+  //    pubblicato, che la chiama finché non arriva la versione nuova; si
+  //    potrà togliere con una migrazione dopo il prossimo rilascio.
+  stato_stampa_cucina: {
+    versione: "20261031000001",
+    perche: "porta del gestionale pubblicato prima del 31/10: Cucina e Bar ora usano stato_stampa(reparto)",
+  },
 };
 
 /**
