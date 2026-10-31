@@ -24,7 +24,7 @@
 // ⚠️ SOLO LETTURA: una `select`, niente altro.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { fermati, strumento } from "./comune.mjs";
+import { fermati, soloProva, strumento } from "./comune.mjs";
 
 const argomenti = process.argv.slice(2);
 const nome = argomenti.find((a) => !a.startsWith("--"));
@@ -47,6 +47,8 @@ if (!riga) {
     "Il modello dei valori attesi è in .env.example."
   );
 }
+// Con --prova si legge solo Prova, ad elenco chiuso (31/10/2026): non Casa.
+if (prova) soloProva(riga[1].trim());
 
 const esito = spawnSync(
   strumento("psql"),

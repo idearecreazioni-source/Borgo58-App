@@ -30,6 +30,7 @@ import {
   interroga,
   titolo,
   REF_PRODUZIONE,
+  soloProva,
   fermati,
 } from "./comune.mjs";
 
@@ -61,9 +62,8 @@ const urlProva = obbligatorio(config, "DB_URL_PROVA", "E' la stringa 'Session po
 if (!urlVero.includes(REF_PRODUZIONE)) {
   fermati("DB_URL_PRODUZIONE non punta al progetto del locale: il confronto non avrebbe senso.");
 }
-if (urlProva.includes(REF_PRODUZIONE)) {
-  fermati("DB_URL_PROVA punta al database VERO. Controlla .env.");
-}
+// Ad elenco chiuso dal 31/10/2026: solo Prova, non Casa o altro.
+soloProva(urlProva);
 
 titolo("Leggo il locale vero e il progetto di prova");
 const vero = conteggi(urlVero);

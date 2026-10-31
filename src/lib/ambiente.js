@@ -23,10 +23,18 @@ export const RIFERIMENTO_PROVA = "bnwqgpuyzmzujxfbtyvs";
  * Che database è, dato il suo indirizzo. Funzione pura: si prova senza
  * bisogno di un browser e senza bisogno di un database.
  */
-export function ambienteDa(url) {
+export function ambienteDa(url, dichiarato = "") {
   const riferimento = String(url ?? "").match(/https?:\/\/([a-z0-9-]+)\.supabase\./i)?.[1] ?? "";
 
   if (!riferimento) {
+    // 🔴 CASA (31/10/2026): la copia personale di Alessio parla con un
+    // Supabase sul suo PC, che non ha un riferimento del cloud. Vale solo se
+    // la costruzione lo DICHIARA: un indirizzo qualsiasi senza dichiarazione
+    // resta sconosciuto. ⚠️ E la dichiarazione non vince mai su un indirizzo
+    // del cloud: «casa» puntata alla produzione resta la produzione.
+    if (dichiarato === "casa" && /^https:\/\//i.test(String(url ?? ""))) {
+      return { riferimento: "", produzione: false, genere: "casa", nome: "Casa, il tuo gestionale personale" };
+    }
     return { riferimento: "", produzione: false, genere: "sconosciuto", nome: "nessun database" };
   }
   if (riferimento === RIFERIMENTO_PRODUZIONE) {
@@ -42,7 +50,7 @@ export function ambienteDa(url) {
 
 /** Quello a cui è collegata QUESTA copia dell'app. */
 export function ambienteCorrente() {
-  return ambienteDa(import.meta.env.VITE_SUPABASE_URL);
+  return ambienteDa(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_AMBIENTE);
 }
 
 // =====================================================================
