@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Stato | Bozza — in attesa di conferma di Alessio |
+| Stato | Fatta il 07/09/2026 (commit `4a7a669c`): «di tasca mia» è sempre la Tasca, e la regola sta in `supabase/functions/ascolta-voce/tasca.ts` |
 | Priorità | Da definire |
 | Origine | Domanda di Alessio sulla dettatura di una spesa personale, 05/09/2026 |
 | Richieste correlate | [`C10`](../RICHIESTE.md) — la Tasca |
