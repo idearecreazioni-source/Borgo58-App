@@ -87,14 +87,23 @@ export function pretendiCasa() {
 }
 
 /**
- * Le porte di Casa pubblicate su TUTTA la rete invece che solo sul PC.
- * 🔴 Il database ha la password di fabbrica `postgres` ed e' superutente:
- * se risponde alla rete di casa, chiunque ci sia sopra puo' leggerlo tutto.
- * Oggi lo ferma solo il firewall di Windows (nessuna regola che lasci
- * entrare Docker). Con `"ip": "127.0.0.1"` nel Docker Engine le porte
- * nascono sul PC soltanto, e questo elenco resta vuoto.
+ * 🔴 CASA RISPONDE SOLO AL PC. Il database ha la password di fabbrica
+ * `postgres` ed e' superutente: se rispondesse alla rete di casa, chiunque
+ * ci sia sopra potrebbe leggerlo tutto.
+ *
+ * ⚠️ Misurato il 31/10: Docker Desktop su Windows pubblica le porte su
+ * 0.0.0.0 anche con `"ip": "127.0.0.1"` nel Docker Engine (un contenitore
+ * di prova appena creato, stesso risultato), e Supabase CLI non ha
+ * un'opzione per l'indirizzo. La chiusura vera e' quindi nel firewall di
+ * Windows: una regola di BLOCCO in entrata sulle porte di Casa, che vince
+ * su qualunque «Consenti» dato a Docker. Il firewall non filtra le
+ * connessioni del PC con se stesso: da qui Casa funziona.
  */
-export function porteAperteAllaRete() {
+export const REGOLA_FIREWALL = "Casa - blocco dalla rete";
+export const PORTE_FIREWALL = "44320-44329";
+
+/** Le porte di Casa pubblicate oltre il PC, come le dice Docker. */
+export function porteOltreIlPC() {
   const aperte = [];
   for (const [contenitore, interna] of [[CONTENITORE, "5432/tcp"], [CONTENITORE_API, "8000/tcp"]]) {
     for (const riga of docker(["port", contenitore, interna]).stdout.split(/\r?\n/).filter(Boolean)) {
@@ -102,6 +111,23 @@ export function porteAperteAllaRete() {
     }
   }
   return aperte;
+}
+
+/** C'e' la regola di blocco, accesa, in entrata, sulle porte di Casa? */
+export function bloccoNelFirewall() {
+  const comando =
+    `$r = Get-NetFirewallRule -DisplayName '${REGOLA_FIREWALL}' -ErrorAction SilentlyContinue | ` +
+    "Where-Object { $_.Enabled -eq 'True' -and $_.Direction -eq 'Inbound' -and $_.Action -eq 'Block' }; " +
+    "if ($r) { ($r | Get-NetFirewallPortFilter).LocalPort -join ',' }";
+  const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", comando], { encoding: "utf8" });
+  return (r.stdout || "").trim().split(",").includes(PORTE_FIREWALL);
+}
+
+/** Problemi di esposizione: porte oltre il PC e nessun blocco nel firewall. */
+export function esposizioneAllaRete() {
+  const aperte = porteOltreIlPC();
+  if (aperte.length === 0 || bloccoNelFirewall()) return [];
+  return [`Casa risponde a tutta la rete (${aperte.join("; ")}) e manca la regola «${REGOLA_FIREWALL}» nel firewall`];
 }
 
 /**
@@ -273,7 +299,7 @@ export function problemiDiCasa({ esitoRegistro }) {
   for (const posto of residuiDelCloud(CLOUD)) problemi.push(`nomina il cloud: ${posto}`);
   if (!bloccoNelDatabase()) problemi.push("manca il blocco del cloud nel database (casa.niente_cloud)");
   for (const nome of nomiApertiDelCloud(CLOUD)) problemi.push(`raggiungibile dal database: ${nome}`);
-  for (const porta of porteAperteAllaRete()) problemi.push(`risponde a tutta la rete, non solo al PC: ${porta}`);
+  problemi.push(...esposizioneAllaRete());
   const ruoli = sql("select coalesce(string_agg(role::text, ',' order by role), '') from user_roles;", "La lettura dei ruoli");
   if (!ruoli.split(",").includes("titolare")) problemi.push("nessun titolare");
   return { problemi, registrate: registrate.length };
