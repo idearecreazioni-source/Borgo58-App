@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { eCasa, eProva, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA } from "../../scripts/comune.mjs";
 import { ambienteDa } from "../../src/lib/ambiente";
+import { CLOUD, RICONOSCITORI, nomiDelCloud, soloLErrore, sqlBloccoDelCloud } from "../../scripts/casa-comune.mjs";
 
 // 🔴 LE BARRIERE A TRE DATABASE (31/10/2026). Con «Casa», la copia
 // personale di Alessio sul suo PC, i database veri diventano due: il locale
@@ -149,6 +150,63 @@ describe("i comandi su Prova chiamano la barriera", () => {
         return testo.includes("DB_URL_PROVA") && !/\b(soloProva|eProva)\(/.test(testo);
       });
     expect(scoperti).toEqual([]);
+  });
+});
+
+// I comandi che lavorano su Casa: la barriera e' quella di Casa, e nessuno
+// ha un modo di svuotarla (niente opzioni dalla riga di comando, niente
+// `drop schema`).
+const DI_CASA = ["casa-costruisci", "casa-pin", "casa-verifica", "casa-accendi"];
+
+describe("i comandi di Casa chiamano la barriera di Casa", () => {
+  it("casa-comune la chiama, e pretende il contenitore di Casa", () => {
+    const testo = readFileSync("scripts/casa-comune.mjs", "utf8");
+    expect(testo).toMatch(/=\s*soloCasa\(/);
+    expect(testo).toMatch(/export function pretendiCasa\(/);
+  });
+
+  for (const nome of DI_CASA) {
+    it(nome, () => {
+      const testo = readFileSync(`scripts/${nome}.mjs`, "utf8");
+      expect(testo).toMatch(/from "\.\/casa-comune\.mjs"/);
+      expect(testo).toMatch(/\bpretendiCasa\(\)/);
+      expect(testo).not.toMatch(/drop\s+schema|process\.argv/i);
+    });
+  }
+});
+
+describe("i pezzi puri di casa-comune", () => {
+  it("dall'errore di psql tiene la spiegazione e butta la riga della SQL", () => {
+    const uscita = [
+      "psql:<stdin>:3: ERROR:  syntax error at or near \"x\"",
+      "LINE 1: select vault.create_secret('parolasegreta', 'notifiche_firma')",
+      "                                    ^",
+      "DETAIL:  qualcosa",
+    ].join("\n");
+    const testo = soloLErrore(uscita);
+    expect(testo).toContain("ERROR:");
+    expect(testo).toContain("DETAIL:");
+    expect(testo).not.toContain("parolasegreta");
+  });
+
+  it("il blocco nel database scarta tutti e due i progetti del cloud, senza fermare chi chiama", () => {
+    const testo = sqlBloccoDelCloud(CLOUD);
+    expect(CLOUD).toEqual([REF_PRODUZIONE, REF_PROVA]);
+    for (const ref of CLOUD) expect(testo).toContain(ref);
+    expect(testo).toMatch(/before insert on net\.http_request_queue/);
+    expect(testo).toMatch(/return null;/);
+    expect(testo).not.toMatch(/raise exception/);
+  });
+
+  it("le porte chiuse coprono anche le funzioni online di ogni progetto", () => {
+    for (const ref of CLOUD) {
+      expect(nomiDelCloud(CLOUD)).toEqual(expect.arrayContaining([`${ref}.supabase.co`, `${ref}.functions.supabase.co`]));
+    }
+  });
+
+  it("chi nomina il cloud per riconoscerlo o bloccarlo e' dichiarato con la ragione", () => {
+    for (const ragione of Object.values(RICONOSCITORI)) expect(ragione.length).toBeGreaterThan(10);
+    expect(Object.keys(RICONOSCITORI)).toContain("funzione casa.niente_cloud");
   });
 });
 
