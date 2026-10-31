@@ -17,7 +17,7 @@
 //   npm run numeri -- --prova il progetto di prova
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { fermati, strumento, titolo } from "./comune.mjs";
+import { fermati, soloProva, strumento, titolo } from "./comune.mjs";
 
 const prova = process.argv.includes("--prova");
 const chiave = prova ? "DB_URL_PROVA" : "DB_URL_PRODUZIONE";
@@ -30,6 +30,8 @@ if (!riga) {
     "Il modello dei valori attesi e' in .env.example."
   );
 }
+// Con --prova si legge solo Prova, ad elenco chiuso (31/10/2026): non Casa.
+if (prova) soloProva(riga[1].trim());
 
 // ⚠️ Il portiere della funzione pretende il titolare, e una migrazione o
 // un comando non hanno un utente: si impostano i claims come fanno i

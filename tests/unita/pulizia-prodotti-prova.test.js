@@ -31,7 +31,7 @@ describe("🔴 si rifiuta di partire fuori dal progetto di prova", () => {
     expect(problemaDelBersaglio("")).toMatch(/DB_URL_PROVA/);
   });
   it("il progetto di prova passa", () => {
-    expect(problemaDelBersaglio(`postgresql://postgres.${REF_PROVA}:x@h:5432/postgres`)).toBeNull();
+    expect(problemaDelBersaglio(`postgresql://postgres.${REF_PROVA}:x@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`)).toBeNull();
   });
   it("🔴 il messaggio non ripete mai la stringa di collegamento", () => {
     const url = `postgresql://postgres.${REF_PRODUZIONE}:segreto@h:5432/postgres`;

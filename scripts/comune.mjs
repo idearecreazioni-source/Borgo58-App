@@ -186,16 +186,100 @@ export function obbligatorio(config, nome, aiuto) {
 }
 
 /**
- * Barriera di sicurezza: usata da ogni comando che SCRIVE.
+ * 🔴 IL GESTIONALE «CASA» (31/10/2026): una copia personale di Alessio che
+ * gira sul suo PC, con Supabase locale. Il suo database risponde qui.
+ * ⚠️ Gli stessi valori vivono nella configurazione di Casa: se si cambia la
+ * porta di là, si cambia anche qui, o i comandi di Casa si rifiutano.
+ */
+export const HOST_CASA = ["127.0.0.1", "localhost", "[::1]"];
+export const PORTA_DB_CASA = "54322";
+
+/**
+ * Le parti di una stringa di collegamento, o null se non si legge.
+ *
+ * ⚠️ NULL ANCHE QUANDO psql LA LEGGEREBBE DIVERSAMENTE (revisione
+ * ecc:security-reviewer, 31/10): i parametri in coda (`?host=…`, `?user=…`,
+ * `?service=…`) vincono su quello scritto prima, e una stringa che qui
+ * sembra Prova porterebbe psql su Casa. Quindi in coda si ammette solo
+ * `sslmode`, e nella parte iniziale una `@` sola e nessun host multiplo
+ * (`a,b`): sono i punti dove questo controllo e psql non leggono uguale.
+ */
+function partiDelCollegamento(url) {
+  try {
+    const testo = String(url ?? "");
+    const u = new URL(testo);
+    if (u.protocol !== "postgresql:" && u.protocol !== "postgres:") return null;
+    const autorita = testo.slice(testo.indexOf("//") + 2).split(/[/?#]/)[0];
+    if ((autorita.match(/@/g) ?? []).length !== 1 || autorita.includes(",")) return null;
+    if ([...u.searchParams.keys()].some((k) => k !== "sslmode")) return null;
+    return { utente: decodeURIComponent(u.username), host: u.hostname, porta: u.port };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * La stringa e' quella del progetto di prova? Funzione pura.
+ *
+ * 🔴 ELENCO CHIUSO (31/10/2026). Fino a ieri `soloProva()` controllava
+ * solo che NON comparisse la produzione: tutto il resto passava. Con Casa
+ * il «tutto il resto» comprende un database vero di Alessio, e
+ * `127.0.0.1:54322` sarebbe passato come «prova» — cioe' `npm run
+ * prova:ricostruisci` avrebbe fatto `drop schema public cascade` su Casa.
+ * Adesso passa SOLO Prova: il pooler di Supabase con l'utente
+ * `postgres.<ref di Prova>`, o il collegamento diretto `db.<ref>.supabase.co`.
+ * Come in `problemiDiProgetto`, si guarda chi si collega e dove, non se il
+ * riferimento compare da qualche parte.
+ */
+export function eProva(url) {
+  const p = partiDelCollegamento(url);
+  if (!p) return false;
+  const pooler = p.utente === `postgres.${REF_PROVA}` && p.host.endsWith(".pooler.supabase.com");
+  const diretto = p.host === `db.${REF_PROVA}.supabase.co`;
+  return pooler || diretto;
+}
+
+/**
+ * La stringa e' quella di Casa? Funzione pura, specchio di `eProva`.
+ * Passa solo il database sul PC stesso, alla porta di Casa: mai un indirizzo
+ * del cloud, nemmeno con un utente che somiglia.
+ */
+export function eCasa(url) {
+  const p = partiDelCollegamento(url);
+  if (!p) return false;
+  return HOST_CASA.includes(p.host) && p.porta === PORTA_DB_CASA && p.utente === "postgres";
+}
+
+/**
+ * Barriera di sicurezza: usata da ogni comando che SCRIVE su Prova.
  * Un errore di copia-incolla nella stringa di collegamento non deve
- * poter riscrivere il database vero.
+ * poter riscrivere il database vero, ne' Casa.
  */
 export function soloProva(url) {
-  if (url.includes(REF_PRODUZIONE)) {
+  if (!eProva(url)) {
     fermati(
-      "FERMO: questa stringa di collegamento punta al database VERO.",
-      "I comandi di ricostruzione e ripristino lavorano solo sul progetto di prova.",
-      "Controlla DB_URL_PROVA in .env."
+      String(url ?? "").includes(REF_PRODUZIONE)
+        ? "FERMO: questa stringa di collegamento punta al database VERO."
+        : "FERMO: questa stringa di collegamento non e' quella del progetto di prova.",
+      "I comandi di ricostruzione e ripristino lavorano solo sul progetto di prova",
+      `(utente postgres.${REF_PROVA} sul pooler di Supabase, o db.${REF_PROVA}.supabase.co).`,
+      "Non ho letto, scritto ne' cancellato niente. Controlla DB_URL_PROVA in .env."
+    );
+  }
+  return url;
+}
+
+/**
+ * Barriera di Casa: usata da ogni comando che lavora sul database di Casa.
+ * ⚠️ Esclude Prova e la produzione per costruzione: nessuna stringa e'
+ * insieme `eProva` ed `eCasa` (lo pretende una prova automatica).
+ */
+export function soloCasa(url) {
+  if (!eCasa(url)) {
+    fermati(
+      "FERMO: questa stringa di collegamento non e' quella di Casa.",
+      `I comandi di Casa lavorano solo sul database del PC (porta ${PORTA_DB_CASA}).`,
+      "Non ho letto, scritto ne' cancellato niente. Controlla DB_URL_CASA."
     );
   }
   return url;

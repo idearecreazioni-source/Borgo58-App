@@ -33,7 +33,7 @@ import {
   fermati,
   leggiConfigurazione,
   obbligatorio,
-  REF_PRODUZIONE,
+  soloProva,
   strumento,
   titolo,
   versioniDoppie,
@@ -64,13 +64,9 @@ const url = obbligatorio(
   "Serve il progetto di prova. Vedi docs/AMBIENTE_PROVA.md."
 );
 
-// Protezione 1: mai sulla produzione, per nessun motivo.
-if (url.includes(REF_PRODUZIONE)) {
-  fermati(
-    "FERMO: DB_URL_PROVA punta al database VERO.",
-    `Ci si aspetta qualcosa di diverso da ${REF_PRODUZIONE}. Controlla .env.`
-  );
-}
+// Protezione 1: solo sul progetto di prova. Dal 31/10 ad elenco chiuso:
+// non basta che non sia la produzione, deve essere Prova (non Casa).
+soloProva(url);
 
 const psql = strumento("psql");
 
