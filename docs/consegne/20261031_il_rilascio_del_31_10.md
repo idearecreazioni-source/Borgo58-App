@@ -37,14 +37,25 @@ Funzioni online: nessuna cambiata.
 - **Il cancello della filiera della #285 era rosso:** era partito prima che Prova finisse di pubblicare. Rilanciato, è passato.
 - **Prova delle schermate della #282:** Chrome non si era avviato sul server di GitHub. Rilanciata, è passata.
 
+## Numeri dell'applicazione in produzione (31/10 sera)
+- **Master pubblicato:** `199ba865`, l'unione della #293. Tutti i Controlli di master sono verdi, compreso «Manda in produzione».
+- **`npm run migra -- --conferma`:** applicate e registrate 1 su 1 (`20261031000001`). La verifica interna è passata senza residui. In produzione ci sono ora 450 migrazioni.
+- **Entrate in più rispetto al piano, con il sì di Alessio scritto nella chat del rilascio:**
+  - la **#284** (barriere di Casa), con «Sì, anche la #284»;
+  - la **#290** (Casa fase 2), con «si vai», dopo la conferma della chat Casa che in produzione la fascia non compare;
+  - la **#292**: una riga `-- rete-guardie:` nella migrazione, che dichiara che `stato_stampa_cucina` diventa una scorciatoia per `stato_stampa('cucina')`.
+- **#289 e #294:** riallineano slave a master. Nessun file cambia.
+
 ## Non verificato
-- I numeri dell'applicazione in produzione arrivano dopo, in un secondo riepilogo.
+- Nulla di quanto sopra.
 
 ## Dato per fatto senza misurarlo
 - Nulla.
 
 ## Affermazioni diventate false durante il lavoro
 - **«Il rilascio è pronto».** L'ho scritto prima di questo riepilogo, che `migra` pretende. Mancava, e l'ha trovato `migra`, non io.
+
+- **«La migrazione è passata da Prova».** Non lo era. Dopo l'unione della #282 non l'avevo applicata su Prova, e `migra` si è fermato. L'ho applicata su Prova con la #292 e solo dopo in produzione. Per circa sei ore il sito nuovo è stato in produzione senza la migrazione. Senza stampanti registrate non si è notato.
 
 ## Cosa abbiamo rovesciato
 - **Il rilascio «solo #278–#282».** La #283 è entrata perché era già unita e controllata su slave quando il rilascio è partito.
