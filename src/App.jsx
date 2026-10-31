@@ -42,6 +42,7 @@ import TaskForm from "./pages/agenda/TaskForm";
 //    portava il gestionale oltre il tetto di `scripts/peso-pacchetto.mjs`.
 const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
 const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
+const CodaCasa = lazy(() => import("./pages/casa/CodaCasa"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
@@ -196,6 +197,7 @@ function AppRoutes() {
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
+        <Route path="/casa/coda" element={<RequireTitolare><CodaCasa /></RequireTitolare>} />
         {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
             sopra: per ora l'assistente lo usa solo Alessio. */}
         <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
