@@ -10,11 +10,13 @@ import {
   registraMovimentoBanca,
   riapriMovimentoBanca,
 } from "../../lib/api/banca";
-import { listCausali } from "../../lib/api/cash";
+import { listCausali, listContiBancari } from "../../lib/api/cash";
 import { CASH_DOCUMENT_TYPES, formatDate, formatEUR } from "../../lib/constants";
 import { leggiFlussoCbi, movimentiDaCaricare } from "../../lib/calcoli/cbi";
+import { eCsvCredem, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
+import CaricaCsvBanca from "./CaricaCsvBanca";
 
 // L'ESTRATTO CONTO DA FILE (24/10/2026). Alessio scarica dalla banca il
 // file CBI (anche dentro lo zip così com'è) e lo carica qui: i movimenti
@@ -24,6 +26,11 @@ import { unaVoltaSola } from "../../lib/calcoli/voce";
 // ⚠️ Il file si legge tutto PRIMA di mandare qualcosa: se un conto non
 // quadra (saldo iniziale + movimenti ≠ saldo finale) non si carica
 // niente, perché un estratto letto a metà sembrerebbe intero.
+//
+// 🔴 ANCHE IL CSV DI CREDEM (31/10/2026), accanto al CBI. Il CSV non dice
+// conto e saldi: li chiede CaricaCsvBanca. E lo stesso movimento, arrivato
+// dai due file, avrebbe due impronte diverse: per gli stessi giorni dello
+// stesso conto si carica da un formato solo (`sovrapposizioni`).
 
 const STATI = [
   ["da_abbinare", "Da abbinare"],
@@ -49,10 +56,31 @@ async function leggiFile(file) {
   const dentro = eZip(bytes) ? await leggiZip(bytes) : [{ nome: file.name, contenuto: bytes }];
   // Il CBI è testo a 120 colonne in caratteri occidentali: latin1 non
   // perde niente, e non inventa caratteri dove UTF-8 si fermerebbe.
-  return dentro.map((d) => ({
-    nome: d.nome === file.name ? file.name : `${file.name} → ${d.nome}`,
-    testo: new TextDecoder("latin1").decode(d.contenuto),
-  }));
+  // ⚠️ Il CSV di Credem invece è UTF-8: letto in latin1 le lettere
+  // accentate diventerebbero due caratteri strani.
+  return dentro.map((d) => {
+    const nome = d.nome === file.name ? file.name : `${file.name} → ${d.nome}`;
+    const utf8 = comeUtf8(d.contenuto);
+    if (utf8 !== null && eCsvCredem(utf8)) return { nome, testo: utf8, formato: "csv" };
+    return { nome, testo: new TextDecoder("latin1").decode(d.contenuto), formato: "cbi" };
+  });
+}
+
+function comeUtf8(bytes) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** L'IBAN senza spazi né minuscole, per confrontarlo. */
+const ibanPulito = (s) => String(s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+function testoSovrapposizione(nome, conto, s) {
+  return `${nome}: sul conto «${conto.nome}» fra il ${formatDate(s.dal)} e il ${formatDate(s.al)} ci sono già`
+    + ` ${s.quanti} ${s.quanti === 1 ? "movimento caricato" : "movimenti caricati"} dal CSV:`
+    + " gli stessi movimenti entrerebbero due volte. Per quei giorni usa un file solo.";
 }
 
 export default function MovimentiBanca() {
@@ -61,26 +89,60 @@ export default function MovimentiBanca() {
   const [caricamento, setCaricamento] = useState(null); // { righe: [...], errori: [...] }
   const [stato, setStato] = useState("da_abbinare");
   const [aperto, setAperto] = useState(null);
+  const [conti, setConti] = useState(null); // null: non ancora letti, o la lettura è caduta
+  const [csv, setCsv] = useState(null); // { nome, movimenti }: il CSV letto, in attesa di conto e saldi
 
   const ricarica = () => listMovimentiBanca().then(setMovimenti);
 
   useEffect(() => {
     ricarica().catch((e) => setErrore(e.message));
+    listContiBancari()
+      .then(setConti)
+      .catch((e) => setErrore(e.message));
   }, []);
 
   const carica = async (files) => {
     setErrore("");
+    setCsv(null);
     setCaricamento({ righe: [], errori: [], inCorso: true });
     const righe = [];
     const errori = [];
     try {
       const letti = [];
       for (const f of files) letti.push(...(await leggiFile(f)));
+
+      // Il CSV ha un passo in più (conto e saldi): si carica da solo.
+      const csvLetti = letti.filter((l) => l.formato === "csv");
+      if (csvLetti.length) {
+        if (letti.length > 1) {
+          errori.push("Il CSV della banca si carica da solo, un file alla volta: chiede il conto e i saldi.");
+        } else {
+          const { movimenti: m, errori: e } = leggiCsvCredem(csvLetti[0].testo);
+          if (e.length) errori.push(...e.map((x) => `${csvLetti[0].nome}: ${x}`));
+          else setCsv({ nome: csvLetti[0].nome, movimenti: m });
+        }
+        setCaricamento(errori.length ? { righe, errori, inCorso: false } : null);
+        return;
+      }
+
       const daMandare = [];
       for (const l of letti) {
-        const { conti, errori: e } = leggiFlussoCbi(l.testo);
+        const { conti: c, errori: e } = leggiFlussoCbi(l.testo);
         if (e.length) errori.push(...e.map((x) => `${l.nome}: ${x}`));
-        else for (const c of conti) daMandare.push({ nome: l.nome, conto: c });
+        else for (const x of c) daMandare.push({ nome: l.nome, conto: x });
+      }
+      // I doppioni col CSV: gli stessi giorni dello stesso conto già caricati da lì.
+      if (!errori.length && daMandare.length) {
+        if (movimenti === null || conti === null) {
+          errori.push("Non riesco a leggere i movimenti già caricati o i conti correnti, quindi non posso controllare i doppioni. Ricarica la pagina e riprova.");
+        } else {
+          for (const { nome, conto } of daMandare) {
+            const nostro = conti.find((c) => c.iban && ibanPulito(c.iban) === ibanPulito(conto.iban));
+            if (!nostro) continue; // il database dirà che il conto non c'è
+            const s = sovrapposizioni(conto.movimenti, "cbi", nostro.id, movimenti);
+            if (s) errori.push(testoSovrapposizione(nome, nostro, s));
+          }
+        }
       }
       // ⚠️ Un file storto ferma tutto il caricamento, anche gli altri: chi
       // ne carica tre e vede «caricato» non va a guardare quale mancava.
@@ -101,6 +163,14 @@ export default function MovimentiBanca() {
     setCaricamento({ righe, errori, inCorso: false });
   };
 
+  const caricaCsv = async (iban, daMandare) => {
+    const r = await caricaMovimentiBanca(iban, csv.nome, daMandare);
+    const nome = csv.nome;
+    setCsv(null);
+    setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false });
+    await ricarica().catch((e) => setErrore(e.message));
+  };
+
   const visibili = (movimenti ?? []).filter((m) => statoDi(m) === stato);
   const conteggi = Object.fromEntries(
     STATI.map(([k]) => [k, (movimenti ?? []).filter((m) => statoDi(m) === k).length]),
@@ -118,12 +188,12 @@ export default function MovimentiBanca() {
 
       <label className="block bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
         <span className="block testo-sala-grande text-b58-charcoal mb-2">
-          Carica l&apos;estratto conto (il file della banca, anche dentro lo zip)
+          Carica l&apos;estratto conto (il file CBI della banca, anche dentro lo zip, oppure il CSV dei movimenti)
         </span>
         <input
           type="file"
           multiple
-          accept=".txt,.zip,.cbi,text/plain,application/zip"
+          accept=".txt,.zip,.cbi,.csv,text/plain,text/csv,application/zip"
           disabled={caricamento?.inCorso}
           onChange={(e) => {
             const files = [...e.target.files];
@@ -133,6 +203,16 @@ export default function MovimentiBanca() {
           className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-sul-colore hover:file:bg-b58-azione-dark"
         />
       </label>
+
+      {csv && (
+        <CaricaCsvBanca
+          file={csv}
+          conti={conti}
+          esistenti={movimenti}
+          onCarica={caricaCsv}
+          onAnnulla={() => setCsv(null)}
+        />
+      )}
 
       {caricamento && (
         <div className="mb-4 testo-sala-grande">
