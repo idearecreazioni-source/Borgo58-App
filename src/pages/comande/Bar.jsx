@@ -224,8 +224,14 @@ export default function Bar() {
   const ora = (iso) =>
     new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 
-  const Ticket = ({ g, evaso }) => (
+  // ⚠️ Una FUNZIONE che restituisce il ticket, non un componente: un
+  // componente definito qui dentro sarebbe nuovo a ogni lettura (ogni 4 s
+  // con la stampante), e React rifarebbe da capo i tasti — un tocco a metà
+  // andrebbe perso e gli avvisi «non è uscito» si rileggerebbero ad alta
+  // voce a ogni giro (revisione ECC, 31/10).
+  const ticket = (g, evaso) => (
     <div
+      key={g.key}
       className={`rounded-xl bg-b58-campo ring-1 p-3 mb-2 ${
         evaso ? "ring-b58-charcoal/5 opacity-50" : "ring-b58-charcoal/15"
       }`}
@@ -320,7 +326,7 @@ export default function Bar() {
             ) : (
               <>
                 {daPreparare.map((g) => (
-                  <Ticket key={g.key} g={g} evaso={false} />
+                  ticket(g, false)
                 ))}
                 {evasi.length > 0 && (
                   <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft/50 mt-3 mb-1">
@@ -328,7 +334,7 @@ export default function Bar() {
                   </p>
                 )}
                 {evasi.map((g) => (
-                  <Ticket key={g.key} g={g} evaso />
+                  ticket(g, true)
                 ))}
               </>
             )}

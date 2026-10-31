@@ -61,8 +61,11 @@ as $function$
 declare
   v_disp dispositivi%rowtype;
 begin
-  if auth.uid() is null then
-    raise exception 'Operazione consentita solo a un utente autenticato';
+  -- ⚠️ Solo chi ha un ruolo nel locale, come `manda_alla_stampante`: un
+  --    account senza ruolo non deve leggere i fogli dei conti aperti
+  --    (revisione ECC, 31/10; la versione della cucina guardava solo il login).
+  if auth.uid() is null or not exists (select 1 from user_roles where user_id = auth.uid()) then
+    raise exception 'Operazione consentita solo a chi lavora nel locale.';
   end if;
   select * into v_disp from dispositivi where id = stampante_del_reparto(p_reparto);
   return jsonb_build_object(
@@ -193,12 +196,18 @@ begin
     end if;
     -- (6) «Ristampa» dal Bar: una persona ha guardato, il foglio torna in
     --     coda al posto dell'incerto.
-    if manda_alla_stampante(array[v_vino], null, false) is null
-       or (select stato from lavori_stampa where id = v_lavoro) <> 'annullato' then
-      raise exception 'VERIFICA (6): la ristampa dal Bar non ha sostituito il foglio incerto.';
+    if manda_alla_stampante(array[v_vino], null, false) is null then
+      raise exception 'VERIFICA (6a): la ristampa dal Bar non è entrata in coda.';
     end if;
     reset role;
     perform set_config('request.jwt.claims', null, true);
+    -- ⚠️ Si guarda la coda DOPO aver lasciato il ruolo dello staff: la RLS
+    --    di `lavori_stampa` la mostra solo al titolare, e da staff questo
+    --    controllo non leggerebbe niente e passerebbe sempre (revisione ECC).
+    if (select stato from lavori_stampa where id = v_lavoro) is distinct from 'annullato'
+       or not exists (select 1 from lavori_stampa where v_vino = any(righe) and stato = 'in_coda') then
+      raise exception 'VERIFICA (6b): la ristampa dal Bar non ha sostituito il foglio incerto.';
+    end if;
 
     raise exception 'ZZ_ANNULLA';
   exception when others then

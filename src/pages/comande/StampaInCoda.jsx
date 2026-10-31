@@ -11,7 +11,7 @@
 //    e dice di guardare la carta PRIMA di qualunque tasto. Niente si
 //    ristampa da solo: decide chi ha guardato la stampante.
 
-const AVVISO = "testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden";
+const AVVISO = "shrink-0 testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden";
 const BOTTONE_PIENO =
   "tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala-grande font-semibold disabled:opacity-50";
 const BOTTONE_VUOTO =
@@ -41,7 +41,7 @@ export function AvvisiDellaStampante({ stampante, pontePronto, codaNonLetta, err
       {stampante && !pontePronto && (
         <p
           role="alert"
-          className="testo-sala-grande font-semibold text-b58-sul-colore bg-b58-terracotta-dark rounded-lg px-3 py-2.5 mb-3 print:hidden"
+          className="shrink-0 testo-sala-grande font-semibold text-b58-sul-colore bg-b58-terracotta-dark rounded-lg px-3 py-2.5 mb-3 print:hidden"
         >
           Il ponte è spento o senza rete: i fogli restano in coda e non escono. {senzaPonte}
         </p>
@@ -87,7 +87,7 @@ export function InCoda({ come, pontePronto, occupato, onManda, onUscito, onStamp
         {come.stato === "incerto" && (
           <span className="block font-normal">
             Prima di premere un tasto guarda la carta della stampante
-            {onUscito ? ": se il foglio c'è, «È uscito»; " : ". "}
+            {onUscito ? ": se il foglio c'è, «È uscito»; " : ": se il foglio c'è, non serve altro; "}
             se non c'è, {seNonCe}.
           </span>
         )}
