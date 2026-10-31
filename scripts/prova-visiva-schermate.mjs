@@ -71,6 +71,12 @@ export const FORME = [
   //    le scritte misurate in centimetri restavano a 26 punti e le altre a
   //    14; sul banco, a 37,8, non si vedeva.
   { nome: "computer 1920 calibrato", larghezza: 1920, altezza: 1080, scala: 1, mobile: false, pxcm: 81 },
+  // 🔴 E LO STESSO PC CON LA FINESTRA STRETTA (31/10/2026, M14): sotto i
+  //    1024 punti compaiono la barra in alto e il menu a cassetto, che la
+  //    #279 non copriva. Il profilo resta «Computer» perché lo dice lo
+  //    SCHERMO, non la finestra: qui lo si scrive in memoria come la scelta
+  //    salvata, perché il banco emula uno schermo largo quanto la finestra.
+  { nome: "computer 900 calibrato", larghezza: 900, altezza: 900, scala: 1, mobile: false, pxcm: 81, schermo: "computer" },
 ];
 
 /** Da quale larghezza la riga non è più «telefono» (`sm:` di Tailwind). */
@@ -94,6 +100,11 @@ const MISURA = `(() => {
     // di sezione del profilo «Computer»: servono solo su quel profilo.
     // ⚠️ Anche i campi, che non hanno testo proprio: erano metà del difetto.
     scritteGrandi: tutti("main *").filter((e) => !/^H[1-6]$/.test(e.tagName) && !e.closest("h1, h2, h3, h4, h5, h6") && (/^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) || [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) && e.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(e).fontSize) > 17.5).slice(0, 5).map((e) => ({ testo: (e.value || e.placeholder || e.textContent).trim().slice(0, 24) || e.tagName.toLowerCase(), px: Math.round(parseFloat(getComputedStyle(e).fontSize)) })),
+    // La barra in alto e il menu a cassetto del banco (main.jsx), solo col
+    // profilo «Computer» a finestra stretta: scritte e pulsanti.
+    telaio: tutti(".telaio-del-gestionale").filter((t) => t.getBoundingClientRect().width > 0).length,
+    telaioGrande: tutti(".telaio-del-gestionale *").filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && e.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(e).fontSize) > 17.5).slice(0, 5).map((e) => ({ testo: e.textContent.trim().slice(0, 24), px: Math.round(parseFloat(getComputedStyle(e).fontSize)) })),
+    telaioBottoni: tutti(".telaio-del-gestionale .tocco-bottone").map((b) => Math.round(b.getBoundingClientRect().height)),
     rete: window.__tentativiDiRete ?? -1,
     reteDove: [...new Set(window.__richiesteFermate ?? [])].join(", "),
     pxcm,
@@ -206,8 +217,14 @@ export function controlla(forma, m, difetti) {
   if (m.sbordo > 1) no(`la pagina scorre di lato di ${m.sbordo} punti`);
   // 🔴 Col profilo «Computer» nessuna scritta supera i 17 punti, qualunque
   //    sia la calibrazione dell'apparecchio (30/10/2026).
-  if (!forma.mobile && forma.larghezza >= 1024) {
+  if (!forma.mobile && (forma.larghezza >= 1024 || forma.schermo === "computer")) {
     for (const s of m.scritteGrandi ?? []) no(`col profilo «Computer» «${s.testo}» è a ${s.px} punti`);
+  }
+  // 🔴 E la barra in alto e il menu a cassetto, a finestra stretta (M14).
+  if (forma.schermo === "computer" && forma.larghezza < 1024) {
+    if (!m.telaio) no("la barra in alto e il menu a cassetto non sono sul banco: la prova non li vede");
+    for (const s of m.telaioGrande ?? []) no(`col profilo «Computer» la barra o il menu hanno «${s.testo}» a ${s.px} punti`);
+    for (const h of m.telaioBottoni ?? []) if (h > 40) no(`col profilo «Computer» un pulsante della barra o del menu è alto ${h} punti`);
   }
 
   // Niente tagliato, niente nascosto (27/09/2026) — su OGNI schermata.

@@ -983,24 +983,29 @@ body {
      ⚠️ Si rimette il valore di fabbrica QUI DENTRO e non si inseguono le
      classi una per una: la prossima misura in centimetri scritta domani
      sarebbe di nuovo fuori. Le Comande (fuori da `contenuto-ampio`) e la
-     stampa restano calibrate. */
-  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) {
+     stampa restano calibrate.
+     🔴 E LA BARRA IN ALTO E IL MENU A CASSETTO (31/10/2026, M14 del
+     controllo finale): con la finestra sotto i 1024 punti la barra laterale
+     sparisce e compaiono loro, che non sono ne' `main` ne' `aside`. Sul PC
+     calibrato restavano a pulsanti da 85 punti accanto a un contenuto
+     piccolo. Portano `telaio-del-gestionale` (Layout.jsx). */
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside, .telaio-del-gestionale) {
     --pxcm: 37.79528px;
     font-size: 14px;
   }
-  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) .testo-sala-grande {
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside, .telaio-del-gestionale) .testo-sala-grande {
     font-size: 14px;
   }
   /* `.testo-sala-lontano` (0,6 cm, letto a distanza di braccio) faceva 23
      punti anche col centimetro di fabbrica: «Fotografa l'etichetta» era la
      scritta più grande della scheda. Al computer non si legge da lontano. */
-  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) :is(.testo-sala-titolo, .testo-sala-lontano) {
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside, .telaio-del-gestionale) :is(.testo-sala-titolo, .testo-sala-lontano) {
     font-size: 17px;
   }
-  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) :is(.tocco-riga, .tocco-azione, .tocco-scelta) {
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside, .telaio-del-gestionale) :is(.tocco-riga, .tocco-azione, .tocco-scelta) {
     min-height: 32px;
   }
-  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside) .tocco-scelta {
+  :root[data-schermo="computer"] :is(main.contenuto-ampio, aside, .telaio-del-gestionale) .tocco-scelta {
     min-width: 32px;
   }
   /* Le celle delle tabelle: 6 punti sopra e sotto invece di 12. */
