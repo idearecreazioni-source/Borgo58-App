@@ -38,6 +38,8 @@
 // basta; a leggere ci pensa `posta-leggi`, chiamata dal lavoro
 // pianificato ogni quarto d'ora.
 
+import { uguali } from "../_shared/uguali.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -50,14 +52,6 @@ function risposta(corpo: unknown, stato = 200) {
     status: stato,
     headers: { "Content-Type": "application/json" },
   });
-}
-
-/** Confronto a tempo costante: la durata non deve dipendere da dove differiscono. */
-function uguali(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /**
@@ -202,18 +196,73 @@ Deno.serve(async (req) => {
   }
 
   const righe = await inserimento.json();
+  const allegati = d.attachments ?? [];
+  let postaId: string;
   if (!righe?.length) {
     // Doppione: la stessa consegna era già arrivata. Non è un errore, è
     // il vincolo `messaggio_id UNIQUE` che fa il suo mestiere.
-    return risposta({ gia_registrata: true });
+    //
+    // ⚠️ Salvo un caso: la consegna precedente è stata interrotta mentre
+    //    scriveva gli allegati (e ha risposto 500 proprio perché il mittente
+    //    riconsegnasse). Se qui rispondessimo «già registrata», quegli
+    //    allegati non si scriverebbero mai più. Si riprende dagli allegati,
+    //    sulla stessa mail.
+    if (!allegati.length) return risposta({ gia_registrata: true });
+    const esistente = await db(
+      `posta_ricevuta?messaggio_id=eq.${encodeURIComponent(emailId)}&select=id`,
+    );
+    const registrata = esistente.ok ? await esistente.json() : null;
+    if (!registrata?.length) {
+      console.error("posta-in-arrivo: mail già registrata ma non rileggibile", esistente.status);
+      return risposta({ errore: "Registrazione fallita" }, 500);
+    }
+    const scritti = await db(
+      `posta_allegati?posta_id=eq.${registrata[0].id}&select=id`,
+    );
+    const gia = scritti.ok ? await scritti.json() : null;
+    if (!Array.isArray(gia)) {
+      console.error("posta-in-arrivo: allegati già scritti non rileggibili", scritti.status);
+      return risposta({ errore: "Registrazione fallita" }, 500);
+    }
+    if (gia.length >= allegati.length) return risposta({ gia_registrata: true });
+    // Mancano righe: si rifanno tutte da capo, togliendo prima le vecchie
+    // per non averle doppie.
+    const pulizia = await db(`posta_allegati?posta_id=eq.${registrata[0].id}`, {
+      method: "DELETE",
+    });
+    if (!pulizia.ok) {
+      console.error("posta-in-arrivo: pulizia allegati fallita", pulizia.status);
+      return risposta({ errore: "Registrazione fallita" }, 500);
+    }
+    postaId = registrata[0].id;
+  } else {
+    postaId = righe[0].id;
   }
-  const postaId = righe[0].id;
 
   // Allegati: si scaricano e si mettono nel bucket dell'Archivio, sotto
   // `posta/`. Se poi la mail diventa un documento, il file è già dove
   // deve stare.
-  const allegati = d.attachments ?? [];
   const salvati: string[] = [];
+  // ⚠️ La scrittura della riga dell'allegato si controlla: se non riesce, la
+  //    mail è registrata ma l'allegato non lascia traccia da nessuna parte —
+  //    né il file né il motivo. Si finisce il giro (gli altri allegati si
+  //    provano comunque) e poi si risponde 500: il mittente riconsegna, e la
+  //    mail non va persa perché è già scritta.
+  let righeNonScritte = 0;
+  const scriviAllegato = async (riga: Record<string, unknown>) => {
+    try {
+      const r = await db("posta_allegati", { method: "POST", body: JSON.stringify(riga) });
+      if (r.ok) return;
+      console.error(
+        "posta_allegati: scrittura fallita",
+        r.status,
+        (await r.text()).slice(0, 300),
+      );
+    } catch (e) {
+      console.error("posta_allegati: scrittura fallita", (e as Error).message);
+    }
+    righeNonScritte++;
+  };
   for (const a of allegati) {
     const nomeOriginale = a.filename ?? "allegato";
     let errore: string | null = null;
@@ -261,32 +310,30 @@ Deno.serve(async (req) => {
         }`;
       }
 
-      await db("posta_allegati", {
-        method: "POST",
-        body: JSON.stringify({
-          posta_id: postaId,
-          file_name: nome,
-          mime: a.content_type ?? null,
-          dimensione: contenuto.byteLength,
-          storage_path: su.ok ? percorso : null,
-          errore,
-        }),
+      await scriviAllegato({
+        posta_id: postaId,
+        file_name: nome,
+        mime: a.content_type ?? null,
+        dimensione: contenuto.byteLength,
+        storage_path: su.ok ? percorso : null,
+        errore,
       });
       if (su.ok) salvati.push(nome);
     } catch (e) {
       // Un allegato che non si salva non deve far perdere la mail: resta
       // registrata, con scritto accanto perché il file non c'è.
-      await db("posta_allegati", {
-        method: "POST",
-        body: JSON.stringify({
-          posta_id: postaId,
-          file_name: nomeOriginale.replace(/[^\w.-]+/g, "_").slice(-120),
-          mime: a.content_type ?? null,
-          storage_path: null,
-          errore: (e as Error).message?.slice(0, 300) ?? "errore sconosciuto",
-        }),
+      await scriviAllegato({
+        posta_id: postaId,
+        file_name: nomeOriginale.replace(/[^\w.-]+/g, "_").slice(-120),
+        mime: a.content_type ?? null,
+        storage_path: null,
+        errore: (e as Error).message?.slice(0, 300) ?? "errore sconosciuto",
       });
     }
+  }
+
+  if (righeNonScritte > 0) {
+    return risposta({ errore: "Allegati non registrati: riprova la consegna" }, 500);
   }
 
   return risposta({

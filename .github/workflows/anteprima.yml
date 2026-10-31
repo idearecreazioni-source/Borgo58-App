@@ -91,12 +91,22 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Gli indirizzi con cui si entra sull'anteprima (mandato 02/09/2026).
+          # Se la variabile non e' impostata arriva vuota, e vuota vale «usa
+          # il predefinito»: nessun effetto finche' Alessio non le crea.
+          VITE_EMAIL_TITOLARE: ${{ vars.EMAIL_TITOLARE }}
+          VITE_EMAIL_STAFF: ${{ vars.EMAIL_STAFF }}
         run: npm run build
 
       # TERZA BARRIERA, e guarda il RISULTATO invece delle intenzioni: e' la
       # rete che sull'anteprima automatica non c'era, ed e' il motivo per cui
       # il disallineamento e' vissuto giorni senza che nessuno lo vedesse.
       - name: Il pacchetto parla col progetto di prova?
+        # Stessi indirizzi della compilazione: il controllo li legge
+        # dall'ambiente per sapere cosa aspettarsi nel pacchetto.
+        env:
+          VITE_EMAIL_TITOLARE: ${{ vars.EMAIL_TITOLARE }}
+          VITE_EMAIL_STAFF: ${{ vars.EMAIL_STAFF }}
         run: node scripts/rilascio.mjs --ambiente anteprima --controlla-pacchetto dist
 
       - name: Pubblica con Wrangler
