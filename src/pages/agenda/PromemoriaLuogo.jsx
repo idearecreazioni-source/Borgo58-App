@@ -64,7 +64,7 @@ export default function PromemoriaLuogo() {
     setErrore("");
     try {
       await revocaChiaveLuogo(id);
-      setNuova(null);
+      // ⚠️ La chiave appena creata NON si azzera: si vede una volta sola.
       rileggi();
     } catch (e) {
       setErrore(e.message);

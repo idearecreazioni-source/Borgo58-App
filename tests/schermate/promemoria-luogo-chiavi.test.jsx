@@ -80,4 +80,19 @@ describe("PromemoriaLuogo", () => {
     await waitFor(() => expect(api.revoca).toHaveBeenCalledWith("k1"));
     expect(api.revoca).toHaveBeenCalledTimes(1);
   });
+
+  it("«Togli» ricarica la lista senza azzerare la chiave appena creata", async () => {
+    api.chiavi.mockResolvedValue([{ id: "k1", nome: "vecchia", usi: 0, revocata_il: null }]);
+    api.crea.mockResolvedValue({ nome: "iPhone", chiave: "segreta-nuova" });
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: "Crea una chiave" }));
+    await screen.findByText("segreta-nuova");
+    const letture = api.chiavi.mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Togli" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, togli" }));
+    await waitFor(() => expect(api.revoca).toHaveBeenCalledWith("k1"));
+    await waitFor(() => expect(api.chiavi.mock.calls.length).toBeGreaterThan(letture));
+    expect(screen.getByText("segreta-nuova")).toBeTruthy();
+  });
 });

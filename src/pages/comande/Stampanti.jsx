@@ -98,8 +98,7 @@ export default function Stampanti() {
   const dove = ambienteCorrente();
 
   // ⚠️ Le letture si numerano, come in Cucina: una partita prima e tornata
-  // dopo non deve coprirne una più nuova, né col risultato né con l'errore
-  // (revisione, 1/11/2026).
+  // dopo non deve coprirne una più nuova, né col risultato né con l'errore.
   const ultimaLettura = useRef(0);
   const rileggi = useCallback(async () => {
     const questa = ++ultimaLettura.current;
@@ -163,9 +162,14 @@ export default function Stampanti() {
         </p>
       </div>
 
-      {(errore || erroreLettura) && (
+      {errore && (
         <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
-          Errore: {errore || erroreLettura}
+          Errore: {errore}
+        </p>
+      )}
+      {erroreLettura && (
+        <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
+          Errore: {erroreLettura}
         </p>
       )}
 

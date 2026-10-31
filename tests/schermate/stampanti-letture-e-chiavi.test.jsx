@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   elenco: vi.fn(),
   lavori: vi.fn(),
   chiavi: vi.fn(),
+  togli: vi.fn(),
 }));
 
 vi.mock("../../src/lib/api/stampanti", () => ({
@@ -20,7 +21,7 @@ vi.mock("../../src/lib/api/stampanti", () => ({
   elencoDispositivi: (...a) => api.elenco(...a),
   revocaChiavePonte: vi.fn(),
   salvaDispositivo: vi.fn(),
-  togliDispositivo: vi.fn(),
+  togliDispositivo: (...a) => api.togli(...a),
   ultimiLavori: (...a) => api.lavori(...a),
 }));
 
@@ -105,5 +106,37 @@ describe("Stampanti: le letture automatiche", () => {
 
     expect(screen.getByText("Cucina nuova")).toBeTruthy();
     expect(screen.queryByText("Cucina vecchia")).toBeNull();
+  });
+});
+
+describe("Stampanti: errore di lettura e di gesto insieme", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    api.elenco.mockReset();
+    api.lavori.mockReset().mockResolvedValue([]);
+    api.chiavi.mockReset().mockResolvedValue([]);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("mostra tutti e due, e una lettura riuscita toglie solo il suo", async () => {
+    api.elenco
+      .mockResolvedValueOnce([apparecchio("Cucina")])
+      .mockRejectedValueOnce(new Error("rete giù"))
+      .mockResolvedValue([apparecchio("Cucina")]);
+    api.togli.mockRejectedValue(new Error("non tolta"));
+    await apri();
+    await act(async () => screen.getByRole("button", { name: "Togli" }).click());
+    await act(async () => screen.getByRole("button", { name: "Sì, togli" }).click());
+    await passano(15000);
+
+    const testi = screen.getAllByRole("alert").map((a) => a.textContent);
+    expect(testi).toHaveLength(2);
+    expect(testi.join("|")).toContain("non tolta");
+    expect(testi.join("|")).toContain("rete giù");
+
+    await passano(15000);
+    const dopo = screen.getAllByRole("alert").map((a) => a.textContent);
+    expect(dopo).toHaveLength(1);
+    expect(dopo[0]).toContain("non tolta");
   });
 });
