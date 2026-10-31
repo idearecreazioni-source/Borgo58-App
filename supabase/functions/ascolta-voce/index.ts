@@ -288,7 +288,13 @@ function scritturaFallita(dove: string, dettaglio: unknown) {
 
 // Messaggi che la porta della chiave scrive apposta per chi la usa: gli altri
 // sono errori del database e non si inoltrano.
-const RIFIUTI_CHIAVE = ["Manca la chiave.", "Questa chiave non vale.", "La chiave appartiene"];
+const RIFIUTI_CHIAVE = [
+  "Manca la chiave.",
+  "Questa chiave non vale.",
+  "La chiave appartiene",
+  // Il freno orario: la frase la scrive voce_limite_dettature().
+  "Sono gia' arrivate",
+];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });

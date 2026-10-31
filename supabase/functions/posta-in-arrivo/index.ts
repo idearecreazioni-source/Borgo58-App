@@ -197,7 +197,24 @@ Deno.serve(async (req) => {
 
   const righe = await inserimento.json();
   const allegati = d.attachments ?? [];
+  // Il nome arriva da fuori: si pulisce (niente percorsi come `../`). Due
+  // allegati che dopo la pulizia hanno lo stesso nome prendono l'indice, così
+  // non si sovrascrivono; il calcolo è lo stesso a ogni consegna.
+  const nomiAllegati: string[] = [];
+  allegati.forEach((a: { filename?: string }, i: number) => {
+    const pulito = (a.filename ?? "allegato").replace(/[^\w.-]+/g, "_").slice(-120);
+    if (!nomiAllegati.includes(pulito)) {
+      nomiAllegati.push(pulito);
+      return;
+    }
+    const punto = pulito.lastIndexOf(".");
+    nomiAllegati.push(
+      punto > 0 ? `${pulito.slice(0, punto)}_${i}${pulito.slice(punto)}` : `${pulito}_${i}`,
+    );
+  });
   let postaId: string;
+  // Nomi degli allegati già scritti in una consegna precedente (vuoto alla prima).
+  const presenti = new Set<string>();
   if (!righe?.length) {
     // Doppione: la stessa consegna era già arrivata. Non è un errore, è
     // il vincolo `messaggio_id UNIQUE` che fa il suo mestiere.
@@ -217,23 +234,19 @@ Deno.serve(async (req) => {
       return risposta({ errore: "Registrazione fallita" }, 500);
     }
     const scritti = await db(
-      `posta_allegati?posta_id=eq.${registrata[0].id}&select=id`,
+      `posta_allegati?posta_id=eq.${registrata[0].id}&select=file_name`,
     );
     const gia = scritti.ok ? await scritti.json() : null;
     if (!Array.isArray(gia)) {
       console.error("posta-in-arrivo: allegati già scritti non rileggibili", scritti.status);
       return risposta({ errore: "Registrazione fallita" }, 500);
     }
-    if (gia.length >= allegati.length) return risposta({ gia_registrata: true });
-    // Mancano righe: si rifanno tutte da capo, togliendo prima le vecchie
-    // per non averle doppie.
-    const pulizia = await db(`posta_allegati?posta_id=eq.${registrata[0].id}`, {
-      method: "DELETE",
-    });
-    if (!pulizia.ok) {
-      console.error("posta-in-arrivo: pulizia allegati fallita", pulizia.status);
-      return risposta({ errore: "Registrazione fallita" }, 500);
-    }
+    // ⚠️ Si rifanno SOLO gli allegati il cui nome (dopo la stessa pulizia)
+    //    manca fra le righe già scritte. Una riga già scritta con `errore`
+    //    conta come presente e NON si ritenta: l'errore è il suo esito, e
+    //    cancellare per rifare perderebbe i file già caricati.
+    for (const r of gia) presenti.add(String(r.file_name));
+    if (nomiAllegati.every((n) => presenti.has(n))) return risposta({ gia_registrata: true });
     postaId = registrata[0].id;
   } else {
     postaId = righe[0].id;
@@ -263,8 +276,10 @@ Deno.serve(async (req) => {
     }
     righeNonScritte++;
   };
-  for (const a of allegati) {
-    const nomeOriginale = a.filename ?? "allegato";
+  for (let i = 0; i < allegati.length; i++) {
+    const a = allegati[i];
+    const nome = nomiAllegati[i];
+    if (presenti.has(nome)) continue; // già scritto da una consegna precedente
     let errore: string | null = null;
     try {
       const dettagli = await resend(`emails/receiving/${emailId}/attachments/${a.id}`);
@@ -276,9 +291,7 @@ Deno.serve(async (req) => {
       if (!file.ok) throw new Error(`scaricamento fallito (${file.status})`);
       const contenuto = new Uint8Array(await file.arrayBuffer());
 
-      // Il nome arriva da fuori: potrebbe contenere percorsi (`../`) e
-      // finire a scrivere dove non deve.
-      const nome = (a.filename ?? "allegato").replace(/[^\w.-]+/g, "_").slice(-120);
+      // Il nome è già pulito (vedi `nomiAllegati`).
       const percorso = `posta/${postaId}/${nome}`;
 
       // ⚠️ `apikey` **e** `Authorization`, come per il database.
@@ -296,6 +309,8 @@ Deno.serve(async (req) => {
           headers: {
             apikey: SERVICE_ROLE,
             Authorization: `Bearer ${SERVICE_ROLE}`,
+            // Alla riconsegna un file già caricato non deve rispondere 409.
+            "x-upsert": "true",
             "Content-Type": a.content_type ?? "application/octet-stream",
           },
           body: contenuto,
@@ -324,7 +339,7 @@ Deno.serve(async (req) => {
       // registrata, con scritto accanto perché il file non c'è.
       await scriviAllegato({
         posta_id: postaId,
-        file_name: nomeOriginale.replace(/[^\w.-]+/g, "_").slice(-120),
+        file_name: nome,
         mime: a.content_type ?? null,
         storage_path: null,
         errore: (e as Error).message?.slice(0, 300) ?? "errore sconosciuto",
