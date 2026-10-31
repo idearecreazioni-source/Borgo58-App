@@ -80,7 +80,7 @@ export default function PromemoriaLuogo() {
         <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">1 · La chiave del telefono</h2>
         <p
           className={`testo-sala rounded-lg px-3 py-2 ${
-            dove.produzione ? "bg-b58-charcoal/10 text-b58-charcoal" : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
+            dove.datiVeri ? "bg-b58-charcoal/10 text-b58-charcoal" : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
           }`}
         >
           La chiave che crei qui vale per <b>{dove.nome}</b>, e solo per quello. Serve solo a leggere i

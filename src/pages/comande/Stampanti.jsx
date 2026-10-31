@@ -175,7 +175,7 @@ export default function Stampanti() {
 
         <p
           className={`testo-sala rounded-lg px-3 py-2 ${
-            dove.produzione ? "bg-b58-charcoal/10 text-b58-charcoal" : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
+            dove.datiVeri ? "bg-b58-charcoal/10 text-b58-charcoal" : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
           }`}
         >
           La chiave che crei qui fa entrare il ponte in <b>{dove.nome}</b>, e solo lì. Va scritta una volta sul
