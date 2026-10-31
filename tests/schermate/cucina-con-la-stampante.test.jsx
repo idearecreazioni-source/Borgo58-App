@@ -36,7 +36,7 @@ vi.mock("../../src/lib/api/orders", () => ({
 }));
 
 vi.mock("../../src/lib/api/stampanti", () => ({
-  statoStampaCucina: vi.fn(async () => finto.coda),
+  statoStampa: vi.fn(async () => finto.coda),
   mandaAllaStampante: vi.fn(async (x) => {
     finto.mandati.push(x);
     return "nuovo";
@@ -101,6 +101,19 @@ describe("la pagina Cucina e la stampante", () => {
     mostra();
     fireEvent.click(await screen.findByRole("button", { name: "È uscito" }));
     await waitFor(() => expect(finto.segnati).toEqual([[["r1"], true]]));
+    expect(finto.mandati).toEqual([]);
+  });
+
+  it("🔴 incerto: dice di guardare la carta, e mai «non l'ha stampato» (31/10)", async () => {
+    // Anche se dal database arrivasse ancora la frase del codice, sotto un
+    // incerto non si mostra: e' quella che faceva ristampare (A2).
+    finto.coda = coda([lavoro("incerto", "la stampante non l'ha stampato.")]);
+    mostra();
+    expect(await screen.findByText(/Forse è uscito, forse no/)).toBeTruthy();
+    expect(screen.getByText(/guarda la carta della stampante/)).toBeTruthy();
+    expect(screen.queryByText(/non l'ha stampato/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Ristampa" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Stampa da qui/ })).toBeTruthy();
     expect(finto.mandati).toEqual([]);
   });
 

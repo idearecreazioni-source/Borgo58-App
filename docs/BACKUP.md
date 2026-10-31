@@ -65,7 +65,9 @@ c'è il modello: si chiama `.env.example`.
      gestore di password. *(Cambiarla non spegne niente: l'app non usa
      quella password.)*
 
-**`SERVICE_ROLE_PRODUZIONE`** — serve a scaricare i documenti caricati:
+**`SERVICE_ROLE_PRODUZIONE`** — serve a scaricare i documenti caricati.
+Senza, `npm run backup` **non parte** (dal 31/10/2026): prima andava
+avanti e diceva «Copia completata» senza PDF e foto.
    - **Settings → API Keys** → riga **`service_role`** → **Reveal** →
      copia e incolla.
    - ⚠️ Questa è la chiave più potente del progetto. Sta solo in questo
