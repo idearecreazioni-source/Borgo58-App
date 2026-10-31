@@ -57,12 +57,14 @@ async function leggiFile(file) {
   // Il CBI è testo a 120 colonne in caratteri occidentali: latin1 non
   // perde niente, e non inventa caratteri dove UTF-8 si fermerebbe.
   // ⚠️ Il CSV di Credem invece è UTF-8: letto in latin1 le lettere
-  // accentate diventerebbero due caratteri strani.
+  // accentate diventerebbero due caratteri strani. Se però qualcuno l'ha
+  // salvato di nuovo (Excel lo rifà in caratteri occidentali), è latin1.
   return dentro.map((d) => {
     const nome = d.nome === file.name ? file.name : `${file.name} → ${d.nome}`;
     const utf8 = comeUtf8(d.contenuto);
     if (utf8 !== null && eCsvCredem(utf8)) return { nome, testo: utf8, formato: "csv" };
-    return { nome, testo: new TextDecoder("latin1").decode(d.contenuto), formato: "cbi" };
+    const latin1 = new TextDecoder("latin1").decode(d.contenuto);
+    return { nome, testo: latin1, formato: eCsvCredem(latin1) ? "csv" : "cbi" };
   });
 }
 
@@ -89,8 +91,9 @@ export default function MovimentiBanca() {
   const [caricamento, setCaricamento] = useState(null); // { righe: [...], errori: [...] }
   const [stato, setStato] = useState("da_abbinare");
   const [aperto, setAperto] = useState(null);
-  const [conti, setConti] = useState(null); // null: non ancora letti, o la lettura è caduta
+  const [conti, setConti] = useState(null); // null: non ancora letti (servono solo alla scelta del conto del CSV)
   const [csv, setCsv] = useState(null); // { nome, movimenti }: il CSV letto, in attesa di conto e saldi
+  const [inviando, setInviando] = useState(false);
 
   const ricarica = () => listMovimentiBanca().then(setMovimenti);
 
@@ -131,15 +134,22 @@ export default function MovimentiBanca() {
         if (e.length) errori.push(...e.map((x) => `${l.nome}: ${x}`));
         else for (const x of c) daMandare.push({ nome: l.nome, conto: x });
       }
-      // I doppioni col CSV: gli stessi giorni dello stesso conto già caricati da lì.
+      // I doppioni col CSV: gli stessi giorni dello stesso conto già caricati
+      // da lì. ⚠️ Conti e movimenti si rileggono ADESSO, non si usano quelli
+      // dell'apertura: possono essere cambiati, o non essere ancora arrivati.
       if (!errori.length && daMandare.length) {
-        if (movimenti === null || conti === null) {
-          errori.push("Non riesco a leggere i movimenti già caricati o i conti correnti, quindi non posso controllare i doppioni. Ricarica la pagina e riprova.");
-        } else {
+        let ora;
+        try {
+          ora = await Promise.all([listContiBancari(), listMovimentiBanca()]);
+        } catch (e) {
+          errori.push(`Non riesco a leggere i conti o i movimenti già caricati (${e.message}), quindi non posso controllare i doppioni col CSV. Riprova.`);
+        }
+        if (ora) {
+          const [contiOra, movimentiOra] = ora;
           for (const { nome, conto } of daMandare) {
-            const nostro = conti.find((c) => c.iban && ibanPulito(c.iban) === ibanPulito(conto.iban));
+            const nostro = contiOra.find((c) => c.iban && ibanPulito(c.iban) === ibanPulito(conto.iban));
             if (!nostro) continue; // il database dirà che il conto non c'è
-            const s = sovrapposizioni(conto.movimenti, "cbi", nostro.id, movimenti);
+            const s = sovrapposizioni(conto.movimenti, "cbi", nostro.id, movimentiOra);
             if (s) errori.push(testoSovrapposizione(nome, nostro, s));
           }
         }
@@ -163,12 +173,19 @@ export default function MovimentiBanca() {
     setCaricamento({ righe, errori, inCorso: false });
   };
 
+  // ⚠️ Mentre il CSV parte, la casella del file è spenta (`inviando`): un
+  // secondo file scelto a metà farebbe sparire il modulo del primo.
   const caricaCsv = async (iban, daMandare) => {
-    const r = await caricaMovimentiBanca(iban, csv.nome, daMandare);
-    const nome = csv.nome;
-    setCsv(null);
-    setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false });
-    await ricarica().catch((e) => setErrore(e.message));
+    setInviando(true);
+    try {
+      const nome = csv.nome;
+      const r = await caricaMovimentiBanca(iban, nome, daMandare);
+      setCsv(null);
+      setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false });
+      await ricarica().catch((e) => setErrore(e.message));
+    } finally {
+      setInviando(false);
+    }
   };
 
   const visibili = (movimenti ?? []).filter((m) => statoDi(m) === stato);
@@ -194,7 +211,7 @@ export default function MovimentiBanca() {
           type="file"
           multiple
           accept=".txt,.zip,.cbi,.csv,text/plain,text/csv,application/zip"
-          disabled={caricamento?.inCorso}
+          disabled={caricamento?.inCorso || inviando}
           onChange={(e) => {
             const files = [...e.target.files];
             e.target.value = "";
@@ -208,14 +225,14 @@ export default function MovimentiBanca() {
         <CaricaCsvBanca
           file={csv}
           conti={conti}
-          esistenti={movimenti}
+          leggiEsistenti={listMovimentiBanca}
           onCarica={caricaCsv}
           onAnnulla={() => setCsv(null)}
         />
       )}
 
       {caricamento && (
-        <div className="mb-4 testo-sala-grande">
+        <div role="status" className="mb-4 testo-sala-grande">
           {caricamento.inCorso && <p className="text-b58-charcoal-soft">Sto leggendo il file…</p>}
           {caricamento.righe.map((r) => (
             <p key={r.nome} className="text-b58-charcoal">
@@ -224,11 +241,11 @@ export default function MovimentiBanca() {
             </p>
           ))}
           {caricamento.errori.length > 0 && (
-            <div className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            <div role="alert" className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
               <p className="font-medium">Non ho caricato niente:</p>
               <ul className="list-disc pl-5">
-                {caricamento.errori.map((e) => (
-                  <li key={e}>{e}</li>
+                {caricamento.errori.map((e, i) => (
+                  <li key={i}>{e}</li>
                 ))}
               </ul>
             </div>

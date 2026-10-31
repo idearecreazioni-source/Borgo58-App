@@ -132,6 +132,13 @@ describe("leggere il file", () => {
     expect(errori[3]).toMatch(/colonne/);
   });
 
+  it("legge anche le righe che finiscono col solo «\\r» (vecchi Mac)", () => {
+    const testo = csv([R_COMMISSIONE, R_COMMISSIONE]).replace(/\r\n/g, "\r");
+    const { movimenti, errori } = leggiCsvCredem(testo);
+    expect(errori).toEqual([]);
+    expect(movimenti).toHaveLength(2);
+  });
+
   it("una virgoletta lasciata aperta è un file troncato, non una descrizione lunga", () => {
     const { errori } = leggiCsvCredem(csv(['20/10/2026;20/10/2026;"TRONCATO;48;48;5,00;']));
     expect(errori.join(" ")).toMatch(/virgolett/);
@@ -223,10 +230,20 @@ describe("i doppioni fra CBI e CSV", () => {
     expect(s?.altroFormato).toBe("csv");
   });
 
-  it("non si ferma per lo stesso formato (lì bastano le impronte), né fuori dai giorni, né su un altro conto", () => {
+  it("guarda due giorni in più per parte: le due date contabili potrebbero non coincidere", () => {
+    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-18", "IT60X§x")])?.altroFormato).toBe("cbi");
+    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-24", "IT60X§x")])?.altroFormato).toBe("cbi");
+  });
+
+  it("non si ferma per lo stesso formato (lì bastano le impronte), né lontano dai giorni, né su un altro conto", () => {
     expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-21", "csv§x")])).toBeNull();
-    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-19", "IT60X§x")])).toBeNull();
-    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-23", "IT60X§x")])).toBeNull();
+    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-17", "IT60X§x")])).toBeNull();
+    expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-25", "IT60X§x")])).toBeNull();
     expect(sovrapposizioni(movimenti, "csv", "c1", [esistente("2026-10-21", "IT60X§x", "c2")])).toBeNull();
+  });
+
+  it("il margine attraversa la fine del mese", () => {
+    const fine = [{ ...movimenti[0], dataContabile: "2026-10-31" }];
+    expect(sovrapposizioni(fine, "csv", "c1", [esistente("2026-11-02", "IT60X§x")])?.quanti).toBe(1);
   });
 });

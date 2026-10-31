@@ -139,6 +139,48 @@ describe("il CSV della banca", () => {
     expect(api.carica).not.toHaveBeenCalled();
   });
 
+  it("se i conti arrivano dopo il file, il conto principale è comunque quello scelto", async () => {
+    let arrivano;
+    api.conti.mockReturnValue(new Promise((r) => { arrivano = r; }));
+    apri();
+    await scegli();
+    expect(screen.getByLabelText("Conto").textContent).toMatch(/Leggo i conti/);
+    arrivano([{ ...CONTO, id: "c0", nome: "Altro", predefinito: false }, CONTO]);
+    await waitFor(() => expect(screen.getByLabelText("Conto").value).toBe("c1"));
+
+    scrivi("Saldo iniziale (€)", "100,00");
+    scrivi("Saldo finale (€)", "5.099,00");
+    fireEvent.click(screen.getByRole("button", { name: "Carica i movimenti" }));
+    expect(await screen.findByText(/2 movimenti nuovi/)).toBeTruthy();
+  });
+
+  it("🔴 i doppioni si cercano nei movimenti di ADESSO, non in quelli dell'apertura", async () => {
+    apri();
+    await scegli();
+    // Nel frattempo il CBI di quei giorni è entrato da un'altra finestra.
+    api.lista.mockResolvedValue([
+      { id: "m1", conto_id: "c1", conto: { nome: "Credem" }, impronta: "IT60X§2026-10-21",
+        data_contabile: "2026-10-21", importo: -10, descrizione: "dal CBI" },
+    ]);
+    scrivi("Saldo iniziale (€)", "100,00");
+    scrivi("Saldo finale (€)", "5.099,00");
+    fireEvent.click(screen.getByRole("button", { name: "Carica i movimenti" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/dal file CBI/);
+    expect(api.carica).not.toHaveBeenCalled();
+  });
+
+  it("un CSV risalvato in caratteri occidentali si riconosce lo stesso", async () => {
+    apri();
+    const casella = document.querySelector('input[type="file"]');
+    const testo = CSV.replace("﻿", "").replace("MARIO ROSSI", "NICOLÒ ROSSI");
+    const bytes = Uint8Array.from(testo, (c) => c.charCodeAt(0)); // latin1: un byte per lettera
+    const file = new File([bytes], "movimenti.csv", { type: "text/csv" });
+    Object.defineProperty(file, "arrayBuffer", { value: async () => bytes.buffer.slice(0) });
+    Object.defineProperty(casella, "files", { value: [file], configurable: true });
+    fireEvent.change(casella);
+    expect(await screen.findByText(/2 movimenti dal 20 ott 2026 al 22 ott 2026/)).toBeTruthy();
+  });
+
   it("un CSV storto non arriva neanche al passo dei saldi", async () => {
     apri();
     metti(CSV.replace("-1,00", "uno"));

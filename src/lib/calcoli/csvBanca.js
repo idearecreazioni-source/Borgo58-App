@@ -32,7 +32,7 @@ function senzaBom(testo) {
 
 /** Vero se il testo comincia con l'intestazione del CSV di Credem. */
 export function eCsvCredem(testo) {
-  const prima = senzaBom(testo).split(/\r?\n/, 1)[0] ?? "";
+  const prima = senzaBom(testo).split(/\r\n|\r|\n/, 1)[0] ?? "";
   return prima.trim() === TESTA.join(";");
 }
 
@@ -104,7 +104,7 @@ function righeCsv(testo) {
       campo = "";
     } else if (c === "\r" && testo[i + 1] === "\n") {
       // l'a capo di Windows: lo chiude il \n
-    } else if (c === "\n") {
+    } else if (c === "\n" || c === "\r") {
       campi.push(campo);
       righe.push({ n: inizio, campi });
       campi = [];
@@ -268,12 +268,25 @@ export function movimentiCsvDaCaricare(movimenti) {
   });
 }
 
+const MARGINE = 2;
+
+/** «2026-10-01», -2 → «2026-09-29». */
+function spostaGiorni(iso, giorni) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + giorni);
+  return d.toISOString().slice(0, 10);
+}
+
 /**
  * 🔴 I DOPPIONI FRA CBI E CSV. Lo stesso movimento arrivato dai due file
  * ha due impronte diverse, ed entrerebbe due volte. Quindi un conto, per
  * gli stessi giorni, si carica da un formato solo: se ha già movimenti
  * dell'ALTRO formato fra il primo e l'ultimo giorno del file nuovo, ci si
  * ferma. Per lo stesso formato bastano le impronte.
+ *
+ * ⚠️ I giorni si allargano di MARGINE per parte: non è misurato che i due
+ * file diano sempre la stessa data contabile allo stesso movimento (fine
+ * mese, festivi), e un blocco di troppo si vede, un doppione no.
  *
  * @param movimenti  quelli del file nuovo (con dataContabile)
  * @param formato    «csv» o «cbi», il formato del file nuovo
@@ -286,11 +299,13 @@ export function sovrapposizioni(movimenti, formato, contoId, esistenti) {
   const date = movimenti.map((m) => m.dataContabile).sort();
   const dal = date[0];
   const al = date[date.length - 1];
+  const da = spostaGiorni(dal, -MARGINE);
+  const a = spostaGiorni(al, MARGINE);
   const altri = (esistenti ?? []).filter(
-    (e) => e.conto_id === contoId
+    (e) => String(e.conto_id) === String(contoId)
       && formatoDi(e.impronta) !== formato
-      && e.data_contabile >= dal
-      && e.data_contabile <= al,
+      && e.data_contabile >= da
+      && e.data_contabile <= a,
   );
   if (!altri.length) return null;
   return { altroFormato: formato === "csv" ? "cbi" : "csv", quanti: altri.length, dal, al };
