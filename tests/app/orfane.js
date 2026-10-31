@@ -39,6 +39,13 @@ export const ORFANE_SEMPRE = {
   registra_lettura_foto: "chiamata da leggi-foto",
   voce_apri_sessione: "chiamata da ascolta-voce",
   luogo_promemoria: "chiamata da promemoria-luogo (l'automazione «quando arrivo a…» dell'iPhone)",
+  // ⚠️ DEBITO (31/10/2026): la vecchia porta della pagina Cucina. Da oggi
+  //    Cucina e Bar chiamano `stato_stampa(reparto)` (20261031000001); questa
+  //    resta per il gestionale già pubblicato finché non arriva quello nuovo.
+  //    Fra le SEMPRE e non fra le PIANIFICATE: la funzione esiste già dalla
+  //    20261029000001, e diventa orfana col codice, non con la migrazione.
+  //    Si toglie con una migrazione dopo il rilascio in produzione.
+  stato_stampa_cucina: "DEBITO: porta del gestionale pubblicato prima del 31/10; Cucina e Bar usano stato_stampa(reparto)",
 
   // Sono RETI: esistono per essere interrogate da una prova, non da una
   // schermata. Una porta a schermo non avrebbe senso.

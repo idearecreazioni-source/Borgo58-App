@@ -134,7 +134,10 @@ export default function Layout() {
           com'era. */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
+          {/* `telaio-del-gestionale` (31/10/2026): col profilo «Computer» il
+              menu a cassetto ha le misure della barra laterale, non quelle
+              calibrate del tablet (index.css). */}
+          <div className="telaio-del-gestionale w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
             <Sidebar
               onNavigate={() => setMobileOpen(false)}
               sopra={sospeso?.da === "menu" ? avviso : null}
@@ -155,7 +158,7 @@ export default function Layout() {
         {/* Topbar mobile */}
         <header
           onClickCapture={trattieni("testata")}
-          className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment"
+          className="telaio-del-gestionale lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment"
         >
           {/* 🔴 DALLA DASHBOARD NON SI TORNAVA INDIETRO (27/08, visto da
               Alessio col telefono): si tocca una sezione, si arriva nel
@@ -196,7 +199,8 @@ export default function Layout() {
               sta dappertutto non compare in nessun elenco per schermata.*
               ⚠️ E compare **solo sugli schermi stretti** (`lg:hidden`) —
               cioè esattamente sul tablet e sul telefono, dove si tocca col
-              dito. Sul computer non c'è. */}
+              dito. Sul computer c'è solo a finestra stretta, e lì ha le
+              misure del profilo «Computer» (`telaio-del-gestionale`). */}
           {/* 🔴 MEMO VOCE DA QUALUNQUE MODULO — 11/09/2026. Qui, e non in
               un pulsante che galleggia sopra la schermata: la testata sta
               FUORI dal contenuto, quindi non copre nessun gesto della
@@ -223,7 +227,7 @@ export default function Layout() {
         {/* La domanda del logo compare subito sotto la testata, dove si è
             appena toccato: il menu in quel momento è chiuso. */}
         {sospeso?.da === "testata" && (
-          <div className="lg:hidden print:hidden pt-3">{avviso}</div>
+          <div className="telaio-del-gestionale lg:hidden print:hidden pt-3">{avviso}</div>
         )}
 
         {/* 🔴 IL TELAIO DESKTOP (05/09/2026): molte pagine restano incollate

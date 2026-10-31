@@ -286,7 +286,12 @@ export async function apriPagina(porta, forma, url, primaDiPartire = "") {
   const calibrazione = forma.pxcm
     ? `localStorage.setItem("b58_pxcm", "${forma.pxcm}");`
     : `localStorage.removeItem("b58_pxcm");`;
-  await manda("Page.addScriptToEvaluateOnNewDocument", { source: calibrazione + primaDiPartire });
+  // Il profilo dello schermo, quando la forma lo dice (31/10/2026): stessa
+  // memoria e stessa ragione della calibrazione.
+  const profilo = forma.schermo
+    ? `localStorage.setItem("b58-schermo", "${forma.schermo}");`
+    : `localStorage.removeItem("b58-schermo");`;
+  await manda("Page.addScriptToEvaluateOnNewDocument", { source: calibrazione + profilo + primaDiPartire });
   await manda("Page.navigate", { url });
   return { ws, manda };
 }
