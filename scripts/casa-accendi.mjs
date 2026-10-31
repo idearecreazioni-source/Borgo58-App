@@ -9,11 +9,15 @@
 //     le porte verso il cloud — 🔴 misurato il 31/10: /etc/hosts
 //     del contenitore torna quello di fabbrica a ogni riavvio, quindi la
 //     seconda protezione va rimessa a ogni accensione;
-//  4. rifa' la verifica di Casa.
+//  4. rifa' la verifica di Casa;
+//  5. accende il server dell'app (casa-sito.mjs) se non risponde, e fa
+//     mandare da Tailscale la 8443 a quel server (fase 2).
 // Ogni accensione lascia una riga in C:\Casa\accensioni.log.
 
-import { spawnSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { appendFileSync, openSync } from "node:fs";
+import { connect } from "node:net";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { fermati, titolo } from "./comune.mjs";
 import { esitoRegistro } from "./ricostruzione-regole.mjs";
@@ -21,6 +25,9 @@ import {
   CARTELLA,
   CLOUD,
   CONTENITORE,
+  PORTA_SITO_CASA,
+  apriTailscaleVersoCasa,
+  indirizzoDiCasa,
   VERSIONE_CLI,
   bloccaIlCloudNelDatabase,
   chiudiIlCloud,
@@ -83,5 +90,36 @@ console.log("   blocco del cloud nel database presente");
 
 const { problemi, registrate } = problemiDiCasa({ esitoRegistro });
 if (problemi.length > 0) fine("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`));
-annota(`ok: ${registrate} migrazioni, porte chiuse`);
-console.log(`   Casa accesa e a posto (${registrate} migrazioni)`);
+console.log(`   database a posto (${registrate} migrazioni)`);
+
+// ---------------------------------------------------------------------
+// Il server dell'app, e Tailscale verso di lui. Il server resta acceso da
+// solo dopo che questo comando finisce; scrive in C:\Casa\sito.log.
+// ---------------------------------------------------------------------
+const risponde = () =>
+  new Promise((risolvi) => {
+    const s = connect(PORTA_SITO_CASA, "127.0.0.1", () => {
+      s.destroy();
+      risolvi(true);
+    });
+    s.on("error", () => risolvi(false));
+  });
+
+if (!(await risponde())) {
+  const registro = openSync(path.join(CARTELLA, "sito.log"), "a");
+  const figlio = spawn(process.execPath, [fileURLToPath(new URL("./casa-sito.mjs", import.meta.url))], {
+    detached: true,
+    stdio: ["ignore", registro, registro],
+    windowsHide: true,
+  });
+  figlio.unref();
+  for (let i = 0; i < 60 && !(await risponde()); i++) await new Promise((r) => setTimeout(r, 500));
+  if (!(await risponde())) fine(`Il server di Casa non si e' acceso: guarda ${path.join(CARTELLA, "sito.log")}.`);
+  console.log("   server dell'app acceso");
+} else {
+  console.log("   server dell'app gia' acceso");
+}
+apriTailscaleVersoCasa();
+const indirizzo = indirizzoDiCasa();
+annota(`ok: ${registrate} migrazioni, porte chiuse, app su ${indirizzo}`);
+console.log(`   Casa accesa e a posto: ${indirizzo}`);

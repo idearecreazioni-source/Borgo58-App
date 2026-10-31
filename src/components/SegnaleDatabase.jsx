@@ -41,7 +41,7 @@ import { ambienteCorrente, paginaDeiClienti } from "../lib/ambiente";
 // Sta fuori dal Layout apposta: vale anche sulle Comande e sulla pagina
 // pubblica, che il Layout non lo usano. `print:hidden` ovunque: su un
 // preconto o su un registro HACCP non c'entra niente.
-// Le tre parole di ogni stato: il resto — posizione, altezza, peso — è
+// Le parole di ogni stato: il resto — posizione, altezza, peso — è
 // identico per costruzione, perché è scritto una volta sola più sotto.
 const STATI = {
   produzione: {
@@ -55,6 +55,13 @@ const STATI = {
     fondo: "bg-b58-terracotta",
     titolo: "DATABASE DI PROVA",
     spiegazione: "quello che scrivi qui non è vero, e quello che leggi nemmeno.",
+  },
+  // Casa, la copia personale di Alessio sul suo PC (31/10/2026): dati veri,
+  // ma suoi e non del locale. Oliva come la fascia in cima (FasciaCasa).
+  casa: {
+    fondo: "bg-b58-olive",
+    titolo: "CASA",
+    spiegazione: "il tuo gestionale personale: i dati sono veri, e stanno sul tuo PC.",
   },
   sconosciuto: {
     fondo: "bg-b58-gold",

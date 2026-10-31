@@ -19,6 +19,58 @@ export const VERSIONE_CLI = "2.122.0";
 // database risponde solo dal PC, e la stringa serve alla barriera.
 export const URL_CASA = soloCasa(`postgresql://postgres:postgres@127.0.0.1:${PORTA_DB_CASA}/postgres`);
 
+// 🔴 L'INDIRIZZO DI CASA (fase 2, 31/10/2026): https://<pc>.ts.net:8443,
+// servito da Tailscale (solo dentro la rete Tailscale di Alessio, con un
+// certificato vero). La 443 e' gia' del gestionale di sviluppo
+// (telefono.mjs, dev-prova.mjs): Casa ha la sua porta, e non la cambia
+// MAI — l'app sull'iPhone e la sua coda vivono sotto quell'indirizzo.
+// Dietro, il server di Casa (casa-sito.mjs) ascolta solo sul PC, dentro il
+// blocco di porte chiuso dal firewall.
+export const PORTA_HTTPS_CASA = 8443;
+export const PORTA_SITO_CASA = 44325;
+export const TAILSCALE = process.platform === "win32" ? "C:/Program Files/Tailscale/tailscale.exe" : "tailscale";
+
+/** Il nome del PC nella rete Tailscale, senza il punto finale; "" se non c'e'. */
+export function nomeTailscaleSeCe() {
+  const r = spawnSync(TAILSCALE, ["status", "--json"], { encoding: "utf8" });
+  try {
+    const nome = String(JSON.parse(r.stdout).Self?.DNSName || "").replace(/\.$/, "");
+    return /^[a-z0-9-]+\.[a-z0-9-]+\.ts\.net$/.test(nome) ? nome : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Come sopra, ma si ferma se Tailscale non risponde. */
+export function nomeTailscale() {
+  const nome = nomeTailscaleSeCe();
+  if (!nome) fermati("Tailscale non risponde o il PC non ha un nome .ts.net.", "Apri Tailscale e controlla di essere collegato.");
+  return nome;
+}
+
+export const indirizzoDiCasa = () => `https://${nomeTailscale()}:${PORTA_HTTPS_CASA}`;
+
+/** Tailscale manda gia' la 8443 al server di Casa? */
+export function tailscaleVersoCasa() {
+  const r = spawnSync(TAILSCALE, ["serve", "status", "--json"], { encoding: "utf8" });
+  try {
+    const web = JSON.parse(r.stdout || "{}").Web || {};
+    const voce = web[`${nomeTailscale()}:${PORTA_HTTPS_CASA}`];
+    return voce?.Handlers?.["/"]?.Proxy === `http://127.0.0.1:${PORTA_SITO_CASA}`;
+  } catch {
+    return false;
+  }
+}
+
+/** Fa mandare la 8443 al server di Casa. Non tocca le altre porte. */
+export function apriTailscaleVersoCasa() {
+  if (tailscaleVersoCasa()) return;
+  const r = spawnSync(TAILSCALE, ["serve", "--bg", `--https=${PORTA_HTTPS_CASA}`, `http://127.0.0.1:${PORTA_SITO_CASA}`], { encoding: "utf8" });
+  if (r.status !== 0 || !tailscaleVersoCasa()) {
+    fermati("Tailscale non ha accettato l'indirizzo di Casa:", (r.stderr || r.stdout || "").trim());
+  }
+}
+
 /** I due progetti del cloud che Casa non deve mai raggiungere. */
 export const CLOUD = [REF_PRODUZIONE, REF_PROVA];
 

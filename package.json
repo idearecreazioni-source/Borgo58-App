@@ -19,6 +19,8 @@
     "casa:pin": "node scripts/casa-pin.mjs",
     "casa:verifica": "node scripts/casa-verifica.mjs",
     "casa:accendi": "node scripts/casa-accendi.mjs",
+    "casa:impacchetta": "node scripts/casa-impacchetta.mjs",
+    "casa:sito": "node scripts/casa-sito.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",

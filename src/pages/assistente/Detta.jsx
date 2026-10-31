@@ -935,7 +935,7 @@ export default function Detta() {
                    male e non un gestionale diverso. */}
             <p
               className={`testo-sala mt-2 rounded-lg px-3 py-2 ${
-                ambienteCorrente().produzione
+                ambienteCorrente().datiVeri
                   ? "bg-b58-charcoal/10 text-b58-charcoal"
                   : "bg-b58-terracotta/10 text-b58-terracotta-dark-testo"
               }`}

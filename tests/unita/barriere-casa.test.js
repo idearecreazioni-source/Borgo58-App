@@ -156,7 +156,7 @@ describe("i comandi su Prova chiamano la barriera", () => {
 // I comandi che lavorano su Casa: la barriera e' quella di Casa, e nessuno
 // ha un modo di svuotarla (niente opzioni dalla riga di comando, niente
 // `drop schema`).
-const DI_CASA = ["casa-costruisci", "casa-pin", "casa-verifica", "casa-accendi"];
+const DI_CASA = ["casa-costruisci", "casa-pin", "casa-verifica", "casa-accendi", "casa-impacchetta"];
 
 describe("i comandi di Casa chiamano la barriera di Casa", () => {
   it("casa-comune la chiama, e pretende il contenitore di Casa", () => {
@@ -229,5 +229,41 @@ describe("il gestionale nel browser riconosce Casa", () => {
 
   it("un indirizzo non protetto non vale come Casa", () => {
     expect(ambienteDa("http://192.168.1.20:8443", "casa").genere).toBe("sconosciuto");
+  });
+
+  // ⚠️ Due domande diverse: «e' il locale?» (le barriere) e «quello che
+  // scrivi e' vero?» (il colore degli avvisi). Casa: vero, ma non il locale.
+  it("i dati veri sono quelli del locale e di Casa, e il locale resta uno solo", () => {
+    const casa = ambienteDa("https://pc-alessio.esempio.ts.net:8443", "casa");
+    expect(casa.datiVeri).toBe(true);
+    expect(casa.produzione).toBe(false);
+    expect(ambienteDa(`https://${REF_PRODUZIONE}.supabase.co`).datiVeri).toBe(true);
+    expect(ambienteDa(`https://${REF_PROVA}.supabase.co`).datiVeri).toBe(false);
+    expect(ambienteDa("https://pc-alessio.esempio.ts.net:8443").datiVeri).toBe(false);
+  });
+});
+
+describe("l'app e il server di Casa", () => {
+  const sito = readFileSync("scripts/casa-sito.mjs", "utf8");
+  const impacchetta = readFileSync("scripts/casa-impacchetta.mjs", "utf8");
+
+  it("il server ascolta solo sul PC", () => {
+    expect(sito).toMatch(/listen\(PORTA_SITO_CASA, "127\.0\.0\.1"/);
+  });
+
+  it("il server risponde solo al nome di Casa o al PC stesso", () => {
+    expect(sito).toMatch(/if \(!servitoDaCasa\(req\)\)/);
+  });
+
+  it("la costruzione dell'app si ferma se dentro c'e' un indirizzo del cloud", () => {
+    expect(impacchetta).toMatch(/CLOUD\.filter\(\(ref\) => testo\.includes\(`\$\{ref\}\.supabase\.co`\)\)/);
+    expect(impacchetta).toMatch(/VITE_AMBIENTE: "casa"/);
+  });
+
+  it("la porta del server sta nel blocco chiuso dal firewall", async () => {
+    const { PORTA_SITO_CASA, PORTE_FIREWALL } = await import("../../scripts/casa-comune.mjs");
+    const [da, a] = PORTE_FIREWALL.split("-").map(Number);
+    expect(PORTA_SITO_CASA).toBeGreaterThanOrEqual(da);
+    expect(PORTA_SITO_CASA).toBeLessThanOrEqual(a);
   });
 });
