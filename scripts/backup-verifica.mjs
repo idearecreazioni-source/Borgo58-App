@@ -37,6 +37,8 @@ import {
   fermati,
   interroga,
   leggiConfigurazione,
+  pretendiProgetto,
+  REF_PRODUZIONE,
   titolo,
 } from "./comune.mjs";
 
@@ -244,6 +246,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (adesso) {
     const url = config.DB_URL_PRODUZIONE;
     if (!url) fermati("Manca DB_URL_PRODUZIONE in .env.");
+    // Confrontare la copia con un altro database la darebbe per allineata
+    // senza esserlo (chat Casa, 30/10/2026).
+    pretendiProgetto(REF_PRODUZIONE, { dbUrl: url }, "Il confronto col database vero");
     const vive = conteggiDichiarati(interroga(url, SQL_CONTEGGI));
     const scostamenti = differenze(vive, nelFile);
     if (scostamenti.length === 0) {

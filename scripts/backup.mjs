@@ -37,6 +37,9 @@ import {
   fermati,
   titolo,
   timbroLocale,
+  pretendiProgetto,
+  REF_PRODUZIONE,
+  urlApiDi,
 } from "./comune.mjs";
 
 const SQL_CONTEGGI = `
@@ -53,6 +56,17 @@ order by relname;
 
 const config = leggiConfigurazione();
 const url = obbligatorio(config, "DB_URL_PRODUZIONE", "E' la stringa 'Session pooler' del progetto vero (docs/BACKUP.md).");
+const service = config.SERVICE_ROLE_PRODUZIONE;
+// ⚠️ L'indirizzo dei documenti si ricava dal progetto, non da
+//    VITE_SUPABASE_URL: quella serve al gestionale e puo' puntare a Prova.
+const urlApi = urlApiDi(REF_PRODUZIONE);
+// 🔴 Prima di creare la cartella e di leggere qualunque cosa: tutto cio'
+//    che si usa deve essere della produzione (vedi problemiDiProgetto).
+pretendiProgetto(
+  REF_PRODUZIONE,
+  service ? { dbUrl: url, apiUrl: urlApi, chiave: service } : { dbUrl: url },
+  "La copia di sicurezza"
+);
 const pgDump = strumento("pg_dump");
 
 const radice = config.BACKUP_CARTELLA || path.join(os.homedir(), "Desktop", "Backup Borgo 58");
@@ -173,12 +187,10 @@ console.log(`   ${conteggi.split("\n").length} tabelle, ${righeTotali} righe in 
 // ---------------------------------------------------------------------
 // I documenti veri (Archivio Documenti). Vivono fuori dal database.
 // ---------------------------------------------------------------------
-const service = config.SERVICE_ROLE_PRODUZIONE;
-const urlApi = config.VITE_SUPABASE_URL;
-if (!service || !urlApi) {
+if (!service) {
   console.log("");
   console.log("  ATTENZIONE: i documenti caricati (PDF, foto) NON sono stati copiati.");
-  console.log("  Mancano VITE_SUPABASE_URL e SERVICE_ROLE_PRODUZIONE in .env.");
+  console.log("  Manca SERVICE_ROLE_PRODUZIONE in .env.");
 } else {
   titolo("Documenti caricati");
   const sb = createClient(urlApi, service, { auth: { persistSession: false } });

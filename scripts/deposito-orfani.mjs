@@ -19,13 +19,24 @@
 // «i file che non compaiono in un elenco che non sono riuscito a leggere»
 // è il modo di perdere un documento vero.
 import { createClient } from "@supabase/supabase-js";
-import { fermati, interroga, leggiConfigurazione, obbligatorio, titolo } from "./comune.mjs";
+import {
+  fermati,
+  interroga,
+  leggiConfigurazione,
+  obbligatorio,
+  pretendiProgetto,
+  REF_PRODUZIONE,
+  titolo,
+  urlApiDi,
+} from "./comune.mjs";
 
 const BUCKET = "documents";
 const conferma = process.argv.includes("--conferma");
 
 const config = leggiConfigurazione();
-const url = obbligatorio(config, "VITE_SUPABASE_URL", "docs/BACKUP.md §2");
+// ⚠️ L'indirizzo si ricava dal progetto, non da VITE_SUPABASE_URL: quella
+//    serve al gestionale e puo' puntare a Prova (30/10/2026).
+const url = urlApiDi(REF_PRODUZIONE);
 const service = obbligatorio(config, "SERVICE_ROLE_PRODUZIONE", "docs/BACKUP.md §2");
 // ⚠️ L'archivio si legge da psql e NON con la chiave di servizio, e la
 // ragione è una misura del 20/08: in questo progetto `service_role` **non ha
@@ -33,6 +44,11 @@ const service = obbligatorio(config, "SERVICE_ROLE_PRODUZIONE", "docs/BACKUP.md 
 // `authenticated`, e sopra c'è la RLS. È una postura difensiva voluta, non
 // un guasto: chi scrive uno script che legge dati passa da qui.
 const dbUrl = obbligatorio(config, "DB_URL_PRODUZIONE", "docs/BACKUP.md §2");
+// 🔴 Questo comando CANCELLA: prima di leggere qualunque elenco, la chiave,
+//    l'indirizzo e la stringa del database devono essere tutti della
+//    produzione. Un elenco letto da un progetto e una cancellazione fatta
+//    su un altro toglierebbero file veri (vedi problemiDiProgetto).
+pretendiProgetto(REF_PRODUZIONE, { dbUrl, apiUrl: url, chiave: service }, "Il controllo del deposito");
 
 const sb = createClient(url, service, { auth: { persistSession: false } });
 
