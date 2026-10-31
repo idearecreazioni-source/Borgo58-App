@@ -274,7 +274,7 @@ export default function Bar() {
   );
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col">
+    <div className="h-[calc(100vh-2rem-var(--fascia-casa))] flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Bar</h1>

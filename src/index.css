@@ -262,6 +262,11 @@ body {
   --sicuro-basso: env(safe-area-inset-bottom, 0px);
   --sicuro-sinistra: env(safe-area-inset-left, 0px);
   --sicuro-destra: env(safe-area-inset-right, 0px);
+  /* La fascia oliva di Casa (FasciaCasa.jsx): zero ovunque, tranne su Casa. */
+  --fascia-casa: 0px;
+}
+:root[data-casa] {
+  --fascia-casa: 20px;
 }
 
 /* 🔴 IL TELAIO STA SU `#root`, cioe' SOPRA OGNI SCHERMATA, login e
@@ -272,7 +277,7 @@ body {
    pollice, che e' fissata allo schermo e non dentro questo flusso — se lo
    stacco lo mettesse anche il guscio, si sommerebbe. */
 #root {
-  padding-top: var(--sicuro-alto);
+  padding-top: calc(var(--sicuro-alto) + var(--fascia-casa));
   padding-left: var(--sicuro-sinistra);
   padding-right: var(--sicuro-destra);
 }
@@ -285,10 +290,14 @@ body {
    sono quattro file oggi, e il settimo che la chiedera' domani nascerebbe
    storto. E' la stessa ragione per cui il telaio non sta nel `Layout`. */
 #root .min-h-screen {
-  min-height: calc(100vh - var(--sicuro-alto));
+  min-height: calc(100vh - var(--sicuro-alto) - var(--fascia-casa));
 }
 #root .h-screen {
-  height: calc(100vh - var(--sicuro-alto));
+  height: calc(100vh - var(--sicuro-alto) - var(--fascia-casa));
+}
+/* Su Casa chi si attacca in cima si attacca SOTTO la fascia. */
+:root[data-casa] #root .sticky.top-0 {
+  top: calc(var(--sicuro-alto) + var(--fascia-casa));
 }
 
 /* ⚠️ In stampa il telaio non esiste: il foglio non ha un orologio. */

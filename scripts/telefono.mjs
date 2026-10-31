@@ -71,7 +71,10 @@ export function statoTunnel() {
     return { disponibile: false };
   }
 
-  const nome = Object.keys(letto?.Web ?? {})[0];
+  // ⚠️ Solo la voce della 443 (31/10/2026): da quando Casa ha la sua voce
+  // sulla 8443 (casa-comune.mjs), «la prima voce» poteva essere quella di
+  // Casa, e il tunnel di sviluppo avrebbe ragionato sulla porta sbagliata.
+  const nome = Object.keys(letto?.Web ?? {}).find((k) => !/:\d+$/.test(k) || k.endsWith(":443"));
   if (!nome) return { disponibile: true, pubblicato: false };
 
   const verso = letto.Web[nome]?.Handlers?.["/"]?.Proxy ?? "";

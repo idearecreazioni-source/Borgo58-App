@@ -192,7 +192,10 @@ export function obbligatorio(config, nome, aiuto) {
  * porta di là, si cambia anche qui, o i comandi di Casa si rifiutano.
  */
 export const HOST_CASA = ["127.0.0.1", "localhost", "[::1]"];
-export const PORTA_DB_CASA = "54322";
+// ⚠️ Non le 5432x di fabbrica di Supabase: su questo PC Windows riserva il
+// blocco 54294–54393 (Hyper-V/WSL), e sotto 49152 non riserva mai niente.
+export const PORTA_API_CASA = "44321";
+export const PORTA_DB_CASA = "44322";
 
 /**
  * Le parti di una stringa di collegamento, o null se non si legge.
@@ -224,7 +227,7 @@ function partiDelCollegamento(url) {
  * 🔴 ELENCO CHIUSO (31/10/2026). Fino a ieri `soloProva()` controllava
  * solo che NON comparisse la produzione: tutto il resto passava. Con Casa
  * il «tutto il resto» comprende un database vero di Alessio, e
- * `127.0.0.1:54322` sarebbe passato come «prova» — cioe' `npm run
+ * il database di Casa sul PC sarebbe passato come «prova» — cioe' `npm run
  * prova:ricostruisci` avrebbe fatto `drop schema public cascade` su Casa.
  * Adesso passa SOLO Prova: il pooler di Supabase con l'utente
  * `postgres.<ref di Prova>`, o il collegamento diretto `db.<ref>.supabase.co`.

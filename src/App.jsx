@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
+import FasciaCasa from "./components/FasciaCasa";
 import SegnaleDatabase from "./components/SegnaleDatabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -411,6 +412,7 @@ function App() {
         {/* Sopra le rotte, non dentro il Layout: vale anche sulle Comande
             e sulla pagina pubblica, che il Layout non lo usano. */}
         <SegnaleDatabase />
+        <FasciaCasa />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
