@@ -10,7 +10,11 @@ import {
   listQuadraturaPagamenti,
   registraConteggioCassa,
   versaInBanca,
+  costoDelProgetto,
+  righeCostoDelProgetto,
 } from "../../lib/api/cash";
+import { esisteUnoScontrino } from "../../lib/api/orders";
+import { riepilogoProgetto, riquadroInQuartaPosizione } from "../../lib/calcoli/progettoFinora";
 import { CAUSALE_ALTRO, omaggiAListino, percentualeOmaggi } from "../../lib/calcoli/omaggi";
 import { getEntities } from "../../lib/api/entities";
 import { contaSpeseDaCollocare } from "../../lib/api/speseDaCollocare";
@@ -20,7 +24,7 @@ import CampoGiornata from "../../components/CampoGiornata";
 import Scorciatoia from "../../components/Scorciatoia";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
-import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Primo del mese in ora locale: la versione precedente passava per
 // toISOString() e restituiva l'ULTIMO giorno del mese prima (mezzanotte
@@ -52,6 +56,27 @@ export default function CassaHome() {
   // denominatore della percentuale degli omaggi, e si chiede alla stessa
   // funzione che risponde in «Incassato e scontrinato» — un solo calcolo.
   const [fiscale, setFiscale] = useState(null);
+  // «Il progetto finora» sta al posto degli omaggi fino al primo scontrino.
+  // null = non si sa (resta il riquadro di sempre).
+  const [scontrino, setScontrino] = useState(null);
+  const [progetto, setProgetto] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    leggi(esisteUnoScontrino()).then((v) => {
+      if (!vivo) return;
+      const emesso = nonLetto(v) ? null : v;
+      setScontrino(emesso);
+      if (riquadroInQuartaPosizione(emesso) !== "progetto") return;
+      leggi(Promise.all([costoDelProgetto("", ""), righeCostoDelProgetto("", "")])).then((r) => {
+        if (vivo) setProgetto(nonLetto(r) ? NON_LETTO : riepilogoProgetto(r[0], r[1]));
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const quartoRiquadro = riquadroInQuartaPosizione(scontrino);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -309,6 +334,31 @@ export default function CassaHome() {
               </div>
             </div>
 
+            {quartoRiquadro === "progetto" ? (
+              <Link
+                to="/cassa/costo-progetto"
+                data-prova="riquadro-progetto"
+                className="block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 hover:ring-b58-terracotta"
+              >
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Il progetto finora</div>
+                {progetto === null ? (
+                  <div className="text-2xl font-medium text-b58-charcoal">—</div>
+                ) : nonLetto(progetto) ? (
+                  <DatoNonLetto cosa="quanto è costato il progetto" />
+                ) : (
+                  <>
+                    <div data-prova="progetto-totale" className="text-2xl font-medium text-b58-charcoal">
+                      {formatEUR(progetto.totale)}
+                    </div>
+                    {progetto.anticipato !== null && (
+                      <div data-prova="progetto-anticipato" className="testo-sala text-b58-charcoal-soft mt-1">
+                        di cui {formatEUR(progetto.anticipato)} anticipati da te
+                      </div>
+                    )}
+                  </>
+                )}
+              </Link>
+            ) : (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
                 Omaggi «{CAUSALE_ALTRO}»
@@ -344,6 +394,7 @@ export default function CassaHome() {
                   sulla stessa schermata sono ingombro — *se un comando si
                   ripete, quasi sempre ne basta uno*. */}
             </div>
+            )}
           </div>
 
           <IlCassetto
