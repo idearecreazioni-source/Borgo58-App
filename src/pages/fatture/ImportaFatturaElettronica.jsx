@@ -113,8 +113,8 @@ export default function ImportaFatturaElettronica() {
         // ⚠️ La fattura è registrata: si dice, e si dice anche che il file no.
         esito = {
           ok: true,
-          xmlMancante: true,
-          testo: `${base} Ma il file XML NON è stato salvato (${e.message}). Premi «Salva il file XML» per riprovare.`,
+          xmlMancante: !e.nonCorrisponde,
+          testo: `${base} Ma il file XML NON è stato salvato (${e.message}).${e.nonCorrisponde ? "" : " Premi «Salva il file XML» per riprovare."}`,
         };
       }
       setEsiti((p) => ({ ...p, [l.chiave]: esito }));
@@ -136,7 +136,7 @@ export default function ImportaFatturaElettronica() {
       const testo = await allegaXml(l);
       setEsiti((p) => ({ ...p, [l.chiave]: { ok: true, testo: `Era già registrata. ${testo}` } }));
     } catch (e) {
-      setErroriXml((p) => ({ ...p, [l.chiave]: `Il file XML non è stato salvato: ${e.message}` }));
+      setErroriXml((p) => ({ ...p, [l.chiave]: `Il file XML non è stato salvato: ${e.message}`, [`${l.chiave}#no`]: !!e.nonCorrisponde }));
     } finally {
       guardia.current.lascia(l.chiave);
       setOccupato(null);
@@ -304,7 +304,7 @@ export default function ImportaFatturaElettronica() {
                   {erroriXml[l.chiave]}
                 </p>
               )}
-              {(esito?.xmlMancante || (esito && !esito.ok && eGiaRegistrata(esito.testo))) && (
+              {!erroriXml[`${l.chiave}#no`] && (esito?.xmlMancante || (esito && !esito.ok && eGiaRegistrata(esito.testo))) && (
                 <button
                   type="button"
                   disabled={occupato === l.chiave || tutte || !entityId}

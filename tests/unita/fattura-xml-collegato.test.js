@@ -10,9 +10,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const uploadDocumentFile = vi.fn();
 const createDocument = vi.fn();
 const deleteDocument = vi.fn();
+const removeDocumentFile = vi.fn();
 const collegaDocumentoAFattura = vi.fn();
 const maybeSingle = vi.fn();
-const eq = vi.fn(() => ({ maybeSingle }));
+const eq = vi.fn(() => maybeSingle());
 const select = vi.fn(() => ({ eq }));
 
 vi.mock("../../src/lib/supabase", () => ({
@@ -23,6 +24,7 @@ vi.mock("../../src/lib/api/documents", () => ({
   uploadDocumentFile: (...a) => uploadDocumentFile(...a),
   createDocument: (...a) => createDocument(...a),
   deleteDocument: (...a) => deleteDocument(...a),
+  removeDocumentFile: (...a) => removeDocumentFile(...a),
 }));
 vi.mock("../../src/lib/api/supplierInvoices", () => ({
   collegaDocumentoAFattura: (...a) => collegaDocumentoAFattura(...a),
@@ -69,7 +71,7 @@ describe("la riga di Archivio della fattura", () => {
 
 describe("allegare l'xml a una fattura già registrata", () => {
   beforeEach(() => {
-    [uploadDocumentFile, createDocument, deleteDocument, collegaDocumentoAFattura, maybeSingle].forEach((m) => m.mockReset());
+    [uploadDocumentFile, createDocument, deleteDocument, removeDocumentFile, collegaDocumentoAFattura, maybeSingle].forEach((m) => m.mockReset());
     uploadDocumentFile.mockResolvedValue({ storage_path: "uuid-a.xml", file_name: "a.xml" });
     createDocument.mockResolvedValue("doc-1");
     collegaDocumentoAFattura.mockResolvedValue(undefined);
@@ -78,7 +80,7 @@ describe("allegare l'xml a una fattura già registrata", () => {
   const dati = { entityId: "ent-1", nomeFile: "a.xml.p7m", xml: "<a/>", fattura };
 
   it("carica il file, crea la riga e la collega", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "inv-1", documenti: [] }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
     const r = await allegaXmlPerFile(dati);
     expect(r).toBe("salvato");
     const file = uploadDocumentFile.mock.calls[0][0];
@@ -90,14 +92,14 @@ describe("allegare l'xml a una fattura già registrata", () => {
   });
 
   it("se il file c'è già non ne crea un secondo", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "inv-1", documenti: [{ id: "d", file_name: "a.xml" }] }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [{ id: "d", file_name: "a.xml" }] }, error: null });
     expect(await allegaXmlPerFile(dati)).toBe("gia_presente");
     expect(uploadDocumentFile).not.toHaveBeenCalled();
     expect(createDocument).not.toHaveBeenCalled();
   });
 
   it("un altro documento collegato (un DDT) non conta come xml", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "inv-1", documenti: [{ id: "d", file_name: "ddt.pdf" }] }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [{ id: "d", file_name: "ddt.pdf" }] }, error: null });
     expect(await allegaXmlPerFile(dati)).toBe("salvato");
   });
 
@@ -108,14 +110,14 @@ describe("allegare l'xml a una fattura già registrata", () => {
   });
 
   it("caricamento fallito: errore chiaro, nessuna riga creata", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "inv-1", documenti: [] }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
     uploadDocumentFile.mockRejectedValue(new Error("deposito giù"));
     await expect(allegaXmlPerFile(dati)).rejects.toThrow(/deposito giù/);
     expect(createDocument).not.toHaveBeenCalled();
   });
 
   it("collegamento fallito: la riga appena creata viene tolta, niente doppioni al secondo tentativo", async () => {
-    maybeSingle.mockResolvedValue({ data: { id: "inv-1", documenti: [] }, error: null });
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
     collegaDocumentoAFattura.mockRejectedValue(new Error("rete"));
     await expect(allegaXmlPerFile(dati)).rejects.toThrow(/rete/);
     expect(deleteDocument).toHaveBeenCalledWith({ id: "doc-1", storage_path: "uuid-a.xml" });
@@ -124,5 +126,50 @@ describe("allegare l'xml a una fattura già registrata", () => {
   it("errore di lettura della fattura: si propaga", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: { message: "boom" } });
     await expect(allegaXmlPerFile(dati)).rejects.toThrow(/boom/);
+  });
+
+  it("🔴 lotto: sceglie la fattura con lo stesso numero e data, non la prima", async () => {
+    maybeSingle.mockResolvedValue({
+      data: [
+        { id: "inv-1", invoice_number: "1/A", invoice_date: "2026-10-01", documenti: [{ id: "d", file_name: "a.xml" }] },
+        { id: "inv-2", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] },
+      ],
+      error: null,
+    });
+    expect(await allegaXmlPerFile(dati)).toBe("salvato");
+    expect(collegaDocumentoAFattura).toHaveBeenCalledWith("doc-1", "inv-2");
+  });
+
+  it("🔴 numero o data diversi: errore chiaro, niente caricato, e l'errore è marcato", async () => {
+    maybeSingle.mockResolvedValue({
+      data: [{ id: "inv-1", invoice_number: "1/A", invoice_date: "2026-10-01", documenti: [] }],
+      error: null,
+    });
+    const e = await allegaXmlPerFile(dati).catch((x) => x);
+    expect(e.message).toMatch(/altro numero o un'altra data/);
+    expect(e.nonCorrisponde).toBe(true);
+    expect(uploadDocumentFile).not.toHaveBeenCalled();
+  });
+
+  it("🔴 riga non creata dopo il caricamento: il file va tolto dal deposito", async () => {
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
+    createDocument.mockRejectedValue(new Error("riga rifiutata"));
+    removeDocumentFile.mockResolvedValue(undefined);
+    await expect(allegaXmlPerFile(dati)).rejects.toThrow(/riga rifiutata/);
+    expect(removeDocumentFile).toHaveBeenCalledWith("uuid-a.xml");
+  });
+
+  it("se anche togliere il file fallisce, l'errore lo dice", async () => {
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
+    createDocument.mockRejectedValue(new Error("riga rifiutata"));
+    removeDocumentFile.mockRejectedValue(new Error("deposito giù"));
+    await expect(allegaXmlPerFile(dati)).rejects.toThrow(/riga rifiutata.*file caricato non si è potuto togliere.*deposito giù/);
+  });
+
+  it("se il rollback del documento fallisce, l'errore lo dice", async () => {
+    maybeSingle.mockResolvedValue({ data: { id: "inv-1", invoice_number: "7/A", invoice_date: "2026-10-20", documenti: [] }, error: null });
+    collegaDocumentoAFattura.mockRejectedValue(new Error("rete"));
+    deleteDocument.mockRejectedValue(new Error("ancora rete"));
+    await expect(allegaXmlPerFile(dati)).rejects.toThrow(/rete.*non ho potuto togliere il documento.*ancora rete/);
   });
 });

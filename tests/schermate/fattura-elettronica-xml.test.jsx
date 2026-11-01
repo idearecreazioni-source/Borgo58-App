@@ -112,4 +112,16 @@ describe("l'import allega l'xml alla fattura", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Salva il file XML" }));
     expect(await screen.findByText(/Il file XML non è stato salvato: Non trovo la fattura/)).toBeTruthy();
   });
+
+  it("🔴 se la fattura trovata è un'altra del lotto, lo dice e il pulsante sparisce", async () => {
+    api.registra.mockRejectedValue(new Error("Questa fattura è già stata registrata"));
+    const e = new Error("La fattura registrata da questo file ha un altro numero o un'altra data");
+    e.nonCorrisponde = true;
+    api.allega.mockRejectedValue(e);
+    apri();
+    fireEvent.click(await scegli());
+    fireEvent.click(await screen.findByRole("button", { name: "Salva il file XML" }));
+    expect(await screen.findByText(/altro numero o un'altra data/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Salva il file XML" })).toBeNull();
+  });
 });

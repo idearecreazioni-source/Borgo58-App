@@ -485,10 +485,17 @@ export default function FattureFornitoriHome() {
   // Apre il file di un documento collegato (l'XML della fattura, un DDT…).
   const apriDocumento = async (d, fatturaId) => {
     setErroreRiga(null);
+    // ⚠️ Safari su iPhone blocca una finestra aperta DOPO un'attesa: si apre
+    // subito, vuota, e dopo si punta al file. Se non si lascia aprire
+    // (null) si torna al modo di prima.
+    const finestra = window.open("", "_blank");
+    if (finestra) finestra.opener = null;
     try {
       const url = await getDocumentUrl(d.storage_path);
-      window.open(url, "_blank", "noopener");
+      if (finestra) finestra.location.href = url;
+      else window.open(url, "_blank", "noopener");
     } catch (e) {
+      finestra?.close();
       setErroreRiga({ id: fatturaId, messaggio: `Non riesco ad aprire il file: ${e.message}` });
     }
   };

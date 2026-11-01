@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { createDocument, deleteDocument, uploadDocumentFile } from "./documents";
+import { createDocument, deleteDocument, removeDocumentFile, uploadDocumentFile } from "./documents";
 import { collegaDocumentoAFattura } from "./supplierInvoices";
 
 // IL FILE XML RESTA ATTACCATO ALLA FATTURA (01/11/2026).
@@ -51,27 +51,49 @@ export function documentoDellaFattura(f, entityId, nomeFile, storagePath) {
  * l'ha già. Restituisce "salvato" | "gia_presente"; lancia se non riesce.
  */
 export async function allegaXmlPerFile({ entityId, nomeFile, xml, fattura }) {
-  const { data: inv, error } = await supabase
+  // ⚠️ Le fatture di un lotto hanno lo stesso file SDI: si sceglie quella con
+  // lo stesso numero e la stessa data, mai la prima che capita.
+  const { data: trovate, error } = await supabase
     .from("supplier_invoices")
-    .select("id, documenti:documents!supplier_invoice_id(id, file_name)")
-    .eq("file_sdi", nomeFile)
-    .maybeSingle();
+    .select("id, invoice_number, invoice_date, documenti:documents!supplier_invoice_id(id, file_name)")
+    .eq("file_sdi", nomeFile);
   if (error) throw new Error(`Non riesco a ritrovare la fattura registrata: ${error.message}`);
-  if (!inv) throw new Error("Non trovo la fattura registrata da questo file: il file XML non è stato collegato.");
+  const elenco = Array.isArray(trovate) ? trovate : trovate ? [trovate] : [];
+  if (elenco.length === 0) throw new Error("Non trovo la fattura registrata da questo file: il file XML non è stato collegato.");
+  const uguale = (a, b) => String(a ?? "").trim() === String(b ?? "").trim();
+  const inv = elenco.find((x) => uguale(x.invoice_number, fattura?.numero) && uguale(x.invoice_date, fattura?.data));
+  if (!inv) {
+    const e = new Error(
+      "La fattura registrata da questo file ha un altro numero o un'altra data: il file XML non è stato collegato a questa riga."
+    );
+    e.nonCorrisponde = true;
+    throw e;
+  }
 
   const nome = nomeFileXml(nomeFile);
   if ((inv.documenti ?? []).some((d) => d.file_name === nome)) return "gia_presente";
 
   const file = new File([xml], nome, { type: "text/xml" });
   const { storage_path } = await uploadDocumentFile(file);
-  const docId = await createDocument(documentoDellaFattura(fattura, entityId, nomeFile, storage_path));
+  let docId;
+  try {
+    docId = await createDocument(documentoDellaFattura(fattura, entityId, nomeFile, storage_path));
+  } catch (e) {
+    // il file appena caricato non ha nessuna riga: si toglie, o resta orfano
+    try {
+      await removeDocumentFile(storage_path);
+    } catch (e2) {
+      throw new Error(`${e.message} Inoltre il file caricato non si è potuto togliere dal deposito (${e2.message}): resta un file senza documento.`);
+    }
+    throw e;
+  }
   try {
     await collegaDocumentoAFattura(docId, inv.id);
   } catch (e) {
     try {
       await deleteDocument({ id: docId, storage_path });
-    } catch {
-      // già stiamo segnalando il guasto vero: il riprovo non peggiora nulla
+    } catch (e2) {
+      throw new Error(`${e.message} Inoltre non ho potuto togliere il documento appena creato (${e2.message}): in Archivio ce ne può essere uno scollegato da eliminare.`);
     }
     throw e;
   }
