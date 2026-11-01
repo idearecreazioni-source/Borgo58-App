@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { ambienteCorrente } from "../ambiente";
 
 // GLI AVVISI DEL GESTIONALE — 24/08/2026, blocco 1(b) del collaudo.
 //
@@ -16,7 +17,16 @@ import { supabase } from "../supabase";
 export async function listAvvisi() {
   const { data, error } = await supabase.rpc("avvisi_del_gestionale");
   if (error) throw error;
-  return data ?? [];
+  return senzaQuelliDiCasa(data ?? [], ambienteCorrente().genere);
+}
+
+// ⚠️ L'UNICA ECCEZIONE, e solo su Casa (01/11/2026, decisione di Alessio):
+// li' i lavori pianificati sono spenti apposta (scripts/casa-comune.mjs),
+// quindi «la sorveglianza dei lavori è ferma» sarebbe vero per sempre e
+// non direbbe niente. Non è una regola nuova sugli avvisi: è la
+// differenza fra Casa e il gestionale vero, e il database resta lo stesso.
+export function senzaQuelliDiCasa(avvisi, genere) {
+  return genere === "casa" ? avvisi.filter((a) => a.chiave !== "sorveglianza") : avvisi;
 }
 
 // L'unico gesto che scrive: si toglie dal riquadro quello che si decide di
