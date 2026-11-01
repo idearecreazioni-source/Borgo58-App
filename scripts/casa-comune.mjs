@@ -353,7 +353,7 @@ export const CARTELLA_FUNZIONI = `${CARTELLA}/supabase/functions`;
 const CONFIGURAZIONE = `${CARTELLA}/supabase/config.toml`;
 
 /** La riga «enabled = ...» della sezione [edge_runtime] di config.toml: indice e valore. */
-function rigaDelRuntime(righe) {
+export function rigaDelRuntime(righe) {
   const inizio = righe.findIndex((r) => r.trim() === "[edge_runtime]");
   for (let i = inizio + 1; inizio >= 0 && i < righe.length && !righe[i].trim().startsWith("["); i++) {
     const m = /^enabled\s*=\s*(true|false)\s*$/.exec(righe[i].trim());
