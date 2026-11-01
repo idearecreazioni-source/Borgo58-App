@@ -410,7 +410,7 @@ export const CASH_DOCUMENT_TYPES = [
   { value: "documento_raccoglitore_occasionale", label: "Documento raccoglitore occasionale" },
   // Le spese della banca (commissioni, canone): il documento è l'estratto
   // conto. Deciso da Alessio il 25/10/2026.
-  { value: "estratto_conto", label: "Estratto conto (spese bancarie)" },
+  { value: "estratto_conto", label: "Estratto conto" },
   { value: "non_documentato", label: "Non documentato" },
 ];
 

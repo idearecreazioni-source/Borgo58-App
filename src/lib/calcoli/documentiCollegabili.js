@@ -69,3 +69,16 @@ export function senzaSocieta(documenti) {
   if (!Array.isArray(documenti)) return 0;
   return documenti.filter((d) => d && !d.supplier_invoice_id && (d.entity_id ?? null) === null).length;
 }
+
+/**
+ * Un documento collegato (`supplier_invoice_id`) a una fattura già PAGATA non
+ * ha più una scadenza da seguire: la copia in archivio resta, ma non va fra
+ * gli «In scadenza». Si guarda solo il collegamento vero, mai il nome o
+ * l'importo: un documento non collegato resta com'è.
+ *
+ * @param documento riga di `documents` con `fattura: { status }` incorporata
+ */
+export function scadenzaDaSeguire(documento) {
+  if (!documento?.expiry_date) return false;
+  return documento.fattura?.status !== "pagata";
+}

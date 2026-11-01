@@ -384,7 +384,7 @@ describe("14 · la migrazione si annulla e non lascia dati di prova", () => {
 });
 
 // =====================================================================
-// «ANTICIPO IO, POI MI RIMBORSO» — LA SECONDA FONTE (21/09/2026)
+// «ANTICIPO DA RIMBORSARMI» — LA SECONDA FONTE (21/09/2026)
 // =====================================================================
 // 🔴 IL DIFETTO CHE CHIUDE. La prima stesura contava queste spese **zero
 //    volte**: la spesa non vive in `cash_movements` ma in
@@ -624,7 +624,7 @@ describe("3-bis · i campi di una nota arrivano al database", () => {
 // =====================================================================
 // DOVE FINISCE QUESTA SPESA — la frase segue il soggetto (21/09/2026)
 // =====================================================================
-// 🔴 IL DIFETTO CHE CHIUDE: in «Anticipo io, poi mi rimborso» il soggetto si
+// 🔴 IL DIFETTO CHE CHIUDE: in «Anticipo da rimborsarmi» il soggetto si
 //    sceglie da un menu (Borgo 58 **oppure** Orto Borgo 58), e l'aiuto
 //    dell'etichetta diceva sempre «entra sotto Borgo 58». Su una nota
 //    dell'orto era **falso**: quella spesa finisce sotto l'orto, e l'orto sta

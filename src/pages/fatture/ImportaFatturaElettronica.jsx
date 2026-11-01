@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { registraFatturaElettronica } from "../../lib/api/banca";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR } from "../../lib/constants";
-import { leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
+import { eGiaRegistrata, leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 
@@ -112,7 +112,7 @@ export default function ImportaFatturaElettronica() {
   // due fatture dello stesso fornitore nuovo mandate insieme potrebbero
   // provare a crearlo due volte. Un doppione si ferma nel database e la
   // riga dice perché: le altre proseguono.
-  const daRegistrare = letture.filter((l) => !l.errore && l.fattura.errori.length === 0 && !esiti[l.chiave]?.ok);
+  const daRegistrare = letture.filter((l) => !l.errore && l.fattura.errori.length === 0 && !esiti[l.chiave]?.ok && !eGiaRegistrata(esiti[l.chiave]?.testo));
   const registraTutte = async () => {
     setTutte(true);
     try {
@@ -264,7 +264,7 @@ export default function ImportaFatturaElettronica() {
                   )}
                 </p>
               ) : null}
-              {!bloccata && !esito?.ok && (
+              {!bloccata && !esito?.ok && !eGiaRegistrata(esito?.testo) && (
                 <button
                   type="button"
                   disabled={occupato === l.chiave || tutte || !entityId}
