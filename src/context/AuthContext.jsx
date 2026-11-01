@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { ambienteCorrente } from "../lib/ambiente";
 
 const AuthContext = createContext(null);
 
@@ -37,6 +38,34 @@ const [, TITOLARE_CODIFICATO, STAFF_CODIFICATO] = __INDIRIZZI_ACCESSO__.split(",
 const TITOLARE_EMAIL = decodeURIComponent(TITOLARE_CODIFICATO);
 const STAFF_EMAIL = decodeURIComponent(STAFF_CODIFICATO);
 
+// 🔴 SU CASA IL RUOLO SI RICORDA (fase 4, 31/10/2026). Casa si apre anche
+// senza rete (la coda delle foto): se il ruolo si potesse solo chiedere al
+// database, all'avvio senza rete il titolare risulterebbe nessuno e la coda
+// gli sarebbe chiusa. Quindi l'ultimo ruolo LETTO si tiene nel telefono, per
+// utente, e si usa solo quando la lettura fallisce.
+// ⚠️ SOLO SU CASA: sul locale niente cambia. E non apre niente che il
+// database non apra: la barriera vera resta la RLS, e senza rete il database
+// non si tocca comunque.
+const SU_CASA = ambienteCorrente().genere === "casa";
+const chiaveRuolo = (userId) => `casa-ruolo:${userId}`;
+function ricordaRuolo(userId, ruolo) {
+  if (!SU_CASA) return;
+  try {
+    if (ruolo) localStorage.setItem(chiaveRuolo(userId), ruolo);
+    else localStorage.removeItem(chiaveRuolo(userId));
+  } catch {
+    // Senza memoria del browser si torna al comportamento di sempre.
+  }
+}
+function ruoloRicordato(userId) {
+  if (!SU_CASA) return null;
+  try {
+    return localStorage.getItem(chiaveRuolo(userId));
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
@@ -63,8 +92,11 @@ export function AuthProvider({ children }) {
         .maybeSingle();
       if (error) throw error;
       setRole(data?.role ?? null);
+      ricordaRuolo(activeSession.user.id, data?.role ?? null);
       setRuoloNonLetto(false);
     } catch (e) {
+      const ricordato = ruoloRicordato(activeSession.user.id);
+      if (ricordato) setRole((attuale) => attuale ?? ricordato);
       setRuoloNonLetto(e?.message || true);
     }
   };
@@ -109,7 +141,14 @@ export function AuthProvider({ children }) {
     return { ok: true };
   };
 
-  const logout = () => supabase.auth.signOut();
+  const logout = async () => {
+    // Su Casa il ruolo ricordato si dimentica uscendo.
+    // SILENZIO MOTIVATO: senza sessione leggibile non c'e' ruolo da
+    // dimenticare, e l'uscita deve avvenire comunque.
+    const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
+    if (data?.session) ricordaRuolo(data.session.user.id, null);
+    return supabase.auth.signOut();
+  };
 
   return (
     <AuthContext.Provider
