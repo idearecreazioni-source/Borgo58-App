@@ -115,6 +115,14 @@ export default function ElencoAdattivo({
   //    Tailwind le trova nel testo del sorgente, e la rete delle tabelle
   //    larghe (`larghezza.js`) cerca «hidden md:block» accanto alla tabella.
   tabellaDa = "md",
+  // 🔴 UNA SCHEDA PER OGNI RIGA ANCHE SUL COMPUTER — facoltativa, dal
+  //    collaudo della Prima nota: la tabella unica attaccava il movimento
+  //    alla sua fascia («Investimento… Rimuovi») e al movimento dopo. Con
+  //    `schedeSeparate` ogni riga, con quello che si apre sotto, sta nel suo
+  //    riquadro, come le fatture fornitori. Colonne a larghezza fissa e
+  //    uguali in tutte le schede, così restano allineate. Chi non la passa
+  //    non vede niente di diverso.
+  schedeSeparate = false,
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
@@ -329,7 +337,114 @@ export default function ElencoAdattivo({
         })}
       </div>
 
+      {/* SUL COMPUTER, UNA SCHEDA PER RIGA (opt-in `schedeSeparate`). */}
+      {schedeSeparate && (
+        <div className={`${tabellaDa === "xl" ? "hidden xl:block" : "hidden md:block"} print:block`} data-schede-separate>
+          {(() => {
+            const gruppo = (
+              <colgroup>
+                <col style={{ width: larghezzaTitolo ?? "8rem" }} />
+                {colonne.map((c) => (
+                  <col key={c.chiave} />
+                ))}
+                {azione && <col style={{ width: "8rem" }} />}
+              </colgroup>
+            );
+            return (
+              <>
+                <table className="w-full table-fixed testo-sala-grande">
+                  {gruppo}
+                  <thead>
+                    <tr className="text-left text-b58-charcoal-soft">
+                      <th className="px-4 py-2 font-medium">{intestazioneTitolo}</th>
+                      {colonne.map((c) => (
+                        <th key={c.chiave} className="px-4 py-2 font-medium">
+                          {c.etichetta}
+                        </th>
+                      ))}
+                      {azione && <th className="px-4 py-2"></th>}
+                    </tr>
+                  </thead>
+                </table>
+                <div className="space-y-3">
+                  {righe.map((r) => {
+                    const gesto = azione?.(r);
+                    const dentroAperta = aperta?.(r);
+                    return (
+                      <div
+                        key={chiave(r)}
+                        data-scheda-riga
+                        className={`rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden ${
+                          attenuata?.(r) ? "opacity-55" : ""
+                        }`}
+                      >
+                        <table className="w-full table-fixed testo-sala-grande">
+                          {gruppo}
+                          <tbody>
+                            <tr
+                              data-riga
+                              {...(onTocco
+                                ? { onClick: apreLaRiga(r), onKeyDown: apreDaTastiera(r), tabIndex: 0, role: "button" }
+                                : {})}
+                              className={onTocco ? `hover:bg-b58-cream-dark/40 cursor-pointer ${fuocoVisibile}` : ""}
+                            >
+                              <td className="px-4 py-3 text-b58-charcoal font-medium">
+                                {conInizio(r, <>
+                                {titolo(r)}
+                                {segno?.(r)}
+                                {nota?.(r) && (
+                                  <span className="block testo-sala font-normal text-b58-charcoal-soft/70 mt-0.5" data-nota>
+                                    {nota(r)}
+                                  </span>
+                                )}
+                                </>)}
+                              </td>
+                              {colonne
+                                .map((col) => campi(r).find((x) => x.chiave === col.chiave) ?? { chiave: col.chiave, valore: "", vuoto: "" })
+                                .map((c) => (
+                                  <td
+                                    key={c.chiave}
+                                    className={`px-4 py-3 break-words ${c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal-soft"}`}
+                                  >
+                                    {c.valore || <span className="text-b58-charcoal-soft/70 italic">{c.vuoto ?? vuoto}</span>}
+                                  </td>
+                                ))}
+                              {azione && (
+                                <td className="px-4 py-3 text-right">
+                                  {gesto && (
+                                    <button
+                                      type="button"
+                                      onClick={gesto.onClick}
+                                      disabled={gesto.spenta}
+                                      className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                      {gesto.etichetta}
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                            {dentroAperta && (
+                              <tr className="bg-b58-campo">
+                                <td colSpan={colonne.length + (azione ? 2 : 1)} className="px-4 py-3">
+                                  {dentroAperta}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* SUL COMPUTER E SULLA CARTA: la tabella. */}
+      {!schedeSeparate && (
       <div className={`${tabellaDa === "xl" ? "hidden xl:block" : "hidden md:block"} print:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent`}>
         <table className={`w-full testo-sala-grande ${larghezzaTitolo ? "table-fixed" : ""}`}>
           <thead>
@@ -420,6 +535,7 @@ export default function ElencoAdattivo({
           </tbody>
         </table>
       </div>
+      )}
     </>
   );
 }

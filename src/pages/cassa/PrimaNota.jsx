@@ -868,6 +868,7 @@ export default function PrimaNota() {
                 vista. Le schede restano fino a 1280. */}
             <ElencoAdattivo
               tabellaDa="xl"
+              schedeSeparate
               righe={movements}
               chiave={(m) => m.id}
               titolo={(m) => formatDate(m.movement_date)}
