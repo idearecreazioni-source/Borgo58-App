@@ -21,7 +21,7 @@ export function funzioniChiamate(righe) {
   const testo = righe.join("\n");
   const nomi = new Set();
   const modi = [
-    /chiamaFunzione\(\s*["'`]([a-z0-9-]+)["'`]/g,
+    /chiamaFunzione\w*\(\s*["'`]([a-z0-9-]+)["'`]/g,
     /functions\.invoke\(\s*["'`]([a-z0-9-]+)["'`]/g,
     /\/functions\/v1\/([a-z0-9-]+)/g,
   ];
@@ -53,21 +53,22 @@ const senzaCommentiSql = (testo) => testo.replace(/--[^\n]*/g, "").replace(/\/\*
  * Cosa cambia per Casa.
  *
  * @param file            i percorsi cambiati (git diff --name-only)
+ * @param fileNuovi       i percorsi aggiunti (git diff --name-only --diff-filter=A)
  * @param aggiunte        le righe aggiunte per file (righeAggiunte)
  * @param migrazioniNuove { nome, testo } delle migrazioni da applicare
  * @param funzioniDiCasa  le funzioni accese su Casa
  * @returns {{ migrazioni: string[], funzioniDaRiavviare: string[], npmCi: boolean, avvisi: string[] }}
  */
-export function differenzePerCasa({ file, aggiunte, migrazioniNuove, funzioniDiCasa }) {
+export function differenzePerCasa({ file, fileNuovi = [], aggiunte, migrazioniNuove, funzioniDiCasa }) {
   const avvisi = [];
   const accese = new Set(funzioniDiCasa);
 
   for (const { nome, testo } of migrazioniNuove) {
     const sql = senzaCommentiSql(testo);
-    if (/\bcron\s*\.\s*(schedule|alter_job)\s*\(/i.test(sql)) {
+    if (/\bcron\s*\.\s*(schedule\w*|alter_job)\s*\(/i.test(sql)) {
       avvisi.push(`${nome}: programma un lavoro automatico. Su Casa i lavori restano spenti: quello che fa, su Casa non succede da solo.`);
     }
-    if (/\bnet\s*\.\s*http_(post|get)\s*\(/i.test(sql)) {
+    if (/\bnet\s*\.\s*http_\w+\s*\(/i.test(sql)) {
       avvisi.push(`${nome}: fa chiamate di rete dal database. Su Casa il cloud è chiuso: quella parte non risponderà.`);
     }
   }
@@ -77,6 +78,13 @@ export function differenzePerCasa({ file, aggiunte, migrazioniNuove, funzioniDiC
   );
   const condiviseCambiate = file.some((f) => f.startsWith("supabase/functions/_shared/"));
   const funzioniDaRiavviare = funzioniDiCasa.filter((n) => funzioniCambiate.has(n) || condiviseCambiate);
+  // Una funzione NUOVA nasce spenta su Casa: va detto anche se l'app non la chiama ancora.
+  for (const nome of [...new Set(fileNuovi.map((f) => /^supabase\/functions\/([^/]+)\/index\.ts$/.exec(f)?.[1]))].filter(Boolean).sort()) {
+    if (nome !== "_shared" && !accese.has(nome)) avvisi.push(`supabase/functions/${nome}: funzione nuova, su Casa resta spenta.`);
+  }
+  if (file.includes("supabase/config.toml")) {
+    avvisi.push("supabase/config.toml: la configurazione del gestionale è cambiata; quella di Casa (C:\\Casa\\supabase) no. Va guardata a mano.");
+  }
 
   const perFunzione = new Map();
   for (const [percorso, righe] of Object.entries(aggiunte)) {

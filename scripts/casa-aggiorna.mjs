@@ -39,7 +39,8 @@ const GESTIONALE = path.resolve(`${CARTELLA}/gestionale`);
 const RAMO = "origin/slave";
 
 function git(...argomenti) {
-  const r = spawnSync("git", argomenti, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  // quotepath=false: un percorso con lettere accentate resta leggibile, non fra virgolette.
+  const r = spawnSync("git", ["-c", "core.quotepath=false", ...argomenti], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (r.status !== 0) fermati(`git ${argomenti.join(" ")} non e' riuscito:`, (r.stderr || r.stdout || "").trim());
   return r.stdout;
 }
@@ -50,10 +51,20 @@ function npm(comando, descrizione) {
   if (r.status !== 0) fermati(`${descrizione} non e' riuscito (npm run ${comando}).`, ...seSiFerma());
 }
 
+// ⚠️ La copia rimette il DATABASE; il codice si rimette a parte, al punto
+//    di partenza: insieme, o Casa resta con codice nuovo e dati vecchi
+//    (revisione ecc:security-reviewer, 01/11/2026).
 let copia = null;
+let partenza = null;
 const seSiFerma = () =>
   copia
-    ? ["", `Casa si rimette com'era con la copia fatta prima: ${copia}`, "(chiedi a Claude di ripristinarla: non farlo a mano)."]
+    ? [
+        "",
+        "Casa si rimette com'era in due passi, insieme (chiedi a Claude: non farlo a mano):",
+        `  · il database, dalla copia fatta prima: ${copia}`,
+        `  · il codice, al punto di partenza: git reset --hard ${partenza}`,
+        "Non rilanciare l'aggiornamento sopra: una migrazione fermata puo' essere rimasta a meta'.",
+      ]
     : [];
 
 // --- 1. E' Casa, e la cartella e' pulita ---------------------------------
@@ -70,7 +81,8 @@ console.log("   e' Casa, e la cartella del gestionale e' pulita");
 // --- 2. Cosa arriva -------------------------------------------------------
 titolo("Guardo cosa arriva");
 git("fetch", "--quiet", "origin", "slave");
-const prima = git("rev-parse", "--short", "HEAD").trim();
+partenza = git("rev-parse", "HEAD").trim();
+const prima = partenza.slice(0, 8);
 const dopo = git("rev-parse", "--short", RAMO).trim();
 // ⚠️ Solo avanti: se Casa avesse commit che slave non ha, un merge li
 //    mescolerebbe in silenzio.
@@ -87,10 +99,14 @@ const elencoMigrazioni = git("ls-tree", "--name-only", `${RAMO}`, "supabase/migr
   .filter((f) => f.endsWith(".sql"))
   .map((f) => path.basename(f))
   .sort();
+// La versione finisce in una SQL: solo nomi della forma delle migrazioni.
+const strane = elencoMigrazioni.filter((f) => !/^\d{14}_[A-Za-z0-9_.-]+\.sql$/.test(f));
+if (strane.length) fermati("FERMO: in supabase/migrations ci sono file con un nome che non e' da migrazione:", ...strane);
 const daApplicare = elencoMigrazioni.filter((f) => !registrate.has(f.slice(0, 14)));
 const migrazioniNuove = daApplicare.map((nome) => ({ nome, testo: git("show", `${RAMO}:supabase/migrations/${nome}`) }));
 const differenze = differenzePerCasa({
   file: fileCambiati,
+  fileNuovi: git("diff", "--name-only", "--diff-filter=A", `HEAD..${RAMO}`).split(/\r?\n/).filter(Boolean),
   aggiunte: righeAggiunte(git("diff", "--unified=0", `HEAD..${RAMO}`, "--", "src")),
   migrazioniNuove,
   funzioniDiCasa: FUNZIONI_DI_CASA,
@@ -116,15 +132,16 @@ if (differenze.avvisi.length) {
 
 // --- 3. La copia di sicurezza ---------------------------------------------
 titolo("Faccio la copia di sicurezza");
-npm("casa:copia", "La copia di sicurezza");
-// Solo le cartelle con copia.json sono copie buone (casa-copia.mjs).
+// Solo le cartelle con copia.json sono copie buone (casa-copia.mjs), e deve
+// essere NUOVA: una copia vecchia non salva quello che e' entrato dopo.
 const COPIE = path.join(CARTELLA, "copie");
-copia = readdirSync(COPIE)
-  .filter((d) => existsSync(path.join(COPIE, d, "copia.json")))
-  .sort()
-  .map((d) => path.join(COPIE, d))
-  .pop();
-if (!copia) fermati("FERMO: la copia di sicurezza non risulta fatta: non aggiorno senza.");
+const copieBuone = () =>
+  existsSync(COPIE) ? readdirSync(COPIE).filter((d) => existsSync(path.join(COPIE, d, "copia.json"))) : [];
+const giaFatte = new Set(copieBuone());
+npm("casa:copia", "La copia di sicurezza");
+const nuove = copieBuone().filter((d) => !giaFatte.has(d)).sort();
+if (nuove.length !== 1) fermati("FERMO: non trovo la copia di sicurezza appena fatta: non aggiorno senza.");
+copia = path.join(COPIE, nuove[0]);
 console.log(`   copia: ${copia}`);
 
 // --- 4. Il codice -----------------------------------------------------------
@@ -145,13 +162,15 @@ for (const nome of daApplicare) {
   const r = psql(readFileSync(percorso, "utf8").replace(/\r\n/g, "\n"), { atomica });
   if (!r.ok) fermati(`La migrazione ${nome} si e' fermata:`, soloLErrore(r.uscita), ...seSiFerma());
   const versione = nome.slice(0, 14);
-  if (sql(`select count(*) from applied_migrations where version = '${versione}';`, "Il controllo del registro") !== "1") {
+  const registro = psql(`select count(*) from applied_migrations where version = '${versione}';`);
+  if (!registro.ok || registro.stdout !== "1") {
     fermati(`La migrazione ${nome} e' passata ma non si e' registrata.`, ...seSiFerma());
   }
   console.log(`   ok   ${nome}`);
 }
 // Una migrazione puo' programmare o riaccendere un lavoro: su Casa restano spenti.
-sql("select cron.alter_job(jobid, active := false) from cron.job where active;", "Lo spegnimento dei lavori pianificati");
+const spenti = psql("select cron.alter_job(jobid, active := false) from cron.job where active;");
+if (!spenti.ok) fermati("Lo spegnimento dei lavori pianificati non e' riuscito:", soloLErrore(spenti.uscita), ...seSiFerma());
 
 // --- 6. Riaccendo, ricostruisco, verifico ------------------------------------
 titolo("Riaccendo, ricostruisco e verifico");

@@ -113,3 +113,31 @@ describe("i titoli delle PR unite", () => {
     ]);
   });
 });
+
+describe("le difese aggiunte dalla revisione (01/11/2026)", () => {
+  it("🔴 una funzione nuova nasce spenta su Casa, e lo dice", () => {
+    const d = differenzePerCasa({
+      ...base,
+      file: ["supabase/functions/nuova-cosa/index.ts"],
+      fileNuovi: ["supabase/functions/nuova-cosa/index.ts"],
+    });
+    expect(d.avvisi).toEqual(["supabase/functions/nuova-cosa: funzione nuova, su Casa resta spenta."]);
+  });
+
+  it("la configurazione cambiata va guardata a mano", () => {
+    expect(differenzePerCasa({ ...base, file: ["supabase/config.toml"] }).avvisi[0]).toMatch(/config\.toml/);
+  });
+
+  it("🔴 anche gli altri nomi: net.http_request, cron.schedule_in_database, chiamaFunzioneConRiprova", () => {
+    const d = differenzePerCasa({
+      ...base,
+      file: ["src/a.js"],
+      aggiunte: { "src/a.js": ['chiamaFunzioneConRiprova("leggi-fattura")'] },
+      migrazioniNuove: [
+        { nome: "20261102000001_a.sql", testo: "select net.http_request('GET', u);" },
+        { nome: "20261102000002_b.sql", testo: "select cron.schedule_in_database('x', '* * * * *', 'select 1', 'postgres');" },
+      ],
+    });
+    expect(d.avvisi).toHaveLength(3);
+  });
+});
