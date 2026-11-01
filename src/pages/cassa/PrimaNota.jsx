@@ -9,6 +9,8 @@ import {
   spesoDallaTasca,
   listCausali,
 } from "../../lib/api/cash";
+import { idMovimentiDaCollocare } from "../../lib/api/speseDaCollocare";
+import { fraseMovimentoDaCollocare } from "../../lib/calcoli/daCollocare";
 import { getEntities } from "../../lib/api/entities";
 import {
   CASH_DOCUMENT_TYPES,
@@ -95,6 +97,9 @@ export default function PrimaNota() {
   const [causaliUscita, setCausaliUscita] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // L'errore della rimozione sta SULLA riga, non in cima alla pagina.
+  const [erroreRiga, setErroreRiga] = useState(null);
+  const [daCollocare, setDaCollocare] = useState(() => new Set());
 
   const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
@@ -175,11 +180,16 @@ export default function PrimaNota() {
       entities?.tasca && entityId === entities.tasca.id
         ? spesoDallaTasca(from || null, to || null)
         : Promise.resolve(null),
-    ]).then(([mov, bal, conto]) => {
-      setMovements(mov);
-      setBalance(bal);
-      setContoTasca(conto);
-    });
+    ])
+      .then(([mov, bal, conto]) =>
+        idMovimentiDaCollocare((mov ?? []).map((m) => m.id)).then((nati) => [mov, bal, conto, nati]),
+      )
+      .then(([mov, bal, conto, nati]) => {
+        setDaCollocare(nati);
+        setMovements(mov);
+        setBalance(bal);
+        setContoTasca(conto);
+      });
   };
 
   useEffect(() => {
@@ -310,11 +320,13 @@ export default function PrimaNota() {
   };
 
   const handleDelete = async (id) => {
+    setErroreRiga(null);
     try {
       await deleteCashMovement(id);
       await reload();
     } catch (e) {
-      setError(e.message);
+      const frase = fraseMovimentoDaCollocare(e);
+      setErroreRiga({ id, testo: frase ?? e.message, daCollocare: Boolean(frase) });
     }
   };
 
@@ -981,11 +993,33 @@ export default function PrimaNota() {
                       </Didascalia>
                     </p>
                   )}
-                  <ConfermaDistruttiva
-                    etichetta="Rimuovi"
-                    cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
-                    onConferma={() => handleDelete(m.id)}
-                  />
+                  {daCollocare.has(m.id) ? (
+                    <p data-prova="movimento-da-collocare" className="testo-sala text-b58-charcoal-soft">
+                      Viene da «Da collocare»: per toglierlo vai a{" "}
+                      <Link to="/cassa/da-collocare" className="tocco-inline underline">
+                        «Da collocare» → «Annulla la collocazione»
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <ConfermaDistruttiva
+                      etichetta="Rimuovi"
+                      cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
+                      onConferma={() => handleDelete(m.id)}
+                    />
+                  )}
+                  {erroreRiga?.id === m.id && (
+                    <p
+                      role="alert"
+                      data-prova="errore-riga"
+                      className="basis-full testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2"
+                    >
+                      {erroreRiga.testo}{" "}
+                      {erroreRiga.daCollocare && (
+                        <Link to="/cassa/da-collocare" className="tocco-inline underline">Vai a «Da collocare»</Link>
+                      )}
+                    </p>
+                  )}
                 </div>
               )}
             />
