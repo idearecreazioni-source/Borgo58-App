@@ -29,14 +29,20 @@ export function riepilogoProgetto(aggregato, righe) {
 }
 
 /**
- * Quale riquadro va in quarta posizione.
+ * Quale riquadro va in quarta posizione: "attesa", "progetto" o "omaggi".
  *
  * 🔴 SI CAMBIA DA SOLO AL PRIMO SCONTRINO, non a una data (scelta di
  *    Alessio). Se non si sa (`null`/`undefined`: lettura fallita) resta il
  *    riquadro di sempre, gli omaggi: e' il comportamento di prima.
  *
- * @param scontrinoEmesso  true / false / null (non si sa)
+ * 🔴 TRE STATI, non due: finche' la lettura e' in corso (`undefined`) si
+ *    disegna un segnaposto neutro, senza ripiego sugli omaggi, altrimenti il
+ *    riquadro lampeggia e poi cambia. Gli omaggi tornano solo se uno
+ *    scontrino esiste (true) o la lettura e' fallita (null).
+ *
+ * @param scontrinoEmesso  undefined (in corso) / true / false / null (lettura fallita)
  */
 export function riquadroInQuartaPosizione(scontrinoEmesso) {
+  if (scontrinoEmesso === undefined) return "attesa";
   return scontrinoEmesso === false ? "progetto" : "omaggi";
 }

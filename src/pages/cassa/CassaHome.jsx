@@ -57,8 +57,8 @@ export default function CassaHome() {
   // funzione che risponde in «Incassato e scontrinato» — un solo calcolo.
   const [fiscale, setFiscale] = useState(null);
   // «Il progetto finora» sta al posto degli omaggi fino al primo scontrino.
-  // null = non si sa (resta il riquadro di sempre).
-  const [scontrino, setScontrino] = useState(null);
+  // undefined = lettura in corso, null = lettura fallita (riquadro di sempre).
+  const [scontrino, setScontrino] = useState(undefined);
   const [progetto, setProgetto] = useState(null);
   useEffect(() => {
     let vivo = true;
@@ -334,11 +334,21 @@ export default function CassaHome() {
               </div>
             </div>
 
-            {quartoRiquadro === "progetto" ? (
+            {quartoRiquadro === "attesa" ? (
+              <div
+                data-prova="riquadro-attesa"
+                aria-hidden="true"
+                className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4"
+              >
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">&nbsp;</div>
+                <div className="text-2xl font-medium text-b58-charcoal">&nbsp;</div>
+                <div className="testo-sala mt-1">&nbsp;</div>
+              </div>
+            ) : quartoRiquadro === "progetto" ? (
               <Link
                 to="/cassa/costo-progetto"
                 data-prova="riquadro-progetto"
-                className="block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 hover:ring-b58-terracotta"
+                className="block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 hover:ring-b58-terracotta focus-visible:ring-2 focus-visible:ring-b58-terracotta"
               >
                 <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Il progetto finora</div>
                 {progetto === null ? (

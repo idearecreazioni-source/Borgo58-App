@@ -40,8 +40,10 @@ describe("riepilogoProgetto", () => {
 describe("riquadroInQuartaPosizione", () => {
   it("nessuno scontrino: il progetto", () => expect(riquadroInQuartaPosizione(false)).toBe("progetto"));
   it("primo scontrino emesso: tornano gli omaggi", () => expect(riquadroInQuartaPosizione(true)).toBe("omaggi"));
-  it("non si sa: restano gli omaggi", () => {
+  it("lettura fallita: restano gli omaggi", () => {
     expect(riquadroInQuartaPosizione(null)).toBe("omaggi");
-    expect(riquadroInQuartaPosizione(undefined)).toBe("omaggi");
+  });
+  it("lettura in corso: segnaposto, ne' omaggi ne' progetto", () => {
+    expect(riquadroInQuartaPosizione(undefined)).toBe("attesa");
   });
 });

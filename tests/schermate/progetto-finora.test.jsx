@@ -55,6 +55,14 @@ beforeEach(() => {
 });
 
 describe("il quarto riquadro", () => {
+  it("mentre lo scontrino si sta cercando non mostra gli omaggi (niente lampeggio)", async () => {
+    api.scontrino.mockReturnValue(new Promise(() => {}));
+    mostra();
+    await waitFor(() => expect(document.querySelector('[data-prova="riquadro-attesa"]')).not.toBeNull());
+    expect(screen.queryByText(/Omaggi/)).toBeNull();
+    expect(screen.queryByText("Il progetto finora")).toBeNull();
+  });
+
   it("senza scontrini mostra il progetto, il totale e quanto hai anticipato", async () => {
     mostra();
     await waitFor(() => expect(document.querySelector('[data-prova="progetto-totale"]')).not.toBeNull());
