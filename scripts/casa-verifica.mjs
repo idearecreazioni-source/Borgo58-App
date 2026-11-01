@@ -14,7 +14,7 @@
 
 import { fermati, titolo } from "./comune.mjs";
 import { esitoRegistro } from "./ricostruzione-regole.mjs";
-import { FUNZIONI_DI_CASA, pretendiCasa, problemiDelleFunzioni, problemiDiCasa } from "./casa-comune.mjs";
+import { FUNZIONI_DI_CASA, chiaveDiClaudePresente, pretendiCasa, problemiDelleFunzioni, problemiDiCasa } from "./casa-comune.mjs";
 
 titolo("Verifico Casa");
 pretendiCasa();
@@ -23,3 +23,5 @@ problemi.push(...(await problemiDelleFunzioni()));
 if (problemi.length > 0) fermati("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`));
 console.log(`   a posto: ${registrate} migrazioni registrate, lavori spenti, niente cloud dentro, porte chiuse`);
 console.log(`   funzioni accese: solo ${FUNZIONI_DI_CASA.join(", ")} (le altre rispondono «non c'e'»)`);
+// La chiave non e' un difetto di Casa: senza, MEMO lo dice da solo a chi lo usa.
+console.log(`   chiave di Claude per MEMO: ${chiaveDiClaudePresente() ? "presente" : "manca (npm run casa:chiave)"}`);

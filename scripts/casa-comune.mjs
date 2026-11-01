@@ -327,13 +327,18 @@ export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
 }
 
 /**
- * 🔴 LE FUNZIONI DI CASA (01/11/2026): ne e' accesa UNA, `operazioni-atomiche`.
- * Ogni scrittura a piu' tabelle del gestionale passa da li' (regola B4 del
- * Contratto): senza, su Casa non si colloca uno scontrino, non si chiude un
- * conto, non si carica una fattura. Le altre (AI, posta, Telegram...)
- * restano spente fino alla fase 7.
+ * 🔴 LE FUNZIONI DI CASA (01/11/2026), solo quelle di FUNZIONI_DI_CASA:
+ *  · `operazioni-atomiche`: ogni scrittura a piu' tabelle del gestionale
+ *    passa da li' (regola B4 del Contratto): senza, su Casa non si colloca
+ *    uno scontrino, non si chiude un conto, non si carica una fattura;
+ *  · MEMO (decisione di Alessio del 01/11 sera: Casa deve funzionare come
+ *    il gestionale vero, con la STESSA AI): `ascolta-voce`, `leggi-foto`,
+ *    `documento-leggi`, `assistente-archivio`. Chiamano Claude (Anthropic)
+ *    con la chiave di FILE_CHIAVE_CLAUDE, nello stesso account del
+ *    gestionale vero; il tetto di spesa del mese e' quello del database di
+ *    Casa. Restano spente posta, Telegram, email ai clienti e il resto.
  *
- * Come resta UNA sola, misurato con Supabase CLI 2.122.0:
+ * Come restano SOLO quelle, misurato con Supabase CLI 2.122.0:
  *  · il motore delle funzioni monta in sola lettura SOLO la cartella
  *    C:\Casa\supabase\functions, e serve quello che ci trova. Dentro ci
  *    mettiamo solo le cartelle di FUNZIONI_DI_CASA, copiate dal gestionale
@@ -347,15 +352,55 @@ export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
  * resta nel volume supabase_edge_runtime_casa e sopravvive ai riavvii.
  * ⚠️ Dal DATABASE le funzioni restano irraggiungibili: `url_funzioni` punta a
  * 127.0.0.1 dentro il contenitore del database, dove non risponde nessuno.
- * ⚠️ RISCHIO ACCETTATO (revisione ecc:security-reviewer): il motore ha la
- * rete in uscita (gli serve per npm) e /etc/hosts chiude solo i nomi di
- * nomiDelCloud, non gli indirizzi numerici ne' i nomi del pooler. Nel suo
- * ambiente la CLI mette anche la chiave service_role e l'indirizzo del
- * database di Casa. Oggi non pesa: `operazioni-atomiche` usa solo
- * SUPABASE_URL e la chiave anon, e chiama solo Casa. Il giorno che si
- * accende una funzione che va su internet (fase 7) va ripensato.
+ * ⚠️ RISCHIO ACCETTATO (revisione ecc:security-reviewer, ripensato il
+ * 01/11 sera con MEMO): il motore ha la rete in uscita (npm e Anthropic) e
+ * /etc/hosts chiude solo i nomi di nomiDelCloud, non gli indirizzi
+ * numerici ne' i nomi del pooler. Nel suo ambiente la CLI mette anche la
+ * chiave service_role e l'indirizzo del database di Casa. Le funzioni di
+ * Casa usano SOLO SUPABASE_URL, la chiave anon e ANTHROPIC_API_KEY (lo
+ * controlla barriere-casa.test.js), e parlano solo con Casa e con
+ * Anthropic, a cui mandano quello che Alessio fotografa o detta: come nel
+ * gestionale vero. Una funzione che legga altro dall'ambiente non entra.
  */
-export const FUNZIONI_DI_CASA = ["operazioni-atomiche"];
+export const FUNZIONI_DI_CASA = ["operazioni-atomiche", "ascolta-voce", "leggi-foto", "documento-leggi", "assistente-archivio"];
+
+/**
+ * La chiave di Claude per Casa: un file `.env` accanto alle funzioni, che
+ * Supabase CLI carica nel loro ambiente a ogni `supabase start`. La scrive
+ * Alessio con `npm run casa:chiave`; non passa mai dalla chat, non entra
+ * nel repository (sta in C:\Casa) e non si stampa: di lei si dice solo se
+ * c'e'. ⚠️ Non e' una funzione: preparaLeFunzioni non la tocca.
+ */
+export const FILE_CHIAVE_CLAUDE = ".env";
+const percorsoChiave = () => `${CARTELLA_FUNZIONI}/${FILE_CHIAVE_CLAUDE}`;
+
+/** Il file della chiave, se manca, con la riga vuota da riempire. Restituisce il percorso. */
+export function preparaIlFileDellaChiave() {
+  mkdirSync(CARTELLA_FUNZIONI, { recursive: true });
+  const file = percorsoChiave();
+  try {
+    if (lstatSync(file).isSymbolicLink()) fermati(`FERMO: ${file} e' un collegamento. Toglilo a mano: non lo seguo.`);
+  } catch (e) {
+    if (e?.code !== "ENOENT") throw e;
+    writeFileSync(
+      file,
+      "# La chiave di Claude per Casa (npm run casa:chiave). Incollala dopo l'uguale, senza spazi.\nANTHROPIC_API_KEY=\n",
+      "utf8"
+    );
+  }
+  return file;
+}
+
+/** C'e' una chiave di Claude con la forma giusta? Solo vero o falso: la chiave non esce mai. */
+export function chiaveDiClaudePresente() {
+  let testo;
+  try {
+    testo = readFileSync(percorsoChiave(), "utf8");
+  } catch {
+    return false;
+  }
+  return /^ANTHROPIC_API_KEY=sk-ant-[A-Za-z0-9_-]{20,}\s*$/m.test(testo);
+}
 export const CONTENITORE_FUNZIONI = "supabase_edge_runtime_casa";
 export const CARTELLA_FUNZIONI = `${CARTELLA}/supabase/functions`;
 const CONFIGURAZIONE = `${CARTELLA}/supabase/config.toml`;
@@ -415,6 +460,7 @@ export function preparaLeFunzioni() {
   for (const voce of elencoSicuro(CARTELLA_FUNZIONI)) {
     const pieno = `${CARTELLA_FUNZIONI}/${voce}`;
     if (lstatSync(pieno).isSymbolicLink()) fermati(`FERMO: ${pieno} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    if (voce === FILE_CHIAVE_CLAUDE) continue;
     if (!FUNZIONI_DI_CASA.includes(voce)) {
       rmSync(pieno, { recursive: true, force: true });
       cambiato = true;
@@ -471,7 +517,9 @@ export async function problemiDelleFunzioni() {
   const problemi = [];
   if (!runtimeNellaConfigurazione()) problemi.push("il motore delle funzioni e' spento in config.toml: lancia  npm run casa:accendi");
   const presenti = elencoSicuro(CARTELLA_FUNZIONI);
-  for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v))) problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
+  for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v) && v !== FILE_CHIAVE_CLAUDE)) {
+    problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
+  }
   for (const nome of FUNZIONI_DI_CASA) {
     if (!presenti.includes(nome)) problemi.push(`manca la funzione ${nome}`);
     else if (!uguali(nome)) problemi.push(`${nome} su Casa e' diversa da quella del gestionale: lancia  npm run casa:accendi`);

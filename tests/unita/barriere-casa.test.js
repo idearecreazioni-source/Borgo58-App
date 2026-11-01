@@ -219,8 +219,26 @@ describe("i pezzi puri di casa-comune", () => {
 });
 
 describe("le funzioni di Casa (01/11/2026)", () => {
-  it("e' accesa solo operazioni-atomiche", () => {
-    expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche"]);
+  // MEMO dal 01/11 sera (decisione di Alessio: la stessa AI del gestionale vero).
+  it("sono accese solo operazioni-atomiche e le quattro di MEMO", () => {
+    expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche", "ascolta-voce", "leggi-foto", "documento-leggi", "assistente-archivio"]);
+  });
+
+  // 🔴 Nell'ambiente del motore la CLI mette anche la chiave service_role e
+  // l'indirizzo del database: le funzioni di Casa, che vanno su internet,
+  // non devono leggerli. Solo l'indirizzo di Casa, la chiave anon e Claude.
+  it("ogni funzione di Casa legge dall'ambiente solo SUPABASE_URL, SUPABASE_ANON_KEY e ANTHROPIC_API_KEY", () => {
+    const ammesse = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "ANTHROPIC_API_KEY"];
+    for (const nome of FUNZIONI_DI_CASA) {
+      for (const f of readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((x) => /\.(ts|js|mjs)$/.test(x))) {
+        const testo = readFileSync(`supabase/functions/${nome}/${f}`, "utf8");
+        // Niente letture dell'ambiente intero: sfuggirebbero al controllo.
+        expect(testo, `${nome}/${f}`).not.toMatch(/Deno\.env\.toObject|process\.env/);
+        for (const [, variabile] of testo.matchAll(/Deno\.env\.get\(\s*([^)]*)\)/g)) {
+          expect(ammesse, `${nome}/${f}: ${variabile}`).toContain(variabile.trim().replace(/^["'`]|["'`]$/g, ""));
+        }
+      }
+    }
   });
 
   // ⚠️ Su Casa si copia solo la cartella della funzione: un import da
@@ -235,7 +253,8 @@ describe("le funzioni di Casa (01/11/2026)", () => {
         expect(testo, `${nome}/${f}`).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
         const importi = /^\s*(?:import\s+(?:[^"';]*?\bfrom\s*)?|export\s[^"';=]*?\bfrom\s*)["']([^"']+)["']/gm;
         for (const [, da] of testo.matchAll(importi)) {
-          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/)/);
+          // npm: solo Supabase, l'SDK di Claude e fflate (gli zip dei documenti).
+          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/|npm:@anthropic-ai\/sdk$|npm:fflate@\d)/);
         }
       }
     }

@@ -23,6 +23,7 @@
     "casa:sito": "node scripts/casa-sito.mjs",
     "casa:copia": "node scripts/casa-copia.mjs",
     "casa:aggiorna": "node scripts/casa-aggiorna.mjs",
+    "casa:chiave": "node scripts/casa-chiave.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",

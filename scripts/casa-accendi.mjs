@@ -19,7 +19,7 @@
 // Ogni accensione lascia una riga in C:\Casa\accensioni.log.
 
 import { spawn, spawnSync } from "node:child_process";
-import { appendFileSync, openSync } from "node:fs";
+import { appendFileSync, existsSync, openSync, readdirSync } from "node:fs";
 import { connect } from "node:net";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -27,6 +27,7 @@ import { fermati, titolo } from "./comune.mjs";
 import { esitoRegistro } from "./ricostruzione-regole.mjs";
 import {
   CARTELLA,
+  CARTELLA_FUNZIONI,
   CLOUD,
   CONTENITORE,
   CONTENITORE_FUNZIONI,
@@ -34,6 +35,8 @@ import {
   PORTA_SITO_CASA,
   accendiIlRuntimeNellaConfigurazione,
   preparaLeFunzioni,
+  preparaIlFileDellaChiave,
+  chiaveDiClaudePresente,
   problemiDelleFunzioni,
   apriTailscaleVersoCasa,
   indirizzoDiCasa,
@@ -82,9 +85,20 @@ function supabase(comando) {
 
 // Le funzioni prima di accendere: il motore serve quello che trova nella
 // cartella, e config.toml si legge solo all'avvio.
+const elenco = () => (existsSync(CARTELLA_FUNZIONI) ? readdirSync(CARTELLA_FUNZIONI).filter((v) => !v.startsWith(".")).sort().join(",") : "");
+const primaDiPreparare = elenco();
 const funzioniCambiate = preparaLeFunzioni();
+// Il file della chiave c'e' prima della partenza: Supabase CLI lo legge solo allora.
+preparaIlFileDellaChiave();
 if (accendiIlRuntimeNellaConfigurazione()) console.log("   motore delle funzioni acceso in config.toml");
 const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", contenitore]).stdout === "true";
+// 🔴 Misurato il 01/11 sera: una funzione AGGIUNTA o tolta non la vede un
+// semplice riavvio del motore (risponde 404); l'elenco lo fa `supabase
+// start`. Allora si riparte tutto (`stop` senza --no-backup: i dati restano).
+if (elenco() !== primaDiPreparare && acceso(CONTENITORE)) {
+  console.log("   l'elenco delle funzioni e' cambiato: riavvio Casa (un minuto circa, i dati restano)");
+  supabase("stop");
+}
 if (funzioniCambiate && acceso(CONTENITORE_FUNZIONI)) {
   // Il motore potrebbe tenere in memoria il codice vecchio: si riavvia solo
   // lui (pochi secondi; /etc/hosts si richiude qui sotto).
@@ -125,6 +139,7 @@ problemi.push(...(await problemiDelleFunzioni()));
 if (problemi.length > 0) fine("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`));
 console.log(`   database a posto (${registrate} migrazioni)`);
 console.log(`   funzioni accese: solo ${FUNZIONI_DI_CASA.join(", ")}`);
+console.log(chiaveDiClaudePresente() ? "   chiave di Claude per MEMO: presente" : "   chiave di Claude per MEMO: manca (MEMO non risponde finche' non la metti:  npm run casa:chiave)");
 
 // ---------------------------------------------------------------------
 // Il server dell'app, e Tailscale verso di lui. Il server resta acceso da
