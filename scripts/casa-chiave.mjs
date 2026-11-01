@@ -38,6 +38,8 @@ if (!chiaveDiClaudePresente()) {
 }
 console.log("   chiave presente (non la mostro)");
 
-const accesa = spawnSync("npm", ["run", "-s", "casa:accendi"], { stdio: "inherit", shell: process.platform === "win32" });
+// L'accensione di QUESTO gestionale, non di quello della cartella da cui si lancia.
+const accendi = fileURLToPath(new URL("./casa-accendi.mjs", import.meta.url));
+const accesa = spawnSync(process.execPath, [accendi], { stdio: "inherit" });
 if (accesa.status !== 0) fermati("La riaccensione di Casa non e' riuscita: lancia  npm run casa:accendi  e guarda cosa dice.");
 console.log("\n   Fatto: MEMO su Casa ha la sua chiave.");
