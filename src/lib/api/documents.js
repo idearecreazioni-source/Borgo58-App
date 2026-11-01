@@ -135,3 +135,10 @@ export async function deleteDocument(doc) {
   }
   await eseguiOperazione("delete_document", { p_document_id: doc.id });
 }
+
+// Toglie solo il file dal deposito (nessuna riga): serve a chi ha caricato un
+// file e poi non è riuscito a creare il documento, per non lasciare orfani.
+export async function removeDocumentFile(storagePath) {
+  const { error } = await supabase.storage.from(BUCKET).remove([storagePath]);
+  if (error) throw error;
+}
