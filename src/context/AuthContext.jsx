@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ambienteCorrente } from "../lib/ambiente";
 
@@ -78,7 +78,14 @@ export function AuthProvider({ children }) {
   const [ruoloNonLetto, setRuoloNonLetto] = useState(false);
   const [sessioneAttuale, setSessioneAttuale] = useState(null);
 
+  // ⚠️ Solo l'ultima lettura conta (01/11/2026, revisione
+  //    ecc:react-reviewer): al ritorno della rete partono insieme la
+  //    rilettura dell'evento «online» e quella del token rinnovato, e una
+  //    vecchia fallita arrivata dopo rimetteva il riquadro sull'accesso.
+  const ultimaLettura = useRef(0);
+
   const fetchRole = async (activeSession) => {
+    const questa = ++ultimaLettura.current;
     if (!activeSession) {
       setRole(null);
       setRuoloNonLetto(false);
@@ -90,11 +97,13 @@ export function AuthProvider({ children }) {
         .select("role")
         .eq("user_id", activeSession.user.id)
         .maybeSingle();
+      if (questa !== ultimaLettura.current) return;
       if (error) throw error;
       setRole(data?.role ?? null);
       ricordaRuolo(activeSession.user.id, data?.role ?? null);
       setRuoloNonLetto(false);
     } catch (e) {
+      if (questa !== ultimaLettura.current) return;
       const ricordato = ruoloRicordato(activeSession.user.id);
       if (ricordato) setRole((attuale) => attuale ?? ricordato);
       setRuoloNonLetto(e?.message || true);
@@ -124,6 +133,16 @@ export function AuthProvider({ children }) {
 
     return () => subscription.subscription.unsubscribe();
   }, []);
+
+  // Quando la rete torna il ruolo si rilegge da solo: senza, il riquadro
+  // sull'accesso restava finche' non si premeva «Riprova» o si cambiava
+  // pagina (prova in modalita' aereo, 01/11/2026).
+  useEffect(() => {
+    if (!sessioneAttuale) return undefined;
+    const rileggi = () => fetchRole(sessioneAttuale);
+    window.addEventListener("online", rileggi);
+    return () => window.removeEventListener("online", rileggi);
+  }, [sessioneAttuale]);
 
   // Prova titolare, poi staff: il PIN corretto determina l'account e quindi il ruolo.
   const login = async (pin) => {
