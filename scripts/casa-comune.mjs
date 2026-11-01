@@ -5,7 +5,7 @@
 // quello di Casa, e la porta pubblicata proprio quella di Casa.
 
 import { spawnSync } from "node:child_process";
-import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PORTA_API_CASA, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA, fermati, soloCasa } from "./comune.mjs";
@@ -379,7 +379,9 @@ export function preparaIlFileDellaChiave() {
   mkdirSync(CARTELLA_FUNZIONI, { recursive: true });
   const file = percorsoChiave();
   try {
-    if (lstatSync(file).isSymbolicLink()) fermati(`FERMO: ${file} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    const tipo = lstatSync(file);
+    if (tipo.isSymbolicLink()) fermati(`FERMO: ${file} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    if (!tipo.isFile()) fermati(`FERMO: ${file} non e' un file. Toglilo a mano.`);
   } catch (e) {
     if (e?.code !== "ENOENT") throw e;
     writeFileSync(
@@ -391,15 +393,35 @@ export function preparaIlFileDellaChiave() {
   return file;
 }
 
-/** C'e' una chiave di Claude con la forma giusta? Solo vero o falso: la chiave non esce mai. */
+/**
+ * Il testo del file ha UNA chiave di Claude con la forma giusta, e
+ * nient'altro che commenti? ⚠️ Nient'altro: una riga come
+ * ANTHROPIC_BASE_URL manderebbe la chiave (e le foto) altrove (revisione
+ * ecc:security-reviewer).
+ */
+export function chiaveBenScritta(testo) {
+  // Il BOM in testa (Blocco note, PowerShell 5) finirebbe nel nome della variabile.
+  if (String(testo ?? "").startsWith("﻿")) return false;
+  const righe = String(testo ?? "").split(/\r?\n/).map((r) => r.trim()).filter((r) => r && !r.startsWith("#"));
+  return righe.length === 1 && /^ANTHROPIC_API_KEY=sk-ant-[A-Za-z0-9_-]{20,}$/.test(righe[0]);
+}
+
+/** C'e' una chiave di Claude ben scritta? Solo vero o falso: la chiave non esce mai. */
 export function chiaveDiClaudePresente() {
-  let testo;
   try {
-    testo = readFileSync(percorsoChiave(), "utf8");
+    return chiaveBenScritta(readFileSync(percorsoChiave(), "utf8"));
   } catch {
     return false;
   }
-  return /^ANTHROPIC_API_KEY=sk-ant-[A-Za-z0-9_-]{20,}\s*$/m.test(testo);
+}
+
+/** Quando e' cambiato il file della chiave (ms), 0 se non c'e'. */
+export function quandoECambiataLaChiave() {
+  try {
+    return statSync(percorsoChiave()).mtimeMs;
+  } catch {
+    return 0;
+  }
 }
 export const CONTENITORE_FUNZIONI = "supabase_edge_runtime_casa";
 export const CARTELLA_FUNZIONI = `${CARTELLA}/supabase/functions`;

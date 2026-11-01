@@ -37,6 +37,7 @@ import {
   preparaLeFunzioni,
   preparaIlFileDellaChiave,
   chiaveDiClaudePresente,
+  quandoECambiataLaChiave,
   problemiDelleFunzioni,
   apriTailscaleVersoCasa,
   indirizzoDiCasa,
@@ -95,8 +96,12 @@ const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", c
 // 🔴 Misurato il 01/11 sera: una funzione AGGIUNTA o tolta non la vede un
 // semplice riavvio del motore (risponde 404); l'elenco lo fa `supabase
 // start`. Allora si riparte tutto (`stop` senza --no-backup: i dati restano).
-if (elenco() !== primaDiPreparare && acceso(CONTENITORE)) {
-  console.log("   l'elenco delle funzioni e' cambiato: riavvio Casa (un minuto circa, i dati restano)");
+// ⚠️ Anche la chiave di Claude si legge solo a `supabase start`: se il file
+// e' piu' recente della partenza del motore, il motore ha quella vecchia.
+const partitoIl = Date.parse(docker(["inspect", "-f", "{{.State.StartedAt}}", CONTENITORE_FUNZIONI]).stdout) || 0;
+const chiaveNuova = acceso(CONTENITORE_FUNZIONI) && quandoECambiataLaChiave() > partitoIl;
+if ((elenco() !== primaDiPreparare || chiaveNuova) && acceso(CONTENITORE)) {
+  console.log(`   ${chiaveNuova ? "la chiave di Claude e' cambiata" : "l'elenco delle funzioni e' cambiato"}: riavvio Casa (un minuto circa, i dati restano)`);
   supabase("stop");
 }
 if (funzioniCambiate && acceso(CONTENITORE_FUNZIONI)) {

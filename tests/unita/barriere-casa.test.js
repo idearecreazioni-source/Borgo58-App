@@ -5,6 +5,7 @@ import { ambienteDa } from "../../src/lib/ambiente";
 import {
   CLOUD,
   FUNZIONI_DI_CASA,
+  chiaveBenScritta,
   RICONOSCITORI,
   nomiDelCloud,
   rigaDelRuntime,
@@ -219,6 +220,28 @@ describe("i pezzi puri di casa-comune", () => {
 });
 
 describe("le funzioni di Casa (01/11/2026)", () => {
+  // 🔴 Il commento di FUNZIONI_DI_CASA promette «solo Casa e Anthropic»:
+  // qui si tiene la promessa (revisione ecc:security-reviewer, 01/11 sera).
+  it("le funzioni di Casa non aprono altre strade verso internet", () => {
+    for (const nome of FUNZIONI_DI_CASA) {
+      for (const f of readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((x) => /\.(ts|js|mjs)$/.test(x))) {
+        const codice = readFileSync(`supabase/functions/${nome}/${f}`, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+        expect(codice, `${nome}/${f}`).not.toMatch(/\bfetch\s*\(|\bWebSocket\b|Deno\.connect|https?:\/\//);
+      }
+    }
+  });
+
+  it("il file della chiave ha SOLO la chiave di Claude", () => {
+    const chiave = `sk-ant-api03-${"a".repeat(40)}`;
+    expect(chiaveBenScritta(`# commento\nANTHROPIC_API_KEY=${chiave}\n`)).toBe(true);
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave}\r\n`)).toBe(true);
+    expect(chiaveBenScritta("ANTHROPIC_API_KEY=\n")).toBe(false);
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave} altro`)).toBe(false);
+    // Una riga in piu' puo' mandare la chiave altrove.
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave}\nANTHROPIC_BASE_URL=http://altrove\n`)).toBe(false);
+    expect(chiaveBenScritta(`﻿# commento\nANTHROPIC_API_KEY=${chiave}`)).toBe(false);
+  });
+
   // MEMO dal 01/11 sera (decisione di Alessio: la stessa AI del gestionale vero).
   it("sono accese solo operazioni-atomiche e le quattro di MEMO", () => {
     expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche", "ascolta-voce", "leggi-foto", "documento-leggi", "assistente-archivio"]);
