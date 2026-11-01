@@ -687,3 +687,20 @@ export async function togliSostituzioneRiga(orderItemId, allergene) {
     p_allergene: allergene,
   });
 }
+
+/**
+ * E' gia' stato emesso almeno uno scontrino? (riquadro «Il progetto finora»)
+ *
+ * Lettura minima: una riga sola, nessun conteggio. Lo scontrino e' un conto
+ * con `documento_fiscale = 'scontrino'` (la stessa definizione della
+ * quadratura fiscale). Nessuna migrazione.
+ */
+export async function esisteUnoScontrino() {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("documento_fiscale", "scontrino")
+    .limit(1);
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}

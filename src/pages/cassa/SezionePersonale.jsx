@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   annullaPareggioAnticipazione,
@@ -16,6 +16,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import { avvisoImportoAnticipo } from "../../lib/calcoli/fatturaAnticipo";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -70,6 +71,10 @@ export default function SezionePersonale() {
   const [form, setForm] = useState(formaVuotaOggi);
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
+  // L'avviso sul riferimento compare solo DOPO aver premuto Registra senza
+  // riferimento e senza fattura: a modulo vuoto non deve rimproverare nessuno.
+  const [avvisoRif, setAvvisoRif] = useState(false);
+  const campoRifRef = useRef(null);
   // 🔴 L'ESITO VA SULLA RIGA TOCCATA, non in cima alla pagina: un rifiuto
   //    lontano dal gesto e' un rifiuto che non c'e' (lezione del 17/08,
   //    pagata una volta proprio in Cassa).
@@ -137,8 +142,13 @@ export default function SezionePersonale() {
     }
   };
 
-  const registra = async () => {
+  const registra = async (senzaAvviso = false) => {
     if (!form.importo || !form.tagId) return;
+    if (!senzaAvviso && !form.documento.trim() && !form.supplierInvoiceId) {
+      setAvvisoRif(true);
+      return;
+    }
+    setAvvisoRif(false);
     setSaving(true);
     setError("");
     try {
@@ -396,7 +406,11 @@ export default function SezionePersonale() {
                     <label className={labelClass}>Rif. documento</label>
                     <input
                       value={form.documento}
-                      onChange={(e) => setForm((f) => ({ ...f, documento: e.target.value }))}
+                      ref={campoRifRef}
+                      onChange={(e) => {
+                        setAvvisoRif(false);
+                        setForm((f) => ({ ...f, documento: e.target.value }));
+                      }}
                       placeholder="numero dello scontrino o della ricevuta"
                       className={inputClass}
                     />
@@ -408,7 +422,16 @@ export default function SezionePersonale() {
                     <label className={labelClass}>C&apos;è già una fattura?</label>
                     <select
                       value={form.supplierInvoiceId}
-                      onChange={(e) => setForm((f) => ({ ...f, supplierInvoiceId: e.target.value }))}
+                      onChange={(e) => {
+                        const scelta = fattureAperte.find((x) => x.id === e.target.value);
+                        // Scelta la fattura, la cifra proposta è quella che
+                        // resta da pagare (l'anticipo deve coincidere).
+                        setForm((f) => ({
+                          ...f,
+                          supplierInvoiceId: e.target.value,
+                          importo: scelta && !f.importo ? String(scelta.da_pagare ?? scelta.amount) : f.importo,
+                        }));
+                      }}
                       className={inputClass}
                     >
                       <option value="">no, la spesa è solo questa</option>
@@ -426,16 +449,64 @@ export default function SezionePersonale() {
                     {nonLetto(fatture) && (
                       <DatoNonLetto cosa="le fatture ancora da pagare" className="mt-1" />
                     )}
+                    {/* 🔴 Collegata a una fattura, l'anticipo LA PAGA: esce
+                        dalle scadenze e resta «pagata (anticipo)». Il
+                        debito verso di te resta qui, e la cassa non si
+                        muove. Se la cifra non coincide, il database
+                        rifiuta: meglio dirlo prima. */}
+                    {form.supplierInvoiceId && (
+                      <p className="testo-sala text-b58-charcoal-soft mt-1" data-prova="anticipo-paga-fattura">
+                        La fattura risulterà <strong>pagata (anticipo)</strong> e uscirà dalle scadenze;
+                        la cassa non si muove e il debito verso di te resta qui.
+                      </p>
+                    )}
+                    {avvisoImportoAnticipo(
+                      form.importo,
+                      fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                    ) && (
+                      <p className="testo-sala text-b58-terracotta-dark-testo mt-1" data-prova="anticipo-importo-diverso">
+                        {avvisoImportoAnticipo(
+                          form.importo,
+                          fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {!form.documento.trim() && (
-                  <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-                    Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
-                    registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
-                    non aggiungi il documento.
-                  </p>
-                )}
+                {/* Il contenitore live resta sempre nel DOM, così chi usa uno
+                    screen reader sente l'avviso quando compare. */}
+                <div aria-live="polite">
+                  {avvisoRif && !form.documento.trim() && !form.supplierInvoiceId && (
+                    <div
+                      role="alert"
+                      className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
+                    >
+                      <p className="mb-2">
+                        Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
+                        registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
+                        non aggiungi il documento.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => campoRifRef.current?.focus()}
+                          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-3 py-1.5"
+                        >
+                          Aggiungo il riferimento
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => registra(true)}
+                          className="tocco-campo rounded-lg ring-1 ring-b58-charcoal/30 text-b58-charcoal testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                        >
+                          Registra lo stesso
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* 🔴 «INVESTIMENTO PER IL PROGETTO» ANCHE QUI — C11,
                     21/09/2026, decisione di Alessio. È il punto in cui la
@@ -519,7 +590,7 @@ export default function SezionePersonale() {
                   <button
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
-                    onClick={registra}
+                    onClick={() => registra()}
                     className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}

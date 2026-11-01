@@ -16,6 +16,7 @@ const IN_ITALIANO = {
   close_order_as_discount_gift: "chiudere il conto",
   registra_produzione: "registrare la produzione",
   pay_supplier_invoice: "registrare il pagamento",
+  registra_anticipazione: "registrare l'anticipo",
   registra_carico_fattura: "caricare la merce",
   chiudi_partita: "chiudere la partita",
   salva_preventivo: "salvare il preventivo",
