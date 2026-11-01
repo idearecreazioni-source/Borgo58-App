@@ -119,6 +119,8 @@ async function unGiro(forza) {
   if (!daMandare.length) return;
   if (typeof navigator !== "undefined" && navigator.onLine === false) return;
 
+  // SILENZIO MOTIVATO: una sessione che non si legge vale «nessun accesso»,
+  // e subito sotto ogni foto in coda lo dice.
   const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
   if (!data?.session) {
     // ⚠️ Senza accesso non parte niente, e va DETTO: altrimenti le foto

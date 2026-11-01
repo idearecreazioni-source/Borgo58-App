@@ -143,6 +143,8 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     // Su Casa il ruolo ricordato si dimentica uscendo.
+    // SILENZIO MOTIVATO: senza sessione leggibile non c'e' ruolo da
+    // dimenticare, e l'uscita deve avvenire comunque.
     const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
     if (data?.session) ricordaRuolo(data.session.user.id, null);
     return supabase.auth.signOut();

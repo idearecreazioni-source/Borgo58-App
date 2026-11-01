@@ -30,6 +30,8 @@ function Miniatura({ chiave, inCoda }) {
         u = URL.createObjectURL(new Blob([foto.byte], { type: foto.tipo }));
         setUrl(u);
       })
+      // SILENZIO MOTIVATO: la miniatura e' un aiuto; se la foto non si
+      // legge resta il segnaposto, e lo stato della voce lo dice la riga.
       .catch(() => {});
     return () => {
       vivo = false;
