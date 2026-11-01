@@ -479,6 +479,7 @@ describe("13-bis · l'etichetta c'e' dove la spesa vive", () => {
     const { container } = await apriAnticipazioni();
     const importo = container.querySelector('input[type="number"]');
     fireEvent.change(importo, { target: { value: "300" } });
+    fireEvent.change(screen.getByPlaceholderText(/numero dello scontrino/), { target: { value: "ZZ-1" } });
     fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
     await waitFor(() => expect(spie.creaNota).toBeTruthy());
     expect(spie.creaNota.eInvestimento).toBe(false);
@@ -488,6 +489,7 @@ describe("13-bis · l'etichetta c'e' dove la spesa vive", () => {
     const { container } = await apriAnticipazioni();
     fireEvent.change(container.querySelector('input[type="number"]'), { target: { value: "300" } });
     fireEvent.click(container.querySelector('[data-prova="investimento-nota-nuova"] input'));
+    fireEvent.change(screen.getByPlaceholderText(/numero dello scontrino/), { target: { value: "ZZ-1" } });
     fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
     await waitFor(() => expect(spie.creaNota).toBeTruthy());
     expect(spie.creaNota.eInvestimento).toBe(true);
