@@ -13,7 +13,7 @@ import {
 import { listCausali, listContiBancari } from "../../lib/api/cash";
 import { CASH_DOCUMENT_TYPES, formatDate, formatEUR } from "../../lib/constants";
 import { leggiFlussoCbi, movimentiDaCaricare } from "../../lib/calcoli/cbi";
-import { eCsvCredem, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
+import { bancaDelCsv, leggiCsvBper, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import CaricaCsvBanca from "./CaricaCsvBanca";
@@ -62,9 +62,13 @@ async function leggiFile(file) {
   return dentro.map((d) => {
     const nome = d.nome === file.name ? file.name : `${file.name} → ${d.nome}`;
     const utf8 = comeUtf8(d.contenuto);
-    if (utf8 !== null && eCsvCredem(utf8)) return { nome, testo: utf8, formato: "csv" };
+    // ⚠️ Anche il CSV di BPER (01/11/2026) passa di qui: Excel lo salva
+    //    in UTF-8 o in caratteri occidentali, secondo la voce scelta.
+    const bancaUtf8 = utf8 !== null ? bancaDelCsv(utf8) : null;
+    if (bancaUtf8) return { nome, testo: utf8, formato: "csv", banca: bancaUtf8 };
     const latin1 = new TextDecoder("latin1").decode(d.contenuto);
-    return { nome, testo: latin1, formato: eCsvCredem(latin1) ? "csv" : "cbi" };
+    const banca = bancaDelCsv(latin1);
+    return { nome, testo: latin1, formato: banca ? "csv" : "cbi", banca };
   });
 }
 
@@ -120,9 +124,10 @@ export default function MovimentiBanca() {
         if (letti.length > 1) {
           errori.push("Il CSV della banca si carica da solo, un file alla volta: chiede il conto e i saldi.");
         } else {
-          const { movimenti: m, errori: e } = leggiCsvCredem(csvLetti[0].testo);
+          const leggi = csvLetti[0].banca === "bper" ? leggiCsvBper : leggiCsvCredem;
+          const { movimenti: m, errori: e, daContabilizzare = 0 } = leggi(csvLetti[0].testo);
           if (e.length) errori.push(...e.map((x) => `${csvLetti[0].nome}: ${x}`));
-          else setCsv({ nome: csvLetti[0].nome, movimenti: m });
+          else setCsv({ nome: csvLetti[0].nome, movimenti: m, daContabilizzare });
         }
         setCaricamento(errori.length ? { righe, errori, inCorso: false } : null);
         return;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +12,7 @@ import ApriMemo from "./ApriMemo";
 import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
 import { useSegnala } from "./useSegnala";
 import { percorsoComande } from "../lib/schermo";
+import { avvisoAccesso } from "../lib/calcoli/avvisoAccesso";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -39,6 +40,19 @@ export default function Layout() {
   //       quindi non naviga e non chiude il menu.
   const navigate = useNavigate();
   const { logout, ruoloNonLetto, riprovaRuolo } = useAuth();
+  // Senza rete il ruolo non si legge, ma non e' un guasto: il riquadro lo
+  // dice com'e' (calcoli/avvisoAccesso.js, 01/11/2026).
+  const [inRete, setInRete] = useState(() => (typeof navigator === "undefined" ? undefined : navigator.onLine));
+  useEffect(() => {
+    const aggiorna = () => setInRete(navigator.onLine);
+    window.addEventListener("online", aggiorna);
+    window.addEventListener("offline", aggiorna);
+    return () => {
+      window.removeEventListener("online", aggiorna);
+      window.removeEventListener("offline", aggiorna);
+    };
+  }, []);
+  const riquadroAccesso = avvisoAccesso({ ruoloNonLetto, inRete });
   // `da` dice dove si è toccato — il menu del telefono, la barra del
   // computer o la testata (il logo) — perché la domanda compaia lì.
   // ⚠️ IL LOGO CHIEDE ANCHE LUI (decisione di Alessio del 12/09/2026): porta
@@ -270,9 +284,14 @@ export default function Layout() {
               />
             </div>
           )}
-          {ruoloNonLetto && (
+          {riquadroAccesso && !riquadroAccesso.riprova && (
+            <p role="status" className="print:hidden mb-4 rounded-lg bg-b58-olive/15 ring-1 ring-b58-olive/40 px-3 py-2 testo-sala text-b58-charcoal">
+              {riquadroAccesso.testo}
+            </p>
+          )}
+          {riquadroAccesso?.riprova && (
             <p role="alert" className="print:hidden mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2 testo-sala text-b58-terracotta-dark-testo">
-              Non riesco a verificare il tuo accesso: alcune parti potrebbero mancare.{" "}
+              {riquadroAccesso.testo}{" "}
               <button type="button" onClick={riprovaRuolo} className="tocco-riga underline font-medium">
                 Riprova
               </button>
