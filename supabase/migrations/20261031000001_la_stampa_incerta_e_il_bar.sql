@@ -85,6 +85,7 @@ begin
        where l.reparto = p_reparto and l.tipo in ('comanda', 'chiamata')), '[]'::jsonb));
 end $function$;
 
+-- rete-guardie: stato_stampa_cucina — diventa una scorciatoia per stato_stampa('cucina'): portiere, security definer e campi letti dalla schermata sono tutti in stato_stampa, qui sopra (31/10)
 create or replace function public.stato_stampa_cucina()
 returns jsonb
 language sql
