@@ -5,7 +5,8 @@
 // quello di Casa, e la porta pubblicata proprio quella di Casa.
 
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { PORTA_API_CASA, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA, fermati, soloCasa } from "./comune.mjs";
 import { INDIRIZZI_PREDEFINITI } from "./indirizzi-accesso.mjs";
 
@@ -294,19 +295,175 @@ export function bloccoNelDatabase() {
 export const nomiDelCloud = (refs) =>
   refs.flatMap((ref) => [`${ref}.supabase.co`, `db.${ref}.supabase.co`, `${ref}.functions.supabase.co`]);
 
-export function chiudiIlCloud(refs) {
+// ⚠️ Misurato il 01/11 nel contenitore delle funzioni: `db.<ref>.supabase.co`
+// ha solo un indirizzo IPv6, e con la sola riga 0.0.0.0 il nome si
+// risolveva ancora via DNS in IPv6. Ogni nome si chiude su tutte e due.
+const INDIRIZZI_CHIUSI = ["0.0.0.0", "::"];
+
+export function chiudiIlCloud(refs, contenitore = CONTENITORE) {
   // Un nome alla volta: se l'elenco cresce, i nomi nuovi si aggiungono anche
   // a un /etc/hosts gia' chiuso.
   const comandi = nomiDelCloud(refs)
-    .map((n) => `grep -q ' ${n}$' /etc/hosts || echo '0.0.0.0 ${n}' >> /etc/hosts`)
+    .flatMap((n) => INDIRIZZI_CHIUSI.map((ip) => `grep -qx '${ip} ${n}' /etc/hosts || echo '${ip} ${n}' >> /etc/hosts`))
     .join("; ");
-  const r = docker(["exec", "-u", "root", CONTENITORE, "sh", "-c", comandi]);
+  const r = docker(["exec", "-u", "root", contenitore, "sh", "-c", comandi]);
   if (!r.ok) fermati("Non sono riuscito a chiudere le porte verso il cloud:", r.uscita.trim());
 }
 
-/** I nomi del cloud che dal database di Casa portano ancora da qualche parte. */
-export function nomiApertiDelCloud(refs) {
-  return nomiDelCloud(refs).filter((nome) => !docker(["exec", CONTENITORE, "getent", "hosts", nome]).stdout.startsWith("0.0.0.0"));
+/**
+ * I nomi del cloud che dal contenitore (di solito il database) portano
+ * ancora da qualche parte: chiuso vuol dire che OGNI indirizzo che il nome
+ * da' e' uno di INDIRIZZI_CHIUSI. ⚠️ Servono tutte e due le domande:
+ * misurato nel contenitore delle funzioni, l'IPv6 del DNS lo mostrava solo
+ * `getent hosts`, mentre `getent ahosts` diceva gia' 0.0.0.0.
+ */
+export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
+  return nomiDelCloud(refs).filter((nome) => {
+    const r = docker(["exec", contenitore, "sh", "-c", `getent hosts ${nome}; getent ahosts ${nome}`]);
+    const indirizzi = r.stdout.split(/\r?\n/).filter(Boolean).map((riga) => riga.split(/\s+/)[0]);
+    return indirizzi.length === 0 || !indirizzi.every((ip) => INDIRIZZI_CHIUSI.includes(ip));
+  });
+}
+
+/**
+ * 🔴 LE FUNZIONI DI CASA (01/11/2026): ne e' accesa UNA, `operazioni-atomiche`.
+ * Ogni scrittura a piu' tabelle del gestionale passa da li' (regola B4 del
+ * Contratto): senza, su Casa non si colloca uno scontrino, non si chiude un
+ * conto, non si carica una fattura. Le altre (AI, posta, Telegram...)
+ * restano spente fino alla fase 7.
+ *
+ * Come resta UNA sola, misurato con Supabase CLI 2.122.0:
+ *  · il motore delle funzioni monta in sola lettura SOLO la cartella
+ *    C:\Casa\supabase\functions, e serve quello che ci trova. Dentro ci
+ *    mettiamo solo le cartelle di FUNZIONI_DI_CASA, copiate dal gestionale
+ *    a ogni accensione; tutto il resto si toglie. Un nome che non c'e'
+ *    risponde «Function not found» (404);
+ *  · non pubblica porte sue: ci si arriva solo dalla 44321 di Casa (kong);
+ *  · dentro, SUPABASE_URL e' http://kong:8000 (Casa) e la chiave anon e'
+ *    quella di Casa: le mette Supabase CLI, non le scriviamo noi;
+ *  · come per il database, i nomi del cloud portano a 0.0.0.0 anche li'.
+ * ⚠️ Il primo avvio scarica `npm:@supabase/supabase-js@2` da internet; poi
+ * resta nel volume supabase_edge_runtime_casa e sopravvive ai riavvii.
+ * ⚠️ Dal DATABASE le funzioni restano irraggiungibili: `url_funzioni` punta a
+ * 127.0.0.1 dentro il contenitore del database, dove non risponde nessuno.
+ */
+export const FUNZIONI_DI_CASA = ["operazioni-atomiche"];
+export const CONTENITORE_FUNZIONI = "supabase_edge_runtime_casa";
+export const CARTELLA_FUNZIONI = `${CARTELLA}/supabase/functions`;
+const CONFIGURAZIONE = `${CARTELLA}/supabase/config.toml`;
+
+/** La riga «enabled = ...» della sezione [edge_runtime] di config.toml: indice e valore. */
+function rigaDelRuntime(righe) {
+  const inizio = righe.findIndex((r) => r.trim() === "[edge_runtime]");
+  for (let i = inizio + 1; inizio >= 0 && i < righe.length && !righe[i].trim().startsWith("["); i++) {
+    const m = /^enabled\s*=\s*(true|false)\s*$/.exec(righe[i].trim());
+    if (m) return { indice: i, acceso: m[1] === "true" };
+  }
+  return null;
+}
+
+/** Il motore delle funzioni e' acceso in config.toml? */
+export const runtimeNellaConfigurazione = () => rigaDelRuntime(readFileSync(CONFIGURAZIONE, "utf8").split("\n"))?.acceso === true;
+
+/** Accende il motore in config.toml. Restituisce true se ha cambiato il file. */
+export function accendiIlRuntimeNellaConfigurazione() {
+  const righe = readFileSync(CONFIGURAZIONE, "utf8").split("\n");
+  const riga = rigaDelRuntime(righe);
+  if (!riga) fermati(`In ${CONFIGURAZIONE} non trovo «enabled» nella sezione [edge_runtime].`);
+  if (riga.acceso) return false;
+  righe[riga.indice] = righe[riga.indice].replace("false", "true");
+  writeFileSync(CONFIGURAZIONE, righe.join("\n"), "utf8");
+  return true;
+}
+
+const elencoSicuro = (cartella) => {
+  try {
+    return readdirSync(cartella);
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Mette in C:\Casa\supabase\functions solo FUNZIONI_DI_CASA, copiate dal
+ * gestionale da cui si lancia il comando, e toglie tutto il resto.
+ */
+export function preparaLeFunzioni() {
+  for (const voce of elencoSicuro(CARTELLA_FUNZIONI)) {
+    if (!FUNZIONI_DI_CASA.includes(voce)) rmSync(`${CARTELLA_FUNZIONI}/${voce}`, { recursive: true, force: true });
+  }
+  for (const nome of FUNZIONI_DI_CASA) {
+    if (JSON.stringify(contenuto(`${CARTELLA_FUNZIONI}/${nome}`)) === JSON.stringify(contenuto(`supabase/functions/${nome}`))) continue;
+    rmSync(`${CARTELLA_FUNZIONI}/${nome}`, { recursive: true, force: true });
+    cpSync(`supabase/functions/${nome}`, `${CARTELLA_FUNZIONI}/${nome}`, { recursive: true });
+  }
+}
+
+/** I file di una cartella con il loro contenuto, per confrontare due copie; {} se non c'e'. */
+function contenuto(cartella) {
+  let voci;
+  try {
+    voci = readdirSync(cartella, { recursive: true, withFileTypes: true });
+  } catch {
+    return {};
+  }
+  return Object.fromEntries(
+    voci
+      .filter((v) => v.isFile())
+      .map((v) => path.join(v.parentPath, v.name))
+      .sort()
+      .map((pieno) => [path.relative(cartella, pieno).replaceAll("\\", "/"), readFileSync(pieno, "utf8")])
+  );
+}
+
+/** Lo stato HTTP della funzione su Casa (OPTIONS, non esegue niente); 0 se non risponde. */
+async function statoDellaFunzione(nome, secondi) {
+  try {
+    const r = await fetch(`http://127.0.0.1:${PORTA_API_CASA}/functions/v1/${nome}`, {
+      method: "OPTIONS",
+      signal: AbortSignal.timeout(secondi * 1000),
+    });
+    await r.arrayBuffer();
+    return r.status;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Il controllo delle funzioni di Casa, per la verifica e l'accensione. Non
+ * scrive niente. Restituisce i problemi, vuoto se e' accesa solo
+ * FUNZIONI_DI_CASA.
+ */
+export async function problemiDelleFunzioni() {
+  const problemi = [];
+  if (!runtimeNellaConfigurazione()) problemi.push("il motore delle funzioni e' spento in config.toml: lancia  npm run casa:accendi");
+  const presenti = elencoSicuro(CARTELLA_FUNZIONI);
+  for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v))) problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
+  for (const nome of FUNZIONI_DI_CASA) {
+    if (!presenti.includes(nome)) problemi.push(`manca la funzione ${nome}`);
+    else if (JSON.stringify(contenuto(`${CARTELLA_FUNZIONI}/${nome}`)) !== JSON.stringify(contenuto(`supabase/functions/${nome}`))) {
+      problemi.push(`${nome} su Casa e' diversa da quella del gestionale: lancia  npm run casa:accendi`);
+    }
+  }
+  if (docker(["inspect", "-f", "{{.State.Running}}", CONTENITORE_FUNZIONI]).stdout !== "true") {
+    problemi.push(`il motore delle funzioni (${CONTENITORE_FUNZIONI}) non e' acceso`);
+    return problemi;
+  }
+  const porte = docker(["inspect", "-f", "{{json .NetworkSettings.Ports}}", CONTENITORE_FUNZIONI]).stdout;
+  if (porte.includes("HostPort")) problemi.push(`il motore delle funzioni pubblica porte sue: ${porte}`);
+  for (const nome of nomiApertiDelCloud(CLOUD, CONTENITORE_FUNZIONI)) problemi.push(`raggiungibile dalle funzioni: ${nome}`);
+  // ⚠️ Il primo avvio scarica supabase-js: la prima risposta puo' tardare.
+  for (const nome of FUNZIONI_DI_CASA) {
+    const stato = await statoDellaFunzione(nome, 90);
+    if (stato !== 200) problemi.push(`la funzione ${nome} non risponde (${stato || "niente"})`);
+  }
+  // Le altre del repository devono rispondere «non c'e'» (404).
+  for (const nome of readdirSync("supabase/functions").filter((n) => !n.startsWith("_") && !FUNZIONI_DI_CASA.includes(n))) {
+    const stato = await statoDellaFunzione(nome, 30);
+    if (stato !== 404) problemi.push(`la funzione ${nome} dovrebbe essere spenta, invece risponde ${stato || "niente"}`);
+  }
+  return problemi;
 }
 
 /**
