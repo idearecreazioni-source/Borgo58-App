@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { registraFatturaElettronica } from "../../lib/api/banca";
+import { allegaXmlPerFile } from "../../lib/api/fatturaXml";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR } from "../../lib/constants";
 import { eGiaRegistrata, leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
@@ -27,6 +28,7 @@ export default function ImportaFatturaElettronica() {
   const [occupato, setOccupato] = useState(null);
   const [saltati, setSaltati] = useState([]);
   const [tutte, setTutte] = useState(false);
+  const [erroriXml, setErroriXml] = useState({}); // chiave → messaggio del salvataggio XML riprovato
 
   useEffect(() => {
     getEntities().then((ent) => {
@@ -58,7 +60,8 @@ export default function ImportaFatturaElettronica() {
     }
     for (const s of singoli) {
       try {
-        const { fatture, errori } = leggiFatturaPA(xmlDaFile(s.bytes));
+        const xml = xmlDaFile(s.bytes);
+        const { fatture, errori } = leggiFatturaPA(xml);
         if (s.daZip && fatture.length === 0) {
           saltati.push(s.nome);
           continue;
@@ -73,6 +76,8 @@ export default function ImportaFatturaElettronica() {
             // dentro lo zip: è su quello che il database riconosce una
             // fattura già caricata.
             file: s.file,
+            // il testo XML si tiene per collegarlo alla fattura registrata
+            xml,
             fattura,
           }),
         );
@@ -86,22 +91,52 @@ export default function ImportaFatturaElettronica() {
     setEsiti({});
   };
 
+  const allegaXml = async (l) => {
+    const r = await allegaXmlPerFile({ entityId, nomeFile: l.file, xml: l.xml, fattura: l.fattura });
+    return r === "gia_presente"
+      ? "Il file XML era già collegato a questa fattura."
+      : "Il file XML è collegato alla fattura: lo apri da «Fatture fornitori».";
+  };
+
   const registra = async (l) => {
     if (!guardia.current.prendi(l.chiave)) return;
     setOccupato(l.chiave);
     try {
       const r = await registraFatturaElettronica(entityId, payloadFattura(l.fattura, l.file));
-      setEsiti((p) => ({
-        ...p,
-        [l.chiave]: {
+      const base = r?.fornitore_nuovo
+        ? "Registrata. Il fornitore non c'era: l'ho aggiunto all'anagrafica."
+        : "Registrata.";
+      let esito;
+      try {
+        esito = { ok: true, testo: `${base} ${await allegaXml(l)}` };
+      } catch (e) {
+        // ⚠️ La fattura è registrata: si dice, e si dice anche che il file no.
+        esito = {
           ok: true,
-          testo: r?.fornitore_nuovo
-            ? "Registrata. Il fornitore non c'era: l'ho aggiunto all'anagrafica."
-            : "Registrata.",
-        },
-      }));
+          xmlMancante: !e.nonCorrisponde,
+          testo: `${base} Ma il file XML NON è stato salvato (${e.message}).${e.nonCorrisponde ? "" : " Premi «Salva il file XML» per riprovare."}`,
+        };
+      }
+      setEsiti((p) => ({ ...p, [l.chiave]: esito }));
     } catch (e) {
       setEsiti((p) => ({ ...p, [l.chiave]: { ok: false, testo: e.message } }));
+    } finally {
+      guardia.current.lascia(l.chiave);
+      setOccupato(null);
+    }
+  };
+
+  // Per una fattura già registrata senza il suo XML (importata prima di
+  // questa funzione, o con il salvataggio caduto): si attacca adesso.
+  const salvaXml = async (l) => {
+    if (!guardia.current.prendi(l.chiave)) return;
+    setOccupato(l.chiave);
+    setErroriXml((p) => ({ ...p, [l.chiave]: null }));
+    try {
+      const testo = await allegaXml(l);
+      setEsiti((p) => ({ ...p, [l.chiave]: { ok: true, testo: `Era già registrata. ${testo}` } }));
+    } catch (e) {
+      setErroriXml((p) => ({ ...p, [l.chiave]: `Il file XML non è stato salvato: ${e.message}`, [`${l.chiave}#no`]: !!e.nonCorrisponde }));
     } finally {
       guardia.current.lascia(l.chiave);
       setOccupato(null);
@@ -264,6 +299,21 @@ export default function ImportaFatturaElettronica() {
                   )}
                 </p>
               ) : null}
+              {erroriXml[l.chiave] && (
+                <p className="testo-sala-grande mt-2 rounded-lg px-3 py-2 bg-b58-terracotta/10 text-b58-terracotta-dark-testo">
+                  {erroriXml[l.chiave]}
+                </p>
+              )}
+              {!erroriXml[`${l.chiave}#no`] && (esito?.xmlMancante || (esito && !esito.ok && eGiaRegistrata(esito.testo))) && (
+                <button
+                  type="button"
+                  disabled={occupato === l.chiave || tutte || !entityId}
+                  onClick={() => salvaXml(l)}
+                  className="tocco-bottone mt-3 rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
+                >
+                  {occupato === l.chiave ? "Sto salvando il file…" : "Salva il file XML"}
+                </button>
+              )}
               {!bloccata && !esito?.ok && !eGiaRegistrata(esito?.testo) && (
                 <button
                   type="button"
