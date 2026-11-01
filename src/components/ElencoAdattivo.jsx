@@ -352,6 +352,7 @@ export default function ElencoAdattivo({
             );
             return (
               <>
+                {/* Sul telefono sta nascosta dal riquadro esterno (hidden md:block, o xl). */}
                 <table className="w-full table-fixed testo-sala-grande">
                   {gruppo}
                   <thead>
@@ -378,6 +379,7 @@ export default function ElencoAdattivo({
                           attenuata?.(r) ? "opacity-55" : ""
                         }`}
                       >
+                        {/* Sul telefono sta nascosta dal riquadro esterno (hidden md:block, o xl). */}
                         <table className="w-full table-fixed testo-sala-grande">
                           {gruppo}
                           <tbody>

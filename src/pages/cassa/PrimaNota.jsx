@@ -285,7 +285,9 @@ export default function PrimaNota() {
         business_purpose: form.business_purpose || null,
         forager_tax_code: isForager ? form.forager_tax_code || null : null,
         harvest_region: isForager ? form.harvest_region || null : null,
-        is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
+        // ⚠️ Il versamento titolare conta solo nel saldo della cassa: su un
+        //    movimento di banca non ha effetto, quindi non parte mai acceso.
+        is_owner_injection: form.direction === "entrata" && form.mezzo === "cassa" ? form.is_owner_injection : false,
         // ⚠️ Mai un `true` su un'entrata, nemmeno se lo stato fosse rimasto
         //    acceso per una strada che non abbiamo previsto: il divieto vero
         //    e' nel database, questa riga evita solo di andarci a sbattere.
@@ -551,7 +553,7 @@ export default function PrimaNota() {
             </button>
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, mezzo: "banca" }))}
+              onClick={() => setForm((f) => ({ ...f, mezzo: "banca", is_owner_injection: false }))}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.mezzo === "banca"
                   ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
@@ -719,7 +721,7 @@ export default function PrimaNota() {
                 telefono la nota scende e prende la riga intera; da `sm` in
                 su resta larga 12 rem, come prima. */}
             <div data-riga-nota className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
-              {form.direction === "entrata" && (
+              {form.direction === "entrata" && form.mezzo === "cassa" && (
                 <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
                     type="checkbox"

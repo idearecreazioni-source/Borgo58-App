@@ -8,6 +8,7 @@ import {
   updateDocument,
   uploadDocumentFile,
 } from "../../lib/api/documents";
+import { scadenzaDaSeguire } from "../../lib/calcoli/documentiCollegabili";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -79,7 +80,7 @@ export default function ArchivioDocumentiHome() {
     leggi(sezioniArchivio()).then(setSezioni);
   }, []);
 
-  const reload = () => listDocuments({ search: cercato || undefined }).then(setDocuments);
+  const reload = () => listDocuments({ search: cercato || undefined, conStatoFattura: true }).then(setDocuments);
 
   // Stessa attesa del salvataggio automatico delle note (700 ms sarebbe
   // troppo per una ricerca, che deve sembrare istantanea): si aspetta che
@@ -258,7 +259,7 @@ export default function ArchivioDocumentiHome() {
   };
 
   const expiringSoon = useMemo(
-    () => documents.filter((d) => d.expiry_date && daysTo(d.expiry_date) <= 60),
+    () => documents.filter((d) => scadenzaDaSeguire(d) && daysTo(d.expiry_date) <= 60),
     [documents]
   );
 
