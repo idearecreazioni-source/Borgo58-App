@@ -119,14 +119,23 @@ async function unGiro(forza) {
   if (!daMandare.length) return;
   if (typeof navigator !== "undefined" && navigator.onLine === false) return;
 
-  // SILENZIO MOTIVATO: una sessione che non si legge vale «nessun accesso»,
-  // e subito sotto ogni foto in coda lo dice.
-  const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
+  // ⚠️ «L'accesso non c'e'» e «l'accesso non si legge» sono due cose: la
+  // seconda (memoria del telefono) non si cura rifacendo il PIN, e dirlo
+  // manderebbe a cercare il guasto nel posto sbagliato (revisione
+  // ecc:silent-failure-hunter, 01/11).
+  let illeggibile = null;
+  const { data } = await supabase.auth.getSession().catch((e) => {
+    illeggibile = e;
+    return { data: null };
+  });
   if (!data?.session) {
     // ⚠️ Senza accesso non parte niente, e va DETTO: altrimenti le foto
     // resterebbero «in coda» per sempre senza una ragione.
+    const motivo = illeggibile
+      ? `Non riesco a leggere l'accesso a Casa (${illeggibile?.message || illeggibile}): riprova, o riapri Casa.`
+      : "Serve rientrare in Casa col PIN: poi parte da sola.";
     for (const v of daMandare) {
-      await salvaVoce(dopoCasaIrraggiungibile(v, "Serve rientrare in Casa col PIN: poi parte da sola."));
+      await salvaVoce(dopoCasaIrraggiungibile(v, motivo));
     }
     return;
   }

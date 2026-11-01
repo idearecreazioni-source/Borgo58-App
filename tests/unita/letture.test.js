@@ -253,14 +253,11 @@ describe("nessuna lettura resta muta", () => {
       //   · l'uscita legge la sessione per dimenticare il ruolo ricordato;
       //     se non si legge non c'e' niente da dimenticare, e si esce lo
       //     stesso;
-      //   · la coda che non legge la sessione la tratta come «nessun
-      //     accesso», e lo SCRIVE su ogni foto in coda;
       //   · il service worker che non si registra lascia Casa com'era, solo
       //     senza la copia per aprirsi offline;
       //   · la miniatura che non si legge lascia il segnaposto: lo stato
       //     della foto lo dice la riga accanto.
       "src/context/AuthContext.jsx",
-      "src/lib/casa/invio.js",
       "src/lib/casa/serviceWorker.js",
       "src/pages/casa/CodaCasa.jsx",
     ].sort();
