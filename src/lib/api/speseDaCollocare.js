@@ -28,16 +28,21 @@ export async function listSpeseDaCollocare() {
 
 // Gli id dei movimenti di prima nota nati da «Da collocare»: quelli non si
 // rimuovono dalla prima nota (la spesa punta al movimento), si annulla la
-// collocazione. Una lettura sola, senza migrazioni. Se fallisce non blocca
-// la pagina: resta l'errore sulla riga al momento di rimuovere.
-export async function idMovimentiDaCollocare() {
+// collocazione. Si chiede solo dei movimenti che la pagina mostra, a gruppi
+// (l'elenco viaggia nell'indirizzo). Se fallisce non blocca la pagina:
+// resta l'errore sulla riga al momento di rimuovere.
+export async function idMovimentiDaCollocare(idMovimenti = []) {
+  const nati = new Set();
   try {
-    const { data, error } = await supabase
-      .from("spese_da_collocare")
-      .select("movimento_id")
-      .not("movimento_id", "is", null);
-    if (error || !Array.isArray(data)) return new Set();
-    return new Set(data.map((r) => r.movimento_id));
+    for (let i = 0; i < idMovimenti.length; i += 150) {
+      const { data, error } = await supabase
+        .from("spese_da_collocare")
+        .select("movimento_id")
+        .in("movimento_id", idMovimenti.slice(i, i + 150));
+      if (error || !Array.isArray(data)) return new Set();
+      for (const r of data) nati.add(r.movimento_id);
+    }
+    return nati;
   } catch {
     return new Set();
   }

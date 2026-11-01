@@ -180,13 +180,16 @@ export default function PrimaNota() {
       entities?.tasca && entityId === entities.tasca.id
         ? spesoDallaTasca(from || null, to || null)
         : Promise.resolve(null),
-      idMovimentiDaCollocare(),
-    ]).then(([mov, bal, conto, nati]) => {
-      setDaCollocare(nati);
-      setMovements(mov);
-      setBalance(bal);
-      setContoTasca(conto);
-    });
+    ])
+      .then(([mov, bal, conto]) =>
+        idMovimentiDaCollocare((mov ?? []).map((m) => m.id)).then((nati) => [mov, bal, conto, nati]),
+      )
+      .then(([mov, bal, conto, nati]) => {
+        setDaCollocare(nati);
+        setMovements(mov);
+        setBalance(bal);
+        setContoTasca(conto);
+      });
   };
 
   useEffect(() => {
