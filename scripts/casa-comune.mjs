@@ -5,8 +5,9 @@
 // quello di Casa, e la porta pubblicata proprio quella di Casa.
 
 import { spawnSync } from "node:child_process";
-import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PORTA_API_CASA, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA, fermati, soloCasa } from "./comune.mjs";
 import { INDIRIZZI_PREDEFINITI } from "./indirizzi-accesso.mjs";
 
@@ -346,6 +347,13 @@ export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
  * resta nel volume supabase_edge_runtime_casa e sopravvive ai riavvii.
  * ⚠️ Dal DATABASE le funzioni restano irraggiungibili: `url_funzioni` punta a
  * 127.0.0.1 dentro il contenitore del database, dove non risponde nessuno.
+ * ⚠️ RISCHIO ACCETTATO (revisione ecc:security-reviewer): il motore ha la
+ * rete in uscita (gli serve per npm) e /etc/hosts chiude solo i nomi di
+ * nomiDelCloud, non gli indirizzi numerici ne' i nomi del pooler. Nel suo
+ * ambiente la CLI mette anche la chiave service_role e l'indirizzo del
+ * database di Casa. Oggi non pesa: `operazioni-atomiche` usa solo
+ * SUPABASE_URL e la chiave anon, e chiama solo Casa. Il giorno che si
+ * accende una funzione che va su internet (fase 7) va ripensato.
  */
 export const FUNZIONI_DI_CASA = ["operazioni-atomiche"];
 export const CONTENITORE_FUNZIONI = "supabase_edge_runtime_casa";
@@ -376,6 +384,10 @@ export function accendiIlRuntimeNellaConfigurazione() {
   return true;
 }
 
+// Le funzioni del gestionale a cui appartiene QUESTO script, non della
+// cartella da cui lo si lancia (revisione ecc:code-reviewer).
+const FUNZIONI_DEL_GESTIONALE = fileURLToPath(new URL("../supabase/functions", import.meta.url));
+
 const elencoSicuro = (cartella) => {
   try {
     return readdirSync(cartella);
@@ -384,19 +396,39 @@ const elencoSicuro = (cartella) => {
   }
 };
 
+const uguali = (nome) => JSON.stringify(contenuto(`${CARTELLA_FUNZIONI}/${nome}`)) === JSON.stringify(contenuto(path.join(FUNZIONI_DEL_GESTIONALE, nome)));
+
 /**
  * Mette in C:\Casa\supabase\functions solo FUNZIONI_DI_CASA, copiate dal
- * gestionale da cui si lancia il comando, e toglie tutto il resto.
+ * gestionale, e toglie tutto il resto. Restituisce true se ha cambiato
+ * qualcosa: il motore gia' acceso va allora riavviato, perche' potrebbe
+ * tenere in memoria il codice vecchio.
+ * ⚠️ Si rifiuta di seguire collegamenti (symlink, junction): cancella e
+ * scrive solo dentro la cartella vera (revisione ecc:security-reviewer).
+ * ⚠️ La copia nuova si prepara a fianco (`.nuova-<nome>`) e prende il posto
+ * della vecchia con un cambio di nome: il motore non vede mai mezza cartella.
  */
 export function preparaLeFunzioni() {
+  mkdirSync(CARTELLA_FUNZIONI, { recursive: true });
+  if (lstatSync(CARTELLA_FUNZIONI).isSymbolicLink()) fermati(`FERMO: ${CARTELLA_FUNZIONI} e' un collegamento, non una cartella. Non ho toccato niente.`);
+  let cambiato = false;
   for (const voce of elencoSicuro(CARTELLA_FUNZIONI)) {
-    if (!FUNZIONI_DI_CASA.includes(voce)) rmSync(`${CARTELLA_FUNZIONI}/${voce}`, { recursive: true, force: true });
+    const pieno = `${CARTELLA_FUNZIONI}/${voce}`;
+    if (lstatSync(pieno).isSymbolicLink()) fermati(`FERMO: ${pieno} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    if (!FUNZIONI_DI_CASA.includes(voce)) {
+      rmSync(pieno, { recursive: true, force: true });
+      cambiato = true;
+    }
   }
   for (const nome of FUNZIONI_DI_CASA) {
-    if (JSON.stringify(contenuto(`${CARTELLA_FUNZIONI}/${nome}`)) === JSON.stringify(contenuto(`supabase/functions/${nome}`))) continue;
+    if (uguali(nome)) continue;
+    const nuova = `${CARTELLA_FUNZIONI}/.nuova-${nome}`;
+    cpSync(path.join(FUNZIONI_DEL_GESTIONALE, nome), nuova, { recursive: true });
     rmSync(`${CARTELLA_FUNZIONI}/${nome}`, { recursive: true, force: true });
-    cpSync(`supabase/functions/${nome}`, `${CARTELLA_FUNZIONI}/${nome}`, { recursive: true });
+    renameSync(nuova, `${CARTELLA_FUNZIONI}/${nome}`);
+    cambiato = true;
   }
+  return cambiato;
 }
 
 /** I file di una cartella con il loro contenuto, per confrontare due copie; {} se non c'e'. */
@@ -442,16 +474,26 @@ export async function problemiDelleFunzioni() {
   for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v))) problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
   for (const nome of FUNZIONI_DI_CASA) {
     if (!presenti.includes(nome)) problemi.push(`manca la funzione ${nome}`);
-    else if (JSON.stringify(contenuto(`${CARTELLA_FUNZIONI}/${nome}`)) !== JSON.stringify(contenuto(`supabase/functions/${nome}`))) {
-      problemi.push(`${nome} su Casa e' diversa da quella del gestionale: lancia  npm run casa:accendi`);
-    }
+    else if (!uguali(nome)) problemi.push(`${nome} su Casa e' diversa da quella del gestionale: lancia  npm run casa:accendi`);
   }
+  // Il database non deve poter chiamare le funzioni (vedi sopra).
+  const vault = sql(
+    "select coalesce(bool_and(decrypted_secret like 'http://127.0.0.1:%'), false) from vault.decrypted_secrets where name = 'url_funzioni';",
+    "Il controllo di url_funzioni"
+  );
+  if (vault !== "t") problemi.push("url_funzioni nel Vault manca o non punta a 127.0.0.1: il database potrebbe chiamare le funzioni");
   if (docker(["inspect", "-f", "{{.State.Running}}", CONTENITORE_FUNZIONI]).stdout !== "true") {
     problemi.push(`il motore delle funzioni (${CONTENITORE_FUNZIONI}) non e' acceso`);
     return problemi;
   }
   const porte = docker(["inspect", "-f", "{{json .NetworkSettings.Ports}}", CONTENITORE_FUNZIONI]).stdout;
-  if (porte.includes("HostPort")) problemi.push(`il motore delle funzioni pubblica porte sue: ${porte}`);
+  let pubblicate;
+  try {
+    pubblicate = Object.values(JSON.parse(porte) || {}).some((p) => Array.isArray(p) && p.length > 0);
+  } catch {
+    pubblicate = true;
+  }
+  if (pubblicate) problemi.push(`il motore delle funzioni pubblica porte sue (o non si capisce): ${porte}`);
   for (const nome of nomiApertiDelCloud(CLOUD, CONTENITORE_FUNZIONI)) problemi.push(`raggiungibile dalle funzioni: ${nome}`);
   // ⚠️ Il primo avvio scarica supabase-js: la prima risposta puo' tardare.
   for (const nome of FUNZIONI_DI_CASA) {
@@ -459,7 +501,7 @@ export async function problemiDelleFunzioni() {
     if (stato !== 200) problemi.push(`la funzione ${nome} non risponde (${stato || "niente"})`);
   }
   // Le altre del repository devono rispondere «non c'e'» (404).
-  for (const nome of readdirSync("supabase/functions").filter((n) => !n.startsWith("_") && !FUNZIONI_DI_CASA.includes(n))) {
+  for (const nome of readdirSync(FUNZIONI_DEL_GESTIONALE).filter((n) => !n.startsWith("_") && !FUNZIONI_DI_CASA.includes(n))) {
     const stato = await statoDellaFunzione(nome, 30);
     if (stato !== 404) problemi.push(`la funzione ${nome} dovrebbe essere spenta, invece risponde ${stato || "niente"}`);
   }

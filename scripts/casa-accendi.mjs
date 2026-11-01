@@ -82,9 +82,15 @@ function supabase(comando) {
 
 // Le funzioni prima di accendere: il motore serve quello che trova nella
 // cartella, e config.toml si legge solo all'avvio.
-preparaLeFunzioni();
+const funzioniCambiate = preparaLeFunzioni();
 if (accendiIlRuntimeNellaConfigurazione()) console.log("   motore delle funzioni acceso in config.toml");
 const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", contenitore]).stdout === "true";
+if (funzioniCambiate && acceso(CONTENITORE_FUNZIONI)) {
+  // Il motore potrebbe tenere in memoria il codice vecchio: si riavvia solo
+  // lui (pochi secondi; /etc/hosts si richiude qui sotto).
+  console.log("   funzioni aggiornate: riavvio il loro motore");
+  if (!docker(["restart", CONTENITORE_FUNZIONI]).ok) fine("Il motore delle funzioni non si e' riavviato.");
+}
 if (!acceso(CONTENITORE)) {
   console.log("   Casa era spenta: la accendo (un minuto circa)");
   supabase("start");

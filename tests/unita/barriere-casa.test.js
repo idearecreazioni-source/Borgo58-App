@@ -227,10 +227,15 @@ describe("le funzioni di Casa (01/11/2026)", () => {
   // ../_shared o da un'altra funzione la romperebbe solo li'.
   it("ogni funzione di Casa importa solo dalla sua cartella o da npm", () => {
     for (const nome of FUNZIONI_DI_CASA) {
-      for (const file of readdirSync(`supabase/functions/${nome}`).filter((f) => f.endsWith(".ts"))) {
-        const testo = readFileSync(`supabase/functions/${nome}/${file}`, "utf8");
-        for (const [, da] of testo.matchAll(/^\s*(?:import|export)[^"']*from\s+["']([^"']+)["']/gm)) {
-          expect(da, `${nome}/${file}`).toMatch(/^(\.\/(?!\.)|npm:|jsr:)/);
+      const file = readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((f) => /\.(ts|js|mjs)$/.test(f));
+      expect(file.length).toBeGreaterThan(0);
+      for (const f of file) {
+        const testo = readFileSync(`supabase/functions/${nome}/${f}`, "utf8");
+        // Niente import dinamici ne' require: sfuggirebbero al controllo qui sotto.
+        expect(testo, `${nome}/${f}`).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+        const importi = /^\s*(?:import\s+(?:[^"';]*?\bfrom\s*)?|export\s[^"';=]*?\bfrom\s*)["']([^"']+)["']/gm;
+        for (const [, da] of testo.matchAll(importi)) {
+          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/)/);
         }
       }
     }
