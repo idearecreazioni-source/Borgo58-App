@@ -156,7 +156,7 @@ describe("i comandi su Prova chiamano la barriera", () => {
 // I comandi che lavorano su Casa: la barriera e' quella di Casa, e nessuno
 // ha un modo di svuotarla (niente opzioni dalla riga di comando, niente
 // `drop schema`).
-const DI_CASA = ["casa-costruisci", "casa-pin", "casa-verifica", "casa-accendi", "casa-impacchetta"];
+const DI_CASA = ["casa-costruisci", "casa-pin", "casa-verifica", "casa-accendi", "casa-impacchetta", "casa-copia"];
 
 describe("i comandi di Casa chiamano la barriera di Casa", () => {
   it("casa-comune la chiama, e pretende il contenitore di Casa", () => {

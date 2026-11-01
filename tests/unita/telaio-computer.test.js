@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { percorsoComande } from "../../src/lib/schermo";
 
 // 🔴 LA BARRA IN ALTO E IL MENU A CASSETTO COL PROFILO «COMPUTER» (31/10/2026,
 // M14 del controllo finale). La prova visiva li misura su una copia nel banco
@@ -28,5 +29,39 @@ describe("barra in alto e menu a cassetto nel profilo «Computer»", () => {
     const conAside = css.match(/:root\[data-schermo="computer"\] :is\([^)]*aside[^)]*\)/g) ?? [];
     expect(conAside.length).toBeGreaterThan(4);
     for (const r of conAside) expect(r).toContain(".telaio-del-gestionale");
+  });
+});
+
+// 🔴 /comande/stampanti È UNA PAGINA D'UFFICIO (31/10/2026, M8 del controllo
+// finale): sta sotto /comande/ ma si apre dal computer, quindi deve seguire il
+// profilo «Computer». Le altre pagine delle Comande restano escluse.
+describe("quali percorsi sono Comande di sala/cucina", () => {
+  it("le pagine di sala e cucina restano escluse dal profilo", () => {
+    expect(percorsoComande("/comande")).toBe(true);
+    expect(percorsoComande("/comande/")).toBe(true);
+    expect(percorsoComande("/comande/sala")).toBe(true);
+    expect(percorsoComande("/comande/cucina/3")).toBe(true);
+  });
+
+  it("le stampanti sono d'ufficio, anche con la barra finale o un sotto-percorso", () => {
+    expect(percorsoComande("/comande/stampanti")).toBe(false);
+    expect(percorsoComande("/comande/stampanti/")).toBe(false);
+    expect(percorsoComande("/comande/stampanti/3")).toBe(false);
+  });
+
+  it("un nome che solo comincia come «stampanti» non vale", () => {
+    expect(percorsoComande("/comande/stampantiX")).toBe(true);
+  });
+
+  it("fuori dalle Comande non è mai Comande", () => {
+    expect(percorsoComande("/")).toBe(false);
+    expect(percorsoComande("/comandel")).toBe(false);
+    expect(percorsoComande("/impostazioni")).toBe(false);
+    expect(percorsoComande(undefined)).toBe(false);
+  });
+
+  it("il Layout usa questa funzione e non più il confronto a mano", () => {
+    expect(layout).toMatch(/const isComande = percorsoComande\(pathname\)/);
+    expect(layout).not.toMatch(/startsWith\("\/comande\/"\)/);
   });
 });
