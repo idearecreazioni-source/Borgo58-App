@@ -44,6 +44,7 @@
 //
 // ⚠️ E LE PRENOTAZIONI E GLI ALLARMI NON CAMBIANO DI UNA RIGA: arrivano
 //    senza chiave, e per loro la strada e' quella di sempre.
+import { firmaCorretta } from "../_shared/uguali.ts";
 import { consegnaUnaVoltaSola, stradaDellaConsegna } from "./consegna.ts";
 // ⚠️ Da Prova ogni messaggio comincia con «TEST PROVA»: il perche' sta in
 //    `ambiente.ts`, e l'unico punto che lo applica e' `sendTelegram` qui sotto.
@@ -221,7 +222,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
-  if (req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
+  if (!firmaCorretta(req.headers.get("x-borgo58-firma"), NOTIFICHE_FIRMA)) {
     return new Response(JSON.stringify({ error: "Chiamante non riconosciuto" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

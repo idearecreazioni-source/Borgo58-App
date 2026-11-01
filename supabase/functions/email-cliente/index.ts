@@ -18,6 +18,7 @@
 // telefono — così può telefonare al cliente, che è quello che avrebbe
 // fatto comunque prima di avere il gestionale.
 
+import { firmaCorretta } from "../_shared/uguali.ts";
 import { type Prenotazione, testoConferma, testoPreventivo } from "./testi.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -61,7 +62,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-  if (req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
+  if (!firmaCorretta(req.headers.get("x-borgo58-firma"), NOTIFICHE_FIRMA)) {
     return new Response(JSON.stringify({ errore: "Chiamante non riconosciuto" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
