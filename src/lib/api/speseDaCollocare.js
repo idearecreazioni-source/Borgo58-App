@@ -26,6 +26,23 @@ export async function listSpeseDaCollocare() {
   return data ?? [];
 }
 
+// Gli id dei movimenti di prima nota nati da «Da collocare»: quelli non si
+// rimuovono dalla prima nota (la spesa punta al movimento), si annulla la
+// collocazione. Una lettura sola, senza migrazioni. Se fallisce non blocca
+// la pagina: resta l'errore sulla riga al momento di rimuovere.
+export async function idMovimentiDaCollocare() {
+  try {
+    const { data, error } = await supabase
+      .from("spese_da_collocare")
+      .select("movimento_id")
+      .not("movimento_id", "is", null);
+    if (error || !Array.isArray(data)) return new Set();
+    return new Set(data.map((r) => r.movimento_id));
+  } catch {
+    return new Set();
+  }
+}
+
 // Le ultime collocate o ignorate: per vedere dove sono finite.
 export async function listSpeseCollocate(quante = 20) {
   const { data, error } = await supabase
