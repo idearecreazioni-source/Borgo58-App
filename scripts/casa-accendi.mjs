@@ -34,6 +34,7 @@ import {
   FUNZIONI_DI_CASA,
   PORTA_SITO_CASA,
   accendiIlRuntimeNellaConfigurazione,
+  apriLaPortaDellaScorciatoia,
   preparaLeFunzioni,
   preparaIlFileDellaChiave,
   chiaveDiClaudePresente,
@@ -92,6 +93,9 @@ const funzioniCambiate = preparaLeFunzioni();
 // Il file della chiave c'e' prima della partenza: Supabase CLI lo legge solo allora.
 preparaIlFileDellaChiave();
 if (accendiIlRuntimeNellaConfigurazione()) console.log("   motore delle funzioni acceso in config.toml");
+// La porta della Scorciatoia: anche lei si legge solo a `supabase start`.
+const portaAperta = apriLaPortaDellaScorciatoia();
+if (portaAperta) console.log("   porta della Scorciatoia (ascolta-voce) aperta in config.toml: la guardia resta la chiave voce");
 const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", contenitore]).stdout === "true";
 // 🔴 Misurato il 01/11 sera: una funzione AGGIUNTA o tolta non la vede un
 // semplice riavvio del motore (risponde 404); l'elenco lo fa `supabase
@@ -100,8 +104,9 @@ const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", c
 // e' piu' recente della partenza del motore, il motore ha quella vecchia.
 const partitoIl = Date.parse(docker(["inspect", "-f", "{{.State.StartedAt}}", CONTENITORE_FUNZIONI]).stdout) || 0;
 const chiaveNuova = acceso(CONTENITORE_FUNZIONI) && quandoECambiataLaChiave() > partitoIl;
-if ((elenco() !== primaDiPreparare || chiaveNuova) && acceso(CONTENITORE)) {
-  console.log(`   ${chiaveNuova ? "la chiave di Claude e' cambiata" : "l'elenco delle funzioni e' cambiato"}: riavvio Casa (un minuto circa, i dati restano)`);
+if ((elenco() !== primaDiPreparare || chiaveNuova || portaAperta) && acceso(CONTENITORE)) {
+  const perche = chiaveNuova ? "la chiave di Claude e' cambiata" : portaAperta ? "la configurazione e' cambiata" : "l'elenco delle funzioni e' cambiato";
+  console.log(`   ${perche}: riavvio Casa (un minuto circa, i dati restano)`);
   supabase("stop");
 }
 if (funzioniCambiate && acceso(CONTENITORE_FUNZIONI)) {

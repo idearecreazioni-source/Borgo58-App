@@ -451,6 +451,54 @@ export function accendiIlRuntimeNellaConfigurazione() {
   return true;
 }
 
+// 🔴 LA PORTA DELLA SCORCIATOIA (01/11/2026 sera). Sul gestionale vero
+// ascolta-voce si installa senza verifica del token (scripts/funzione.mjs,
+// SENZA_TOKEN, con il perche'): la Scorciatoia dell'orologio non ha un
+// accesso, e la sua barriera e' la chiave voce, controllata dentro prima di
+// spendere. Su Casa la stessa decisione la prende config.toml, che la CLI
+// legge solo a `supabase start`. Misurato: senza questa sezione il gateway
+// locale risponde «Missing authorization header».
+// ⚠️ Solo funzioni che sono ANCHE in SENZA_TOKEN del gestionale vero
+// (lo controlla tests/unita/barriere-casa.test.js): Casa non apre niente
+// che work tiene chiuso.
+export const FUNZIONI_SENZA_TOKEN_DI_CASA = ["ascolta-voce"];
+
+/** Il testo di config.toml con «verify_jwt = false» per quelle funzioni. Non tocca il resto. */
+export function configurazioneSenzaToken(testo) {
+  let righe = testo.split("\n");
+  for (const nome of FUNZIONI_SENZA_TOKEN_DI_CASA) {
+    const inizio = righe.findIndex((r) => r.trim() === `[functions.${nome}]`);
+    if (inizio < 0) {
+      righe = [...righe, "", `[functions.${nome}]`, "verify_jwt = false", ""];
+      continue;
+    }
+    let trovata = false;
+    for (let i = inizio + 1; i < righe.length && !righe[i].trim().startsWith("["); i++) {
+      if (/^verify_jwt\s*=/.test(righe[i].trim())) {
+        righe[i] = "verify_jwt = false";
+        trovata = true;
+      }
+    }
+    if (!trovata) righe.splice(inizio + 1, 0, "verify_jwt = false");
+  }
+  return righe.join("\n");
+}
+
+/** La porta della Scorciatoia e' aperta in config.toml? */
+export const portaDellaScorciatoiaAperta = () => {
+  const testo = readFileSync(CONFIGURAZIONE, "utf8");
+  return configurazioneSenzaToken(testo) === testo;
+};
+
+/** Apre la porta in config.toml. Restituisce true se ha cambiato il file. */
+export function apriLaPortaDellaScorciatoia() {
+  const testo = readFileSync(CONFIGURAZIONE, "utf8");
+  const nuovo = configurazioneSenzaToken(testo);
+  if (nuovo === testo) return false;
+  writeFileSync(CONFIGURAZIONE, nuovo, "utf8");
+  return true;
+}
+
 // Le funzioni del gestionale a cui appartiene QUESTO script, non della
 // cartella da cui lo si lancia (revisione ecc:code-reviewer).
 const FUNZIONI_DEL_GESTIONALE = fileURLToPath(new URL("../supabase/functions", import.meta.url));
@@ -538,6 +586,7 @@ async function statoDellaFunzione(nome, secondi) {
 export async function problemiDelleFunzioni() {
   const problemi = [];
   if (!runtimeNellaConfigurazione()) problemi.push("il motore delle funzioni e' spento in config.toml: lancia  npm run casa:accendi");
+  if (!portaDellaScorciatoiaAperta()) problemi.push("la porta della Scorciatoia (ascolta-voce) e' chiusa in config.toml: lancia  npm run casa:accendi");
   const presenti = elencoSicuro(CARTELLA_FUNZIONI);
   for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v) && v !== FILE_CHIAVE_CLAUDE)) {
     problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);

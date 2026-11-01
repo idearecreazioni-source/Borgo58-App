@@ -349,3 +349,31 @@ describe("l'app e il server di Casa", () => {
     expect(PORTA_SITO_CASA).toBeLessThanOrEqual(a);
   });
 });
+
+// 🔴 LA PORTA DELLA SCORCIATOIA (01/11/2026 sera): su Casa si toglie la
+// verifica del token SOLO alle funzioni che il gestionale vero installa gia'
+// senza (SENZA_TOKEN in scripts/funzione.mjs), e solo a funzioni accese.
+describe("Casa: le funzioni senza token", () => {
+  it("sono anche senza token sul gestionale vero, e sono funzioni di Casa", async () => {
+    const { FUNZIONI_SENZA_TOKEN_DI_CASA } = await import("../../scripts/casa-comune.mjs");
+    const funzione = readFileSync("scripts/funzione.mjs", "utf8");
+    const blocco = funzione.slice(funzione.indexOf("const SENZA_TOKEN = {"), funzione.indexOf("\n};", funzione.indexOf("const SENZA_TOKEN = {")));
+    expect(FUNZIONI_SENZA_TOKEN_DI_CASA.length).toBeGreaterThan(0);
+    for (const nome of FUNZIONI_SENZA_TOKEN_DI_CASA) {
+      expect(blocco).toContain(`"${nome}":`);
+      expect(FUNZIONI_DI_CASA).toContain(nome);
+    }
+  });
+
+  it("la sezione si aggiunge, si corregge, e non tocca il resto", async () => {
+    const { configurazioneSenzaToken } = await import("../../scripts/casa-comune.mjs");
+    const base = '[edge_runtime]\nenabled = true\n\n[analytics]\nenabled = false\n';
+    const aperta = configurazioneSenzaToken(base);
+    expect(aperta.startsWith(base)).toBe(true);
+    expect(aperta).toContain("[functions.ascolta-voce]\nverify_jwt = false");
+    expect(configurazioneSenzaToken(aperta)).toBe(aperta);
+    const chiusa = "[functions.ascolta-voce]\nverify_jwt = true\n\n[analytics]\nverify_jwt = true\n";
+    expect(configurazioneSenzaToken(chiusa)).toBe("[functions.ascolta-voce]\nverify_jwt = false\n\n[analytics]\nverify_jwt = true\n");
+    expect(configurazioneSenzaToken("[functions.ascolta-voce]\n[x]\n")).toBe("[functions.ascolta-voce]\nverify_jwt = false\n[x]\n");
+  });
+});
