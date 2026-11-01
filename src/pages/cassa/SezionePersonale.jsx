@@ -16,6 +16,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import { avvisoImportoAnticipo } from "../../lib/calcoli/fatturaAnticipo";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -408,7 +409,16 @@ export default function SezionePersonale() {
                     <label className={labelClass}>C&apos;è già una fattura?</label>
                     <select
                       value={form.supplierInvoiceId}
-                      onChange={(e) => setForm((f) => ({ ...f, supplierInvoiceId: e.target.value }))}
+                      onChange={(e) => {
+                        const scelta = fattureAperte.find((x) => x.id === e.target.value);
+                        // Scelta la fattura, la cifra proposta è quella che
+                        // resta da pagare (l'anticipo deve coincidere).
+                        setForm((f) => ({
+                          ...f,
+                          supplierInvoiceId: e.target.value,
+                          importo: scelta && !f.importo ? String(scelta.da_pagare ?? scelta.amount) : f.importo,
+                        }));
+                      }}
                       className={inputClass}
                     >
                       <option value="">no, la spesa è solo questa</option>
@@ -425,6 +435,28 @@ export default function SezionePersonale() {
                         evitare. */}
                     {nonLetto(fatture) && (
                       <DatoNonLetto cosa="le fatture ancora da pagare" className="mt-1" />
+                    )}
+                    {/* 🔴 Collegata a una fattura, l'anticipo LA PAGA: esce
+                        dalle scadenze e resta «pagata (anticipo)». Il
+                        debito verso di te resta qui, e la cassa non si
+                        muove. Se la cifra non coincide, il database
+                        rifiuta: meglio dirlo prima. */}
+                    {form.supplierInvoiceId && (
+                      <p className="testo-sala text-b58-charcoal-soft mt-1" data-prova="anticipo-paga-fattura">
+                        La fattura risulterà <strong>pagata (anticipo)</strong> e uscirà dalle scadenze;
+                        la cassa non si muove e il debito verso di te resta qui.
+                      </p>
+                    )}
+                    {avvisoImportoAnticipo(
+                      form.importo,
+                      fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                    ) && (
+                      <p className="testo-sala text-b58-terracotta-dark-testo mt-1" data-prova="anticipo-importo-diverso">
+                        {avvisoImportoAnticipo(
+                          form.importo,
+                          fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                        )}
+                      </p>
                     )}
                   </div>
                 </div>

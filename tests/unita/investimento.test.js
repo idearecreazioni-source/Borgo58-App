@@ -307,7 +307,14 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
     const colpevoli = readdirSync(cartella)
       .filter((n) => n.endsWith(".sql"))
       .filter((n) => readFileSync(`${cartella}/${n}`, "utf8").includes("e_investimento"));
-    expect(colpevoli).toEqual(["20260921000003_l_etichetta_investimento.sql"]);
+    // ⚠️ La seconda e' `registra_anticipazione` (01/11/2026): NON e' fiscale,
+    //    porta solo il valore della casella dal modulo alla stessa riga di
+    //    `anticipazioni_socio` che prima scriveva il browser. Nessun conteggio
+    //    del costo o delle imposte la legge: lo guardano le prove qui sopra.
+    expect(colpevoli).toEqual([
+      "20260921000003_l_etichetta_investimento.sql",
+      "20261101000001_l_anticipo_paga_la_fattura.sql",
+    ]);
   });
 
   it("e la tasca resta dalla parte sua: entra nel costo, non nel fiscale", () => {

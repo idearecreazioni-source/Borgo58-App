@@ -20,6 +20,7 @@ import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import { documentiCollegabili, senzaSocieta } from "../../lib/calcoli/documentiCollegabili";
+import { eFatturaPagataConAnticipo, etichettaPagamento } from "../../lib/calcoli/fatturaAnticipo";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import FormNotaCredito from "../../components/FormNotaCredito";
@@ -1184,7 +1185,7 @@ export default function FattureFornitoriHome() {
                     <span className="text-b58-charcoal">{inv.supplier.name}</span>
                     {inv.invoice_number && ` #${inv.invoice_number}`}
                     {inv.paid_at && ` — ${formatDate(inv.paid_at)}`}
-                    {inv.payment_method && ` · ${labelFor(PAYMENT_METHODS, inv.payment_method)}`}
+                    {inv.payment_method && ` · ${etichettaPagamento(inv, (m) => labelFor(PAYMENT_METHODS, m))}`}
                   </span>
                   <span className="gesti-pericolosi">
                     <span className="text-b58-charcoal">{formatEUR(inv.da_pagare)}</span>
@@ -1198,13 +1199,24 @@ export default function FattureFornitoriHome() {
                     >
                       {notaPerId === inv.id ? "Chiudi" : "Nota di credito"}
                     </button>
-                    {/* Toglie un'uscita vera dalla prima nota: conferma. */}
-                    <ConfermaDistruttiva
-                      etichetta="Annulla il pagamento"
-                      domanda={`Tolgo dalla prima nota l'uscita di ${formatEUR(inv.da_pagare)} e rimetto la fattura fra quelle da pagare?`}
-                      etichettaConferma="Sì, annulla"
-                      onConferma={() => handleAnnullaPagamento(inv.id)}
-                    />
+                    {/* 🔴 Pagata con un anticipo tuo: in prima nota NON c'è
+                        nessuna uscita da togliere, e «Annulla il pagamento»
+                        la rimetterebbe da pagare con la nota ancora
+                        attaccata (pagabile due volte). Il database lo
+                        rifiuta; qui si indica la strada giusta. */}
+                    {eFatturaPagataConAnticipo(inv) ? (
+                      <span className="testo-sala text-b58-charcoal-soft" data-prova="anticipo-niente-annulla">
+                        Per riaprirla elimina l&apos;anticipo in Cassa
+                      </span>
+                    ) : (
+                      /* Toglie un'uscita vera dalla prima nota: conferma. */
+                      <ConfermaDistruttiva
+                        etichetta="Annulla il pagamento"
+                        domanda={`Tolgo dalla prima nota l'uscita di ${formatEUR(inv.da_pagare)} e rimetto la fattura fra quelle da pagare?`}
+                        etichettaConferma="Sì, annulla"
+                        onConferma={() => handleAnnullaPagamento(inv.id)}
+                      />
+                    )}
                   </span>
                 </div>
                 <RigaNote inv={inv} />
