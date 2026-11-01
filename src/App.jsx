@@ -43,6 +43,9 @@ import TaskForm from "./pages/agenda/TaskForm";
 const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
 const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
+// ⚠️ Anche la banca (31/10/2026): col CSV accanto al CBI il gestionale
+//    arrivava a 0,25 kB dal tetto. Si apre poche volte al mese.
+const MovimentiBanca = lazy(() => import("./pages/cassa/MovimentiBanca"));
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
@@ -79,7 +82,6 @@ import DaCollocare from "./pages/cassa/DaCollocare";
 import Segnalazioni from "./pages/assistente/Segnalazioni";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
-import MovimentiBanca from "./pages/cassa/MovimentiBanca";
 import ImportaFatturaElettronica from "./pages/fatture/ImportaFatturaElettronica";
 import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
@@ -318,7 +320,7 @@ function AppRoutes() {
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
-        <Route path="/cassa/banca" element={<RequireTitolare><MovimentiBanca /></RequireTitolare>} />
+        <Route path="/cassa/banca" element={<RequireTitolare><Suspense fallback={<p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}><MovimentiBanca /></Suspense></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
