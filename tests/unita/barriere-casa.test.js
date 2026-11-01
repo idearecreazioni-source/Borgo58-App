@@ -5,6 +5,7 @@ import { ambienteDa } from "../../src/lib/ambiente";
 import {
   CLOUD,
   FUNZIONI_DI_CASA,
+  chiaveBenScritta,
   RICONOSCITORI,
   nomiDelCloud,
   rigaDelRuntime,
@@ -219,8 +220,48 @@ describe("i pezzi puri di casa-comune", () => {
 });
 
 describe("le funzioni di Casa (01/11/2026)", () => {
-  it("e' accesa solo operazioni-atomiche", () => {
-    expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche"]);
+  // 🔴 Il commento di FUNZIONI_DI_CASA promette «solo Casa e Anthropic»:
+  // qui si tiene la promessa (revisione ecc:security-reviewer, 01/11 sera).
+  it("le funzioni di Casa non aprono altre strade verso internet", () => {
+    for (const nome of FUNZIONI_DI_CASA) {
+      for (const f of readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((x) => /\.(ts|js|mjs)$/.test(x))) {
+        const codice = readFileSync(`supabase/functions/${nome}/${f}`, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+        expect(codice, `${nome}/${f}`).not.toMatch(/\bfetch\s*\(|\bWebSocket\b|Deno\.connect|https?:\/\//);
+      }
+    }
+  });
+
+  it("il file della chiave ha SOLO la chiave di Claude", () => {
+    const chiave = `sk-ant-api03-${"a".repeat(40)}`;
+    expect(chiaveBenScritta(`# commento\nANTHROPIC_API_KEY=${chiave}\n`)).toBe(true);
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave}\r\n`)).toBe(true);
+    expect(chiaveBenScritta("ANTHROPIC_API_KEY=\n")).toBe(false);
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave} altro`)).toBe(false);
+    // Una riga in piu' puo' mandare la chiave altrove.
+    expect(chiaveBenScritta(`ANTHROPIC_API_KEY=${chiave}\nANTHROPIC_BASE_URL=http://altrove\n`)).toBe(false);
+    expect(chiaveBenScritta(`﻿# commento\nANTHROPIC_API_KEY=${chiave}`)).toBe(false);
+  });
+
+  // MEMO dal 01/11 sera (decisione di Alessio: la stessa AI del gestionale vero).
+  it("sono accese solo operazioni-atomiche e le quattro di MEMO", () => {
+    expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche", "ascolta-voce", "leggi-foto", "documento-leggi", "assistente-archivio"]);
+  });
+
+  // 🔴 Nell'ambiente del motore la CLI mette anche la chiave service_role e
+  // l'indirizzo del database: le funzioni di Casa, che vanno su internet,
+  // non devono leggerli. Solo l'indirizzo di Casa, la chiave anon e Claude.
+  it("ogni funzione di Casa legge dall'ambiente solo SUPABASE_URL, SUPABASE_ANON_KEY e ANTHROPIC_API_KEY", () => {
+    const ammesse = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "ANTHROPIC_API_KEY"];
+    for (const nome of FUNZIONI_DI_CASA) {
+      for (const f of readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((x) => /\.(ts|js|mjs)$/.test(x))) {
+        const testo = readFileSync(`supabase/functions/${nome}/${f}`, "utf8");
+        // Niente letture dell'ambiente intero: sfuggirebbero al controllo.
+        expect(testo, `${nome}/${f}`).not.toMatch(/Deno\.env\.toObject|process\.env/);
+        for (const [, variabile] of testo.matchAll(/Deno\.env\.get\(\s*([^)]*)\)/g)) {
+          expect(ammesse, `${nome}/${f}: ${variabile}`).toContain(variabile.trim().replace(/^["'`]|["'`]$/g, ""));
+        }
+      }
+    }
   });
 
   // ⚠️ Su Casa si copia solo la cartella della funzione: un import da
@@ -235,7 +276,8 @@ describe("le funzioni di Casa (01/11/2026)", () => {
         expect(testo, `${nome}/${f}`).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
         const importi = /^\s*(?:import\s+(?:[^"';]*?\bfrom\s*)?|export\s[^"';=]*?\bfrom\s*)["']([^"']+)["']/gm;
         for (const [, da] of testo.matchAll(importi)) {
-          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/)/);
+          // npm: solo Supabase, l'SDK di Claude e fflate (gli zip dei documenti).
+          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/|npm:@anthropic-ai\/sdk$|npm:fflate@\d)/);
         }
       }
     }
@@ -305,5 +347,33 @@ describe("l'app e il server di Casa", () => {
     const [da, a] = PORTE_FIREWALL.split("-").map(Number);
     expect(PORTA_SITO_CASA).toBeGreaterThanOrEqual(da);
     expect(PORTA_SITO_CASA).toBeLessThanOrEqual(a);
+  });
+});
+
+// 🔴 LA PORTA DELLA SCORCIATOIA (01/11/2026 sera): su Casa si toglie la
+// verifica del token SOLO alle funzioni che il gestionale vero installa gia'
+// senza (SENZA_TOKEN in scripts/funzione.mjs), e solo a funzioni accese.
+describe("Casa: le funzioni senza token", () => {
+  it("sono anche senza token sul gestionale vero, e sono funzioni di Casa", async () => {
+    const { FUNZIONI_SENZA_TOKEN_DI_CASA } = await import("../../scripts/casa-comune.mjs");
+    const funzione = readFileSync("scripts/funzione.mjs", "utf8");
+    const blocco = funzione.slice(funzione.indexOf("const SENZA_TOKEN = {"), funzione.indexOf("\n};", funzione.indexOf("const SENZA_TOKEN = {")));
+    expect(FUNZIONI_SENZA_TOKEN_DI_CASA.length).toBeGreaterThan(0);
+    for (const nome of FUNZIONI_SENZA_TOKEN_DI_CASA) {
+      expect(blocco).toContain(`"${nome}":`);
+      expect(FUNZIONI_DI_CASA).toContain(nome);
+    }
+  });
+
+  it("la sezione si aggiunge, si corregge, e non tocca il resto", async () => {
+    const { configurazioneSenzaToken } = await import("../../scripts/casa-comune.mjs");
+    const base = '[edge_runtime]\nenabled = true\n\n[analytics]\nenabled = false\n';
+    const aperta = configurazioneSenzaToken(base);
+    expect(aperta.startsWith(base)).toBe(true);
+    expect(aperta).toContain("[functions.ascolta-voce]\nverify_jwt = false");
+    expect(configurazioneSenzaToken(aperta)).toBe(aperta);
+    const chiusa = "[functions.ascolta-voce]\nverify_jwt = true\n\n[analytics]\nverify_jwt = true\n";
+    expect(configurazioneSenzaToken(chiusa)).toBe("[functions.ascolta-voce]\nverify_jwt = false\n\n[analytics]\nverify_jwt = true\n");
+    expect(configurazioneSenzaToken("[functions.ascolta-voce]\n[x]\n")).toBe("[functions.ascolta-voce]\nverify_jwt = false\n[x]\n");
   });
 });

@@ -5,7 +5,7 @@
 // quello di Casa, e la porta pubblicata proprio quella di Casa.
 
 import { spawnSync } from "node:child_process";
-import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PORTA_API_CASA, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA, fermati, soloCasa } from "./comune.mjs";
@@ -327,13 +327,18 @@ export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
 }
 
 /**
- * 🔴 LE FUNZIONI DI CASA (01/11/2026): ne e' accesa UNA, `operazioni-atomiche`.
- * Ogni scrittura a piu' tabelle del gestionale passa da li' (regola B4 del
- * Contratto): senza, su Casa non si colloca uno scontrino, non si chiude un
- * conto, non si carica una fattura. Le altre (AI, posta, Telegram...)
- * restano spente fino alla fase 7.
+ * 🔴 LE FUNZIONI DI CASA (01/11/2026), solo quelle di FUNZIONI_DI_CASA:
+ *  · `operazioni-atomiche`: ogni scrittura a piu' tabelle del gestionale
+ *    passa da li' (regola B4 del Contratto): senza, su Casa non si colloca
+ *    uno scontrino, non si chiude un conto, non si carica una fattura;
+ *  · MEMO (decisione di Alessio del 01/11 sera: Casa deve funzionare come
+ *    il gestionale vero, con la STESSA AI): `ascolta-voce`, `leggi-foto`,
+ *    `documento-leggi`, `assistente-archivio`. Chiamano Claude (Anthropic)
+ *    con la chiave di FILE_CHIAVE_CLAUDE, nello stesso account del
+ *    gestionale vero; il tetto di spesa del mese e' quello del database di
+ *    Casa. Restano spente posta, Telegram, email ai clienti e il resto.
  *
- * Come resta UNA sola, misurato con Supabase CLI 2.122.0:
+ * Come restano SOLO quelle, misurato con Supabase CLI 2.122.0:
  *  · il motore delle funzioni monta in sola lettura SOLO la cartella
  *    C:\Casa\supabase\functions, e serve quello che ci trova. Dentro ci
  *    mettiamo solo le cartelle di FUNZIONI_DI_CASA, copiate dal gestionale
@@ -347,15 +352,77 @@ export function nomiApertiDelCloud(refs, contenitore = CONTENITORE) {
  * resta nel volume supabase_edge_runtime_casa e sopravvive ai riavvii.
  * ⚠️ Dal DATABASE le funzioni restano irraggiungibili: `url_funzioni` punta a
  * 127.0.0.1 dentro il contenitore del database, dove non risponde nessuno.
- * ⚠️ RISCHIO ACCETTATO (revisione ecc:security-reviewer): il motore ha la
- * rete in uscita (gli serve per npm) e /etc/hosts chiude solo i nomi di
- * nomiDelCloud, non gli indirizzi numerici ne' i nomi del pooler. Nel suo
- * ambiente la CLI mette anche la chiave service_role e l'indirizzo del
- * database di Casa. Oggi non pesa: `operazioni-atomiche` usa solo
- * SUPABASE_URL e la chiave anon, e chiama solo Casa. Il giorno che si
- * accende una funzione che va su internet (fase 7) va ripensato.
+ * ⚠️ RISCHIO ACCETTATO (revisione ecc:security-reviewer, ripensato il
+ * 01/11 sera con MEMO): il motore ha la rete in uscita (npm e Anthropic) e
+ * /etc/hosts chiude solo i nomi di nomiDelCloud, non gli indirizzi
+ * numerici ne' i nomi del pooler. Nel suo ambiente la CLI mette anche la
+ * chiave service_role e l'indirizzo del database di Casa. Le funzioni di
+ * Casa usano SOLO SUPABASE_URL, la chiave anon e ANTHROPIC_API_KEY (lo
+ * controlla barriere-casa.test.js), e parlano solo con Casa e con
+ * Anthropic, a cui mandano quello che Alessio fotografa o detta: come nel
+ * gestionale vero. Una funzione che legga altro dall'ambiente non entra.
  */
-export const FUNZIONI_DI_CASA = ["operazioni-atomiche"];
+export const FUNZIONI_DI_CASA = ["operazioni-atomiche", "ascolta-voce", "leggi-foto", "documento-leggi", "assistente-archivio"];
+
+/**
+ * La chiave di Claude per Casa: un file `.env` accanto alle funzioni, che
+ * Supabase CLI carica nel loro ambiente a ogni `supabase start`. La scrive
+ * Alessio con `npm run casa:chiave`; non passa mai dalla chat, non entra
+ * nel repository (sta in C:\Casa) e non si stampa: di lei si dice solo se
+ * c'e'. ⚠️ Non e' una funzione: preparaLeFunzioni non la tocca.
+ */
+export const FILE_CHIAVE_CLAUDE = ".env";
+const percorsoChiave = () => `${CARTELLA_FUNZIONI}/${FILE_CHIAVE_CLAUDE}`;
+
+/** Il file della chiave, se manca, con la riga vuota da riempire. Restituisce il percorso. */
+export function preparaIlFileDellaChiave() {
+  mkdirSync(CARTELLA_FUNZIONI, { recursive: true });
+  const file = percorsoChiave();
+  try {
+    const tipo = lstatSync(file);
+    if (tipo.isSymbolicLink()) fermati(`FERMO: ${file} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    if (!tipo.isFile()) fermati(`FERMO: ${file} non e' un file. Toglilo a mano.`);
+  } catch (e) {
+    if (e?.code !== "ENOENT") throw e;
+    writeFileSync(
+      file,
+      "# La chiave di Claude per Casa (npm run casa:chiave). Incollala dopo l'uguale, senza spazi.\nANTHROPIC_API_KEY=\n",
+      "utf8"
+    );
+  }
+  return file;
+}
+
+/**
+ * Il testo del file ha UNA chiave di Claude con la forma giusta, e
+ * nient'altro che commenti? ⚠️ Nient'altro: una riga come
+ * ANTHROPIC_BASE_URL manderebbe la chiave (e le foto) altrove (revisione
+ * ecc:security-reviewer).
+ */
+export function chiaveBenScritta(testo) {
+  // Il BOM in testa (Blocco note, PowerShell 5) finirebbe nel nome della variabile.
+  if (String(testo ?? "").startsWith("﻿")) return false;
+  const righe = String(testo ?? "").split(/\r?\n/).map((r) => r.trim()).filter((r) => r && !r.startsWith("#"));
+  return righe.length === 1 && /^ANTHROPIC_API_KEY=sk-ant-[A-Za-z0-9_-]{20,}$/.test(righe[0]);
+}
+
+/** C'e' una chiave di Claude ben scritta? Solo vero o falso: la chiave non esce mai. */
+export function chiaveDiClaudePresente() {
+  try {
+    return chiaveBenScritta(readFileSync(percorsoChiave(), "utf8"));
+  } catch {
+    return false;
+  }
+}
+
+/** Quando e' cambiato il file della chiave (ms), 0 se non c'e'. */
+export function quandoECambiataLaChiave() {
+  try {
+    return statSync(percorsoChiave()).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
 export const CONTENITORE_FUNZIONI = "supabase_edge_runtime_casa";
 export const CARTELLA_FUNZIONI = `${CARTELLA}/supabase/functions`;
 const CONFIGURAZIONE = `${CARTELLA}/supabase/config.toml`;
@@ -381,6 +448,54 @@ export function accendiIlRuntimeNellaConfigurazione() {
   if (riga.acceso) return false;
   righe[riga.indice] = righe[riga.indice].replace("false", "true");
   writeFileSync(CONFIGURAZIONE, righe.join("\n"), "utf8");
+  return true;
+}
+
+// 🔴 LA PORTA DELLA SCORCIATOIA (01/11/2026 sera). Sul gestionale vero
+// ascolta-voce si installa senza verifica del token (scripts/funzione.mjs,
+// SENZA_TOKEN, con il perche'): la Scorciatoia dell'orologio non ha un
+// accesso, e la sua barriera e' la chiave voce, controllata dentro prima di
+// spendere. Su Casa la stessa decisione la prende config.toml, che la CLI
+// legge solo a `supabase start`. Misurato: senza questa sezione il gateway
+// locale risponde «Missing authorization header».
+// ⚠️ Solo funzioni che sono ANCHE in SENZA_TOKEN del gestionale vero
+// (lo controlla tests/unita/barriere-casa.test.js): Casa non apre niente
+// che work tiene chiuso.
+export const FUNZIONI_SENZA_TOKEN_DI_CASA = ["ascolta-voce"];
+
+/** Il testo di config.toml con «verify_jwt = false» per quelle funzioni. Non tocca il resto. */
+export function configurazioneSenzaToken(testo) {
+  let righe = testo.split("\n");
+  for (const nome of FUNZIONI_SENZA_TOKEN_DI_CASA) {
+    const inizio = righe.findIndex((r) => r.trim() === `[functions.${nome}]`);
+    if (inizio < 0) {
+      righe = [...righe, "", `[functions.${nome}]`, "verify_jwt = false", ""];
+      continue;
+    }
+    let trovata = false;
+    for (let i = inizio + 1; i < righe.length && !righe[i].trim().startsWith("["); i++) {
+      if (/^verify_jwt\s*=/.test(righe[i].trim())) {
+        righe[i] = "verify_jwt = false";
+        trovata = true;
+      }
+    }
+    if (!trovata) righe.splice(inizio + 1, 0, "verify_jwt = false");
+  }
+  return righe.join("\n");
+}
+
+/** La porta della Scorciatoia e' aperta in config.toml? */
+export const portaDellaScorciatoiaAperta = () => {
+  const testo = readFileSync(CONFIGURAZIONE, "utf8");
+  return configurazioneSenzaToken(testo) === testo;
+};
+
+/** Apre la porta in config.toml. Restituisce true se ha cambiato il file. */
+export function apriLaPortaDellaScorciatoia() {
+  const testo = readFileSync(CONFIGURAZIONE, "utf8");
+  const nuovo = configurazioneSenzaToken(testo);
+  if (nuovo === testo) return false;
+  writeFileSync(CONFIGURAZIONE, nuovo, "utf8");
   return true;
 }
 
@@ -415,6 +530,7 @@ export function preparaLeFunzioni() {
   for (const voce of elencoSicuro(CARTELLA_FUNZIONI)) {
     const pieno = `${CARTELLA_FUNZIONI}/${voce}`;
     if (lstatSync(pieno).isSymbolicLink()) fermati(`FERMO: ${pieno} e' un collegamento. Toglilo a mano: non lo seguo.`);
+    if (voce === FILE_CHIAVE_CLAUDE) continue;
     if (!FUNZIONI_DI_CASA.includes(voce)) {
       rmSync(pieno, { recursive: true, force: true });
       cambiato = true;
@@ -470,8 +586,11 @@ async function statoDellaFunzione(nome, secondi) {
 export async function problemiDelleFunzioni() {
   const problemi = [];
   if (!runtimeNellaConfigurazione()) problemi.push("il motore delle funzioni e' spento in config.toml: lancia  npm run casa:accendi");
+  if (!portaDellaScorciatoiaAperta()) problemi.push("la porta della Scorciatoia (ascolta-voce) e' chiusa in config.toml: lancia  npm run casa:accendi");
   const presenti = elencoSicuro(CARTELLA_FUNZIONI);
-  for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v))) problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
+  for (const voce of presenti.filter((v) => !FUNZIONI_DI_CASA.includes(v) && v !== FILE_CHIAVE_CLAUDE)) {
+    problemi.push(`nella cartella delle funzioni c'e' anche «${voce}»`);
+  }
   for (const nome of FUNZIONI_DI_CASA) {
     if (!presenti.includes(nome)) problemi.push(`manca la funzione ${nome}`);
     else if (!uguali(nome)) problemi.push(`${nome} su Casa e' diversa da quella del gestionale: lancia  npm run casa:accendi`);
