@@ -140,7 +140,12 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
     );
     expect(fatture.valori).toContain("assegno");
     expect(spesa.valori).toContain("assegno");
-    expect(spesa.valori).toEqual(fatture.valori);
+    // ⚠️ «anticipo» (01/11/2026) sta solo sulle fatture: lo scrive
+    // `registra_anticipazione` quando un anticipo del titolare paga la
+    // fattura, e nessun menu lo offre. Si confrontano i mezzi che si
+    // SCELGONO, che restano uguali.
+    expect(fatture.valori).toContain("anticipo");
+    expect(spesa.valori).toEqual(fatture.valori.filter((v) => v !== "anticipo"));
     // E il vocabolario separato non esiste più: se qualcuno lo rimettesse,
     // questa riga direbbe subito che ne è tornato un secondo.
     expect(costanti.PAYMENT_METHODS_SPESA).toBeUndefined();
