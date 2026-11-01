@@ -2,7 +2,15 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { eCasa, eProva, PORTA_DB_CASA, REF_PRODUZIONE, REF_PROVA } from "../../scripts/comune.mjs";
 import { ambienteDa } from "../../src/lib/ambiente";
-import { CLOUD, RICONOSCITORI, nomiDelCloud, soloLErrore, sqlBloccoDelCloud } from "../../scripts/casa-comune.mjs";
+import {
+  CLOUD,
+  FUNZIONI_DI_CASA,
+  RICONOSCITORI,
+  nomiDelCloud,
+  rigaDelRuntime,
+  soloLErrore,
+  sqlBloccoDelCloud,
+} from "../../scripts/casa-comune.mjs";
 
 // 🔴 LE BARRIERE A TRE DATABASE (31/10/2026). Con «Casa», la copia
 // personale di Alessio sul suo PC, i database veri diventano due: il locale
@@ -207,6 +215,38 @@ describe("i pezzi puri di casa-comune", () => {
   it("chi nomina il cloud per riconoscerlo o bloccarlo e' dichiarato con la ragione", () => {
     for (const ragione of Object.values(RICONOSCITORI)) expect(ragione.length).toBeGreaterThan(10);
     expect(Object.keys(RICONOSCITORI)).toContain("funzione casa.niente_cloud");
+  });
+});
+
+describe("le funzioni di Casa (01/11/2026)", () => {
+  it("e' accesa solo operazioni-atomiche", () => {
+    expect(FUNZIONI_DI_CASA).toEqual(["operazioni-atomiche"]);
+  });
+
+  // ⚠️ Su Casa si copia solo la cartella della funzione: un import da
+  // ../_shared o da un'altra funzione la romperebbe solo li'.
+  it("ogni funzione di Casa importa solo dalla sua cartella o da npm", () => {
+    for (const nome of FUNZIONI_DI_CASA) {
+      const file = readdirSync(`supabase/functions/${nome}`, { recursive: true }).filter((f) => /\.(ts|js|mjs)$/.test(f));
+      expect(file.length).toBeGreaterThan(0);
+      for (const f of file) {
+        const testo = readFileSync(`supabase/functions/${nome}/${f}`, "utf8");
+        // Niente import dinamici ne' require: sfuggirebbero al controllo qui sotto.
+        expect(testo, `${nome}/${f}`).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+        const importi = /^\s*(?:import\s+(?:[^"';]*?\bfrom\s*)?|export\s[^"';=]*?\bfrom\s*)["']([^"']+)["']/gm;
+        for (const [, da] of testo.matchAll(importi)) {
+          expect(da, `${nome}/${f}`).toMatch(/^(\.\/(?!\.)|npm:@supabase\/)/);
+        }
+      }
+    }
+  });
+
+  it("legge «enabled» solo nella sezione [edge_runtime] di config.toml", () => {
+    const toml = ["[analytics]", "enabled = true", "", "[edge_runtime]", "# commento", "enabled = false", "policy = 1", "[x]", "enabled = true"];
+    expect(rigaDelRuntime(toml)).toEqual({ indice: 5, acceso: false });
+    expect(rigaDelRuntime(["[edge_runtime]\r", "enabled = true\r"])).toEqual({ indice: 1, acceso: true });
+    expect(rigaDelRuntime(["[edge_runtime]", "policy = 1", "[analytics]", "enabled = true"])).toBeNull();
+    expect(rigaDelRuntime(["[analytics]", "enabled = true"])).toBeNull();
   });
 });
 
