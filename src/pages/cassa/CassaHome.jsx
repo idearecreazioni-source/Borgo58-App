@@ -431,7 +431,7 @@ export default function CassaHome() {
                 La tasca è l'altra cosa: soldi tuoi che non torneranno
                 indietro, e non c'è niente da pareggiare. */}
             <Scorciatoia to="/cassa/personale">
-              Anticipo io, poi mi rimborso
+              Anticipo da rimborsarmi
             </Scorciatoia>
             {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
                 Preventivi è rimasta irraggiungibile per giorni perché la
