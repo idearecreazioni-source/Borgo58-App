@@ -245,7 +245,7 @@ describe("la spesa dalla tasca, detta a voce", () => {
       {
         tipo: "anticipazione_da_registrare",
         sicuro: true,
-        destinazione: "Anticipo io, poi mi rimborso",
+        destinazione: "Anticipo da rimborsarmi",
         motivo: "Hai detto che questi soldi devono tornarti.",
         frase: `${NOME} anticipo`,
         dati: { importo: 30, descrizione: `${NOME} pane anticipato` },
@@ -257,7 +257,7 @@ describe("la spesa dalla tasca, detta a voce", () => {
       .eq("id", righe[0].appunto_id)
       .single();
     expect(appunto.eseguibile).toBe(false);
-    expect(appunto.titolo).toBe("Anticipo io, poi mi rimborso");
+    expect(appunto.titolo).toBe("Anticipo da rimborsarmi");
     expect(await conta()).toEqual(prima);
   });
 

@@ -4,10 +4,12 @@ import { filtroRicerca } from "../calcoli/ricerca";
 
 const BUCKET = "documents";
 
-export async function listDocuments({ search } = {}) {
+// `conStatoFattura`: aggiunge `fattura: { status }` per i documenti collegati a una
+// fattura fornitore (colonna `supplier_invoice_id`); gli altri hanno `fattura: null`.
+export async function listDocuments({ search, conStatoFattura = false } = {}) {
   let query = supabase
     .from("documents")
-    .select("*")
+    .select(conStatoFattura ? "*, fattura:supplier_invoices!supplier_invoice_id(status)" : "*")
     .order("document_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (search) query = query.or(filtroRicerca(["title", "doc_type", "counterparties"], search));
