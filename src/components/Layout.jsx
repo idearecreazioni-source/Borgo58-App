@@ -11,6 +11,7 @@ import AvvisoAggiornamento from "./AvvisoAggiornamento";
 import ApriMemo from "./ApriMemo";
 import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
 import { useSegnala } from "./useSegnala";
+import { percorsoComande } from "../lib/schermo";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,7 +23,9 @@ export default function Layout() {
   // larghezze lì dentro sono calibrate sul tablet di sala (vedi il
   // commento su `max-w-3xl` in Sala.jsx), non su un monitor da ufficio.
   // Il telaio desktop qui sotto non deve toccarle.
-  const isComande = pathname === "/comande" || pathname.startsWith("/comande/");
+  // `/comande/stampanti` è l'eccezione: si apre dal computer d'ufficio e segue
+  // il profilo «Computer» (M8, 31/10/2026), vedi `percorsoComande`.
+  const isComande = percorsoComande(pathname);
 
   // 🔴 A MICROFONO ACCESO IL MENU CHIEDE PRIMA DI CAMBIARE PAGINA — 12/09/2026,
   //    mandato notturno, blocco C (dal collaudo sull'iPhone). Cambiare pagina
