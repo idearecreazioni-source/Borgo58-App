@@ -84,12 +84,15 @@ begin
     if v_inv.status <> 'da_pagare' then
       raise exception 'Questa fattura risulta gia'' pagata: non si puo'' collegare a un anticipo.';
     end if;
+    -- Il permesso per il trigger del §2-bis: vale solo in questa
+    -- transazione e solo per QUESTA fattura.
+    perform set_config('b58.anticipo_fattura', p_supplier_invoice_id::text, true);
 
     v_netto := da_pagare(v_inv);
     if round(p_importo, 2) is distinct from v_netto then
       raise exception
-        'La fattura vale % euro da pagare e la nota % euro: per segnarla pagata con l''anticipo devono coincidere. Se hai anticipato una cifra diversa, registra la nota senza collegare la fattura.',
-        to_char(v_netto, 'FM999999990.00'), to_char(round(p_importo, 2), 'FM999999990.00');
+        'La fattura vale % da pagare e la nota %: per segnarla pagata con l''anticipo devono coincidere. Se hai anticipato una cifra diversa, registra la nota senza collegare la fattura.',
+        euro(v_netto), euro(round(p_importo, 2));
     end if;
   end if;
 
@@ -133,11 +136,51 @@ grant execute on function registra_anticipazione(uuid, numeric, date, uuid, text
   to authenticated;
 
 -- ---------------------------------------------------------------------
+-- 2-bis. Nessuna nota si collega a una fattura da pagare per un'altra strada
+-- ---------------------------------------------------------------------
+-- 🔴 Una nota collegata a una fattura ancora da pagare e' il buco che questa
+-- migrazione chiude: la spesa sembrerebbe ancora da pagare (e pagabile dalla
+-- cassa) con il debito verso il titolare gia' scritto. Solo
+-- `registra_anticipazione` puo' farlo, perche' nella stessa transazione
+-- segna la fattura pagata.
+-- ⚠️ `insert or update` SENZA `of supplier_invoice_id` (trappola del
+-- 27/08): la condizione sul cambiamento la scrive il corpo.
+create or replace function guardia_anticipo_su_fattura()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  if new.supplier_invoice_id is null then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.supplier_invoice_id is not distinct from new.supplier_invoice_id then
+    return new;
+  end if;
+  if exists (select 1 from supplier_invoices i
+              where i.id = new.supplier_invoice_id and i.status = 'da_pagare')
+     and current_setting('b58.anticipo_fattura', true) is distinct from new.supplier_invoice_id::text then
+    raise exception
+      'Una nota non si collega a una fattura ancora da pagare scrivendo la nota da sola: la fattura resterebbe fra le scadenze, pagabile una seconda volta. Registrala da «Anticipo da rimborsarmi» scegliendo la fattura.';
+  end if;
+  return new;
+end;
+$fn$;
+
+revoke all on function guardia_anticipo_su_fattura() from public, anon, authenticated;
+
+drop trigger if exists trg_guardia_anticipo_su_fattura on anticipazioni_socio;
+create trigger trg_guardia_anticipo_su_fattura
+  before insert or update on anticipazioni_socio
+  for each row execute function guardia_anticipo_su_fattura();
+
+-- ---------------------------------------------------------------------
 -- 3. Eliminare l'anticipo riapre la fattura
 -- ---------------------------------------------------------------------
--- ⚠️ RIPRESA DAL TESTO DELLA MIGRAZIONE `20260816000005` (nessuna
--- migrazione successiva la tocca): con una sola aggiunta, in fondo. Prima di
--- applicare in produzione va confrontata col corpo vivo sulla Prova.
+-- ⚠️ RIPRESA DAL CORPO VIVO sulla Prova (quello riscritto da
+-- `20260817000005`: il messaggio usa `euro()`), con due aggiunte in
+-- fondo: il blocco della riga fattura e la riapertura.
 create or replace function delete_anticipazione(p_anticipazione_id uuid)
 returns void
 language plpgsql
@@ -160,9 +203,15 @@ begin
   if a.pareggiata_il is not null then
     select amount into v_importo from cash_movements where id = a.movimento_id;
     raise exception
-      'Questa nota e'' gia'' stata rimborsata il %: in prima nota c''e'' un''uscita di % euro. Cancellandola resterebbero soldi usciti dal cassetto senza il perche''. Annulla prima il rimborso.',
+      'Questa nota e'' gia'' stata rimborsata il %: in prima nota c''e'' un''uscita di %. Cancellandola resterebbero soldi usciti dal cassetto senza il perche''. Annulla prima il rimborso.',
       to_char(a.pareggiata_il, 'DD/MM/YYYY'),
-      to_char(coalesce(v_importo, a.importo), 'FM999999990.00');
+      euro(coalesce(v_importo, a.importo));
+  end if;
+
+  -- Riga fattura bloccata prima di toccarla: un pagamento o un annullo in
+  -- contemporanea non possono incrociarsi con la riapertura.
+  if a.supplier_invoice_id is not null then
+    perform 1 from supplier_invoices where id = a.supplier_invoice_id for update;
   end if;
 
   delete from anticipazioni_socio where id = p_anticipazione_id;
@@ -411,6 +460,7 @@ declare
   v_forn  uuid;
   v_fatt  uuid;
   v_fatt2 uuid;
+  v_fatt3 uuid;
   v_ant   uuid;
   v_n     integer;
   v_prima integer;
@@ -421,10 +471,6 @@ declare
 begin
   select id into v_ente from entities where entity_type = 'srls';
   select user_id into v_tit from user_roles where role = 'titolare' limit 1;
-  if v_ente is null or v_tit is null then
-    raise exception 'VERIFICA: servono la societa'' e un titolare (srls=%, titolare=%).', v_ente, v_tit;
-  end if;
-
   -- (0) Struttura: la funzione c'e', e' chiusa a anon/public, il vincolo
   --     ammette «anticipo» e `pay_supplier_invoice` NO.
   if not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -441,6 +487,18 @@ begin
   end if;
   if pg_get_functiondef('pay_supplier_invoice(uuid,text,date,text,uuid[])'::regprocedure) like '%''anticipo''%' then
     raise exception 'VERIFICA (0d): pay_supplier_invoice ha imparato «anticipo»: si potrebbe pagare con l''anticipo senza nessuna nota.';
+  end if;
+
+  if not exists (select 1 from pg_trigger where tgname = 'trg_guardia_anticipo_su_fattura'
+                    and tgrelid = 'anticipazioni_socio'::regclass and not tgisinternal) then
+    raise exception 'VERIFICA (0e): manca il trigger che impedisce di collegare una nota a una fattura da pagare.';
+  end if;
+
+  -- Su un database vuoto (CI, installazione nuova) le prove sui dati non
+  -- hanno su cosa girare: la struttura e' gia' stata verificata qui sopra.
+  if v_ente is null or v_tit is null then
+    raise notice 'Verifica sui dati saltata: manca la societa'' o il titolare (srls=%, titolare=%). Struttura verificata.', v_ente, v_tit;
+    return;
   end if;
 
   perform set_config('request.jwt.claims',
@@ -472,7 +530,7 @@ begin
       perform registra_anticipazione(v_ente, 79.00, make_date(2094, 5, 3), v_tag, 'contanti', v_fatt);
     exception when others then
       v_preso := true;
-      if sqlerrm not like '%devono coincidere%' then
+      if sqlerrm not like '%devono coincidere%' or sqlerrm not like '%79,00 €%' or sqlerrm like '%euro%' then
         raise exception 'VERIFICA (2): rifiuto col messaggio sbagliato: %', sqlerrm;
       end if;
     end;
@@ -517,7 +575,11 @@ begin
     v_preso := false;
     begin
       perform registra_anticipazione(v_ente, 80.00, make_date(2094, 5, 4), v_tag, 'contanti', v_fatt);
-    exception when others then v_preso := true;
+    exception when others then
+      v_preso := true;
+      if sqlerrm not like '%gia%pagata%' then
+        raise exception 'VERIFICA (6): rifiuto col messaggio sbagliato: %', sqlerrm;
+      end if;
     end;
     if not v_preso then raise exception 'VERIFICA (6): una fattura gia'' pagata si e'' lasciata collegare ancora.'; end if;
 
@@ -572,12 +634,50 @@ begin
       raise exception 'VERIFICA (9c): dopo il rimborso i costi 2094 sono % invece di 130,00.', v_costi;
     end if;
 
+    -- (11) Il trigger: scrivere la nota da sola su una fattura da pagare e'
+    --      respinto (insert e update); la via giusta passa.
+    insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, amount)
+    values (v_ente, v_forn, 'ZZ-ANT-3', make_date(2094, 5, 9), 20.00)
+    returning id into v_fatt3;
+    v_preso := false;
+    begin
+      insert into anticipazioni_socio (entity_id, importo, pagata_il, tag_id, supplier_invoice_id)
+      values (v_ente, 20.00, make_date(2094, 5, 9), v_tag, v_fatt3);
+    exception when others then
+      v_preso := true;
+      if sqlerrm not like '%ancora da pagare%' then
+        raise exception 'VERIFICA (11a): rifiuto col messaggio sbagliato: %', sqlerrm;
+      end if;
+    end;
+    if not v_preso then raise exception 'VERIFICA (11a): una nota si e'' collegata a una fattura da pagare scrivendo dritto.'; end if;
+    insert into anticipazioni_socio (entity_id, importo, pagata_il, tag_id)
+    values (v_ente, 20.00, make_date(2094, 5, 9), v_tag)
+    returning id into v_ant;
+    v_preso := false;
+    begin
+      update anticipazioni_socio set supplier_invoice_id = v_fatt3 where id = v_ant;
+    exception when others then
+      v_preso := true;
+      if sqlerrm not like '%ancora da pagare%' then
+        raise exception 'VERIFICA (11b): rifiuto col messaggio sbagliato: %', sqlerrm;
+      end if;
+    end;
+    if not v_preso then raise exception 'VERIFICA (11b): il collegamento tardivo a una fattura da pagare e'' passato.'; end if;
+    perform registra_anticipazione(v_ente, 20.00, make_date(2094, 5, 9), v_tag, 'contanti', v_fatt3);
+    if (select status from supplier_invoices where id = v_fatt3) <> 'pagata' then
+      raise exception 'VERIFICA (11c): la via giusta non ha pagato la fattura.';
+    end if;
+
     -- (10) Senza titolare tutto si rifiuta.
     perform set_config('request.jwt.claims', null, true);
     v_preso := false;
     begin
       perform registra_anticipazione(v_ente, 80.00, make_date(2094, 5, 8), v_tag, 'contanti', null);
-    exception when others then v_preso := true;
+    exception when others then
+      v_preso := true;
+      if sqlerrm not like '%riservate al titolare%' then
+        raise exception 'VERIFICA (10): rifiuto col messaggio sbagliato: %', sqlerrm;
+      end if;
     end;
     if not v_preso then raise exception 'VERIFICA (10): registra_anticipazione risponde anche a chi non e'' titolare.'; end if;
 

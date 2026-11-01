@@ -221,6 +221,33 @@ describe("la migrazione, letta come testo", () => {
     expect(dati).not.toMatch(/cash_movements/);
   });
 
+  it("🔴 i messaggi scrivono il denaro con euro(), non con to_char a mano", () => {
+    for (const nome of ["registra_anticipazione(", "delete_anticipazione"]) {
+      const c = corpo(nome);
+      expect(c).toContain("euro(");
+      expect(c).not.toMatch(/FM999999990/);
+    }
+    expect(corpo("delete_anticipazione")).toContain("euro(coalesce(v_importo, a.importo))");
+  });
+
+  it("delete_anticipazione blocca la riga fattura prima di riaprirla", () => {
+    expect(corpo("delete_anticipazione")).toMatch(/from supplier_invoices where id = a.supplier_invoice_id for update/);
+  });
+
+  it("🔴 un trigger rifiuta il collegamento a una fattura da pagare se non viene dalla funzione", () => {
+    const t = corpo("guardia_anticipo_su_fattura");
+    expect(t).toContain("i.status = 'da_pagare'");
+    expect(t).toContain("current_setting('b58.anticipo_fattura', true) is distinct from new.supplier_invoice_id::text");
+    expect(corpo("registra_anticipazione(")).toContain("set_config('b58.anticipo_fattura', p_supplier_invoice_id::text, true)");
+    // Senza "of colonna": la trappola del 27/08.
+    expect(sql).toMatch(/before insert or update on anticipazioni_socio/);
+  });
+
+  it("la verifica, su un database vuoto, controlla la struttura e poi esce con un avviso", () => {
+    expect(sql).toMatch(/Verifica sui dati saltata/);
+    expect(sql).not.toMatch(/raise exception 'VERIFICA: servono/);
+  });
+
   it("ha il blocco di verifica che si annulla e si registra da sola", () => {
     expect(sql).toMatch(/raise exception 'ZZ_ANNULLA'/);
     expect(sql).toMatch(/pretendi_nessun_residuo/);
