@@ -130,10 +130,10 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 |---|---|---|
 | Ricettario | Costruito | A |
 | Agenda / promemoria | Costruito, notifica Telegram in produzione | A + B2/B5 (Edge Function + pg_cron) |
-| Fatture fornitori | Costruito (manuale, senza sincronizzazione automatica) | A — B2/B3 non ancora rilevanti (integrazione Fatture in Cloud non implementata) |
+| Fatture fornitori | Costruito (manuale, più caricamento da file XML e zip dal 24/10; senza sincronizzazione automatica) | A — B2/B3 non ancora rilevanti (integrazione Fatture in Cloud non implementata) |
 | Magazzino | Costruito | A + una scrittura su due tabelle fuori dal corridoio — vedi la constatazione in fondo |
-| Cassa / Prima Nota | Costruito | A |
-| Comande | **Parziale**: Sala rifatta e verificata dal vivo (08/08); Bar e Cucina rifatte (08-09/08); carta dei vini non costruita (manca la fonte dati) | A per lettura/presa ordini; **B1 obbligatorio quando arriva il mini-PC**; **B4 rispettato: il difetto sotto è stato corretto il 09/08** |
+| Cassa / Prima Nota | Costruito (anche i movimenti della banca da file, dal 24/10) | A |
+| Comande | **Parziale**: Sala rifatta e verificata dal vivo (08/08); Bar e Cucina rifatte (08-09/08); carta dei vini costruita (la Sala la mostra, si modifica in `src/pages/menu-editor/BevandeVini.jsx`); **conto diviso e asporto ancora aperti** (decisione di prodotto) | A per lettura/presa ordini; **B1 obbligatorio quando arriva il mini-PC**; **B4 rispettato: il difetto sotto è stato corretto il 09/08** |
 
 **✅ Difetto CORRETTO il 09/08/2026** — *riga aggiornata il 14/08/2026 su autorizzazione esplicita di Alessio (Sezione 0), perché il documento era rimasto indietro rispetto al codice: rilievo del validatore del 14/08. Il testo originale resta qui sotto come origine della decisione.*
 
@@ -143,15 +143,17 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 
 ⚠️ **La stessa forma di difetto si ripresenterà nella Sala** (rilievo del validatore, 14/08/2026): assegnare una prenotazione tocca la prenotazione **e** le righe dei tavoli, cioè due tabelle — quindi il corridoio è **obbligatorio**, non facoltativo. Per contro, un'operazione che scrive più righe su **una sola** tabella (come `completa_task`/`riapri_task` in Agenda) resta Categoria A e la chiamata diretta via RPC è corretta: a rendere necessario il corridoio è la seconda tabella, non il numero di righe.
 | Calendario eventi / clienti | Costruito, form pubblico con freno anti-abuso | A + B2/B3 (Edge Function per notifica) |
-| HACCP | Costruito; manca filtro di periodo sul manuale esportabile (§3.19 punto 5) | A |
+| HACCP | Costruito; il manuale completo ha il filtro di periodo, scritto dentro il documento stampato (§3.19 punto 5) | A |
 | Agricolo | Costruito; messo da parte nel menu (in fondo, sotto «Messo da parte») finché l'azienda agricola non è costituita | A |
 | Proiezione fiscale | Costruito | A + B4 — vedi la constatazione qui sotto |
 | Ricerca ricorrente | **Tolto l'11/10/2026** (decisione di Alessio) | — |
 | Personale | Costruito | A |
 | Monitoraggio social | **Tolto l'11/10/2026** (decisione di Alessio) | — |
 | Editor menu | Costruito | A |
-| Assistente AI | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
+| Assistente AI (MEMO) | Costruito: MEMO foto (`/fotografa`) e MEMO voce (`/detta`), senza una voce propria nel menu | B — Edge Function `leggi-foto` e `ascolta-voce` (osservato, da confermare) |
 | Archivio documenti | Costruito | A |
+
+*Stato aggiornato il 27/10/2026 per Comande, Fatture, Cassa, HACCP e Assistente AI, verificando il codice (sola correzione dello stato: regole e categorie invariate). **Da confermare da Alessio.***
 
 *Righe di Agricolo, Ricerca ricorrente e Monitoraggio social aggiornate l'11/10/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarate al validatore** nella proposta #177. I due moduli tolti erano segnaposto senza nessuna schermata; l'Agricolo resta costruito e raggiungibile. **Il testo originale era** `| Agricolo | Costruito | A |`, `| Ricerca ricorrente | Placeholder, non attivato | Non ancora costruito — bloccato su account AI di Alessio |` e `| Monitoraggio social | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |`, e resta qui perché il confronto sia possibile.*
 
