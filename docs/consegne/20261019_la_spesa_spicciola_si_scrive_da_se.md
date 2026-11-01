@@ -89,7 +89,26 @@ intorno alle 17:07 UTC, in tre prove. Una di queste, `tre-esiti-lista`, non
 controllava l'esito di `chiudi()` e quindi cadeva su un `data[0]` vuoto. Ora lo
 controlla.
 
-*Numeri veri dopo l'applicazione in produzione: da completare.*
+**Il 24/10** le due proposte hanno avuto le prove verdi: #198 al terzo giro
+(`0bf57ab`), poi #197 su `5ec3322` dopo la pubblicazione su Borgo58-Prova
+(`848db94` su `master`).
+
+**Produzione, 25/10/2026.** La 002 l'ha applicata alle **11:11:13 UTC** il thread
+delle fatture e della banca, insieme alle sue, con `--salta 20261019000001`
+(decisione di Alessio, 25/10). La copia di sicurezza è
+`Borgo58_backup_2026-10-25_1047.zip`, fatta e verificata da quel thread alle
+10:47. Misurato dopo, dal connettore in sola lettura:
+
+- `applied_migrations`: **427** righe (erano 421 prima delle 11:00 UTC; le altre
+  quattro, `20261024000001`-`…003` e `20261025000001`, sono di quel thread). La `20261019000001` e la `20261019000002` risultano registrate
+  entrambe, con lo stesso istante, perché la 002 registra anche la 001.
+- `tipi_azione_vocale`: 17 tipi, tutti eseguibili; `senza_approvazione` è vera
+  per **uno solo**, `spesa_spicciola`.
+- `scrivi_dettatura`: il corpo vivo è quello nuovo (contiene il ramo
+  `t.senza_approvazione`), impronta normalizzata `be59600b…`.
+- Residui della verifica: **zero** dettature, azioni, righe di spesa spicciola
+  e righe della lista della spesa col prefisso `ZZ verifica`; **zero** lapidi in
+  `deleted_records` fra le 11:10 e le 11:13 UTC (15 in tutto).
 
 ## Cosa NON è verificato
 
