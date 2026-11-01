@@ -123,6 +123,8 @@ begin
     -- ⚠️ NESSUN `insert into cash_movements`, ed e' voluto: vedi la testata.
   end if;
 
+  -- Il permesso alla guardia vale solo per questa nota: si spegne subito.
+  perform set_config('b58.anticipo_fattura', '', true);
   return v_id;
 end;
 $funzione$;
