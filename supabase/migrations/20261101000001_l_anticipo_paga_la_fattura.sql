@@ -621,8 +621,15 @@ begin
 
     v_ant := registra_anticipazione(v_ente, 80.00, make_date(2094, 5, 6), v_tag, 'contanti', v_fatt);
     -- Il rimborso (pareggio) esce dalla cassa: serve contante nel cassetto.
+    -- ⚠️ IL FONDO HA LA DATA DI OGGI, non del 2094 (02/11/2026): il saldo del
+    --    cassetto (`v_cash_balance`) conta solo i movimenti fino a oggi, e su
+    --    home la cassa vera era a -61,04 €: un fondo nel futuro non si vedeva
+    --    e la verifica si fermava. Si legge il contante di adesso e lo si
+    --    porta sopra il rimborso, qualunque sia il cassetto vero.
+    select contante_atteso into v_cassa from saldo_tesoreria(v_ente);
     insert into cash_movements (entity_id, direction, amount, movement_date, mezzo, tipo_documento, note)
-    values (v_ente, 'entrata', 500.00, make_date(2094, 5, 6), 'cassa', 'non_documentato', 'ZZ fondo di verifica');
+    values (v_ente, 'entrata', greatest(0, 80.00 - v_cassa) + 500.00,
+            (now() at time zone 'Europe/Rome')::date, 'cassa', 'non_documentato', 'ZZ fondo di verifica');
     perform pareggia_anticipazione(v_ant, make_date(2094, 5, 7));
     v_preso := false;
     begin
