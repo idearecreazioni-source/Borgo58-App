@@ -15,7 +15,7 @@ import {
   ultimeFatturePagate,
   updateSupplierInvoice,
 } from "../../lib/api/supplierInvoices";
-import { listDocuments } from "../../lib/api/documents";
+import { getDocumentUrl, listDocuments } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
@@ -482,6 +482,17 @@ export default function FattureFornitoriHome() {
     );
   };
 
+  // Apre il file di un documento collegato (l'XML della fattura, un DDT…).
+  const apriDocumento = async (d, fatturaId) => {
+    setErroreRiga(null);
+    try {
+      const url = await getDocumentUrl(d.storage_path);
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+      setErroreRiga({ id: fatturaId, messaggio: `Non riesco ad aprire il file: ${e.message}` });
+    }
+  };
+
   const RigaDocumenti = ({ inv }) => {
     // 🔴 LA REGOLA STA IN UN POSTO SOLO — 21/09/2026. Era questa riga, e da
     //    qui non la poteva provare nessuna prova: decide se un DDT si possa
@@ -493,7 +504,23 @@ export default function FattureFornitoriHome() {
       <div className="mt-2 pt-2 border-t border-b58-charcoal/10">
         {(inv.documenti ?? []).length > 0 ? (
           <p className="testo-sala text-b58-charcoal-soft">
-            Documenti collegati: {inv.documenti.map((d) => d.title).join(" · ")}
+            Documenti collegati:{" "}
+            {inv.documenti.map((d, i) => (
+              <span key={d.id}>
+                {i > 0 && " · "}
+                {d.storage_path ? (
+                  <button
+                    type="button"
+                    onClick={() => apriDocumento(d, inv.id)}
+                    className="underline text-b58-terracotta-testo"
+                  >
+                    {d.title}
+                  </button>
+                ) : (
+                  d.title
+                )}
+              </span>
+            ))}
           </p>
         ) : (
           <p className="testo-sala text-b58-charcoal-soft/60">Nessun documento collegato.</p>
