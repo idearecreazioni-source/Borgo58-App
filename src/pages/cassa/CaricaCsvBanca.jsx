@@ -92,6 +92,13 @@ export default function CaricaCsvBanca({ file, conti, leggiEsistenti, onCarica, 
         {file.nome}: {movimenti.length} {movimenti.length === 1 ? "movimento" : "movimenti"} dal{" "}
         {formatDate(date[0])} al {formatDate(date[date.length - 1])}, in tutto {formatEUR(somma / 100)}.
       </p>
+      {file.daContabilizzare > 0 && (
+        <p className="testo-sala text-b58-charcoal-soft">
+          {file.daContabilizzare === 1
+            ? "1 movimento è ancora «da contabilizzare» in banca: lo lascio fuori, arriverà col prossimo file."
+            : `${file.daContabilizzare} movimenti sono ancora «da contabilizzare» in banca: li lascio fuori, arriveranno col prossimo file.`}
+        </p>
+      )}
       <p className="testo-sala text-b58-charcoal-soft">
         Il CSV non dice il conto né i saldi: scrivili tu, dall&apos;estratto conto, così controllo che il file sia intero.
       </p>
