@@ -21,6 +21,7 @@
     "casa:accendi": "node scripts/casa-accendi.mjs",
     "casa:impacchetta": "node scripts/casa-impacchetta.mjs",
     "casa:sito": "node scripts/casa-sito.mjs",
+    "casa:copia": "node scripts/casa-copia.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",

@@ -266,7 +266,8 @@ body {
   --fascia-casa: 0px;
 }
 :root[data-casa] {
-  --fascia-casa: 20px;
+  /* 24 e non 20 (fase 4): dentro c'e' anche la spia della coda, da toccare. */
+  --fascia-casa: 24px;
 }
 
 /* 🔴 IL TELAIO STA SU `#root`, cioe' SOPRA OGNI SCHERMATA, login e
