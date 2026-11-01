@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   annullaPareggioAnticipazione,
@@ -71,6 +71,10 @@ export default function SezionePersonale() {
   const [form, setForm] = useState(formaVuotaOggi);
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
+  // L'avviso sul riferimento compare solo DOPO aver premuto Registra senza
+  // riferimento e senza fattura: a modulo vuoto non deve rimproverare nessuno.
+  const [avvisoRif, setAvvisoRif] = useState(false);
+  const campoRifRef = useRef(null);
   // 🔴 L'ESITO VA SULLA RIGA TOCCATA, non in cima alla pagina: un rifiuto
   //    lontano dal gesto e' un rifiuto che non c'e' (lezione del 17/08,
   //    pagata una volta proprio in Cassa).
@@ -138,8 +142,13 @@ export default function SezionePersonale() {
     }
   };
 
-  const registra = async () => {
+  const registra = async (senzaAvviso = false) => {
     if (!form.importo || !form.tagId) return;
+    if (!senzaAvviso && !form.documento.trim() && !form.supplierInvoiceId) {
+      setAvvisoRif(true);
+      return;
+    }
+    setAvvisoRif(false);
     setSaving(true);
     setError("");
     try {
@@ -397,7 +406,11 @@ export default function SezionePersonale() {
                     <label className={labelClass}>Rif. documento</label>
                     <input
                       value={form.documento}
-                      onChange={(e) => setForm((f) => ({ ...f, documento: e.target.value }))}
+                      ref={campoRifRef}
+                      onChange={(e) => {
+                        setAvvisoRif(false);
+                        setForm((f) => ({ ...f, documento: e.target.value }));
+                      }}
                       placeholder="numero dello scontrino o della ricevuta"
                       className={inputClass}
                     />
@@ -461,13 +474,39 @@ export default function SezionePersonale() {
                   </div>
                 </div>
 
-                {!form.documento.trim() && (
-                  <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-                    Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
-                    registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
-                    non aggiungi il documento.
-                  </p>
-                )}
+                {/* Il contenitore live resta sempre nel DOM, così chi usa uno
+                    screen reader sente l'avviso quando compare. */}
+                <div aria-live="polite">
+                  {avvisoRif && !form.documento.trim() && !form.supplierInvoiceId && (
+                    <div
+                      role="alert"
+                      className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
+                    >
+                      <p className="mb-2">
+                        Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
+                        registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
+                        non aggiungi il documento.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => campoRifRef.current?.focus()}
+                          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-3 py-1.5"
+                        >
+                          Aggiungo il riferimento
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => registra(true)}
+                          className="tocco-campo rounded-lg ring-1 ring-b58-charcoal/30 text-b58-charcoal testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                        >
+                          Registra lo stesso
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* 🔴 «INVESTIMENTO PER IL PROGETTO» ANCHE QUI — C11,
                     21/09/2026, decisione di Alessio. È il punto in cui la
@@ -551,7 +590,7 @@ export default function SezionePersonale() {
                   <button
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
-                    onClick={registra}
+                    onClick={() => registra()}
                     className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
