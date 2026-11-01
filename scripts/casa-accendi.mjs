@@ -4,12 +4,16 @@
 // pianificazione di Windows), ma si lancia anche a mano. Non costruisce e
 // non cancella niente:
 //  1. aspetta Docker (all'accesso parte dopo qualche decina di secondi);
-//  2. se Casa e' spenta la accende, dalla sua cartella;
+//  2. mette nella cartella di Casa SOLO le funzioni di FUNZIONI_DI_CASA
+//     (oggi `operazioni-atomiche`, 01/11/2026) e accende il loro motore in
+//     config.toml; se Casa e' spenta la accende, dalla sua cartella, e se
+//     e' accesa senza il motore la riavvia (`stop` senza --no-backup: i
+//     dati restano);
 //  3. rimette il blocco del cloud nel database, se mancasse, e richiude
 //     le porte verso il cloud — 🔴 misurato il 31/10: /etc/hosts
 //     del contenitore torna quello di fabbrica a ogni riavvio, quindi la
-//     seconda protezione va rimessa a ogni accensione;
-//  4. rifa' la verifica di Casa;
+//     seconda protezione va rimessa a ogni accensione (database e funzioni);
+//  4. rifa' la verifica di Casa, funzioni comprese;
 //  5. accende il server dell'app (casa-sito.mjs) se non risponde, e fa
 //     mandare da Tailscale la 8443 a quel server (fase 2).
 // Ogni accensione lascia una riga in C:\Casa\accensioni.log.
@@ -25,7 +29,12 @@ import {
   CARTELLA,
   CLOUD,
   CONTENITORE,
+  CONTENITORE_FUNZIONI,
+  FUNZIONI_DI_CASA,
   PORTA_SITO_CASA,
+  accendiIlRuntimeNellaConfigurazione,
+  preparaLeFunzioni,
+  problemiDelleFunzioni,
   apriTailscaleVersoCasa,
   indirizzoDiCasa,
   VERSIONE_CLI,
@@ -61,22 +70,45 @@ while (!docker(["info", "--format", "{{.ServerVersion}}"]).ok) {
 }
 console.log("   Docker risponde");
 
-if (docker(["inspect", "-f", "{{.State.Running}}", CONTENITORE]).stdout !== "true") {
-  console.log("   Casa era spenta: la accendo (un minuto circa)");
-  const r = spawnSync("npx", ["--yes", "--prefer-offline", `supabase@${VERSIONE_CLI}`, "start"], {
+function supabase(comando) {
+  const r = spawnSync("npx", ["--yes", "--prefer-offline", `supabase@${VERSIONE_CLI}`, comando], {
     cwd: CARTELLA,
     encoding: "utf8",
     shell: process.platform === "win32",
   });
   // ⚠️ L'uscita di `supabase start` contiene le chiavi: non si stampa.
-  if (r.status !== 0) fine("Supabase di Casa non si e' acceso.", (r.stderr || "").trim().split("\n").slice(-3).join("\n  "));
+  if (r.status !== 0) fine(`Supabase di Casa: «${comando}» non e' riuscito.`, (r.stderr || "").trim().split("\n").slice(-3).join("\n  "));
+}
+
+// Le funzioni prima di accendere: il motore serve quello che trova nella
+// cartella, e config.toml si legge solo all'avvio.
+const funzioniCambiate = preparaLeFunzioni();
+if (accendiIlRuntimeNellaConfigurazione()) console.log("   motore delle funzioni acceso in config.toml");
+const acceso = (contenitore) => docker(["inspect", "-f", "{{.State.Running}}", contenitore]).stdout === "true";
+if (funzioniCambiate && acceso(CONTENITORE_FUNZIONI)) {
+  // Il motore potrebbe tenere in memoria il codice vecchio: si riavvia solo
+  // lui (pochi secondi; /etc/hosts si richiude qui sotto).
+  console.log("   funzioni aggiornate: riavvio il loro motore");
+  if (!docker(["restart", CONTENITORE_FUNZIONI]).ok) fine("Il motore delle funzioni non si e' riavviato.");
+}
+if (!acceso(CONTENITORE)) {
+  console.log("   Casa era spenta: la accendo (un minuto circa)");
+  supabase("start");
+} else if (!acceso(CONTENITORE_FUNZIONI)) {
+  // 🔴 MAI `stop --no-backup`: cancellerebbe i dati di Alessio. `stop` da
+  // solo spegne i contenitori e lascia il database nel suo volume.
+  console.log("   Casa e' accesa senza il motore delle funzioni: la riavvio (un minuto circa, i dati restano)");
+  supabase("stop");
+  supabase("start");
 }
 pretendiCasa();
 
-chiudiIlCloud(CLOUD);
-const aperti = nomiApertiDelCloud(CLOUD);
-if (aperti.length > 0) fine(`Dal database di Casa si raggiunge ancora ${aperti.join(", ")}.`);
-console.log("   porte verso il cloud chiuse");
+for (const [contenitore, chi] of [[CONTENITORE, "dal database"], [CONTENITORE_FUNZIONI, "dalle funzioni"]]) {
+  chiudiIlCloud(CLOUD, contenitore);
+  const aperti = nomiApertiDelCloud(CLOUD, contenitore);
+  if (aperti.length > 0) fine(`Su Casa ${chi} si raggiunge ancora ${aperti.join(", ")}.`);
+}
+console.log("   porte verso il cloud chiuse (database e funzioni)");
 
 // Casa accesa ma ancora vuota (prima di `casa:costruisci`): non c'e' niente
 // da bloccare ne' da verificare, e non e' un errore.
@@ -89,8 +121,10 @@ if (!bloccaIlCloudNelDatabase(CLOUD)) fine("Il blocco del cloud nel database non
 console.log("   blocco del cloud nel database presente");
 
 const { problemi, registrate } = problemiDiCasa({ esitoRegistro });
+problemi.push(...(await problemiDelleFunzioni()));
 if (problemi.length > 0) fine("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`));
 console.log(`   database a posto (${registrate} migrazioni)`);
+console.log(`   funzioni accese: solo ${FUNZIONI_DI_CASA.join(", ")}`);
 
 // ---------------------------------------------------------------------
 // Il server dell'app, e Tailscale verso di lui. Il server resta acceso da

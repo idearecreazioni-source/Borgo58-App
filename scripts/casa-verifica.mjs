@@ -4,19 +4,22 @@
 // lasciata: registro delle migrazioni completo, lavori pianificati spenti,
 // nessun indirizzo del cloud dentro il database, il blocco del cloud nel
 // database, le porte verso il cloud chiuse, le porte di Casa solo sul PC,
-// un titolare. La stessa verifica gira alla fine di `npm run casa:costruisci`
-// e a ogni `npm run casa:accendi`.
+// un titolare. E che delle funzioni sia accesa SOLO `operazioni-atomiche`
+// (01/11/2026, vedi FUNZIONI_DI_CASA in casa-comune.mjs). La stessa verifica
+// gira alla fine di `npm run casa:costruisci` e a ogni `npm run casa:accendi`.
 //
-// ⚠️ Se dice «raggiungibile dal database», il contenitore e' stato
-// riavviato o ricreato e /etc/hosts e' tornato quello di fabbrica: si
-// richiude con `npm run casa:accendi`.
+// ⚠️ Se dice «raggiungibile dal database» o «dalle funzioni», il contenitore
+// e' stato riavviato o ricreato e /etc/hosts e' tornato quello di fabbrica:
+// si richiude con `npm run casa:accendi`.
 
 import { fermati, titolo } from "./comune.mjs";
 import { esitoRegistro } from "./ricostruzione-regole.mjs";
-import { pretendiCasa, problemiDiCasa } from "./casa-comune.mjs";
+import { FUNZIONI_DI_CASA, pretendiCasa, problemiDelleFunzioni, problemiDiCasa } from "./casa-comune.mjs";
 
 titolo("Verifico Casa");
 pretendiCasa();
 const { problemi, registrate } = problemiDiCasa({ esitoRegistro });
+problemi.push(...(await problemiDelleFunzioni()));
 if (problemi.length > 0) fermati("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`));
 console.log(`   a posto: ${registrate} migrazioni registrate, lavori spenti, niente cloud dentro, porte chiuse`);
+console.log(`   funzioni accese: solo ${FUNZIONI_DI_CASA.join(", ")} (le altre rispondono «non c'e'»)`);
