@@ -445,6 +445,7 @@ export default function PrimaNota() {
           )}
           {entities && (
             <select
+              aria-label="Di chi è il movimento"
               value={entityId}
               // ⚠️ Passando alla tasca con «entrata» gia' scelto, il salvataggio
               //    verrebbe respinto dal database per una scelta fatta PRIMA di
@@ -581,8 +582,9 @@ export default function PrimaNota() {
               64 punti per cm). Regola comune in index.css. */}
           <div className="riga-campi mb-3">
             <div className="cella-media">
-              <label className={labelClass}>Importo €</label>
+              <label htmlFor="pn-importo" className={labelClass}>Importo €</label>
               <input
+                id="pn-importo"
                 type="number"
                 step="0.01"
                 min="0"
@@ -602,7 +604,7 @@ export default function PrimaNota() {
               className="w-min"
             />
             <div className="cella-larga">
-              <label className={labelClass}>Causale</label>
+              <label htmlFor="pn-causale" className={labelClass}>Causale</label>
               {/* 🔴 SULLA TASCA LA CAUSALE NON SI SCEGLIE (SPEC-0005,
                   06/09/2026). Qui c'era il menu delle causali di uscita, e
                   offriva una scelta che il database non poteva rispettare:
@@ -622,6 +624,7 @@ export default function PrimaNota() {
                 </p>
               ) : (
                 <select
+                  id="pn-causale"
                   value={form.causale_id}
                   onChange={(e) => setForm((f) => ({ ...f, causale_id: e.target.value }))}
                   className={inputClass}
@@ -634,8 +637,9 @@ export default function PrimaNota() {
               )}
             </div>
             <div className="cella-larga">
-              <label className={labelClass}>Tipo documento</label>
+              <label htmlFor="pn-tipo-documento" className={labelClass}>Tipo documento</label>
               <select
+                id="pn-tipo-documento"
                 value={form.tipo_documento}
                 onChange={(e) => setForm((f) => ({ ...f, tipo_documento: e.target.value }))}
                 className={inputClass}
@@ -674,12 +678,14 @@ export default function PrimaNota() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
+                  aria-label="Codice fiscale del raccoglitore"
                   value={form.forager_tax_code}
                   onChange={(e) => setForm((f) => ({ ...f, forager_tax_code: e.target.value }))}
                   placeholder="Codice fiscale del raccoglitore"
                   className={inputClass}
                 />
                 <input
+                  aria-label="Regione di raccolta"
                   value={form.harvest_region}
                   onChange={(e) => setForm((f) => ({ ...f, harvest_region: e.target.value }))}
                   placeholder="Regione di raccolta"
@@ -699,6 +705,7 @@ export default function PrimaNota() {
                 <label className={labelClass}>Rif. documento</label>
               )}
               <input
+                aria-label="Rif. documento"
                 value={form.document_reference}
                 onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
                 placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (facoltativo)"}
@@ -717,6 +724,7 @@ export default function PrimaNota() {
                 <label className={labelClass}>{descrizione.etichetta}</label>
               )}
               <input
+                aria-label={descrizione.etichetta}
                 value={form.business_purpose}
                 onChange={(e) => setForm((f) => ({ ...f, business_purpose: e.target.value }))}
                 placeholder={descrizione.segnaposto}
@@ -775,6 +783,7 @@ export default function PrimaNota() {
                 </label>
               )}
               <input
+                aria-label="Nota"
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
                 placeholder="Nota (facoltativa)"
@@ -802,12 +811,12 @@ export default function PrimaNota() {
               una riga sua. */}
           <div className="riga-campi">
             <div>
-              <label className={labelClass}>Dal</label>
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={`${inputClass} campo-data`} />
+              <label htmlFor="pn-dal" className={labelClass}>Dal</label>
+              <input id="pn-dal" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={`${inputClass} campo-data`} />
             </div>
             <div>
-              <label className={labelClass}>Al</label>
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={`${inputClass} campo-data`} />
+              <label htmlFor="pn-al" className={labelClass}>Al</label>
+              <input id="pn-al" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={`${inputClass} campo-data`} />
             </div>
             {(from || to) && (
               <div className="riga-campi-gesti">
