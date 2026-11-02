@@ -29,13 +29,13 @@ const tenue = `${chip} bg-b58-charcoal/5 text-b58-charcoal-soft/70`;
 const interruttore = (acceso) =>
   `tocco-bottone rounded-full border px-3 testo-sala ${
     acceso
-      ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark font-medium"
+      ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo font-medium"
       : "border-b58-charcoal/15 text-b58-charcoal-soft"
   }`;
 
 export function OrigineAllergeni({ origine }) {
-  if (origine === "proposti") return <span className="testo-sala text-b58-ambra-dark">proposti da MEMO, da confermare</span>;
-  if (origine === "confermati") return <span className="testo-sala text-b58-olive-dark">confermati da te</span>;
+  if (origine === "proposti") return <span className="testo-sala text-b58-ambra-dark-testo">proposti da MEMO, da confermare</span>;
+  if (origine === "confermati") return <span className="testo-sala text-b58-olive-dark-testo">confermati da te</span>;
   if (origine === "prodotti") return <span className="testo-sala text-b58-charcoal-soft">dai prodotti del magazzino</span>;
   return null;
 }
@@ -107,7 +107,7 @@ export function TagEStagioni({ tags, stagioni, modifica, suggeriti = [], onTags,
             list="tag-archivio"
             placeholder="nuovo tag"
             aria-label="Nuovo tag"
-            className="tocco-riga w-40 rounded-lg border border-b58-charcoal/20 bg-white px-3 text-b58-charcoal"
+            className="tocco-riga w-40 rounded-lg border border-b58-charcoal/20 bg-b58-campo px-3 text-b58-charcoal"
           />
           <datalist id="tag-archivio">
             {suggeriti.filter((t) => !elenco.includes(t)).map((t) => (
@@ -148,7 +148,7 @@ export function AllergeniArchivio({ allergeni, origine, modifica, extra = [], on
         {origine === "proposti" && onAllergeni && (
           <button
             type="button"
-            className="tocco-bottone rounded-lg border border-b58-olive/40 px-3 text-b58-olive-dark"
+            className="tocco-bottone rounded-lg border border-b58-olive/40 px-3 text-b58-olive-dark-testo"
             onClick={() => onAllergeni(elenco)}
           >
             Confermo
@@ -192,7 +192,7 @@ export function AllergeniArchivio({ allergeni, origine, modifica, extra = [], on
         {origine === "proposti" && (
           <button
             type="button"
-            className="tocco-bottone rounded-lg border border-b58-olive/40 px-3 text-b58-olive-dark"
+            className="tocco-bottone rounded-lg border border-b58-olive/40 px-3 text-b58-olive-dark-testo"
             onClick={() => onAllergeni(elenco)}
           >
             Confermo

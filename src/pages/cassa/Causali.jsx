@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { createCausale, deactivateCausale, listAllCausali, setCausaleNeiFissi } from "../../lib/api/cash";
+import { createCausale, deactivateCausale, listAllCausali, reactivateCausale, setCausaleNeiFissi } from "../../lib/api/cash";
+import { causaleSpentaOmonima } from "../../lib/calcoli/causali";
 import { listRegoleDeducibilita, setRegolaCausale } from "../../lib/api/deducibilita";
 import Didascalia from "../../components/Didascalia";
 
@@ -40,10 +41,25 @@ export default function Causali() {
   }, [causali]);
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+
+  const spente = useMemo(() => causali.filter((c) => !c.active), [causali]);
+  // Il nome è già occupato da una causale spenta: si offre di riaccenderla.
+  const omonimaSpenta = causaleSpentaOmonima(causali, newLabel, newKind);
+
+  const handleRiaccendi = async (id) => {
+    setError("");
+    try {
+      await reactivateCausale(id);
+      setNewLabel("");
+      await reload();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   const handleAdd = async () => {
-    if (!newLabel.trim()) return;
+    if (!newLabel.trim() || omonimaSpenta) return;
     setSaving(true);
     setError("");
     try {
@@ -90,7 +106,7 @@ export default function Causali() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Cassa
       </Link>
       {/* 🔴 I TRE PARAGRAFI SONO PASSATI DIETRO IL «?» — 25/10/2026,
@@ -121,10 +137,10 @@ export default function Causali() {
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
-      <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
+      <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
         <input
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
@@ -138,12 +154,24 @@ export default function Causali() {
         </select>
         <button
           type="button"
-          disabled={saving || !newLabel.trim()}
+          disabled={saving || !newLabel.trim() || Boolean(omonimaSpenta)}
           onClick={handleAdd}
-          className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>
+        {omonimaSpenta && (
+          <p data-causale-spenta-omonima className="basis-full testo-sala-grande text-b58-charcoal">
+            «{omonimaSpenta.label}» c&apos;è già, ma è spenta.{" "}
+            <button
+              type="button"
+              onClick={() => handleRiaccendi(omonimaSpenta.id)}
+              className="tocco-bottone underline text-b58-terracotta-testo"
+            >
+              Riaccendi
+            </button>
+          </p>
+        )}
       </div>
 
       {loading ? (
@@ -177,7 +205,7 @@ export default function Causali() {
                         <button
                           onClick={() => handleRemove(c.id)}
                           data-disattiva-causale
-                          className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                           title="Disattiva"
                           aria-label={`Disattiva la causale «${c.label}»`}
                         >
@@ -199,7 +227,7 @@ export default function Causali() {
                         <select
                           value={c.regola_deducibilita_id || ""}
                           onChange={(e) => handleRegola(c.id, e.target.value)}
-                          className="w-full mt-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                          className="w-full mt-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
                         >
                           <option value="">deducibilità: da dire</option>
                           {regole.map((r) => (
@@ -219,6 +247,34 @@ export default function Causali() {
             </div>
           ))}
         </div>
+      )}
+
+      {!loading && spente.length > 0 && (
+        <details data-causali-spente className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
+          <summary className="tocco-bottone cursor-pointer testo-sala-grande text-b58-charcoal-soft">
+            Spente ({spente.length})
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {spente.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-2 testo-sala-grande text-b58-charcoal">
+                <span>
+                  {c.label}{" "}
+                  <span className="testo-sala text-b58-charcoal-soft/70">
+                    ({KINDS.find((k) => k.value === c.kind)?.label ?? c.kind})
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRiaccendi(c.id)}
+                  className="tocco-bottone underline text-b58-terracotta-testo"
+                  aria-label={`Riaccendi la causale «${c.label}»`}
+                >
+                  Riaccendi
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </div>
   );

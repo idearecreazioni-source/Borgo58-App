@@ -17,10 +17,10 @@ import Didascalia from "../../components/Didascalia";
 //    da MEMO: è un gesto solo, e farlo passare da «Modifica» lo nasconderebbe.
 
 const COLORE_FASE = {
-  mise_en_place: "bg-b58-olive/15 text-b58-olive-dark",
-  cottura: "bg-b58-terracotta/15 text-b58-terracotta-dark",
-  finitura: "bg-b58-ambra/15 text-b58-ambra-dark",
-  impiattamento: "bg-b58-gold/20 text-b58-gold-dark",
+  mise_en_place: "bg-b58-olive/15 text-b58-olive-dark-testo",
+  cottura: "bg-b58-terracotta/15 text-b58-terracotta-dark-testo",
+  finitura: "bg-b58-ambra/15 text-b58-ambra-dark-testo",
+  impiattamento: "bg-b58-gold/20 text-b58-gold-dark-testo",
 };
 
 const numero = (n) => Number(n).toLocaleString("it-IT", { maximumFractionDigits: 3 });
@@ -97,7 +97,7 @@ export default function LetturaRicetta({
             Food cost {cost ? formatEUR(isComponente ? cost.food_cost_base : perPorzione) : "—"}
             {isComponente ? " la dose" : isSelezione ? " in tutto" : " a porzione"}
             {parziale && (
-              <span className="text-b58-terracotta-dark">
+              <span className="text-b58-terracotta-dark-testo">
                 {" "}
                 · Parziale · {daCollegare.length} da collegare
                 <Didascalia>
@@ -127,7 +127,7 @@ export default function LetturaRicetta({
                     <Link
                       to={`/ricettario/ricette/${ri.component.id}`}
                       state={passoDaQui}
-                      className="tocco-testo max-w-full text-b58-charcoal underline decoration-b58-charcoal/20 hover:text-b58-terracotta"
+                      className="tocco-testo max-w-full text-b58-charcoal underline decoration-b58-charcoal/20 hover:text-b58-terracotta-testo"
                     >
                       {ri.component.name}
                     </Link>
@@ -236,7 +236,7 @@ export default function LetturaRicetta({
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="tocco-testo break-all text-b58-terracotta underline"
+                  className="tocco-testo break-all text-b58-terracotta-testo underline"
                 >
                   {v.note || "Guarda il video"} ↗
                 </a>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import {
+  annotaSpesaDettataAMano,
   annullaCollocazione,
   collocaSpesa,
   eliminaSpesa,
@@ -23,6 +24,8 @@ import {
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { formatDate, formatEUR } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import { useDaVoce } from "../../lib/daVoce";
 
 // «DA COLLOCARE» — le spese dette a MEMO o fotografate (11/10/2026, C12).
 //
@@ -39,7 +42,7 @@ import Didascalia from "../../components/Didascalia";
 //    Alessio dell'11/10).
 
 const campo =
-  "tocco-riga w-full rounded-lg border border-b58-charcoal/20 bg-white px-3 text-b58-charcoal";
+  "tocco-riga w-full rounded-lg border border-b58-charcoal/20 bg-b58-campo px-3 text-b58-charcoal";
 const etichetta = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1";
 
 function Foto({ path }) {
@@ -56,7 +59,7 @@ function Foto({ path }) {
       vivo = false;
     };
   }, [path]);
-  if (errore) return <p className="testo-sala text-b58-ambra-dark">La foto non si apre.</p>;
+  if (errore) return <p className="testo-sala text-b58-ambra-dark-testo">La foto non si apre.</p>;
   if (!url) return <p className="testo-sala text-b58-charcoal-soft">Apro la foto…</p>;
   return (
     <a href={url} target="_blank" rel="noreferrer" className="block w-28 shrink-0">
@@ -109,7 +112,7 @@ function GestoConConferma({ etichetta, domanda, conferma, onFai }) {
           type="button"
           onClick={fai}
           disabled={lavoro}
-          className="tocco-bottone rounded-lg bg-b58-azione px-4 font-medium text-b58-parchment disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-azione px-4 font-medium text-b58-sul-colore disabled:opacity-60"
         >
           {lavoro ? "Lo sto facendo…" : conferma}
         </button>
@@ -184,12 +187,12 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
     <li className="rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10" data-spesa={spesa.id}>
       {/* L'esito dell'annullamento sta sulla riga che è tornata, non in
           cima alla pagina: un esito lontano dal gesto non si vede (17/08). */}
-      {tornata && <p className="testo-sala mb-2 text-b58-olive-dark">{tornata}</p>}
+      {tornata && <p className="testo-sala mb-2 text-b58-olive-dark-testo">{tornata}</p>}
       <div className="flex gap-3">
         {spesa.foto_path && <Foto path={spesa.foto_path} />}
         <div className="min-w-0 flex-1">
           <p className="testo-sala-grande font-semibold text-b58-charcoal">
-            {spesa.importo != null ? formatEUR(spesa.importo) : <span className="text-b58-ambra-dark">importo non letto</span>}
+            {spesa.importo != null ? formatEUR(spesa.importo) : <span className="text-b58-ambra-dark-testo">importo non letto</span>}
             {spesa.controparte && <span className="font-normal"> · {spesa.controparte}</span>}
           </p>
           {spesa.descrizione && <p className="text-b58-charcoal">{spesa.descrizione}</p>}
@@ -202,7 +205,7 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
               MEMO propone: <strong>{etichettaDestinazione(spesa.natura_proposta)}</strong>
             </p>
           )}
-          {spesa.incertezza && <p className="testo-sala text-b58-ambra-dark">{spesa.incertezza}</p>}
+          {spesa.incertezza && <p className="testo-sala text-b58-ambra-dark-testo">{spesa.incertezza}</p>}
           {spesa.testo_originale && spesa.provenienza === "voce" && (
             <p className="testo-sala italic text-b58-charcoal-soft">«{spesa.testo_originale}»</p>
           )}
@@ -214,7 +217,7 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
           <button
             type="button"
             onClick={() => setAperta(true)}
-            className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark"
+            className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark"
           >
             Colloca
           </button>
@@ -329,7 +332,7 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
                       ))}
                     </select>
                     {elenchi.tag.length === 0 && (
-                      <span className="testo-sala text-b58-ambra-dark">
+                      <span className="testo-sala text-b58-ambra-dark-testo">
                         Non ci sono ancora motivi:{" "}
                         <Link to="/cassa/personale" className="underline">
                           aggiungine uno
@@ -380,7 +383,7 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
           )}
 
           {manca.length > 0 && dove && (
-            <p className="testo-sala mt-2 text-b58-ambra-dark">Manca {manca.join(", ")}.</p>
+            <p className="testo-sala mt-2 text-b58-ambra-dark-testo">Manca {manca.join(", ")}.</p>
           )}
           {errore && <p className="testo-sala mt-2 rounded bg-red-50 p-2 text-red-700">{errore}</p>}
 
@@ -389,7 +392,7 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
               type="button"
               disabled={!dove || manca.length > 0 || lavoro}
               onClick={conferma}
-              className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark disabled:opacity-50"
+              className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark disabled:opacity-50"
             >
               {lavoro
                 ? "Sto collocando…"
@@ -413,6 +416,87 @@ function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
   );
 }
 
+// 🔴 «FALLO A MANO» DI UNA SPESA DETTA (27/10/2026). Prima si arrivava qui
+//    e la spesa non c'era: la scrive solo «Approva», e la schermata non
+//    aveva un modo per scriverla — un vicolo cieco trovato da Alessio.
+//    Qui la si corregge e la si mette fra quelle da collocare; il database
+//    chiude la cosa detta nella stessa transazione (20261027000002).
+// ⚠️ NON È CONTABILITÀ nemmeno così: entra nell'elenco qui sotto, e da lì
+//    si colloca come tutte le altre.
+const VUOTA = { importo: "", data: "", controparte: "", descrizione: "" };
+
+function SchedaDallaVoce({ venuto, scheda, setScheda, onScritta }) {
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState("");
+  const guardia = useRef(unaVoltaSola());
+
+  const imposta = (k) => (e) => setScheda((c) => ({ ...c, [k]: e.target.value }));
+  const vuota = !scheda.importo.trim() && !scheda.descrizione.trim();
+
+  const salva = async (e) => {
+    e.preventDefault();
+    if (vuota || !venuto.idDaChiudere || !guardia.current.prendi("salva")) return;
+    setErrore("");
+    setLavoro(true);
+    try {
+      await annotaSpesaDettataAMano(venuto.idDaChiudere, scheda);
+      venuto.segnaChiusa();
+      onScritta();
+    } catch (err) {
+      setErrore(err.message);
+    } finally {
+      guardia.current.lascia("salva");
+      setLavoro(false);
+    }
+  };
+
+  return (
+    <form onSubmit={salva} className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
+      <h2 className="mb-3 font-display font-semibold text-b58-charcoal">La spesa che hai detto</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="voce-importo" className={etichetta}>Importo (€)</label>
+          <input id="voce-importo" inputMode="decimal" className={campo} value={scheda.importo} onChange={imposta("importo")} />
+        </div>
+        <div>
+          <label htmlFor="voce-data" className={etichetta}>Giorno della spesa</label>
+          <input id="voce-data" type="date" className={`${campo} campo-data`} value={scheda.data} onChange={imposta("data")} />
+        </div>
+        <div>
+          <label htmlFor="voce-controparte" className={etichetta}>Da chi</label>
+          <input id="voce-controparte" className={campo} value={scheda.controparte} onChange={imposta("controparte")} />
+        </div>
+        <div>
+          <label htmlFor="voce-descrizione" className={etichetta}>Che cosa</label>
+          <input id="voce-descrizione" className={campo} value={scheda.descrizione} onChange={imposta("descrizione")} />
+        </div>
+      </div>
+      {vuota && (
+        <p id="voce-manca" className="testo-sala mt-2 text-b58-charcoal-soft">
+          Scrivi almeno l'importo o che cosa hai comprato.
+        </p>
+      )}
+      {errore && (
+        <p role="alert" className="testo-sala mt-2 rounded bg-red-50 p-2 text-red-700">
+          {errore}
+        </p>
+      )}
+      {/* ⚠️ Con la scheda vuota il bottone resta raggiungibile da tastiera e
+          dice perché non salva (aria-describedby): spento del tutto, chi usa
+          la tastiera lo salterebbe senza sapere cosa manca. */}
+      <button
+        type="submit"
+        disabled={lavoro}
+        aria-disabled={vuota || undefined}
+        aria-describedby={vuota ? "voce-manca" : undefined}
+        className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark disabled:opacity-60 aria-disabled:opacity-60"
+      >
+        {lavoro ? "La sto mettendo…" : "Mettila fra quelle da collocare"}
+      </button>
+    </form>
+  );
+}
+
 export default function DaCollocare() {
   const [aperte, setAperte] = useState(null);
   const [fatte, setFatte] = useState([]);
@@ -420,6 +504,8 @@ export default function DaCollocare() {
   const [errLettura, setErrLettura] = useState("");
   const [esiti, setEsiti] = useState({});
   const [avviso, setAvviso] = useState("");
+  const [scheda, setScheda] = useState(VUOTA);
+  const venuto = useDaVoce((c) => setScheda((s) => ({ ...s, ...c })));
 
   const carica = () => {
     setErrLettura("");
@@ -499,6 +585,7 @@ export default function DaCollocare() {
   if (errLettura) {
     return (
       <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+        <StriscaDallaVoce venuto={venuto} />
         <DatoNonLetto cosa="le spese da collocare" nonVuolDire="che non ce ne siano" onRiprova={carica} />
       </div>
     );
@@ -518,7 +605,21 @@ export default function DaCollocare() {
         </Didascalia>
       </h1>
 
-      {avviso && <p className="testo-sala mb-3 text-b58-ambra-dark">{avviso}</p>}
+      <StriscaDallaVoce venuto={venuto} />
+      {/* Si aspetta la rilettura dell'appunto: una scheda vuota che poi si
+          riempie da sola sembra un modulo che cambia sotto le dita. */}
+      {venuto.idDaChiudere && (venuto.azione || venuto.errore) && (
+        <SchedaDallaVoce
+          venuto={venuto}
+          scheda={scheda}
+          setScheda={setScheda}
+          // ⚠️ La spesa è scritta: se la rilettura fallisce, sopra a
+          //    DatoNonLetto resta la striscia «Fatto», così non sembra fallita.
+          onScritta={carica}
+        />
+      )}
+
+      {avviso && <p className="testo-sala mb-3 text-b58-ambra-dark-testo">{avviso}</p>}
 
       {aperte.length === 0 ? (
         <p className="rounded-xl bg-b58-parchment p-4 text-b58-charcoal-soft ring-1 ring-b58-charcoal/10">
@@ -555,7 +656,7 @@ export default function DaCollocare() {
                   {formatDate(s.collocata_il)}
                 </p>
                 {esiti[s.id]?.fotoRimasta && (
-                  <p className="testo-sala text-b58-ambra-dark">{esiti[s.id].fotoRimasta}</p>
+                  <p className="testo-sala text-b58-ambra-dark-testo">{esiti[s.id].fotoRimasta}</p>
                 )}
                 <div className="flex flex-wrap items-start gap-2">
                   {s.foto_path && s.collocata_in !== "archivio" && (

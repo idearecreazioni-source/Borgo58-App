@@ -3,23 +3,25 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, formatDate, oggiLocale } from "../../lib/constants";
+import { CROP_STATUSES, formatDate, giorniDaOggi, oggiLocale } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useUnita } from "../../lib/unita";
 
 const STATUS_BADGE = {
-  pianificato: "bg-b58-charcoal-soft/50",
+  pianificato: "bg-b58-inverso-soft/50",
   seminato: "bg-b58-gold",
   in_crescita: "bg-b58-olive",
   raccolto: "bg-b58-terracotta",
-  chiuso: "bg-b58-charcoal-soft/40",
+  chiuso: "bg-b58-inverso-soft/40",
 };
 
 const emptyForm = {
   name: "", variety: "", plot: "", sowing_date: "", expected_harvest_date: "", ingredient_id: "",
 };
 
-const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function AgricoloHome() {
   // Le unita' si chiedono al database, non a un elenco scritto qui: la
@@ -52,7 +54,7 @@ export default function AgricoloHome() {
   }, []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -141,22 +143,22 @@ export default function AgricoloHome() {
           <Link to="/agricolo/cessioni" className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
             Cessioni alla S.r.l.s.
           </Link>
-          <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+          <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2">
             {showForm ? "Annulla" : "+ Nuova coltura"}
           </button>
         </div>
       </div>
 
       {entities && !entities.agricola?.is_active && (
-        <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">
           L'azienda agricola non è ancora attiva: puoi già pianificare le colture, la struttura è pronta per quando aprirà.
         </p>
       )}
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
       {showForm && (
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-6">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder='Coltura, es. "Aglione della Valdichiana"' className={`${inputClass} sm:col-span-2`} />
             <input value={form.variety} onChange={(e) => setForm((f) => ({ ...f, variety: e.target.value }))} placeholder="Varietà (opz.)" className={inputClass} />
@@ -181,7 +183,7 @@ export default function AgricoloHome() {
             </select>
           </div>
           <div className="flex justify-end">
-            <button type="button" disabled={saving || !form.name.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={saving || !form.name.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
               {saving ? "Salvo…" : "+ Aggiungi coltura"}
             </button>
           </div>
@@ -195,7 +197,7 @@ export default function AgricoloHome() {
             {upcoming.map((c) => (
               <li key={c.id} className="testo-sala-grande flex items-center justify-between gap-2">
                 <span className="text-b58-charcoal">{c.name}</span>
-                <span className="text-b58-olive-dark">{formatDate(c.expected_harvest_date)} ({daysTo(c.expected_harvest_date)}gg)</span>
+                <span className="text-b58-olive-dark-testo">{formatDate(c.expected_harvest_date)} ({daysTo(c.expected_harvest_date)}gg)</span>
               </li>
             ))}
           </ul>
@@ -228,7 +230,7 @@ export default function AgricoloHome() {
                       {c.name}
                       {c.variety && <span className="testo-sala text-b58-charcoal-soft"> · {c.variety}</span>}
                       {c.plot && <div className="testo-sala text-b58-charcoal-soft">{c.plot}</div>}
-                      {c.ingredient && <div className="testo-sala text-b58-olive-dark">→ {c.ingredient.name}</div>}
+                      {c.ingredient && <div className="testo-sala text-b58-olive-dark-testo">→ {c.ingredient.name}</div>}
                     </td>
                     <td className="px-4 py-3 text-b58-charcoal-soft">{formatDate(c.sowing_date)}</td>
                     <td className="px-4 py-3 text-b58-charcoal-soft">
@@ -240,40 +242,46 @@ export default function AgricoloHome() {
                       <select
                         value={c.status}
                         onChange={(e) => changeStatus(c, e.target.value)}
-                        className={`tocco-campo testo-sala rounded-full ${STATUS_BADGE[c.status]} text-b58-parchment font-medium px-2 py-1 border-0 focus:outline-none`}
+                        className={`tocco-campo testo-sala rounded-full ${STATUS_BADGE[c.status]} text-b58-sul-colore font-medium px-2 py-1 border-0 focus:outline-none`}
                       >
                         {CROP_STATUSES.map((s) => (
-                          <option key={s.value} value={s.value} className="text-b58-charcoal bg-white">{s.label}</option>
+                          <option key={s.value} value={s.value} className="text-b58-charcoal bg-b58-campo">{s.label}</option>
                         ))}
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => { setHarvestFor(harvestFor === c.id ? null : c.id); setHarvest({ actual_harvest_date: "", harvested_quantity: "", unit: c.unit ?? "kg" }); }} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+                      <button onClick={() => { setHarvestFor(harvestFor === c.id ? null : c.id); setHarvest({ actual_harvest_date: "", harvested_quantity: "", unit: c.unit ?? "kg" }); }} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
                         {harvestFor === c.id ? "Annulla" : "Raccolto"}
                       </button>
                       {/* 🔴 Stava a `ml-3`, cioè **1,62 mm** dal pulsante
                           accanto (22/08). Quello registra il raccolto,
                           questo **cancella la coltura** — e la cancella
                           senza chiedere niente. */}
-                      <button
-                        onClick={() => deleteCrop(c.id).then(reload)}
-                        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                        style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }}
-                      >
-                        Rimuovi
-                      </button>
+                      {/* ⚠️ E adesso chiede (notte del 28/10), come le cessioni:
+                          un tocco impreciso sul telefono la cancellava. */}
+                      <span style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }} className="inline-block">
+                        <ConfermaDistruttiva
+                          etichetta="Rimuovi"
+                          cosaSparisce={`la coltura «${c.name}»`}
+                          onConferma={() =>
+                            deleteCrop(c.id)
+                              .then(reload)
+                              .catch((e) => setError(e.message))
+                          }
+                        />
+                      </span>
                     </td>
                   </tr>
                   {harvestFor === c.id && (
-                    <tr className="bg-white">
+                    <tr className="bg-b58-campo">
                       <td colSpan={5} className="px-4 py-3">
                         <div className="flex flex-wrap gap-2 items-end">
-                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} className={inputClass + " w-40"} />
+                          <input type="date" value={harvest.actual_harvest_date} onChange={(e) => setHarvest((h) => ({ ...h, actual_harvest_date: e.target.value }))} aria-label="Data del raccolto" className={inputClass + " campo-data"} />
                           <input type="number" step="0.001" value={harvest.harvested_quantity} onChange={(e) => setHarvest((h) => ({ ...h, harvested_quantity: e.target.value }))} placeholder="Quantità raccolta" className={inputClass + " w-40"} />
                           <select value={harvest.unit} onChange={(e) => setHarvest((h) => ({ ...h, unit: e.target.value }))} className={inputClass + " w-28"}>
                             {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
                           </select>
-                          <button type="button" onClick={() => saveHarvest(c)} disabled={!harvest.harvested_quantity} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+                          <button type="button" onClick={() => saveHarvest(c)} disabled={!harvest.harvested_quantity} className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60">
                             Registra raccolto
                           </button>
                         </div>

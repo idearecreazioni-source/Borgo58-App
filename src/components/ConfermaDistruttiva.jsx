@@ -69,7 +69,7 @@ export default function ConfermaDistruttiva({
         disabled={disabilitato}
         onClick={() => setChiesto(true)}
         {...attributi}
-        className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
+        className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo disabled:opacity-50 ${className}`}
       >
         {etichetta}
       </button>
@@ -87,26 +87,35 @@ export default function ConfermaDistruttiva({
     // ⚠️ Non e' prudenza generica: il secondo tocco deve cadere lontano
     // dal primo, che e' gia' la ragione per cui questa conferma nasce sul
     // posto invece che in una finestra.
-    <span className="inline-flex items-center testo-sala" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
-      <span className="text-b58-terracotta-dark">
+    //
+    // 🔴 AL TELEFONO VA A CAPO (28/10/2026, dalla prima segnalazione di
+    // Alessio). Stava su una riga sola a ogni costo: accanto a «Salva
+    // modifiche» la domanda si schiacciava in quattro righe, «Sì, elimina»
+    // veniva tagliato e «Annulla» usciva dallo schermo. Adesso, se non c'è
+    // posto, la domanda resta sopra e i due pulsanti vanno sotto — sempre
+    // insieme, e mai spezzati a metà parola.
+    <span className="inline-flex max-w-full flex-wrap items-center testo-sala" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
+      <span className="min-w-0 text-b58-terracotta-dark-testo">
         {domanda ?? `Elimino ${cosaSparisce}?`}
       </span>
-      <button
-        type="button"
-        onClick={conferma}
-        disabled={inCorso}
-        className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment px-3 py-1.5 disabled:opacity-60"
-      >
-        {inCorso ? "Elimino…" : etichettaConferma}
-      </button>
-      <button
-        type="button"
-        onClick={() => setChiesto(false)}
-        disabled={inCorso}
-        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-charcoal px-2 py-1.5"
-      >
-        Annulla
-      </button>
+      <span className="inline-flex shrink-0 items-center" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
+        <button
+          type="button"
+          onClick={conferma}
+          disabled={inCorso}
+          className="tocco-bottone whitespace-nowrap rounded-lg bg-b58-terracotta text-b58-sul-colore px-3 py-1.5 disabled:opacity-60"
+        >
+          {inCorso ? "Elimino…" : etichettaConferma}
+        </button>
+        <button
+          type="button"
+          onClick={() => setChiesto(false)}
+          disabled={inCorso}
+          className="tocco-bottone whitespace-nowrap text-b58-charcoal-soft hover:text-b58-charcoal px-2 py-1.5"
+        >
+          Annulla
+        </button>
+      </span>
     </span>
   );
 }

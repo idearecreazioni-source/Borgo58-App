@@ -62,6 +62,7 @@ import {
   STORAGE_TYPES,
   SUPPLIER_CATEGORIES,
   TASK_CATEGORIES,
+  TASK_LUOGHI,
   TASK_PRIORITIES,
   TASK_RICORRENZA_UNITA,
   TASK_SOLLECITO_UNITA,
@@ -134,7 +135,18 @@ export const SPECCHIATI = [
   // lo stesso elenco copre due tabelle.
   // ⚠️ La rete resta, e adesso sorveglia entrambe: se qualcuno riseparasse
   // i vincoli, una delle due righe qui sotto diventerebbe rossa.
-  { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "supplier_invoices", colonna: "payment_method" },
+  {
+    costante: "PAYMENT_METHODS",
+    valori: PAYMENT_METHODS,
+    tabella: "supplier_invoices",
+    colonna: "payment_method",
+    // ⚠️ «anticipo» (01/11/2026) lo scrive solo `registra_anticipazione`,
+    // quando una nota «Anticipo da rimborsarmi» paga la fattura: non e'
+    // un modo di pagare che Alessio possa scegliere dal menu — senza una
+    // nota dietro, la fattura risulterebbe pagata da nessuno.
+    inPiuNelDatabase: ["anticipo"],
+    perche: "«anticipo» è un riflesso scritto da registra_anticipazione, non una scelta di chi paga una fattura",
+  },
   { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "shopping_list_items", colonna: "payment_method" },
   { costante: "ESITI_RIGA_LISTA", valori: ESITI_RIGA_LISTA, tabella: "shopping_list_items", colonna: "esito" },
   { costante: "CLEANING_FREQUENCIES", valori: CLEANING_FREQUENCIES, tabella: "haccp_cleaning_tasks", colonna: "frequency" },
@@ -167,6 +179,7 @@ export const SPECCHIATI = [
   { costante: "RESERVATION_TYPES", valori: RESERVATION_TYPES, tabella: "reservations", colonna: "type" },
   { costante: "RESERVATION_STATUSES", valori: RESERVATION_STATUSES, tabella: "reservations", colonna: "status" },
   { costante: "TASK_CATEGORIES", valori: TASK_CATEGORIES, tabella: "tasks", colonna: "category" },
+  { costante: "TASK_LUOGHI", valori: TASK_LUOGHI, tabella: "tasks", colonna: "luogo" },
   { costante: "TASK_PRIORITIES", valori: TASK_PRIORITIES, tabella: "tasks", colonna: "priority" },
   { costante: "TASK_STATUSES", valori: TASK_STATUSES, tabella: "tasks", colonna: "status" },
   // 🔴 LA RICORRENZA HA CAMBIATO FORMA — 10/09/2026. Era una parola sola
@@ -239,6 +252,34 @@ export const SPECCHI_ESENTI = [
 // ⚠️ Una rete che grida su un caso legittimo viene spenta. Ma un'eccezione
 // senza la sua ragione scritta si allarga da sola, quindi ognuna ha la sua.
 export const GUARDIE_ESENTI = [
+  // ⚠️ LE TRE DEL PONTE (28/10/2026, 20261028000005): sono sottoinsiemi
+  //    VOLUTI dei vocabolari di `lavori_stampa` e `dispositivi`, e la
+  //    ragione è la stessa per tutte e tre — il ponte non può scrivere i
+  //    valori che appartengono al gestionale.
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_stato",
+    perche:
+      "il ponte chiude un lavoro come stampato, fallito o incerto: «in_coda» e «in_corso» li scrive il gestionale quando lo accoda e quando il ponte lo prende, e «annullato» solo il titolare. Sono tre dei sei stati di lavoro_stato_noto, apposta",
+  },
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_stato_dispositivo",
+    perche:
+      "non è una guardia che rifiuta ma una normalizzazione: i cinque stati che il ponte sa leggere da un apparecchio passano, tutto il resto diventa «sconosciuto» — il sesto valore di dispositivo_stato_noto, che il ponte non deve dichiarare da sé. Un valore inatteso non deve far fallire l'esito di un foglio uscito bene",
+  },
+  {
+    funzione: "ponte_esito_lavoro",
+    parametro: "p_errore_codice",
+    perche:
+      "normalizzazione come per lo stato dell'apparecchio: i sei codici che il ponte sa riconoscere passano, il resto diventa «sconosciuto», il settimo valore di lavoro_errore_noto. Rifiutare un codice nuovo lascerebbe il lavoro in corso, e dopo cinque minuti incerto",
+  },
+  {
+    funzione: "chiedi_lavoro_dispositivo",
+    parametro: "p_tipo",
+    perche:
+      "il titolare dalla pagina Stampanti chiede solo una prova di stampa o una lettura di stato: «comanda» e «biglietto del turno» li accoda il database quando il tablet invia, legati alle loro righe, e chiederli a mano darebbe un foglio senza niente dentro. Sono due dei quattro tipi di lavoro_tipo_di_questo_passo, apposta (29/10/2026, 20261029000001)",
+  },
   {
     funzione: "azione_domanda",
     parametro: "p_stato",

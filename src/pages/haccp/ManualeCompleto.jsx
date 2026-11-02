@@ -73,14 +73,14 @@ export default function ManualeCompleto() {
   };
 
   const chipClass = (attivo) =>
-    `tocco-campo text-xs rounded-full px-3 py-1.5 border ${attivo ? "bg-b58-azione text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`;
+    `tocco-campo text-xs rounded-full px-3 py-1.5 border ${attivo ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`;
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm text-b58-charcoal";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-1.5 text-sm text-b58-charcoal";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-2 print:hidden">
-        <Link to="/haccp" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/haccp" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← HACCP
         </Link>
         <PrintButton label="Esporta manuale in PDF" />
@@ -134,7 +134,7 @@ export default function ManualeCompleto() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-4 print:hidden">
+        <p className="text-sm text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-4 print:hidden">
           {error}
         </p>
       )}
@@ -169,9 +169,9 @@ export default function ManualeCompleto() {
                             <td className="py-1 text-b58-charcoal-soft">{r.recorded_temp_c}°C</td>
                             <td className="py-1">
                               {r.target_min_c == null ? "" : r.is_compliant ? (
-                                <span className="text-b58-olive-dark text-xs">conforme</span>
+                                <span className="text-b58-olive-dark-testo text-xs">conforme</span>
                               ) : (
-                                <span className="text-b58-terracotta-dark text-xs font-medium">fuori range</span>
+                                <span className="text-b58-terracotta-dark-testo text-xs font-medium">fuori range</span>
                               )}
                             </td>
                             <td className="py-1 text-b58-charcoal-soft text-xs">{r.note}</td>
@@ -214,9 +214,9 @@ export default function ManualeCompleto() {
                       {(() => {
                         const esito = esitoRicevimento(r);
                         return esito.conforme ? (
-                          <span className="text-b58-olive-dark text-xs">conforme</span>
+                          <span className="text-b58-olive-dark-testo text-xs">conforme</span>
                         ) : (
-                          <span className="text-b58-terracotta-dark text-xs font-medium">
+                          <span className="text-b58-terracotta-dark-testo text-xs font-medium">
                             {esito.etichetta}
                           </span>
                         );
@@ -320,9 +320,9 @@ export default function ManualeCompleto() {
                     </td>
                     <td className="py-1.5">
                       {nc.resolved ? (
-                        <span className="text-b58-olive-dark text-xs">risolta</span>
+                        <span className="text-b58-olive-dark-testo text-xs">risolta</span>
                       ) : (
-                        <span className="text-b58-terracotta-dark text-xs font-medium">aperta</span>
+                        <span className="text-b58-terracotta-dark-testo text-xs font-medium">aperta</span>
                       )}
                     </td>
                   </tr>

@@ -33,7 +33,7 @@ import Didascalia from "../../components/Didascalia";
 // perché si ricalcola ogni giorno sulla disposizione di quel giorno.
 
 const inputClass =
-  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 const sezioneClass = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6";
 
@@ -111,13 +111,13 @@ export default function SalaEOrari() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Calendario Eventi
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Sala e orari</h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Interruttore generale */}
@@ -141,7 +141,7 @@ export default function SalaEOrari() {
           </span>
         </label>
         {avviso && (
-          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
+          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
             {avviso}
           </p>
         )}
@@ -150,7 +150,7 @@ export default function SalaEOrari() {
           <strong>{serviziAperti}</strong>{" "}
           {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quanti
           coperti entrano lo decidi tu guardando la sala:{" "}
-          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
+          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta-testo">
             apri la pianta
           </Link>
           .
@@ -198,7 +198,7 @@ export default function SalaEOrari() {
               </h3>
               <div className="space-y-1">
                 {orariDelGiorno(g.weekday).map((o) => (
-                  <div key={o.id} className="bg-white rounded-lg px-3 py-2">
+                  <div key={o.id} className="bg-b58-campo rounded-lg px-3 py-2">
                     <label className="tocco-campo flex items-center gap-2 min-w-[110px]">
                       <input
                         type="checkbox"
@@ -292,7 +292,7 @@ export default function SalaEOrari() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {formati.map((f) => (
-            <div key={f.id} className="bg-white rounded-lg px-3 py-2">
+            <div key={f.id} className="bg-b58-campo rounded-lg px-3 py-2">
               <label className={labelClass}>{f.nome}</label>
               <CampoAutosalvato
                 type="number"
@@ -323,7 +323,7 @@ export default function SalaEOrari() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {tavoli.map((t) => (
-            <div key={t.id} className={`bg-white rounded-lg px-3 py-2 ${t.active ? "" : "opacity-50"}`}>
+            <div key={t.id} className={`bg-b58-campo rounded-lg px-3 py-2 ${t.active ? "" : "opacity-50"}`}>
               <label className={labelClass}>
                 {t.tipo === "tavolo" ? "Tavolo" : t.tipo === "divano" ? "Divano" : "Bancone"}
                 {t.posti_fissi ? ` · ${t.posti_fissi} posti` : ""}
@@ -336,7 +336,7 @@ export default function SalaEOrari() {
               <button
                 type="button"
                 onClick={() => esegui(() => attivaSagoma(t.id, !t.active))}
-                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
+                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo underline mt-1"
               >
                 {t.active ? "spegni" : "riaccendi"}
               </button>
@@ -512,7 +512,7 @@ export default function SalaEOrari() {
             const riga = cucina.find((c) => c.weekday === g);
             const aperto = orari.some((o) => o.weekday === g && o.attivo);
             return (
-              <div key={g} className="flex flex-wrap items-center gap-3 bg-white rounded-lg px-3 py-2">
+              <div key={g} className="flex flex-wrap items-center gap-3 bg-b58-campo rounded-lg px-3 py-2">
                 <span className="testo-sala-grande text-b58-charcoal w-28 shrink-0">{nome}</span>
                 <span className="testo-sala text-b58-charcoal-soft w-40 shrink-0">
                   {aperto ? "aperto al pubblico" : "chiuso al pubblico"}
@@ -532,7 +532,7 @@ export default function SalaEOrari() {
                       onClick={() => esegui(() => setGiornoCucina(g, s.v))}
                       className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
                         riga?.si_lavora === s.v
-                          ? "bg-b58-azione text-b58-parchment"
+                          ? "bg-b58-azione text-b58-sul-colore"
                           : "border border-b58-charcoal/20 text-b58-charcoal-soft"
                       }`}
                     >
@@ -619,7 +619,7 @@ export default function SalaEOrari() {
               type="button"
               onClick={aggiungiChiusura}
               disabled={!nuovaChiusura.dal}
-              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Aggiungi
             </button>
@@ -629,7 +629,7 @@ export default function SalaEOrari() {
           {chiusure.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between gap-2 testo-sala-grande text-b58-charcoal bg-white rounded-lg px-3 py-2"
+              className="flex items-center justify-between gap-2 testo-sala-grande text-b58-charcoal bg-b58-campo rounded-lg px-3 py-2"
             >
               <span>
                 {/* In italiano, non «2026-12-24 → 2026-12-27» (27/09/2026). */}
@@ -638,7 +638,7 @@ export default function SalaEOrari() {
                 {/* Si dice solo quando qualcuno si e' pronunciato: scriverlo
                     sempre farebbe sembrare una decisione anche il silenzio. */}
                 {c.si_lavora_in_cucina === true && (
-                  <span className="testo-sala text-b58-olive-dark"> · in cucina si lavora</span>
+                  <span className="testo-sala text-b58-olive-dark-testo"> · in cucina si lavora</span>
                 )}
                 {c.si_lavora_in_cucina === false && (
                   <span className="testo-sala text-b58-charcoal-soft"> · nemmeno in cucina</span>
@@ -651,7 +651,7 @@ export default function SalaEOrari() {
               <button
                 onClick={() => esegui(() => deleteClosure(c.id))}
                 data-togli-chiusura
-                className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                 title="Togli"
                 aria-label={`Togli la chiusura ${c.dal === c.al ? `del ${c.dal}` : `dal ${c.dal} al ${c.al}`}`}
               >

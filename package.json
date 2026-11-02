@@ -15,6 +15,15 @@
     "test:app": "node scripts/chiavi-di-prova.mjs && node scripts/prove-app.mjs",
     "backup": "node scripts/backup.mjs",
     "prova:ricostruisci": "node scripts/prova-ricostruisci.mjs",
+    "casa:costruisci": "node scripts/casa-costruisci.mjs",
+    "casa:pin": "node scripts/casa-pin.mjs",
+    "casa:verifica": "node scripts/casa-verifica.mjs",
+    "casa:accendi": "node scripts/casa-accendi.mjs",
+    "casa:impacchetta": "node scripts/casa-impacchetta.mjs",
+    "casa:sito": "node scripts/casa-sito.mjs",
+    "casa:copia": "node scripts/casa-copia.mjs",
+    "casa:aggiorna": "node scripts/casa-aggiorna.mjs",
+    "casa:chiave": "node scripts/casa-chiave.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",
@@ -53,6 +62,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
+    "modern-screenshot": "4.7.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"

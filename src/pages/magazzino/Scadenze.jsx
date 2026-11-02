@@ -161,7 +161,7 @@ export default function Scadenze() {
         <div className="flex" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
           <button
             type="button"
-            className="tocco-bottone rounded-lg border border-stone-400 bg-white px-4 leading-tight shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
+            className="tocco-bottone rounded-lg border border-stone-400 bg-b58-campo px-4 leading-tight shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "finita")}
           >
@@ -170,7 +170,7 @@ export default function Scadenze() {
           </button>
           <button
             type="button"
-            className="tocco-bottone rounded-lg border border-red-700 bg-red-600 px-4 leading-tight text-white shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
+            className="tocco-bottone rounded-lg border border-transparent bg-red-600 px-4 leading-tight text-white shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "buttata")}
           >
@@ -193,7 +193,7 @@ export default function Scadenze() {
           onClick={() => setAperto(apertoQui ? null : g.id)}
           className="tocco-riga flex w-full flex-wrap items-baseline justify-between gap-x-3 py-3 text-left"
         >
-          <span className="testo-sala-titolo font-medium text-stone-800">{g.nome}</span>
+          <span className="testo-sala-titolo font-medium text-b58-charcoal">{g.nome}</span>
           <span
             className={`testo-sala-grande ${g.prima < 0 ? "font-semibold text-red-700" : "text-stone-600"}`}
           >
@@ -248,7 +248,7 @@ export default function Scadenze() {
             onClick={() => setPosizione(p.chiave)}
             className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
               posizione === p.chiave
-                ? "bg-stone-800 text-white"
+                ? "bg-b58-charcoal text-b58-cream"
                 : "border border-stone-300 text-stone-600"
             }`}
           >

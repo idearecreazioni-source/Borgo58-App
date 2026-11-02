@@ -206,7 +206,7 @@ export default function RicetteList() {
 
   const filtroAttivo = search || category || statusFilter || stagione || tag || senzaAllergene;
   const selectClass =
-    "tocco-riga rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-riga rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -214,7 +214,7 @@ export default function RicetteList() {
         <div>
           <Link
             to="/ricettario"
-            className="tocco-riga inline-flex items-center px-2 -mx-2 rounded-lg testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-riga inline-flex items-center px-2 -mx-2 rounded-lg testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
           >
             ← Ricettario
           </Link>
@@ -223,7 +223,7 @@ export default function RicetteList() {
         {isTitolare && (
           <Link
             to={`/ricettario/ricette/nuova?tipo=${dove.crea}`}
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 testo-sala"
           >
             {dove.nuovo}
           </Link>
@@ -263,7 +263,7 @@ export default function RicetteList() {
               onClick={() => cambiaModo(m.value)}
               className={`tocco-riga rounded-full px-4 border testo-sala transition-colors ${
                 m.value === modo.value
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark font-medium"
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark-testo font-medium"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft hover:border-b58-charcoal/40"
               }`}
             >
@@ -324,18 +324,18 @@ export default function RicetteList() {
       </div>
 
       {esclusePerchePocoChiare > 0 && (
-        <p className="testo-sala text-b58-terracotta-dark mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo mb-4">
           {esclusePerchePocoChiare === 1
             ? "Una ricetta resta fuori"
             : `${esclusePerchePocoChiare} ricette restano fuori`}{" "}
           perché i loro allergeni non sono confermati o non sono stati detti: non si può dire che siano senza.{" "}
-          <Link to="/ricettario/schede" className="tocco-inline underline text-b58-terracotta">
+          <Link to="/ricettario/schede" className="tocco-inline underline text-b58-terracotta-testo">
             Le schede dei prodotti
           </Link>
         </p>
       )}
 
-      {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
@@ -366,7 +366,7 @@ export default function RicetteList() {
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-1">
                     <span className="text-b58-charcoal font-medium testo-sala-grande">{r.name}</span>
                     <span
-                      className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
+                      className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-sul-colore testo-sala font-medium px-2.5 py-1 shrink-0`}
                     >
                       {statusInfo.label}
                     </span>
@@ -424,7 +424,7 @@ export default function RicetteList() {
                       ))}
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
+                          className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-sul-colore testo-sala font-medium px-2.5 py-1`}
                         >
                           {statusInfo.label}
                         </span>

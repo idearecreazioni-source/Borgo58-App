@@ -42,7 +42,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   REF_PRODUZIONE,
-  REF_PROVA,
+  eProva,
   esegui,
   leggiConfigurazione,
   obbligatorio,
@@ -71,7 +71,9 @@ export function problemaDelBersaglio(url) {
   const u = String(url || "").trim();
   if (!u) return "manca DB_URL_PROVA nel file .env";
   if (u.includes(REF_PRODUZIONE)) return "la stringa di collegamento punta al database VERO";
-  if (!u.includes(REF_PROVA)) return "la stringa di collegamento non e' quella del progetto Borgo58-Prova";
+  // Ad elenco chiuso dal 31/10/2026 (`eProva`): il riferimento nella
+  // password o nei parametri non basta, e Casa sul PC non passa.
+  if (!eProva(u)) return "la stringa di collegamento non e' quella del progetto Borgo58-Prova";
   return null;
 }
 

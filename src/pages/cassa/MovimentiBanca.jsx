@@ -10,11 +10,13 @@ import {
   registraMovimentoBanca,
   riapriMovimentoBanca,
 } from "../../lib/api/banca";
-import { listCausali } from "../../lib/api/cash";
+import { listCausali, listContiBancari } from "../../lib/api/cash";
 import { CASH_DOCUMENT_TYPES, formatDate, formatEUR } from "../../lib/constants";
 import { leggiFlussoCbi, movimentiDaCaricare } from "../../lib/calcoli/cbi";
+import { bancaDelCsv, leggiCsvBper, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
+import CaricaCsvBanca from "./CaricaCsvBanca";
 
 // L'ESTRATTO CONTO DA FILE (24/10/2026). Alessio scarica dalla banca il
 // file CBI (anche dentro lo zip così com'è) e lo carica qui: i movimenti
@@ -24,6 +26,11 @@ import { unaVoltaSola } from "../../lib/calcoli/voce";
 // ⚠️ Il file si legge tutto PRIMA di mandare qualcosa: se un conto non
 // quadra (saldo iniziale + movimenti ≠ saldo finale) non si carica
 // niente, perché un estratto letto a metà sembrerebbe intero.
+//
+// 🔴 ANCHE IL CSV DI CREDEM (31/10/2026), accanto al CBI. Il CSV non dice
+// conto e saldi: li chiede CaricaCsvBanca. E lo stesso movimento, arrivato
+// dai due file, avrebbe due impronte diverse: per gli stessi giorni dello
+// stesso conto si carica da un formato solo (`sovrapposizioni`).
 
 const STATI = [
   ["da_abbinare", "Da abbinare"],
@@ -38,21 +45,48 @@ function statoDi(m) {
 }
 
 const campo =
-  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const bottone =
-  "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
+  "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
 const bottonePieno =
-  "tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
+  "tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3 py-1.5 disabled:opacity-60";
 
 async function leggiFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const dentro = eZip(bytes) ? await leggiZip(bytes) : [{ nome: file.name, contenuto: bytes }];
   // Il CBI è testo a 120 colonne in caratteri occidentali: latin1 non
   // perde niente, e non inventa caratteri dove UTF-8 si fermerebbe.
-  return dentro.map((d) => ({
-    nome: d.nome === file.name ? file.name : `${file.name} → ${d.nome}`,
-    testo: new TextDecoder("latin1").decode(d.contenuto),
-  }));
+  // ⚠️ Il CSV di Credem invece è UTF-8: letto in latin1 le lettere
+  // accentate diventerebbero due caratteri strani. Se però qualcuno l'ha
+  // salvato di nuovo (Excel lo rifà in caratteri occidentali), è latin1.
+  return dentro.map((d) => {
+    const nome = d.nome === file.name ? file.name : `${file.name} → ${d.nome}`;
+    const utf8 = comeUtf8(d.contenuto);
+    // ⚠️ Anche il CSV di BPER (01/11/2026) passa di qui: Excel lo salva
+    //    in UTF-8 o in caratteri occidentali, secondo la voce scelta.
+    const bancaUtf8 = utf8 !== null ? bancaDelCsv(utf8) : null;
+    if (bancaUtf8) return { nome, testo: utf8, formato: "csv", banca: bancaUtf8 };
+    const latin1 = new TextDecoder("latin1").decode(d.contenuto);
+    const banca = bancaDelCsv(latin1);
+    return { nome, testo: latin1, formato: banca ? "csv" : "cbi", banca };
+  });
+}
+
+function comeUtf8(bytes) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** L'IBAN senza spazi né minuscole, per confrontarlo. */
+const ibanPulito = (s) => String(s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+function testoSovrapposizione(nome, conto, s) {
+  return `${nome}: sul conto «${conto.nome}» fra il ${formatDate(s.dal)} e il ${formatDate(s.al)} ci sono già`
+    + ` ${s.quanti} ${s.quanti === 1 ? "movimento caricato" : "movimenti caricati"} dal CSV:`
+    + " gli stessi movimenti entrerebbero due volte. Per quei giorni usa un file solo.";
 }
 
 export default function MovimentiBanca() {
@@ -61,26 +95,69 @@ export default function MovimentiBanca() {
   const [caricamento, setCaricamento] = useState(null); // { righe: [...], errori: [...] }
   const [stato, setStato] = useState("da_abbinare");
   const [aperto, setAperto] = useState(null);
+  const [conti, setConti] = useState(null); // null: non ancora letti (servono solo alla scelta del conto del CSV)
+  const [csv, setCsv] = useState(null); // { nome, movimenti }: il CSV letto, in attesa di conto e saldi
+  const [inviando, setInviando] = useState(false);
 
   const ricarica = () => listMovimentiBanca().then(setMovimenti);
 
   useEffect(() => {
     ricarica().catch((e) => setErrore(e.message));
+    listContiBancari()
+      .then(setConti)
+      .catch((e) => setErrore(e.message));
   }, []);
 
   const carica = async (files) => {
     setErrore("");
+    setCsv(null);
     setCaricamento({ righe: [], errori: [], inCorso: true });
     const righe = [];
     const errori = [];
     try {
       const letti = [];
       for (const f of files) letti.push(...(await leggiFile(f)));
+
+      // Il CSV ha un passo in più (conto e saldi): si carica da solo.
+      const csvLetti = letti.filter((l) => l.formato === "csv");
+      if (csvLetti.length) {
+        if (letti.length > 1) {
+          errori.push("Il CSV della banca si carica da solo, un file alla volta: chiede il conto e i saldi.");
+        } else {
+          const leggi = csvLetti[0].banca === "bper" ? leggiCsvBper : leggiCsvCredem;
+          const { movimenti: m, errori: e, daContabilizzare = 0 } = leggi(csvLetti[0].testo);
+          if (e.length) errori.push(...e.map((x) => `${csvLetti[0].nome}: ${x}`));
+          else setCsv({ nome: csvLetti[0].nome, movimenti: m, daContabilizzare });
+        }
+        setCaricamento(errori.length ? { righe, errori, inCorso: false } : null);
+        return;
+      }
+
       const daMandare = [];
       for (const l of letti) {
-        const { conti, errori: e } = leggiFlussoCbi(l.testo);
+        const { conti: c, errori: e } = leggiFlussoCbi(l.testo);
         if (e.length) errori.push(...e.map((x) => `${l.nome}: ${x}`));
-        else for (const c of conti) daMandare.push({ nome: l.nome, conto: c });
+        else for (const x of c) daMandare.push({ nome: l.nome, conto: x });
+      }
+      // I doppioni col CSV: gli stessi giorni dello stesso conto già caricati
+      // da lì. ⚠️ Conti e movimenti si rileggono ADESSO, non si usano quelli
+      // dell'apertura: possono essere cambiati, o non essere ancora arrivati.
+      if (!errori.length && daMandare.length) {
+        let ora;
+        try {
+          ora = await Promise.all([listContiBancari(), listMovimentiBanca()]);
+        } catch (e) {
+          errori.push(`Non riesco a leggere i conti o i movimenti già caricati (${e.message}), quindi non posso controllare i doppioni col CSV. Riprova.`);
+        }
+        if (ora) {
+          const [contiOra, movimentiOra] = ora;
+          for (const { nome, conto } of daMandare) {
+            const nostro = contiOra.find((c) => c.iban && ibanPulito(c.iban) === ibanPulito(conto.iban));
+            if (!nostro) continue; // il database dirà che il conto non c'è
+            const s = sovrapposizioni(conto.movimenti, "cbi", nostro.id, movimentiOra);
+            if (s) errori.push(testoSovrapposizione(nome, nostro, s));
+          }
+        }
       }
       // ⚠️ Un file storto ferma tutto il caricamento, anche gli altri: chi
       // ne carica tre e vede «caricato» non va a guardare quale mancava.
@@ -101,6 +178,21 @@ export default function MovimentiBanca() {
     setCaricamento({ righe, errori, inCorso: false });
   };
 
+  // ⚠️ Mentre il CSV parte, la casella del file è spenta (`inviando`): un
+  // secondo file scelto a metà farebbe sparire il modulo del primo.
+  const caricaCsv = async (iban, daMandare) => {
+    setInviando(true);
+    try {
+      const nome = csv.nome;
+      const r = await caricaMovimentiBanca(iban, nome, daMandare);
+      setCsv(null);
+      setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false });
+      await ricarica().catch((e) => setErrore(e.message));
+    } finally {
+      setInviando(false);
+    }
+  };
+
   const visibili = (movimenti ?? []).filter((m) => statoDi(m) === stato);
   const conteggi = Object.fromEntries(
     STATI.map(([k]) => [k, (movimenti ?? []).filter((m) => statoDi(m) === k).length]),
@@ -110,32 +202,42 @@ export default function MovimentiBanca() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Cassa
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">Movimenti della banca</h1>
 
-      <label className="block bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+      <label className="block bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
         <span className="block testo-sala-grande text-b58-charcoal mb-2">
-          Carica l&apos;estratto conto (il file della banca, anche dentro lo zip)
+          Carica l&apos;estratto conto (il file CBI della banca, anche dentro lo zip, oppure il CSV dei movimenti)
         </span>
         <input
           type="file"
           multiple
-          accept=".txt,.zip,.cbi,text/plain,application/zip"
-          disabled={caricamento?.inCorso}
+          accept=".txt,.zip,.cbi,.csv,text/plain,text/csv,application/zip"
+          disabled={caricamento?.inCorso || inviando}
           onChange={(e) => {
             const files = [...e.target.files];
             e.target.value = "";
             if (files.length) carica(files);
           }}
-          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
+          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-sul-colore hover:file:bg-b58-azione-dark"
         />
       </label>
 
+      {csv && (
+        <CaricaCsvBanca
+          file={csv}
+          conti={conti}
+          leggiEsistenti={listMovimentiBanca}
+          onCarica={caricaCsv}
+          onAnnulla={() => setCsv(null)}
+        />
+      )}
+
       {caricamento && (
-        <div className="mb-4 testo-sala-grande">
+        <div role="status" className="mb-4 testo-sala-grande">
           {caricamento.inCorso && <p className="text-b58-charcoal-soft">Sto leggendo il file…</p>}
           {caricamento.righe.map((r) => (
             <p key={r.nome} className="text-b58-charcoal">
@@ -144,11 +246,11 @@ export default function MovimentiBanca() {
             </p>
           ))}
           {caricamento.errori.length > 0 && (
-            <div className="text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            <div role="alert" className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
               <p className="font-medium">Non ho caricato niente:</p>
               <ul className="list-disc pl-5">
-                {caricamento.errori.map((e) => (
-                  <li key={e}>{e}</li>
+                {caricamento.errori.map((e, i) => (
+                  <li key={i}>{e}</li>
                 ))}
               </ul>
             </div>
@@ -157,7 +259,7 @@ export default function MovimentiBanca() {
       )}
 
       {errore && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {errore}
         </p>
       )}
@@ -169,7 +271,7 @@ export default function MovimentiBanca() {
             type="button"
             onClick={() => setStato(k)}
             className={`tocco-bottone rounded-full px-3 py-1 testo-sala ${
-              stato === k ? "bg-b58-charcoal text-b58-parchment" : "bg-white border border-b58-charcoal/15 text-b58-charcoal"
+              stato === k ? "bg-b58-inverso text-b58-sul-colore" : "bg-b58-campo border border-b58-charcoal/15 text-b58-charcoal"
             }`}
           >
             {nome} ({conteggi[k]})
@@ -248,7 +350,7 @@ function RigaMovimento({ m, aperto, apri, fatto }) {
           )}
         </span>
         <span
-          className={`shrink-0 testo-sala-grande font-medium ${importo < 0 ? "text-b58-charcoal" : "text-b58-olive-dark"}`}
+          className={`shrink-0 testo-sala-grande font-medium ${importo < 0 ? "text-b58-charcoal" : "text-b58-olive-dark-testo"}`}
         >
           {importo > 0 ? "+" : ""}
           {formatEUR(importo)}
@@ -278,7 +380,7 @@ function RigaMovimento({ m, aperto, apri, fatto }) {
             </p>
           )}
           {errore && (
-            <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
+            <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
               {errore}
             </p>
           )}
@@ -312,7 +414,7 @@ function Abbina({ m, occupato, esegui }) {
       <div>
         <h3 className="testo-sala font-medium text-b58-charcoal mb-1">Cosa potrebbe essere</h3>
         {erroreProposte ? (
-          <p className="testo-sala text-b58-terracotta-dark">{erroreProposte}</p>
+          <p className="testo-sala text-b58-terracotta-dark-testo">{erroreProposte}</p>
         ) : proposte === null ? (
           <p className="testo-sala text-b58-charcoal-soft">Cerco…</p>
         ) : proposte.length === 0 ? (
@@ -324,7 +426,7 @@ function Abbina({ m, occupato, esegui }) {
             {proposte.map((p) => (
               <li
                 key={`${p.genere}-${p.rif_id}`}
-                className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-lg px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 bg-b58-campo rounded-lg px-3 py-2"
               >
                 <span className="testo-sala text-b58-charcoal min-w-0">
                   {p.titolo}

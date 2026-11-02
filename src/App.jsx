@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Caricamento from "./components/Caricamento";
 import PezzoMancante from "./components/PezzoMancante";
+import FasciaCasa from "./components/FasciaCasa";
 import SegnaleDatabase from "./components/SegnaleDatabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -110,6 +111,11 @@ const BevandeVini = lazy(() => import("./pages/menu-editor/BevandeVini"));
 const PiattiDelGiorno = lazy(() => import("./pages/menu-editor/PiattiDelGiorno"));
 const AgricoloHome = lazy(() => import("./pages/agricolo/AgricoloHome"));
 const Cessioni = lazy(() => import("./pages/agricolo/Cessioni"));
+// Arrivate dopo il 27/10: anche loro si scaricano quando si aprono.
+const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
+const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
+const CodaCasa = lazy(() => import("./pages/casa/CodaCasa"));
+const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -171,6 +177,16 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        {/* Le impostazioni di questo apparecchio: per tutti, perché i tablet
+            della sala li usa lo staff (29/10/2026). */}
+        <Route
+          path="/impostazioni"
+          element={
+            <Suspense fallback={<Caricamento />}>
+              <Impostazioni />
+            </Suspense>
+          }
+        />
 
         {/* Ricettario */}
         <Route path="/ricettario" element={<RicettarioHome />} />
@@ -190,6 +206,7 @@ function AppRoutes() {
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
+        <Route path="/casa/coda" element={<RequireTitolare><CodaCasa /></RequireTitolare>} />
         {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
             sopra: per ora l'assistente lo usa solo Alessio. */}
         <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
@@ -223,6 +240,17 @@ function AppRoutes() {
         {/* Agenda (condivisa titolare/staff) */}
         <Route path="/agenda" element={<AgendaList />} />
         <Route path="/agenda/nuovo" element={<TaskForm />} />
+        {/* Le chiavi dei promemoria per luogo: solo del titolare (28/10/2026) */}
+        <Route
+          path="/agenda/luoghi"
+          element={
+            <RequireTitolare>
+              <Suspense fallback={<Caricamento />}>
+                <PromemoriaLuogo />
+              </Suspense>
+            </RequireTitolare>
+          }
+        />
         {/* Adempimenti societari: riservati al titolare (§3.5/§3.18) */}
         <Route
           path="/agenda/adempimenti"
@@ -293,7 +321,7 @@ function AppRoutes() {
 
         {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
         <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />
-        <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><ImportaFatturaElettronica /></RequireTitolare>} />
+        <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><Suspense fallback={<Caricamento />}><ImportaFatturaElettronica /></Suspense></RequireTitolare>} />
 
         {/* Cassa, Banca e Prima Nota (solo titolare — §3.5) */}
         <Route path="/cassa" element={<RequireTitolare><CassaHome /></RequireTitolare>} />
@@ -301,7 +329,7 @@ function AppRoutes() {
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
-        <Route path="/cassa/banca" element={<RequireTitolare><MovimentiBanca /></RequireTitolare>} />
+        <Route path="/cassa/banca" element={<RequireTitolare><Suspense fallback={<Caricamento />}><MovimentiBanca /></Suspense></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
@@ -328,6 +356,18 @@ function AppRoutes() {
         <Route path="/comande/bar" element={<Bar />} />
         <Route path="/comande/cucina" element={<Cucina />} />
         <Route path="/comande/scontrini" element={<Scontrini />} />
+        {/* Le stampanti e il registratore: indirizzi e prove, solo del
+            titolare (28/10/2026). */}
+        <Route
+          path="/comande/stampanti"
+          element={
+            <RequireTitolare>
+              <Suspense fallback={<Caricamento />}>
+                <Stampanti />
+              </Suspense>
+            </RequireTitolare>
+          }
+        />
         {/* Il vecchio indirizzo resta come reindirizzo: qualche tablet
             potrebbe averlo ancora nei preferiti. */}
         <Route path="/comande/reparti" element={<Navigate to="/comande/cucina" replace />} />
@@ -385,6 +425,7 @@ function App() {
         {/* Sopra le rotte, non dentro il Layout: vale anche sulle Comande
             e sulla pagina pubblica, che il Layout non lo usano. */}
         <SegnaleDatabase />
+        <FasciaCasa />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

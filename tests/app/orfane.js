@@ -38,6 +38,14 @@ export const ORFANE_SEMPRE = {
   registra_dettatura_da_chiave: "chiamata da ascolta-voce (la Scorciatoia)",
   registra_lettura_foto: "chiamata da leggi-foto",
   voce_apri_sessione: "chiamata da ascolta-voce",
+  luogo_promemoria: "chiamata da promemoria-luogo (l'automazione «quando arrivo a…» dell'iPhone)",
+  // ⚠️ DEBITO (31/10/2026): la vecchia porta della pagina Cucina. Da oggi
+  //    Cucina e Bar chiamano `stato_stampa(reparto)` (20261031000001); questa
+  //    resta per il gestionale già pubblicato finché non arriva quello nuovo.
+  //    Fra le SEMPRE e non fra le PIANIFICATE: la funzione esiste già dalla
+  //    20261029000001, e diventa orfana col codice, non con la migrazione.
+  //    Si toglie con una migrazione dopo il rilascio in produzione.
+  stato_stampa_cucina: "DEBITO: porta del gestionale pubblicato prima del 31/10; Cucina e Bar usano stato_stampa(reparto)",
 
   // Sono RETI: esistono per essere interrogate da una prova, non da una
   // schermata. Una porta a schermo non avrebbe senso.
@@ -152,6 +160,21 @@ export const ORFANE_PIANIFICATE = {
   registra_lettura_ricetta: {
     versione: "20261010000003",
     perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
+  },
+  // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
+  //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
+  //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
+  //    `src/lib/calcoli/vocabolari.js` (le sue tre guardie sono fra le
+  //    GUARDIE_ESENTI), e per questa rete un nome in `src/` è una porta. È
+  //    il limite dichiarato in cima a `funzioni-senza-schermata.test.js`:
+  //    la sua porta vera resta il ponte.
+  ponte_battito: {
+    versione: "20261028000005",
+    perche: "chiamata dal ponte del mini-PC: «ci sono», e riceve gli apparecchi",
+  },
+  ponte_prendi_lavori: {
+    versione: "20261028000005",
+    perche: "chiamata dal ponte del mini-PC: prende i lavori di stampa in coda",
   },
 };
 

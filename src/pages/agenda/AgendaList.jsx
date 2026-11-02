@@ -33,7 +33,7 @@ import Didascalia from "../../components/Didascalia";
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
   media: "bg-b58-gold",
-  bassa: "bg-b58-charcoal-soft/50",
+  bassa: "bg-b58-inverso-soft/50",
 };
 
 
@@ -97,11 +97,11 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
       <div className="flex items-center justify-between mb-4">
         {/* Il nome delle frecce (11/09/2026): senza, per la lettura dello
             schermo erano «←» e «→». Stessi nomi della Settimana. */}
-        <button onClick={onPrev} aria-label="Mese precedente" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
+        <button onClick={onPrev} aria-label="Mese precedente" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-testo px-2">←</button>
         <h3 className="font-display testo-sala-grande text-b58-charcoal">
           {MONTH_NAMES[month - 1]} {year}
         </h3>
-        <button onClick={onNext} aria-label="Mese successivo" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
+        <button onClick={onNext} aria-label="Mese successivo" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-testo px-2">→</button>
       </div>
 
       {loading ? (
@@ -123,7 +123,7 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
                 onClick={() => onSelectDay(isSelected ? null : dateISO)}
                 className={`tocco-bottone aspect-square rounded-lg flex flex-col items-center justify-center testo-sala relative ${
                   isSelected
-                    ? "bg-b58-azione text-b58-parchment"
+                    ? "bg-b58-azione text-b58-sul-colore"
                     : isToday
                       ? "bg-b58-olive/15 text-b58-charcoal font-medium"
                       : "text-b58-charcoal hover:bg-b58-cream-dark"
@@ -202,7 +202,7 @@ function Stella({ accesa, onStella }) {
       style={{ minWidth: "calc(var(--pxcm) * 0.65)" }}
       title={accesa ? "Togli dalla testa" : "Portalo in testa"}
     >
-      <span data-stella className={accesa ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>
+      <span data-stella className={accesa ? "text-b58-gold-testo" : "text-b58-charcoal-soft/30"}>
         ★
       </span>
     </button>
@@ -214,8 +214,11 @@ function CasellaRimanda({ giorno, onGiorno }) {
     <input
       type="date"
       defaultValue={giorno ?? ""}
-      onChange={(e) => onGiorno(e.target.value)}
-      className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+      // ⚠️ Solo un anno intero (notte del 28/10, dalla revisione): al
+      //    computer, scrivendo l'anno a mano, la data e' gia' «valida» alla
+      //    prima cifra (0002) e l'impegno finiva rimandato di duemila anni.
+      onChange={(e) => Number(e.target.value.slice(0, 4)) >= 2000 && onGiorno(e.target.value)}
+      className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-b58-campo px-2 py-1 testo-sala text-b58-charcoal"
     />
   );
 }
@@ -264,7 +267,7 @@ function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, on
           type="button"
           data-gesto
           onClick={onRimanda}
-          className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+          className="tocco-testo testo-sala font-medium text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
         >
           {t.due_date ? "rimanda" : "dagli una data"}
         </button>
@@ -421,7 +424,13 @@ export default function AgendaList() {
     });
     if (!ok) return; // `togliSubito` l'ha già rimessa al suo posto e l'ha detto
     if (esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
-    await ricarica();
+    // ⚠️ Fatto e' fatto; se la rilettura fallisce si dice (notte del 28/10):
+    //    prima restava un errore non gestito e l'elenco vecchio.
+    try {
+      await ricarica();
+    } catch (e) {
+      setError(`Fatto, ma non riesco a rileggere l'elenco: ${e.message}`);
+    }
   };
 
   const sposta = async (task, data) => {
@@ -471,7 +480,7 @@ export default function AgendaList() {
               entra mai: un numero fermo su venti smette di essere
               un'informazione e si impara a ignorarlo. */}
           {quanti > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-b58-azione text-b58-parchment testo-sala font-medium px-2 py-0.5 align-middle">
+            <span data-contatore className="ml-2 inline-flex items-center rounded-full bg-b58-azione text-b58-sul-colore testo-sala font-medium px-2 py-0.5 align-middle">
               {quanti}
             </span>
           )}
@@ -488,9 +497,17 @@ export default function AgendaList() {
               Scadenze da stampare
             </Link>
           )}
+          {isTitolare && (
+            <Link
+              to="/agenda/luoghi"
+              className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+            >
+              Quando arrivo…
+            </Link>
+          )}
           <Link
             to="/agenda/nuovo"
-            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4  testo-sala"
           >
             + Nuovo task
           </Link>
@@ -498,7 +515,7 @@ export default function AgendaList() {
       </div>
 
       {notice && (
-        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+        <p className="testo-sala text-b58-olive-dark-testo bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
 
       {/* 🔴 LISTA · SETTIMANA · MESE — 11/09/2026, mandato notturno: «un
@@ -520,7 +537,7 @@ export default function AgendaList() {
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
-                ? "bg-b58-azione text-b58-parchment border-b58-terracotta"
+                ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >
@@ -539,7 +556,7 @@ export default function AgendaList() {
         </Didascalia>
       </div>
 
-      {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {view === "lista" ? (
         loading ? (
@@ -586,7 +603,7 @@ export default function AgendaList() {
                   >
                     <h2
                       className={`font-display testo-sala-grande ${
-                        c.allarme ? "text-b58-terracotta-dark" : "text-b58-charcoal"
+                        c.allarme ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"
                       }`}
                     >
                       {/* 🔴 LA STELLA STA NEL TITOLO — 30/08. Alessio, sulla
@@ -595,7 +612,7 @@ export default function AgendaList() {
                           scrive: si mette lo stesso segno nel titolo della
                           sezione che quel segno produce, e la spiegazione
                           diventa superflua. */}
-                      {c.key === "per_me_conta" && <span className="text-b58-gold">★ </span>}
+                      {c.key === "per_me_conta" && <span className="text-b58-gold-testo">★ </span>}
                       {c.titolo}
                     </h2>
                     <span className="testo-sala text-b58-charcoal-soft">({righe.length})</span>
@@ -727,7 +744,7 @@ export default function AgendaList() {
           <button
             type="button"
             onClick={() => setMostraFatti((m) => !m)}
-            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
           >
             {mostraFatti ? "▾" : "▸"} Fatti di recente ({fatti.length})
           </button>
@@ -749,7 +766,7 @@ export default function AgendaList() {
                   <button
                     type="button"
                     onClick={() => riapri(f)}
-                    className="tocco-bottone shrink-0 testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                    className="tocco-bottone shrink-0 testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                   >
                     rimetti da fare
                   </button>

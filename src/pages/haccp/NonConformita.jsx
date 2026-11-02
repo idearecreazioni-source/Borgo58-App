@@ -15,6 +15,7 @@ import ArchivioMensile from "../../components/ArchivioMensile";
 import { NOMI_MESI } from "../../lib/nomiMesi";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import GiornataDiServizio from "../../components/GiornataDiServizio";
+import DatoNonLetto from "../../components/DatoNonLetto";
 
 // Le non conformità: le APERTE in evidenza, le risolte in archivio.
 //
@@ -57,7 +58,10 @@ export default function NonConformita() {
 
   const load = useCallback(
     () =>
-      Promise.all([listNonConformities(), leggi(nonConformitaMesiConDati())]).then(([nc, ms]) => {
+      // ⚠️ Anche l'elenco col segno «non letto» (notte del 28/10): senza, una
+      //    lettura fallita scriveva «Nessuna non conformità aperta» sotto
+      //    l'errore — la frase che un controllo leggerebbe come «tutto a posto».
+      Promise.all([leggi(listNonConformities()), leggi(nonConformitaMesiConDati())]).then(([nc, ms]) => {
         setItems(nc);
         setMesi(nonLetto(ms) ? [] : ms);
       }),
@@ -80,10 +84,10 @@ export default function NonConformita() {
     [ricarica]
   );
 
-  const open = useMemo(() => items.filter((i) => !i.resolved), [items]);
+  const open = useMemo(() => (nonLetto(items) ? null : items.filter((i) => !i.resolved)), [items]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.description.trim()) return;
@@ -131,13 +135,13 @@ export default function NonConformita() {
 
   return (
     <div className="testo-sala max-w-3xl mx-auto pb-16">
-      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← HACCP
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Non conformità</h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -145,7 +149,7 @@ export default function NonConformita() {
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Aperte</h2>
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
             <select
               value={form.category}
@@ -174,22 +178,24 @@ export default function NonConformita() {
               type="button"
               disabled={adding || !form.description.trim()}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60 shrink-0"
             >
               {adding ? "Segnalo…" : "+ Segnala"}
             </button>
           </div>
         </div>
 
-        {open.length === 0 ? (
+        {open === null ? (
+          <DatoNonLetto cosa="le non conformità aperte" onRiprova={load} />
+        ) : open.length === 0 ? (
           <p className="testo-sala text-b58-charcoal-soft/60">Nessuna non conformità aperta.</p>
         ) : (
           <ul className="space-y-2">
             {open.map((item) => (
-              <li key={item.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+              <li key={item.id} className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
-                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 mr-1.5">
+                    <span className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-full px-2 py-0.5 mr-1.5">
                       {labelFor(NC_CATEGORIES, item.category)}
                     </span>
                     <span className="testo-sala text-b58-charcoal">{item.description}</span>
@@ -202,7 +208,7 @@ export default function NonConformita() {
                         setResolvingId((id) => (id === item.id ? null : item.id));
                         setCorrectiveAction("");
                       }}
-                      className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                      className="tocco-bottone testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo shrink-0"
                     >
                       {resolvingId === item.id ? "Annulla" : "Risolvi"}
                     </button>
@@ -233,7 +239,9 @@ export default function NonConformita() {
                       type="button"
                       disabled={resolving || !correctiveAction.trim()}
                       onClick={() => handleResolve(item.id)}
-                      className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                      // ⚠️ `self-start`: allineato al campo, non alla riga
+                      //    d'aiuto che gli sta sotto (notte del 28/10).
+                      className="tocco-bottone come-campo self-start rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                     >
                       {resolving ? "Confermo…" : "Conferma risoluzione"}
                     </button>
@@ -248,7 +256,7 @@ export default function NonConformita() {
       {/* ---------------------------------------------------------------
           L'ARCHIVIO: quello che è successo, e cosa è stato fatto
           --------------------------------------------------------------- */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6">
+      <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
         <ArchivioMensile
           mesi={mesi}
@@ -333,7 +341,7 @@ function ArchivioNC({ righe, mese, isTitolare, onRiapri }) {
 
       {ripetuti.length > 0 && (
         <div className="rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-3 mb-4">
-          <p className="testo-sala text-b58-terracotta-dark font-medium mb-1">
+          <p className="testo-sala text-b58-terracotta-dark-testo font-medium mb-1">
             Stesso apparecchio più volte in un giorno
           </p>
           <p className="testo-sala text-b58-charcoal-soft mb-2">
@@ -369,11 +377,11 @@ function ArchivioNC({ righe, mese, isTitolare, onRiapri }) {
                         {r.rimedio ? (
                           <span className="text-b58-charcoal">{r.rimedio}</span>
                         ) : (
-                          <span className="text-b58-terracotta-dark">rimedio non scritto</span>
+                          <span className="text-b58-terracotta-dark-testo">rimedio non scritto</span>
                         )}
                       </>
                     ) : (
-                      <span className="text-b58-terracotta-dark font-medium">Ancora aperta</span>
+                      <span className="text-b58-terracotta-dark-testo font-medium">Ancora aperta</span>
                     )}
                     {r.nota ? ` · ${r.nota}` : ""}
                     {/* La via di ritorno di «Risolvi»: chiusa per sbaglio,

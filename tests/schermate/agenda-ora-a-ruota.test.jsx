@@ -180,6 +180,49 @@ describe("🔴 le ruote girano: dito, rotella, tastiera", () => {
     expect(scelto(ruotaMinuti())).toBe("30");
   });
 
+  // 🔴 28/10/2026, dal collaudo sull'iPhone: girando col dito l'ora non
+  //    cambiava finche' non si toccava la voce. Si finge la geometria (jsdom
+  //    non impagina): voci alte 40, la ruota alta 200, e la si ferma con la
+  //    voce «45» sotto la riga centrale.
+  it("🔴 girando col dito, la voce che si ferma al centro diventa la scelta", async () => {
+    await apriSu("09:30:00");
+    const ruota = ruotaMinuti();
+    [...ruota.querySelectorAll('[role="option"]')].forEach((v, i) => {
+      Object.defineProperty(v, "offsetTop", { configurable: true, value: 80 + i * 40 });
+      Object.defineProperty(v, "offsetHeight", { configurable: true, value: 40 });
+    });
+    Object.defineProperty(ruota, "clientHeight", { configurable: true, value: 200 });
+    const i45 = voci(ruota).indexOf("45");
+    ruota.scrollTop = 80 + i45 * 40 + 20 - 100;
+
+    // ⚠️ Uno scorrimento che non viene da un gesto (il gestionale che porta
+    //    al centro l'ora proposta aprendo il riquadro) non sceglie niente:
+    //    misurato in Chrome, senza questa regola le 09 diventavano 00.
+    await act(async () => {
+      ruota.dispatchEvent(new window.Event("scroll"));
+    });
+    await new Promise((r) => setTimeout(r, 200));
+    expect(scelto(ruotaMinuti())).toBe("30");
+
+    await act(async () => {
+      ruota.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+      ruota.dispatchEvent(new window.Event("scroll"));
+    });
+    // ⚠️ Col dito ancora giu', anche fermo, non si sceglie (revisione ECC).
+    await new Promise((r) => setTimeout(r, 200));
+    expect(scelto(ruota)).toBe("30");
+    await act(async () => {
+      ruota.dispatchEvent(new window.Event("pointerup", { bubbles: true }));
+    });
+    // Appena alzato il dito non si sceglie ancora: si aspetta che si fermi.
+    expect(scelto(ruota)).toBe("30");
+    await waitFor(() => expect(scelto(ruotaMinuti())).toBe("45"));
+    // e resta una bozza finche' non si conferma
+    expect(oraScritta()).toBe("09:30");
+    await tocca(pannello().querySelector("[data-conferma-ora]"));
+    expect(oraScritta()).toBe("09:45");
+  });
+
   it("⚠️ Inizio e Fine portano ai due capi", async () => {
     await apriSu("09:30:00");
     await tasto(ruotaMinuti(), "End");

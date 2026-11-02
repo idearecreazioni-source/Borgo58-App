@@ -1,4 +1,4 @@
-import { formatDate } from "../constants";
+import { TASK_LUOGHI, formatDate, labelFor } from "../constants";
 
 // COME SI LEGGE L'AGENDA — 30/08/2026, Blocco 3 del mandato.
 //
@@ -26,23 +26,30 @@ import { formatDate } from "../constants";
  * non si è guardato — la stessa ragione per cui una selezione di finger non
  * compare più fra i piatti.
  *
- * ⚠️ «In ritardo» e «Più avanti» si CHIUDONO, le altre no. Il criterio non
- * è la lunghezza: è che quelle due sono le uniche in cui *stare dentro
- * l'elenco non è una notizia*. Quattordici scadute non si leggono una per
- * una — si guarda il numero, e si apre quando si ha tempo. Quello che va
- * fatto adesso è già in cima, perché lui ci ha messo la stella.
+ * ⚠️ «Più avanti» si CHIUDE, le altre no: è l'unica in cui *stare dentro
+ * l'elenco non è una notizia*.
+ *
+ * 🔴 «IN RITARDO» TORNA, SEMPRE APERTA E SOPRA «OGGI» — 27/10/2026, sera.
+ * Alessio aveva chiesto di non lasciare gli scaduti in una sezione da
+ * aprire, dove se ne dimenticava; mescolati sotto «Oggi» con «scaduto il …»
+ * accanto a ogni titolo però «rende tutto confusionario». Una sezione a
+ * parte, mai chiusa, prima di «Oggi»: «così leggo prima cosa mi sono
+ * lasciato indietro».
+ * ⚠️ NON SI CHIUDE: la sezione chiusa di suo era proprio il posto dove uno
+ *    scaduto smetteva di farsi vedere.
+ * ⚠️ La scadenza nel database non si sposta: resta la data vera.
  */
 export const SEZIONI = [
   {
     key: "per_me_conta",
     titolo: "Per me conta",
     // Non si chiude: è la ragione per cui esiste la stella.
-    // ⚠️ E sparisce quando è vuota, come «in ritardo»: un titoletto vuoto
+    // ⚠️ E sparisce quando è vuota: un titoletto vuoto
     // in cima ogni giorno è rumore che si impara a saltare.
     nascondiSeVuota: true,
     forte: true,
   },
-  { key: "in_ritardo", titolo: "In ritardo", nascondiSeVuota: true, chiudibile: true, chiusaDiSuo: true, allarme: true },
+  { key: "in_ritardo", titolo: "In ritardo", nascondiSeVuota: true, allarme: true },
   { key: "questa_settimana", titolo: "Questa settimana", perGiorno: true },
   { key: "piu_avanti", titolo: "Più avanti", chiudibile: true, chiusaDiSuo: true, perMese: true },
   { key: "quando_capita", titolo: "Quando capita" },
@@ -146,6 +153,8 @@ export function campiImpegno(t) {
     ...(!t.due_date && t.giorni_in_lista > 13
       ? [{ chiave: "eta", etichetta: "In lista da", valore: anzianita(t.giorni_in_lista) }]
       : []),
+    // 28/10/2026: un promemoria per luogo dice dove te lo ricorderò.
+    ...(t.luogo ? [{ chiave: "luogo", etichetta: "Quando arrivo", valore: labelFor(TASK_LUOGHI, t.luogo) }] : []),
   ];
 }
 

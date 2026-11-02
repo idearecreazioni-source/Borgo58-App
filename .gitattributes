@@ -54,3 +54,9 @@
 # torna a voler dire una differenza di codice.
 supabase/functions/** text eol=lf
 
+
+# I file .cmd di Windows vanno con fine riga di Windows — 29/10/2026
+# ⚠️ Con fine riga di Linux cmd.exe può saltare righe o etichette: sono i
+# file che Alessio apre con un doppio clic sul portatile del collaudo
+# (`ponte/portatile/`).
+*.cmd text eol=crlf

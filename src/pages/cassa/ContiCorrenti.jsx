@@ -43,7 +43,7 @@ export default function ContiCorrenti() {
   }, []);
 
   const campo =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const azione = async (fn) => {
     setErrore("");
@@ -74,7 +74,7 @@ export default function ContiCorrenti() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
       >
         ← Cassa
       </Link>
@@ -87,7 +87,7 @@ export default function ContiCorrenti() {
       </h1>
 
       {errore && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {errore}
         </p>
       )}
@@ -105,7 +105,7 @@ export default function ContiCorrenti() {
         </p>
       )}
 
-      <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
+      <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 mb-6 flex flex-wrap gap-2 items-end">
         <input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
@@ -131,7 +131,7 @@ export default function ContiCorrenti() {
           type="button"
           disabled={salvando || !nome.trim() || !entityId}
           onClick={aggiungi}
-          className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>
@@ -150,7 +150,7 @@ export default function ContiCorrenti() {
                 <div className="min-w-0">
                   <span className="testo-sala-grande text-b58-charcoal font-medium">{c.nome}</span>
                   {c.predefinito && (
-                    <span className="ml-2 testo-sala text-b58-terracotta-dark">· quello di sempre</span>
+                    <span className="ml-2 testo-sala text-b58-terracotta-dark-testo">· quello di sempre</span>
                   )}
                   {c.iban && (
                     <span className="block testo-sala text-b58-charcoal-soft break-all">{c.iban}</span>
@@ -169,7 +169,7 @@ export default function ContiCorrenti() {
                     <button
                       type="button"
                       onClick={() => azione(() => setContoPredefinito(c.id))}
-                      className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal"
+                      className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal"
                     >
                       Usa questo di solito
                     </button>
@@ -177,7 +177,7 @@ export default function ContiCorrenti() {
                   <button
                     type="button"
                     onClick={() => azione(() => setContoAttivo(c.id, false))}
-                    className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal-soft"
+                    className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal-soft"
                   >
                     Spegni
                   </button>
@@ -214,7 +214,7 @@ export default function ContiCorrenti() {
                     <button
                       type="button"
                       onClick={() => azione(() => setContoAttivo(c.id, true))}
-                      className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal"
+                      className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala px-3 py-1.5 text-b58-charcoal"
                     >
                       Riaccendi
                     </button>

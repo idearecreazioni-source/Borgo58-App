@@ -55,12 +55,21 @@ const CARTELLA = path.join(process.cwd(), "dist", "assets");
  *     pulsante «Segnala» presente in ogni schermata, piu' la pagina
  *     /segnalazioni). Il pulsante sta nel Layout, quindi non si puo'
  *     caricare dopo. La strada pubblica non cambia (tetto 160 invariato).
+ *   · 28/10/2026 — gestionale 440 → 450: misurato da questo comando,
+ *     439,99 su slave dopo i promemoria per luogo (#258), 439,31 con la
+ *     pagina «Quando arrivo…» caricata a parte (#260), 441,24 con le
+ *     correzioni della notte del 28/10 (+1,93 kB: errori che ora si dicono
+ *     invece di tacere, conferme prima di cancellare, l'avviso «non riesco
+ *     a verificare il tuo accesso»). Provato a caricare a parte anche le due
+ *     pagine da stampa (manuale HACCP, scadenze): 440,01, perche' i pezzi
+ *     condivisi restano nel conto — non vale la complicazione. La strada
+ *     pubblica non cambia (tetto 160 invariato).
  */
 const TETTI_KB_COMPRESSI = {
   // Quello che scarica un cliente per strada. E' il numero che conta di piu'.
   pubblico: 160,
   // Quello che scarica chi apre il gestionale.
-  gestionale: 440,
+  gestionale: 450,
 };
 
 const MANIFESTO = path.join(process.cwd(), "dist", ".vite", "manifest.json");

@@ -21,6 +21,11 @@ export default function SimulatoreFiscale() {
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [settings, setSettings] = useState(VUOTE);
+  // 🔴 SI SALVA SOLO CIO' CHE SI E' LETTO (notte del 28/10, dalla revisione):
+  //    se la lettura del soggetto falliva, nel modulo restavano i parametri
+  //    dell'altro soggetto (o quelli di partenza), e «Salva» li scriveva sul
+  //    soggetto sbagliato — aliquote fiscali vere sovrascritte senza saperlo.
+  const [impostazioniLette, setImpostazioniLette] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
@@ -51,8 +56,10 @@ export default function SimulatoreFiscale() {
   useEffect(() => {
     if (!entityId) return;
     setLoading(true);
+    setImpostazioniLette(false);
     getFiscalSettings(entityId)
       .then((s) => {
+        setImpostazioniLette(true);
         setSettings(s ? { ...VUOTE, ...s, annual_revenue_estimate: s.annual_revenue_estimate ?? "",
                           parametri_confermati_da_laura: s.parametri_confermati_da_laura ?? "" } : VUOTE);
       })
@@ -72,7 +79,7 @@ export default function SimulatoreFiscale() {
   }, [entityId, estimatedProfit, costoLavoro, savedMsg]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSaveSettings = async () => {
@@ -111,14 +118,14 @@ export default function SimulatoreFiscale() {
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Proiezione fiscale
         </Link>
         {entities && (
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -127,14 +134,14 @@ export default function SimulatoreFiscale() {
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Simulatore fiscale</h1>
-      <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+      <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
         Stima trasparente basata sugli importi che inserisci tu — non un dato certo estratto dalla contabilità.
         Serve a farsi un'idea degli ordini di grandezza. I numeri veri li determina la commercialista sulla contabilità
         reale.
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Impostazioni (persistite) */}
@@ -255,12 +262,18 @@ export default function SimulatoreFiscale() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSaveSettings}
-            disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            disabled={saving || !impostazioniLette}
+            title={impostazioniLette ? undefined : "Non ho letto i parametri di questo soggetto: ricarica la pagina prima di salvare."}
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Salvo…" : "Salva parametri"}
           </button>
-          {savedMsg && <span className="testo-sala text-b58-olive-dark">{savedMsg}</span>}
+          {!impostazioniLette && !loading && (
+            <span className="testo-sala text-b58-terracotta-dark-testo">
+              Non ho letto i parametri di questo soggetto: non li salvo.
+            </span>
+          )}
+          {savedMsg && <span className="testo-sala text-b58-olive-dark-testo">{savedMsg}</span>}
         </div>
       </div>
 
@@ -352,7 +365,7 @@ export default function SimulatoreFiscale() {
           </div>
           {/* La frase esce dal database insieme al numero: cosi' non
               possono separarsi, e ogni schermata dice la stessa cosa. */}
-          <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
+          <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1.5">
             {imposte.avvertenza}
           </p>
           <div className="flex justify-between text-b58-charcoal font-medium pt-1 border-t border-b58-charcoal/10">

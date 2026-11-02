@@ -162,7 +162,7 @@ export default function ScattaFoto({
           //       diversi fa cercare la differenza dove non c'e'.
           //    ⚠️ 1,5 cm veri (non 1,2) e testo da 6 mm: le due misure sono
           //       decise da lui e vivono in «index.css», non qui.
-          className="tocco-azione-grande testo-sala-lontano flex flex-1 items-center justify-center rounded-xl bg-b58-charcoal px-4 py-2 font-medium text-white transition-colors hover:bg-b58-charcoal-soft disabled:opacity-50 md:flex-none md:justify-start"
+          className="tocco-azione-grande testo-sala-lontano flex flex-1 items-center justify-center rounded-xl bg-b58-inverso px-4 py-2 font-medium text-white transition-colors hover:bg-b58-inverso-soft disabled:opacity-50 md:flex-none md:justify-start"
         >
           {inCorso ? "Sto leggendo la foto…" : foto ? "📷 Rifai la foto" : etichettaPulsante}
         </button>

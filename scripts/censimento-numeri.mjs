@@ -16,7 +16,7 @@
 // Una colonna numerica senza vincolo può essere legittima (un identificativo
 // progressivo, un conteggio), e una testuale con numeri dentro può essere
 // una nota libera. Prima di mettere un limite si guarda cosa contiene.
-import { leggiConfigurazione, REF_PRODUZIONE, strumento } from "./comune.mjs";
+import { leggiConfigurazione, REF_PRODUZIONE, soloProva, strumento } from "./comune.mjs";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -33,6 +33,8 @@ if (!vero && url.includes(REF_PRODUZIONE)) {
   console.error("FERMO: .env punta al database vero sulla riga della prova.");
   process.exit(1);
 }
+// Crea e toglie una tabella di lavoro: sulla riga della prova, solo Prova (31/10/2026).
+if (!vero) soloProva(url);
 
 // ⚠️ DA FILE, MAI COME ARGOMENTO: `psql -c "…"` fa passare il testo dalla
 // riga di comando, e lì gli accenti e le virgolette si rompono (§8, 18/08).

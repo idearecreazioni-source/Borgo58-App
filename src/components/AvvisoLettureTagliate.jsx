@@ -54,7 +54,7 @@ export default function AvvisoLettureTagliate() {
       <button
         type="button"
         onClick={dimenticaLettureTagliate}
-        className="tocco-bottone mt-1 testo-sala underline text-b58-terracotta-dark hover:text-b58-charcoal"
+        className="tocco-bottone mt-1 testo-sala underline text-b58-terracotta-dark-testo hover:text-b58-charcoal"
       >
         Ho visto, togli l&apos;avviso
       </button>

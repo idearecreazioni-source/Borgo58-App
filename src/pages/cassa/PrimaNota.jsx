@@ -9,6 +9,8 @@ import {
   spesoDallaTasca,
   listCausali,
 } from "../../lib/api/cash";
+import { idMovimentiDaCollocare } from "../../lib/api/speseDaCollocare";
+import { fraseMovimentoDaCollocare } from "../../lib/calcoli/daCollocare";
 import { getEntities } from "../../lib/api/entities";
 import {
   CASH_DOCUMENT_TYPES,
@@ -41,7 +43,10 @@ import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investi
 
 const today = oggiLocale;
 
-const emptyForm = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const emptyFormOggi = () => ({
   direction: "uscita",
   amount: "",
   movement_date: today(),
@@ -58,7 +63,7 @@ const emptyForm = {
   //    dalla causale o dalle parole della descrizione.
   e_investimento: false,
   note: "",
-};
+});
 
 // 🔴 ARRIVATO QUI DA UNA COSA DETTA A VOCE — è l'esempio di Alessio parola
 //    per parola: *«se ti dico segna trenta euro pagati al fornitore, mi
@@ -92,8 +97,11 @@ export default function PrimaNota() {
   const [causaliUscita, setCausaliUscita] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // L'errore della rimozione sta SULLA riga, non in cima alla pagina.
+  const [erroreRiga, setErroreRiga] = useState(null);
+  const [daCollocare, setDaCollocare] = useState(() => new Set());
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyFormOggi);
   const [saving, setSaving] = useState(false);
   // 🔴 IL PERIODO PARTE DAL MESE IN CORSO, e prima partiva VUOTO (19/08/2026).
   // Con i campi vuoti questa schermata chiedeva TUTTI i movimenti — e su
@@ -146,7 +154,11 @@ export default function PrimaNota() {
         setCausaliEntrata(cin);
         setCausaliUscita(cout);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -168,11 +180,16 @@ export default function PrimaNota() {
       entities?.tasca && entityId === entities.tasca.id
         ? spesoDallaTasca(from || null, to || null)
         : Promise.resolve(null),
-    ]).then(([mov, bal, conto]) => {
-      setMovements(mov);
-      setBalance(bal);
-      setContoTasca(conto);
-    });
+    ])
+      .then(([mov, bal, conto]) =>
+        idMovimentiDaCollocare((mov ?? []).map((m) => m.id)).then((nati) => [mov, bal, conto, nati]),
+      )
+      .then(([mov, bal, conto, nati]) => {
+        setDaCollocare(nati);
+        setMovements(mov);
+        setBalance(bal);
+        setContoTasca(conto);
+      });
   };
 
   useEffect(() => {
@@ -249,7 +266,7 @@ export default function PrimaNota() {
   const isForager = form.tipo_documento === "documento_raccoglitore_occasionale";
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // ⚠️ Passando a «entrata», l'etichetta si spegne: il database la rifiuta
@@ -278,7 +295,9 @@ export default function PrimaNota() {
         business_purpose: form.business_purpose || null,
         forager_tax_code: isForager ? form.forager_tax_code || null : null,
         harvest_region: isForager ? form.harvest_region || null : null,
-        is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
+        // ⚠️ Il versamento titolare conta solo nel saldo della cassa: su un
+        //    movimento di banca non ha effetto, quindi non parte mai acceso.
+        is_owner_injection: form.direction === "entrata" && form.mezzo === "cassa" ? form.is_owner_injection : false,
         // ⚠️ Mai un `true` su un'entrata, nemmeno se lo stato fosse rimasto
         //    acceso per una strada che non abbiamo previsto: il divieto vero
         //    e' nel database, questa riga evita solo di andarci a sbattere.
@@ -291,7 +310,7 @@ export default function PrimaNota() {
       //    fare, e la volta dopo lo stesso movimento entrava due volte.
       await createCashMovement(movimento, { azioneDettataId: chiudendo });
       if (chiudendo) venuto.segnaChiusa();
-      setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
+      setForm({ ...emptyFormOggi(), movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
       await reload();
     } catch (e) {
       setError(e.message);
@@ -301,11 +320,13 @@ export default function PrimaNota() {
   };
 
   const handleDelete = async (id) => {
+    setErroreRiga(null);
     try {
       await deleteCashMovement(id);
       await reload();
     } catch (e) {
-      setError(e.message);
+      const frase = fraseMovimentoDaCollocare(e);
+      setErroreRiga({ id, testo: frase ?? e.message, daCollocare: Boolean(frase) });
     }
   };
 
@@ -376,7 +397,7 @@ export default function PrimaNota() {
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa
         </Link>
         <div className="flex flex-wrap items-center gap-3">
@@ -417,7 +438,7 @@ export default function PrimaNota() {
           {!inTasca && balance && (
             <span className="testo-sala text-b58-charcoal-soft">
               Banca:{" "}
-              <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
+              <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.saldo_banca)}
               </span>
             </span>
@@ -455,7 +476,7 @@ export default function PrimaNota() {
                   }));
                 }
               }}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -468,14 +489,14 @@ export default function PrimaNota() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-6">Prima nota di cassa</h1>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Nuovo movimento */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Nuovo movimento</h2>
         <StriscaDallaVoce venuto={venuto} />
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
           {/* ⚠️ Sulla tasca il verso e' uno solo, e la schermata lo DICE invece
               di sembrare rotta: un pulsante che sparisce senza spiegazione si
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
@@ -544,7 +565,7 @@ export default function PrimaNota() {
             </button>
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, mezzo: "banca" }))}
+              onClick={() => setForm((f) => ({ ...f, mezzo: "banca", is_owner_injection: false }))}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.mezzo === "banca"
                   ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
@@ -634,7 +655,7 @@ export default function PrimaNota() {
           </div>
 
           {showSimplifiedInvoiceHint && (
-            <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
+            <p className="testo-sala text-b58-gold-dark-testo bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
               Scontrino sotto i {SIMPLIFIED_INVOICE_THRESHOLD}€: hai chiesto la fattura semplificata
               (dando P.IVA/codice fiscale) per poter recuperare l'IVA? Con il solo scontrino l'IVA non è detraibile.
             </p>
@@ -712,7 +733,7 @@ export default function PrimaNota() {
                 telefono la nota scende e prende la riga intera; da `sm` in
                 su resta larga 12 rem, come prima. */}
             <div data-riga-nota className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
-              {form.direction === "entrata" && (
+              {form.direction === "entrata" && form.mezzo === "cassa" && (
                 <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
                     type="checkbox"
@@ -765,7 +786,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>
@@ -823,17 +844,17 @@ export default function PrimaNota() {
             <dl data-totali-periodo className="flex flex-wrap gap-x-6 gap-y-1 testo-sala mb-3">
               <div data-totale="entrate">
                 <dt className="inline text-b58-charcoal-soft">Entrate </dt>
-                <dd className="inline text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</dd>
+                <dd className="inline text-b58-olive-dark-testo font-medium">+{formatEUR(periodTotals.inc)}</dd>
               </div>
               <div data-totale="uscite">
                 <dt className="inline text-b58-charcoal-soft">Uscite </dt>
-                <dd className="inline text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</dd>
+                <dd className="inline text-b58-terracotta-dark-testo font-medium">−{formatEUR(periodTotals.out)}</dd>
               </div>
               <div data-totale="saldo">
                 <dt className="inline text-b58-charcoal-soft">Saldo del periodo </dt>
                 <dd
                   className={`inline font-medium ${
-                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"
+                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-dark-testo"
                   }`}
                 >
                   {periodTotals.saldo < 0 ? "−" : "+"}
@@ -861,6 +882,7 @@ export default function PrimaNota() {
                 vista. Le schede restano fino a 1280. */}
             <ElencoAdattivo
               tabellaDa="xl"
+              schedeSeparate
               righe={movements}
               chiave={(m) => m.id}
               titolo={(m) => formatDate(m.movement_date)}
@@ -920,7 +942,7 @@ export default function PrimaNota() {
                   <span
                     data-prova="segno-investimento"
                     title="Investimento per il progetto"
-                    className="rounded-full bg-b58-gold/20 text-b58-gold-dark px-2 testo-sala"
+                    className="rounded-full bg-b58-gold/20 text-b58-gold-dark-testo px-2 testo-sala"
                   >
                     investimento
                   </span>
@@ -971,11 +993,33 @@ export default function PrimaNota() {
                       </Didascalia>
                     </p>
                   )}
-                  <ConfermaDistruttiva
-                    etichetta="Rimuovi"
-                    cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
-                    onConferma={() => handleDelete(m.id)}
-                  />
+                  {daCollocare.has(m.id) ? (
+                    <p data-prova="movimento-da-collocare" className="testo-sala text-b58-charcoal-soft">
+                      Viene da «Da collocare»: per toglierlo vai a{" "}
+                      <Link to="/cassa/da-collocare" className="tocco-inline underline">
+                        «Da collocare» → «Annulla la collocazione»
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <ConfermaDistruttiva
+                      etichetta="Rimuovi"
+                      cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
+                      onConferma={() => handleDelete(m.id)}
+                    />
+                  )}
+                  {erroreRiga?.id === m.id && (
+                    <p
+                      role="alert"
+                      data-prova="errore-riga"
+                      className="basis-full testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2"
+                    >
+                      {erroreRiga.testo}{" "}
+                      {erroreRiga.daCollocare && (
+                        <Link to="/cassa/da-collocare" className="tocco-inline underline">Vai a «Da collocare»</Link>
+                      )}
+                    </p>
+                  )}
                 </div>
               )}
             />

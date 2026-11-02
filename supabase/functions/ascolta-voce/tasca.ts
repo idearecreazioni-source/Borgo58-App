@@ -8,7 +8,7 @@
 //        Solo uscite, sempre «Indeducibile», fuori dalla proiezione
 //        fiscale, e **non torna indietro**: non c'è niente da pareggiare
 //        (decisione del 30/08, vincoli nel database).
-//      · **Anticipo io, poi mi rimborso** — una spesa fatta **per conto
+//      · **Anticipo da rimborsarmi** — una spesa fatta **per conto
 //        della società**, che la società gli pareggia (`anticipazioni_socio`).
 //
 // 🔴 QUALE DELLE DUE LO DECIDONO LE PAROLE, e quali parole lo ha deciso
@@ -233,12 +233,12 @@ export function destinazioneDellaSpesa(azione: AzioneDettata, dettato = ""): Azi
       return {
         ...azione,
         tipo: TIPO_DA_RIMBORSARE,
-        destinazione: "Anticipo io, poi mi rimborso",
+        destinazione: "Anticipo da rimborsarmi",
         sicuro: true,
         motivo:
           "Hai detto che questi soldi devono tornarti: allora non è la tua " +
           "tasca, è un anticipo che la società ti pareggia. Si registra in " +
-          "Cassa → «Anticipo io, poi mi rimborso», e da lì lo chiudi quando " +
+          "Cassa → «Anticipo da rimborsarmi», e da lì lo chiudi quando " +
           "ti sei rimborsato.",
       };
 
@@ -265,7 +265,7 @@ export function destinazioneDellaSpesa(azione: AzioneDettata, dettato = ""): Azi
             "Nella tua tasca entrano soldi solo se il progetto te li " +
             "restituisce, e quello è un pareggio: la tasca non lo fa. Se ti " +
             "sei ripreso dei soldi, quello è un anticipo — Cassa → «Anticipo " +
-            "io, poi mi rimborso».",
+            "da rimborsarmi».",
         };
       }
 

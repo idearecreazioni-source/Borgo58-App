@@ -67,12 +67,12 @@ export default function LegendaDellaSala() {
   const [aperta, setAperta] = useState(false);
 
   return (
-    <div className="print:hidden">
+    <div className="tema-chiaro print:hidden">
       <button
         type="button"
         onClick={() => setAperta((v) => !v)}
         aria-expanded={aperta}
-        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta"
+        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-testo"
       >
         {aperta ? "Nascondi cosa vogliono dire i colori" : "Cosa vogliono dire i colori?"}
       </button>

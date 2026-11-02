@@ -55,7 +55,7 @@ export default function Materiali() {
         <div>
           <Link
             to="/magazzino"
-            className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
           >
             ← Magazzino
           </Link>
@@ -69,7 +69,7 @@ export default function Materiali() {
         </div>
         <Link
           to="/ricettario/ingredienti/nuovo?materiale=1"
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
         >
           + Nuovo materiale
         </Link>
@@ -83,7 +83,7 @@ export default function Materiali() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca per nome…"
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[200px]"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[200px]"
         />
         <label className="tocco-bottone inline-flex items-center gap-2 testo-sala-grande text-b58-charcoal-soft">
           <input
@@ -97,7 +97,7 @@ export default function Materiali() {
       </div>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}

@@ -1,0 +1,6 @@
+{
+  "indirizzo": "https://<il-progetto>.supabase.co",
+  "chiavePubblica": "<la chiave pubblica (anon) del progetto: la stessa che usa il sito>",
+  "chiavePonte": "<la chiave creata in Comande → Stampanti → «Crea la chiave del ponte»>",
+  "simulatore": false
+}

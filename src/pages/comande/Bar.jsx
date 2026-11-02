@@ -15,6 +15,10 @@ import PrecontoModal from "./PrecontoModal";
 import Didascalia from "../../components/Didascalia";
 import Scorciatoia from "../../components/Scorciatoia";
 import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
+import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
+import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
+import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
+import { AvvisiDellaStampante, InCoda } from "./StampaInCoda";
 
 // Schermata BAR — tablet 11" in orizzontale, su supporto fisso (§3.2.1).
 //
@@ -26,7 +30,16 @@ import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
 //
 // Il ticket di carta esce comunque dalla stampante del bar: questo schermo
 // serve al colpo d'occhio e a segnare "evaso", non a sostituirlo.
+//
+// 🔴 DAL 31/10/2026 IL BAR SA SE IL SUO FOGLIO È USCITO (controllo finale
+// del 30/10, A3). Se in «Stampanti» c'è una stampante attiva per il bar,
+// sotto ogni ticket da preparare c'è lo stesso riquadro della Cucina (in
+// coda, uscito, non uscito, incerto) e in testa gli stessi avvisi rossi.
+// Prima un foglio che non usciva non lo vedeva nessuno.
+// ⚠️ Niente «Stampa da qui» e niente «È uscito»: al bar il ticket si legge
+//    da questo schermo, ed «Evaso» vuol dire preparato, non stampato.
 const POLL_MS = 10000;
+const POLL_CON_STAMPANTE_MS = 4000;
 
 export default function Bar() {
   const [tickets, setTickets] = useState([]);
@@ -35,6 +48,10 @@ export default function Bar() {
   const [order, setOrder] = useState(null);
   const [mode, setMode] = useState(null); // "precon" | "close"
   const [error, setError] = useState("");
+  const [coda, setCoda] = useState(null);
+  const [codaNonLetta, setCodaNonLetta] = useState(false);
+  const [mandando, setMandando] = useState(() => new Set());
+  const [erroreTasto, setErroreTasto] = useState("");
 
   // ⚠️ Quanti salvataggi sono in volo adesso. Finché è > 0 il ricarico
   // periodico NON applica quello che legge: il database non ha ancora
@@ -51,28 +68,91 @@ export default function Bar() {
     }
   };
 
-  const load = () =>
-    Promise.all([listRepartoTickets("bar"), listOpenOrders()])
-      .then(([t, o]) => {
+  // ⚠️ Le letture si numerano, come in Cucina: una partita prima di
+  // «Riprova» e tornata dopo riporterebbe il ticket a «non uscito».
+  const ultimaLettura = useRef(0);
+  const load = () => {
+    const questa = ++ultimaLettura.current;
+    return Promise.all([
+      listRepartoTickets("bar"),
+      listOpenOrders(),
+      // La coda è un di più: se non risponde, i ticket si vedono lo stesso.
+      statoStampa("bar").catch(() => NON_LETTO),
+    ])
+      .then(([t, o, q]) => {
         if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
+        if (questa !== ultimaLettura.current) return; // ne è già partita una più nuova
         setTickets(t);
         setOpenOrders(o);
+        if (nonLetto(q)) setCodaNonLetta(true);
+        else {
+          setCoda(q);
+          setCodaNonLetta(false);
+        }
         setError("");
       })
       // Un errore qui non va ingoiato: uno schermo vuoto per un problema di
       // rete e' indistinguibile da un bar senza ordini.
       .catch((e) => setError(e.message));
+  };
+
+  const stampante = coda?.stampante ?? null;
+  const pontePronto = Boolean(coda?.ponte_acceso);
+  const conStampante = Boolean(stampante);
 
   useEffect(() => {
     load();
     // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
-    return ogniTantoSeVisibile(load, POLL_MS);
-  }, []);
+    return ogniTantoSeVisibile(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
+  }, [conStampante]);
 
+  // «Riprova», «Ristampa», «Mandalo alla stampante»: il ticket di nuovo in
+  // coda, al posto di quello fallito o incerto. Solo a un tocco.
+  const manda = async (g) => {
+    setMandando((m) => new Set(m).add(g.key));
+    setErroreTasto("");
+    try {
+      await mandaAllaStampante({ righe: g.items.map((i) => i.id) });
+      await load();
+    } catch (e) {
+      setErroreTasto(e.message);
+    } finally {
+      setMandando((m) => {
+        const n = new Set(m);
+        n.delete(g.key);
+        return n;
+      });
+    }
+  };
+
+  // 🔴 IL PREZZO DEL COPERTO NON SI DA' PER ZERO (notte del 28/10, dalla
+  //    revisione): se questa lettura falliva, il giro successivo cancellava
+  //    l'avviso e il conto si chiudeva con il coperto a zero, senza che
+  //    nessuno lo vedesse. Adesso si riprova a ogni giro finche' non si legge,
+  //    l'avviso resta suo, e «Chiudi conto» aspetta.
+  const [copertoNonLetto, setCopertoNonLetto] = useState("");
   useEffect(() => {
-    getServiceSettings()
-      .then((s) => setCopertoPrice(Number(s.coperto_price)))
-      .catch((e) => setError(e.message));
+    const leggiCoperto = () =>
+      getServiceSettings()
+        .then((s) => {
+          setCopertoPrice(Number(s.coperto_price));
+          setCopertoNonLetto("");
+          return true;
+        })
+        .catch((e) => {
+          setCopertoNonLetto(e.message);
+          return false;
+        });
+    let interval = null;
+    let annullato = false;
+    leggiCoperto().then((ok) => {
+      if (annullato) return;
+      if (!ok) interval = setInterval(() => leggiCoperto().then((ok2) => ok2 && clearInterval(interval)), POLL_MS);
+    });
+    return () => {
+      annullato = true;
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   // Un "ticket" e' un invio: tutte le righe partite dalla sala nello stesso
@@ -145,9 +225,15 @@ export default function Bar() {
   const ora = (iso) =>
     new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 
-  const Ticket = ({ g, evaso }) => (
+  // ⚠️ Una FUNZIONE che restituisce il ticket, non un componente: un
+  // componente definito qui dentro sarebbe nuovo a ogni lettura (ogni 4 s
+  // con la stampante), e React rifarebbe da capo i tasti — un tocco a metà
+  // andrebbe perso e gli avvisi «non è uscito» si rileggerebbero ad alta
+  // voce a ogni giro (revisione ECC, 31/10).
+  const ticket = (g, evaso) => (
     <div
-      className={`rounded-xl bg-white ring-1 p-3 mb-2 ${
+      key={g.key}
+      className={`rounded-xl bg-b58-campo ring-1 p-3 mb-2 ${
         evaso ? "ring-b58-charcoal/5 opacity-50" : "ring-b58-charcoal/15"
       }`}
     >
@@ -161,6 +247,14 @@ export default function Bar() {
           {i.note && <div className="testo-sala italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
         </div>
       ))}
+      {stampante && !evaso && (
+        <InCoda
+          come={lavoroDelFoglio(g, coda?.lavori)}
+          pontePronto={pontePronto}
+          occupato={mandando.has(g.key)}
+          onManda={() => manda(g)}
+        />
+      )}
       {/* ⚠️ NIENTE `disabled`: un pulsante che si spegne per trecento
           millisecondi, al banco, si legge «non ha preso» — e la mano
           tocca una seconda volta, che qui vuol dire riaprire un ticket
@@ -172,7 +266,7 @@ export default function Bar() {
         className={`tocco-azione w-full mt-2 rounded-lg testo-sala font-semibold ${
           evaso
             ? "border border-b58-charcoal/15 text-b58-charcoal-soft"
-            : "bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment"
+            : "bg-b58-olive hover:bg-b58-olive-dark text-b58-sul-colore"
         }`}
       >
         {evaso ? "↺ Riapri" : "✓ Evaso"}
@@ -181,7 +275,7 @@ export default function Bar() {
   );
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col">
+    <div className="h-[calc(100vh-2rem-var(--fascia-casa))] flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Bar</h1>
@@ -202,8 +296,20 @@ export default function Bar() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
+        </p>
+      )}
+      <AvvisiDellaStampante
+        stampante={stampante}
+        pontePronto={pontePronto}
+        codaNonLetta={codaNonLetta}
+        erroreTasto={erroreTasto}
+        senzaPonte="Leggi i ticket da questo schermo."
+      />
+      {copertoNonLetto && (
+        <p role="alert" className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
+          Non riesco a leggere il prezzo del coperto ({copertoNonLetto}): i totali sono senza coperto e i conti non si chiudono finché non lo leggo. Riprovo da solo.
         </p>
       )}
 
@@ -221,7 +327,7 @@ export default function Bar() {
             ) : (
               <>
                 {daPreparare.map((g) => (
-                  <Ticket key={g.key} g={g} evaso={false} />
+                  ticket(g, false)
                 ))}
                 {evasi.length > 0 && (
                   <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft/50 mt-3 mb-1">
@@ -229,7 +335,7 @@ export default function Bar() {
                   </p>
                 )}
                 {evasi.map((g) => (
-                  <Ticket key={g.key} g={g} evaso />
+                  ticket(g, true)
                 ))}
               </>
             )}
@@ -260,7 +366,7 @@ export default function Bar() {
                 // conti aperti non ce l'hanno ancora, domani no.
                 const { items: righe, nonInviate, coperti, total: totale } = orderTotals(o, copertoPrice);
                 return (
-                  <div key={o.id} className="rounded-xl bg-white ring-1 ring-b58-charcoal/15 p-3 mb-2">
+                  <div key={o.id} className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/15 p-3 mb-2">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-display testo-sala-grande text-b58-charcoal">{o.table_label}</span>
                       <span className="testo-sala-grande font-semibold text-b58-charcoal">
@@ -291,8 +397,10 @@ export default function Bar() {
                       </button>
                       <button
                         type="button"
+                        disabled={copertoPrice === null}
+                        title={copertoPrice === null ? "Non so ancora il prezzo del coperto: riprovo da solo." : undefined}
                         onClick={() => apriConto(o.id, "close")}
-                        className="tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-semibold"
+                        className="tocco-azione flex-1 rounded-lg disabled:opacity-50 bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-semibold"
                       >
                         Chiudi conto
                       </button>

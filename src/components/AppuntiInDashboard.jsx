@@ -78,7 +78,7 @@ export default function AppuntiInDashboard({ dettate, onCambiato }) {
           {quante === 1 ? "aspetta che tu lo approvi" : "aspettano che tu li approvi"}
           {dettate?.laPiuVecchia > 0 && ` — il più vecchio ${daQuantoAspetta(dettate.laPiuVecchia)}`}
         </span>
-        <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
+        <span aria-hidden="true" className="testo-sala text-b58-terracotta-testo shrink-0">
           {aperto ? "▲" : "▼"}
         </span>
       </button>
@@ -89,7 +89,7 @@ export default function AppuntiInDashboard({ dettate, onCambiato }) {
             <p className="testo-sala text-b58-charcoal-soft">Sto leggendo gli appunti…</p>
           ) : nonLetto(appunti) ? (
             // ⚠️ Non letto non è «nessuno»: si dice, con la via per riprovare.
-            <p className="testo-sala text-b58-terracotta-dark">
+            <p className="testo-sala text-b58-terracotta-dark-testo">
               Non sono riuscito a leggere gli appunti.{" "}
               <button type="button" onClick={rileggi} className="tocco-inline underline">
                 Riprova
@@ -115,7 +115,7 @@ export default function AppuntiInDashboard({ dettate, onCambiato }) {
           <Link
             to={INDIRIZZO_MEMO}
             state={statoVersoMemo(location)}
-            className="tocco-riga mt-3 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta hover:underline"
+            className="tocco-riga mt-3 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta-testo hover:underline"
           >
             Apri MEMO voce →
           </Link>

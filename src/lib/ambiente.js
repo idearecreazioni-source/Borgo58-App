@@ -20,29 +20,44 @@ export const RIFERIMENTO_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
 export const RIFERIMENTO_PROVA = "bnwqgpuyzmzujxfbtyvs";
 
 /**
+ * ⚠️ `produzione` e `datiVeri` non sono la stessa domanda (31/10/2026).
+ * `produzione` dice «e' il locale» — le barriere e i comandi che toccano il
+ * locale guardano questa. `datiVeri` dice «quello che scrivi qui e' vero»:
+ * vale per il locale e per Casa, la copia personale di Alessio, e decide
+ * solo come si colorano gli avvisi (neutri sui dati veri, terracotta sui
+ * finti).
+ *
  * Che database è, dato il suo indirizzo. Funzione pura: si prova senza
  * bisogno di un browser e senza bisogno di un database.
  */
-export function ambienteDa(url) {
+export function ambienteDa(url, dichiarato = "") {
   const riferimento = String(url ?? "").match(/https?:\/\/([a-z0-9-]+)\.supabase\./i)?.[1] ?? "";
 
   if (!riferimento) {
-    return { riferimento: "", produzione: false, genere: "sconosciuto", nome: "nessun database" };
+    // 🔴 CASA (31/10/2026): la copia personale di Alessio parla con un
+    // Supabase sul suo PC, che non ha un riferimento del cloud. Vale solo se
+    // la costruzione lo DICHIARA: un indirizzo qualsiasi senza dichiarazione
+    // resta sconosciuto. ⚠️ E la dichiarazione non vince mai su un indirizzo
+    // del cloud: «casa» puntata alla produzione resta la produzione.
+    if (dichiarato === "casa" && /^https:\/\//i.test(String(url ?? ""))) {
+      return { riferimento: "", produzione: false, datiVeri: true, genere: "casa", nome: "Casa, il tuo gestionale personale" };
+    }
+    return { riferimento: "", produzione: false, datiVeri: false, genere: "sconosciuto", nome: "nessun database" };
   }
   if (riferimento === RIFERIMENTO_PRODUZIONE) {
-    return { riferimento, produzione: true, genere: "produzione", nome: "il locale vero" };
+    return { riferimento, produzione: true, datiVeri: true, genere: "produzione", nome: "il locale vero" };
   }
   if (riferimento === RIFERIMENTO_PROVA) {
-    return { riferimento, produzione: false, genere: "prova", nome: "il database di prova" };
+    return { riferimento, produzione: false, datiVeri: false, genere: "prova", nome: "il database di prova" };
   }
   // ⚠️ Un terzo database non è «probabilmente la prova»: è un database
   // che nessuno ha dichiarato, e va trattato come tale.
-  return { riferimento, produzione: false, genere: "sconosciuto", nome: "un database sconosciuto" };
+  return { riferimento, produzione: false, datiVeri: false, genere: "sconosciuto", nome: "un database sconosciuto" };
 }
 
 /** Quello a cui è collegata QUESTA copia dell'app. */
 export function ambienteCorrente() {
-  return ambienteDa(import.meta.env.VITE_SUPABASE_URL);
+  return ambienteDa(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_AMBIENTE);
 }
 
 // =====================================================================

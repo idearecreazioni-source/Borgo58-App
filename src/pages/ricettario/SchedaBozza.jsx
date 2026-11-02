@@ -39,10 +39,10 @@ const SENZA_QUANTITA = "quantità non indicata nella ricetta originale";
 const vienDaFuori = (bozza) => bozza.origine_tipo && bozza.origine_tipo !== "manuale";
 
 const COLORE_FASE = {
-  mise_en_place: "bg-b58-olive/15 text-b58-olive-dark",
-  cottura: "bg-b58-terracotta/15 text-b58-terracotta-dark",
-  finitura: "bg-b58-ambra/15 text-b58-ambra-dark",
-  impiattamento: "bg-b58-gold/20 text-b58-gold-dark",
+  mise_en_place: "bg-b58-olive/15 text-b58-olive-dark-testo",
+  cottura: "bg-b58-terracotta/15 text-b58-terracotta-dark-testo",
+  finitura: "bg-b58-ambra/15 text-b58-ambra-dark-testo",
+  impiattamento: "bg-b58-gold/20 text-b58-gold-dark-testo",
 };
 const FASE_VUOTA = "bg-b58-charcoal/5 text-b58-charcoal-soft/70";
 
@@ -69,8 +69,8 @@ const notaSenzaQb = (nota) =>
     .join(" · ") || null;
 
 // I campi in posto: bordo leggero, sfondo chiaro, si vede che si scrive lì.
-const campo = "tocco-riga w-full rounded-lg border border-b58-charcoal/20 bg-white px-3 text-b58-charcoal";
-const piccolo = "tocco-riga rounded-lg border border-b58-charcoal/20 bg-white px-2 text-b58-charcoal";
+const campo = "tocco-riga w-full rounded-lg border border-b58-charcoal/20 bg-b58-campo px-3 text-b58-charcoal";
+const piccolo = "tocco-riga rounded-lg border border-b58-charcoal/20 bg-b58-campo px-2 text-b58-charcoal";
 const togli =
   "tocco-bottone shrink-0 rounded-lg px-3 text-b58-charcoal-soft/70 hover:bg-b58-charcoal/5 hover:text-red-700";
 const aggiungi = "tocco-bottone mt-3 rounded-lg border border-dashed border-b58-charcoal/30 px-4 text-b58-charcoal";
@@ -130,7 +130,7 @@ export default function SchedaBozza({
             <button
               type="button"
               className={`tocco-bottone self-end rounded-lg px-4 ${
-                modifica ? "bg-b58-charcoal text-b58-parchment" : "border border-b58-charcoal/20 text-b58-charcoal"
+                modifica ? "bg-b58-inverso text-b58-sul-colore" : "border border-b58-charcoal/20 text-b58-charcoal"
               }`}
               onClick={onModifica}
             >
@@ -268,12 +268,12 @@ export default function SchedaBozza({
             {(link || video) && (
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
                 {link && (
-                  <a className="tocco-riga inline-flex items-center text-b58-terracotta underline" href={link} target="_blank" rel="noreferrer">
+                  <a className="tocco-riga inline-flex items-center text-b58-terracotta-testo underline" href={link} target="_blank" rel="noreferrer">
                     Ricetta originale ↗
                   </a>
                 )}
                 {video && (
-                  <a className="tocco-riga inline-flex items-center text-b58-terracotta underline" href={video} target="_blank" rel="noreferrer">
+                  <a className="tocco-riga inline-flex items-center text-b58-terracotta-testo underline" href={video} target="_blank" rel="noreferrer">
                     Guarda il video ↗
                   </a>
                 )}
@@ -299,7 +299,7 @@ export default function SchedaBozza({
                   </span>
                   <span>
                     <span className="text-b58-charcoal">{r.nome}</span>
-                    {nonDetta && <span className="block testo-sala text-b58-ambra-dark">{SENZA_QUANTITA}</span>}
+                    {nonDetta && <span className="block testo-sala text-b58-ambra-dark-testo">{SENZA_QUANTITA}</span>}
                     {nota && <span className="block testo-sala text-b58-charcoal-soft/80">{nota}</span>}
                   </span>
                 </li>
@@ -347,7 +347,7 @@ export default function SchedaBozza({
                   </select>
                   {nota && <span className="testo-sala text-b58-charcoal-soft/80">{nota}</span>}
                   {quantitaLeggibile(r) === null && vienDaFuori(bozza) && (
-                    <span className="basis-full testo-sala text-b58-ambra-dark">{SENZA_QUANTITA}</span>
+                    <span className="basis-full testo-sala text-b58-ambra-dark-testo">{SENZA_QUANTITA}</span>
                   )}
                 </div>
                 {cucina && (
@@ -397,7 +397,7 @@ export default function SchedaBozza({
         <ol className="space-y-3">
           {passaggi.map((p, i) => (
             <li key={p.id} className={`grid gap-3 ${modifica ? "grid-cols-[2rem_1fr_auto]" : "grid-cols-[2rem_1fr]"}`}>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-b58-charcoal text-b58-parchment testo-sala">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-b58-inverso text-b58-sul-colore testo-sala">
                 {i + 1}
               </span>
               {modifica ? (
