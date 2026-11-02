@@ -6,6 +6,7 @@ import { applicaSchermo } from './lib/schermo'
 import { pubblica } from './lib/calcoli/pubblico'
 import { accendiLaBozza } from './lib/bozza'
 import { accendiLaSorveglianzaVersione } from './lib/versione'
+import { ambienteCorrente } from './lib/ambiente'
 
 // Calibrazione dei tocchi in cm reali (§3.2.1): applicata prima del primo
 // render, cosi' nessuna schermata compare per un istante con i pulsanti
@@ -23,6 +24,11 @@ accendiLaBozza()
 // Quando esce una versione nuova, il gestionale lo DICE — non ricarica mai da
 // solo. Il perche sta per esteso in src/lib/calcoli/versione.js.
 accendiLaSorveglianzaVersione()
+
+// Casa (fase 4): la coda delle foto prova a svuotarsi da sola, e l'app si
+// apre anche senza rete. ⚠️ Caricata a parte e solo su Casa: il primo pezzo
+// di codice resta quello leggero delle pagine dei clienti.
+if (ambienteCorrente().genere === 'casa') import('./lib/casa/avvio').then((m) => m.avviaCasa())
 
 // 🔴 DUE PEZZI DI CODICE, NON UNO (11/10/2026, decisione di Alessio). Le
 //    pagine che apre un cliente — prenotare, leggere l'informativa — si

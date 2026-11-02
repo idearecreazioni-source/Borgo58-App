@@ -1,5 +1,8 @@
 import { useLayoutEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { riassunto } from "../lib/calcoli/codaCasa";
+import { useCoda } from "../lib/casa/useCoda";
 import { ambienteCorrente, paginaDeiClienti } from "../lib/ambiente";
 
 // LA FASCIA DI CASA — variante C, scelta da Alessio il 31/10/2026.
@@ -20,6 +23,7 @@ import { ambienteCorrente, paginaDeiClienti } from "../lib/ambiente";
 export default function FasciaCasa() {
   const casa = ambienteCorrente().genere === "casa";
   const { pathname } = useLocation();
+  const { isAuthenticated } = useAuth();
   const visibile = casa && !paginaDeiClienti(pathname);
 
   useLayoutEffect(() => {
@@ -34,10 +38,27 @@ export default function FasciaCasa() {
     <div
       role="note"
       aria-label="Casa, il tuo gestionale personale"
-      className="print:hidden fixed left-0 right-0 z-50 flex items-center justify-center bg-b58-olive text-b58-parchment uppercase font-semibold tracking-[0.06em] text-[10px] leading-none"
+      className="print:hidden fixed left-0 right-0 z-50 flex items-center justify-between px-3 bg-b58-olive text-b58-parchment uppercase font-semibold tracking-[0.06em] text-[10px] leading-none"
       style={{ top: "var(--sicuro-alto)", height: "var(--fascia-casa)" }}
     >
-      Casa · gestionale personale
+      <span>Casa · gestionale personale</span>
+      {isAuthenticated && <SpiaDellaCoda />}
     </div>
+  );
+}
+
+// 🔴 LA SPIA DELLA CODA, SEMPRE IN VISTA (variante C): quante foto aspettano
+// di arrivare a Casa. Un tocco porta alla coda, dove si scatta.
+function SpiaDellaCoda() {
+  const { voci } = useCoda(true);
+  const { inCoda, conErrore } = riassunto(voci);
+  return (
+    <Link
+      to="/casa/coda"
+      className="flex items-center h-full px-2 -mr-2 normal-case tracking-normal text-[11px] underline-offset-2 hover:underline"
+      aria-label={inCoda ? `${inCoda} scontrini in coda` : "Fotografa uno scontrino"}
+    >
+      {inCoda ? `📷 ${inCoda} in coda${conErrore ? " ⚠" : ""}` : "📷 Scontrini"}
+    </Link>
   );
 }

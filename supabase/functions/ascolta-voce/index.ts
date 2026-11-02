@@ -274,6 +274,28 @@ function errore(
   });
 }
 
+/** Frase fissa per chi chiama quando il salvataggio della frase fallisce. */
+const FRASE_SCRITTURA = "Non sono riuscito a salvare quello che hai detto: riprova tra poco.";
+
+/**
+ * Il salvataggio della frase è fallito: il dettaglio del database resta nei
+ * registri della funzione, a chi chiama va una frase fissa (500).
+ */
+function scritturaFallita(dove: string, dettaglio: unknown) {
+  console.error(`registra_dettatura (${dove}):`, dettaglio);
+  return errore(500, "scrittura", FRASE_SCRITTURA);
+}
+
+// Messaggi che la porta della chiave scrive apposta per chi la usa: gli altri
+// sono errori del database e non si inoltrano.
+const RIFIUTI_CHIAVE = [
+  "Manca la chiave.",
+  "Questa chiave non vale.",
+  "La chiave appartiene",
+  // Il freno orario: la frase la scrive voce_limite_dettature().
+  "Sono gia' arrivate",
+];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return errore(405, "metodo", "Metodo non ammesso");
@@ -346,7 +368,12 @@ Deno.serve(async (req) => {
 
   if (conChiave) {
     const { data, error } = await supabase.rpc("voce_apri_sessione", { p_chiave: chiaveVoce });
-    if (error) return errore(401, "chiave", error.message);
+    if (error) {
+      const msg = error.message ?? "";
+      if (RIFIUTI_CHIAVE.some((r) => msg.startsWith(r))) return errore(401, "chiave", msg);
+      console.error("voce_apri_sessione:", msg);
+      return errore(500, "chiave", "Errore interno: riprova più tardi.");
+    }
     catalogo = (data?.catalogo ?? {}) as Record<string, unknown>;
     spesa = (data?.spesa ?? null) as Record<string, unknown> | null;
     scambi = (Array.isArray(data?.scambi) ? data.scambi : []) as Scambio[];
@@ -367,11 +394,17 @@ Deno.serve(async (req) => {
       return errore(401, "auth", "Sessione non valida: rifare l'accesso");
     }
     const { data: sp, error: erroreSpesa } = await supabase.rpc("spesa_ai_del_mese");
-    if (erroreSpesa) return errore(403, "spesa", erroreSpesa.message);
+    if (erroreSpesa) {
+      console.error("spesa_ai_del_mese:", erroreSpesa.message);
+      return errore(403, "spesa", "Non riesco a leggere la spesa del mese: riprova più tardi.");
+    }
     spesa = (Array.isArray(sp) ? sp[0] : sp) as Record<string, unknown> | null;
 
     const { data: cat, error: erroreCat } = await supabase.rpc("voce_catalogo");
-    if (erroreCat) return errore(403, "catalogo", erroreCat.message);
+    if (erroreCat) {
+      console.error("voce_catalogo:", erroreCat.message);
+      return errore(403, "catalogo", "Non riesco a leggere il catalogo: riprova più tardi.");
+    }
     catalogo = (cat ?? {}) as Record<string, unknown>;
 
     // ⚠️ LA MEMORIA BREVE NON E' INDISPENSABILE, e una lettura che fallisce
@@ -404,12 +437,13 @@ Deno.serve(async (req) => {
     // ⚠️ Si registra anche la dettatura che NON è avvenuta: senza, il
     //    registro direbbe che quel giorno nessuno ha provato a parlare,
     //    mentre qualcuno ci ha provato e ha trovato la porta chiusa.
-    await registra({
+    const { error: erroreTetto } = await registra({
       p_testo: testo,
       p_azioni: [],
       p_esito: "tetto",
       p_messaggio: (spesa?.frase as string) ?? null,
     });
+    if (erroreTetto) return scritturaFallita("tetto", erroreTetto.message);
     return errore(429, "tetto", (spesa?.frase as string) ?? "La spesa del mese ha raggiunto il tetto.", {
       spesa,
     });
@@ -457,7 +491,7 @@ Deno.serve(async (req) => {
     cache = tokenCache(esito.usage as unknown as Record<string, unknown>);
 
     if (esito.stop_reason === "max_tokens") {
-      await registra({
+      const { error: erroreTroncata } = await registra({
         p_testo: testo,
         p_azioni: [],
         p_esito: "errore",
@@ -466,6 +500,7 @@ Deno.serve(async (req) => {
         p_token_risposta: esito.usage.output_tokens,
         p_messaggio: "La risposta si è interrotta a metà.",
       });
+      if (erroreTroncata) return scritturaFallita("troncata", erroreTroncata.message);
       return errore(
         502,
         "troncata",
@@ -492,12 +527,13 @@ Deno.serve(async (req) => {
     //    domanda no.
     const perche = causaInItaliano((e as Error).message);
     const tace = quandoLAssistenteTace(testo, perche);
-    const { data } = await registra({
+    const { data, error: erroreRete } = await registra({
       p_testo: testo,
       p_azioni: tace.azioni,
       p_esito: "errore",
       p_messaggio: (e as Error).message,
     });
+    if (erroreRete) return scritturaFallita("assistente", erroreRete.message);
     return new Response(
       JSON.stringify({
         esito: "errore",
@@ -525,7 +561,7 @@ Deno.serve(async (req) => {
       testo,
       "L'assistente ha risposto in un modo che non si riesce a leggere.",
     );
-    await registra({
+    const { error: erroreLettura } = await registra({
       p_testo: testo,
       p_azioni: tace.azioni,
       p_esito: "errore",
@@ -534,6 +570,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: `Risposta non leggibile: ${(e as Error).message}`,
     });
+    if (erroreLettura) return scritturaFallita("formato", erroreLettura.message);
     return errore(502, "formato", tace.messaggio);
   }
 
@@ -572,7 +609,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: `Ho chiesto: ${chiarimento}`,
     });
-    if (erroreChiedo) return errore(500, "scrittura", erroreChiedo.message);
+    if (erroreChiedo) return scritturaFallita("erroreChiedo", erroreChiedo.message);
     return new Response(
       JSON.stringify({
         esito: "chiarimento",
@@ -609,7 +646,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: messaggio ?? "Era una domanda: non ho scritto niente.",
     });
-    if (erroreDomanda) return errore(500, "scrittura", erroreDomanda.message);
+    if (erroreDomanda) return scritturaFallita("erroreDomanda", erroreDomanda.message);
 
     return new Response(
       JSON.stringify({
@@ -753,7 +790,7 @@ Deno.serve(async (req) => {
   });
 
   if (erroreScrittura) {
-    return errore(500, "scrittura", erroreScrittura.message);
+    return scritturaFallita("erroreScrittura", erroreScrittura.message);
   }
 
   return new Response(

@@ -135,7 +135,18 @@ export const SPECCHIATI = [
   // lo stesso elenco copre due tabelle.
   // ⚠️ La rete resta, e adesso sorveglia entrambe: se qualcuno riseparasse
   // i vincoli, una delle due righe qui sotto diventerebbe rossa.
-  { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "supplier_invoices", colonna: "payment_method" },
+  {
+    costante: "PAYMENT_METHODS",
+    valori: PAYMENT_METHODS,
+    tabella: "supplier_invoices",
+    colonna: "payment_method",
+    // ⚠️ «anticipo» (01/11/2026) lo scrive solo `registra_anticipazione`,
+    // quando una nota «Anticipo da rimborsarmi» paga la fattura: non e'
+    // un modo di pagare che Alessio possa scegliere dal menu — senza una
+    // nota dietro, la fattura risulterebbe pagata da nessuno.
+    inPiuNelDatabase: ["anticipo"],
+    perche: "«anticipo» è un riflesso scritto da registra_anticipazione, non una scelta di chi paga una fattura",
+  },
   { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "shopping_list_items", colonna: "payment_method" },
   { costante: "ESITI_RIGA_LISTA", valori: ESITI_RIGA_LISTA, tabella: "shopping_list_items", colonna: "esito" },
   { costante: "CLEANING_FREQUENCIES", valori: CLEANING_FREQUENCIES, tabella: "haccp_cleaning_tasks", colonna: "frequency" },

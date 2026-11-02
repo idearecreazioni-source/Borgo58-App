@@ -89,7 +89,38 @@ export function payloadAnticipazione(payload) {
   };
 }
 
+/**
+ * I parametri della funzione `registra_anticipazione`, ricavati dagli STESSI
+ * campi di `payloadAnticipazione` (un elenco solo): se una colonna nuova
+ * entrasse in uno e non nell'altro, la prova pura lo vede.
+ */
+export function parametriRegistraAnticipazione(payload) {
+  const c = payloadAnticipazione(payload);
+  return {
+    p_entity_id: c.entity_id,
+    p_importo: c.importo,
+    p_pagata_il: c.pagata_il,
+    p_tag_id: c.tag_id,
+    p_fondi: c.fondi,
+    p_supplier_invoice_id: c.supplier_invoice_id,
+    p_documento_riferimento: c.documento_riferimento,
+    p_e_investimento: c.e_investimento,
+    p_nota: c.nota,
+  };
+}
+
+// 🔴 CON UNA FATTURA COLLEGATA SI PASSA DAL CORRIDOIO (1/11/2026): la nota
+//    nasce E la fattura diventa «pagata (anticipo)», nella stessa
+//    transazione — e senza nessun movimento in prima nota, perche' la
+//    societa' non ha pagato. Una scrittura sola sulla nota lascerebbe la
+//    fattura fra le scadenze, pagabile una seconda volta dalla cassa.
+//    Senza fattura resta l'inserimento diretto (una tabella, nessuna
+//    conseguenza altrove).
 export async function createAnticipazione(payload) {
+  if (payloadAnticipazione(payload).supplier_invoice_id) {
+    const id = await eseguiOperazione("registra_anticipazione", parametriRegistraAnticipazione(payload));
+    return { id };
+  }
   const { data, error } = await supabase
     .from("anticipazioni_socio")
     .insert(payloadAnticipazione(payload))

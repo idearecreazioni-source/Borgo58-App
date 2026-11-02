@@ -42,10 +42,15 @@ import TaskForm from "./pages/agenda/TaskForm";
 //    portava il gestionale oltre il tetto di `scripts/peso-pacchetto.mjs`.
 const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
 const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
+const CodaCasa = lazy(() => import("./pages/casa/CodaCasa"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 // ⚠️ Anche la banca (31/10/2026): col CSV accanto al CBI il gestionale
 //    arrivava a 0,25 kB dal tetto. Si apre poche volte al mese.
 const MovimentiBanca = lazy(() => import("./pages/cassa/MovimentiBanca"));
+// ⚠️ E l'import delle fatture da file (01/11/2026): con l'xml che resta
+//    collegato alla fattura il gestionale passava il tetto di 1,2 kB.
+//    Si apre quando arrivano le fatture, non a ogni giro.
+const ImportaFatturaElettronica = lazy(() => import("./pages/fatture/ImportaFatturaElettronica"));
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
@@ -82,7 +87,6 @@ import DaCollocare from "./pages/cassa/DaCollocare";
 import Segnalazioni from "./pages/assistente/Segnalazioni";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
-import ImportaFatturaElettronica from "./pages/fatture/ImportaFatturaElettronica";
 import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
@@ -198,6 +202,7 @@ function AppRoutes() {
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
+        <Route path="/casa/coda" element={<RequireTitolare><CodaCasa /></RequireTitolare>} />
         {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
             sopra: per ora l'assistente lo usa solo Alessio. */}
         <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
@@ -312,7 +317,7 @@ function AppRoutes() {
 
         {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
         <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />
-        <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><ImportaFatturaElettronica /></RequireTitolare>} />
+        <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><Suspense fallback={<p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}><ImportaFatturaElettronica /></Suspense></RequireTitolare>} />
 
         {/* Cassa, Banca e Prima Nota (solo titolare — §3.5) */}
         <Route path="/cassa" element={<RequireTitolare><CassaHome /></RequireTitolare>} />

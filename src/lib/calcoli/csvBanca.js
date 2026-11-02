@@ -1,6 +1,7 @@
 /**
  * Il lettore del CSV della banca: Credem, home banking, «Elenco movimenti
  * di conto» (31/10/2026). Sta accanto al CBI (cbi.js), non al suo posto.
+ * In fondo, il CSV di BPER (01/11/2026): stessa forma d'uscita.
  *
  * La forma, misurata il 31/10 sul file vero (che resta fuori dal
  * repository: porta nomi e importi del locale):
@@ -229,7 +230,10 @@ function improntaCsv(m) {
     m.dataValuta,
     m.centesimi,
     m.causaleAbi,
-    m.causaleInterna,
+    // ⚠️ La Categoria di BPER la cambia chi usa l'app della banca: dentro
+    //    l'impronta, lo stesso movimento ricaricato dopo entrerebbe due
+    //    volte (revisione ecc:silent-failure-hunter, 01/11/2026).
+    m.banca === "bper" ? "" : m.causaleInterna,
     m.descrizione,
     m.dettagli.join(" | "),
   ].join("§");
@@ -309,4 +313,177 @@ export function sovrapposizioni(movimenti, formato, contoId, esistenti) {
   );
   if (!altri.length) return null;
   return { altroFormato: formato === "csv" ? "cbi" : "csv", quanti: altri.length, dal, al };
+}
+
+// ─── BPER Banca ─────────────────────────────────────────────────────────
+//
+// IL CSV DI BPER (01/11/2026, il conto personale di Alessio su Casa). BPER
+// da home banking esporta «Lista movimenti» solo in XLS o PDF: l'XLS,
+// aperto in Excel e salvato come CSV, ha questa forma (misurata sul file
+// vero, che resta fuori dal repository):
+//   - caratteri occidentali (Excel), righe CRLF, separatore «;»;
+//   - una testata libera (luogo e data, conto, IBAN, saldi, «Numero
+//     Movimenti: N»), poi l'intestazione (TESTA_BPER), poi i movimenti dal
+//     piu' recente, poi la riga «Totale» con entrate e uscite;
+//   - date in lettere («30 ottobre 2026»); la valuta e' «"-"» finche' il
+//     movimento non e' contabilizzato;
+//   - entrate e uscite in due colonne, le uscite gia' col meno, e i
+//     decimali solo se servono («-7,8», «1000»).
+//
+// ⚠️ I MOVIMENTI «Da contabilizzare» SI LASCIANO FUORI: non hanno ancora la
+//    valuta, e quando la banca li contabilizza tornano nel file con la
+//    valuta scritta, cioe' con un'altra impronta: entrerebbero due volte.
+//    Si caricano col file successivo.
+// ⚠️ La riga «Totale» e «Numero Movimenti» sono la prova che il file e'
+//    intero: se non tornano coi movimenti letti, ci si ferma.
+
+const TESTA_BPER = ["Data operazione", "Data valuta", "Descrizione", "Entrate", "Uscite", "Categoria", "Stato"];
+const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+const eTestaBper = (campi) => campi.map((c) => c.trim()).join(";") === TESTA_BPER.join(";");
+
+/** Vero se il testo e' il CSV di BPER (l'intestazione sta dopo la testata). */
+export function eCsvBper(testo) {
+  const { righe } = righeCsv(senzaBom(testo));
+  return righe.some((r) => eTestaBper(r.campi));
+}
+
+/** Quale CSV di banca e': «credem», «bper», o null. */
+export function bancaDelCsv(testo) {
+  if (eCsvCredem(testo)) return "credem";
+  if (eCsvBper(testo)) return "bper";
+  return null;
+}
+
+/** «30 ottobre 2026» → «2026-10-30». null se non e' una data vera. */
+export function dataInLettere(s) {
+  const m = /^(\d{1,2}) ([a-z]+) (\d{4})$/i.exec(stringi(String(s ?? "")));
+  if (!m) return null;
+  const mese = MESI.indexOf(m[2].toLowerCase());
+  if (mese < 0) return null;
+  const [gg, aa] = [Number(m[1]), Number(m[3])];
+  const d = new Date(Date.UTC(aa, mese, gg));
+  if (d.getUTCFullYear() !== aa || d.getUTCMonth() !== mese || d.getUTCDate() !== gg) return null;
+  return `${m[3]}-${String(mese + 1).padStart(2, "0")}-${String(gg).padStart(2, "0")}`;
+}
+
+/**
+ * Un importo di BPER in centesimi: «-7,8» → -780, «1000» → 100000,
+ * «2.307,00» → 230700. Virgola dei decimali (uno o due), punti a gruppi di
+ * tre; qualunque altra forma e' null.
+ */
+export function centesimiBper(s) {
+  const t = String(s ?? "").trim();
+  if (!/^-?(\d{1,3}(\.\d{3})+|\d+)(,\d{1,2})?$/.test(t)) return null;
+  const [intero, decimali = ""] = t.replace(/\./g, "").split(",");
+  const segno = intero.startsWith("-") ? -1 : 1;
+  return segno * (Math.abs(Number(intero)) * 100 + Number(decimali.padEnd(2, "0")));
+}
+
+/**
+ * Legge il CSV di BPER.
+ *
+ * @returns {{ movimenti: object[], errori: string[], daContabilizzare: number }}
+ *   i movimenti contabilizzati nella stessa forma di quelli di Credem, e
+ *   quanti ne sono rimasti fuori perche' ancora da contabilizzare.
+ */
+export function leggiCsvBper(testo) {
+  const errori = [];
+  const movimenti = [];
+  const { righe, aperta } = righeCsv(senzaBom(testo));
+  const fuori = { movimenti: [], errori, daContabilizzare: 0 };
+
+  if (aperta !== null) {
+    errori.push(`Riga ${aperta}: una virgoletta si apre e non si chiude più. Il file potrebbe essere troncato.`);
+    return fuori;
+  }
+  const i = righe.findIndex((r) => eTestaBper(r.campi));
+  if (i < 0) {
+    errori.push(`Non trovo l'intestazione del CSV di BPER («${TESTA_BPER.join(";")}»): le colonne potrebbero essere spostate.`);
+    return fuori;
+  }
+  const dichiarati = righe
+    .slice(0, i)
+    .map((r) => /^Numero Movimenti:\s*(\d+)$/i.exec(r.campi[0]?.trim() ?? ""))
+    .find(Boolean);
+
+  let totale = null;
+  let letti = 0;
+  let sommaEntrate = 0;
+  let sommaUscite = 0;
+  let daContabilizzare = 0;
+  for (const { n, campi } of righe.slice(i + 1)) {
+    if (!campi.some((c) => c.trim() !== "")) continue;
+    if (campi[2]?.trim() === "Totale") {
+      totale = { n, entrate: centesimiBper(campi[3]), uscite: centesimiBper(campi[4]) };
+      break;
+    }
+    if (campi.length !== TESTA_BPER.length) {
+      errori.push(`Riga ${n}: ha ${campi.length} colonne, il CSV di BPER ne ha ${TESTA_BPER.length}.`);
+      continue;
+    }
+    const [operazione, valuta, descrizione, entrate, uscite, categoria, statoBanca] = campi;
+    letti++;
+    const dataContabile = dataInLettere(operazione);
+    if (!dataContabile) {
+      errori.push(`Riga ${n}: la data «${operazione.trim()}» non si legge.`);
+      continue;
+    }
+    const piu = entrate.trim() ? centesimiBper(entrate) : 0;
+    const meno = uscite.trim() ? centesimiBper(uscite) : 0;
+    if (piu === null || meno === null || piu < 0 || meno > 0 || (piu !== 0) === (meno !== 0)) {
+      errori.push(`Riga ${n}: entrate «${entrate.trim()}» e uscite «${uscite.trim()}» non si leggono (ne serve una sola, le uscite col meno).`);
+      continue;
+    }
+    sommaEntrate += piu;
+    sommaUscite += meno;
+    const stato = statoBanca.trim();
+    if (stato === "Da contabilizzare") {
+      daContabilizzare++;
+      continue;
+    }
+    if (stato !== "Contabilizzato") {
+      errori.push(`Riga ${n}: lo stato «${stato}» non lo conosco (mi aspetto «Contabilizzato» o «Da contabilizzare»).`);
+      continue;
+    }
+    const dataValuta = dataInLettere(valuta);
+    if (!dataValuta) {
+      errori.push(`Riga ${n}: la data valuta «${valuta.trim()}» non si legge.`);
+      continue;
+    }
+    const testoDescrizione = stringi(descrizione);
+    movimenti.push({
+      banca: "bper",
+      dataContabile,
+      dataValuta,
+      centesimi: piu + meno,
+      causaleAbi: "",
+      causaleInterna: stringi(categoria),
+      numeroAssegno: null,
+      riferimentoBanca: null,
+      descrizione: testoDescrizione,
+      dettagli: [],
+      ibanControparte: testoDescrizione.match(IBAN_IT)?.[0] ?? null,
+    });
+  }
+
+  if (!totale) {
+    errori.push("Manca la riga «Totale» in fondo: il file potrebbe essere troncato.");
+  } else if (totale.entrate !== sommaEntrate || totale.uscite !== sommaUscite) {
+    errori.push(
+      `Riga ${totale.n}: il Totale del file (entrate ${euro(totale.entrate ?? 0)}, uscite ${euro(totale.uscite ?? 0)})`
+      + ` non torna coi movimenti letti (${euro(sommaEntrate)}, ${euro(sommaUscite)}).`,
+    );
+  }
+  if (!dichiarati) {
+    errori.push("Manca «Numero Movimenti» in cima al file: senza, non so se è intero.");
+  } else if (Number(dichiarati[1]) !== letti) {
+    errori.push(`Il file dice ${dichiarati[1]} movimenti, ma ne ho letti ${letti}: potrebbe essere incompleto.`);
+  }
+  if (!letti && !errori.length) errori.push("Il file non ha nessun movimento.");
+  else if (!movimenti.length && !errori.length) {
+    errori.push("Il file ha solo movimenti ancora «da contabilizzare»: non c'è niente da caricare, riprova fra qualche giorno.");
+  }
+
+  return { movimenti: errori.length ? [] : movimenti, errori, daContabilizzare: errori.length ? 0 : daContabilizzare };
 }

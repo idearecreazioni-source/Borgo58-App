@@ -127,12 +127,35 @@ for (const file of ["icona-192.png", "icona-512.png", "apple-touch-icon.png"]) {
   scriviPng(larghezza, altezza, pixel, dove);
 }
 
+const commit = spawnSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).stdout.trim();
+const costruita = new Date().toISOString();
+writeFileSync(path.join(NUOVA, "casa-versione.json"), JSON.stringify({ costruita, commit }, null, 2), "utf8");
+console.log(`   nome «${NOME_BREVE}», fascia oliva, icone di Casa`);
+
+// ---------------------------------------------------------------------
+// 4bis. Il service worker (fase 4): l'app dentro il telefono, per aprirsi
+//       anche senza rete. Il modello e' scripts/casa-sw.js; qui si mettono
+//       la versione e l'elenco di TUTTI i file dell'app, compresi i pezzi
+//       di codice che si caricano solo quando servono.
+// ---------------------------------------------------------------------
+const tuttiIFile = (cartella, base = "") =>
+  readdirSync(cartella, { withFileTypes: true }).flatMap((v) =>
+    v.isDirectory() ? tuttiIFile(path.join(cartella, v.name), `${base}/${v.name}`) : [`${base}/${v.name}`]
+  );
+const elenco = tuttiIFile(NUOVA)
+  .filter((f) => !f.startsWith("/.vite/") && f !== "/casa-versione.json")
+  .map((f) => encodeURI(f));
+const modello = readFileSync(new URL("./casa-sw.js", import.meta.url), "utf8");
+if (!modello.includes('"__VERSIONE__"') || !modello.includes('"__ELENCO__"')) scarta("Il modello del service worker e' cambiato: mancano i segnaposto.");
 writeFileSync(
-  path.join(NUOVA, "casa-versione.json"),
-  JSON.stringify({ costruita: new Date().toISOString(), commit: spawnSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).stdout.trim() }, null, 2),
+  path.join(NUOVA, "sw-casa.js"),
+  modello
+    .replace('"__VERSIONE__"', () => JSON.stringify(`${commit}-${costruita}`))
+    // L'elenco entra come testo JSON dentro una stringa: JSON.parse lo rilegge.
+    .replace('"__ELENCO__"', () => JSON.stringify(JSON.stringify(elenco))),
   "utf8"
 );
-console.log(`   nome «${NOME_BREVE}», fascia oliva, icone di Casa`);
+console.log(`   app nel telefono: ${elenco.length} file per aprirsi anche senza rete`);
 
 // ---------------------------------------------------------------------
 // 5. Lo scambio: la versione nuova prende il posto di quella di prima.

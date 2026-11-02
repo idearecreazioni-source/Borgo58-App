@@ -307,7 +307,14 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
     const colpevoli = readdirSync(cartella)
       .filter((n) => n.endsWith(".sql"))
       .filter((n) => readFileSync(`${cartella}/${n}`, "utf8").includes("e_investimento"));
-    expect(colpevoli).toEqual(["20260921000003_l_etichetta_investimento.sql"]);
+    // ⚠️ La seconda e' `registra_anticipazione` (01/11/2026): NON e' fiscale,
+    //    porta solo il valore della casella dal modulo alla stessa riga di
+    //    `anticipazioni_socio` che prima scriveva il browser. Nessun conteggio
+    //    del costo o delle imposte la legge: lo guardano le prove qui sopra.
+    expect(colpevoli).toEqual([
+      "20260921000003_l_etichetta_investimento.sql",
+      "20261101000001_l_anticipo_paga_la_fattura.sql",
+    ]);
   });
 
   it("e la tasca resta dalla parte sua: entra nel costo, non nel fiscale", () => {
@@ -384,7 +391,7 @@ describe("14 · la migrazione si annulla e non lascia dati di prova", () => {
 });
 
 // =====================================================================
-// «ANTICIPO IO, POI MI RIMBORSO» — LA SECONDA FONTE (21/09/2026)
+// «ANTICIPO DA RIMBORSARMI» — LA SECONDA FONTE (21/09/2026)
 // =====================================================================
 // 🔴 IL DIFETTO CHE CHIUDE. La prima stesura contava queste spese **zero
 //    volte**: la spesa non vive in `cash_movements` ma in
@@ -624,7 +631,7 @@ describe("3-bis · i campi di una nota arrivano al database", () => {
 // =====================================================================
 // DOVE FINISCE QUESTA SPESA — la frase segue il soggetto (21/09/2026)
 // =====================================================================
-// 🔴 IL DIFETTO CHE CHIUDE: in «Anticipo io, poi mi rimborso» il soggetto si
+// 🔴 IL DIFETTO CHE CHIUDE: in «Anticipo da rimborsarmi» il soggetto si
 //    sceglie da un menu (Borgo 58 **oppure** Orto Borgo 58), e l'aiuto
 //    dell'etichetta diceva sempre «entra sotto Borgo 58». Su una nota
 //    dell'orto era **falso**: quella spesa finisce sotto l'orto, e l'orto sta

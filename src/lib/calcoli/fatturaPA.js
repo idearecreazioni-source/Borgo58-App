@@ -471,3 +471,9 @@ export function payloadFattura(f, nomeFile) {
     cliente: { partita_iva: f.cliente?.partitaIva ?? null, codice_fiscale: f.cliente?.codiceFiscale ?? null },
   };
 }
+
+// Il database rifiuta le fatture già registrate (stesso file SDI, oppure stesso
+// numero e data dello stesso fornitore): quella riga non si può più registrare.
+export function eGiaRegistrata(testo) {
+  return /gi[àa]['’]?\s+(stata\s+)?registrata/i.test(String(testo ?? ""));
+}

@@ -36,6 +36,7 @@ import {
   CARTELLA,
   CLOUD,
   CONTENITORE,
+  FUNZIONI_DI_CASA,
   STAFF,
   TITOLARE,
   URL_CASA,
@@ -45,6 +46,7 @@ import {
   nomiApertiDelCloud,
   nomiDelCloud,
   pretendiCasa,
+  problemiDelleFunzioni,
   problemiDiCasa,
   psql,
   soloLErrore,
@@ -63,9 +65,12 @@ const MIGRAZIONE_DEI_RUOLI = "20260801000001_roles_rls.sql";
 // sotto, e la versione si registra a mano con una nota che lo dice.
 const MIGRAZIONE_SOLO_CLOUD = "20260929000001_l_indirizzo_delle_funzioni_nel_vault.sql";
 
-// ⚠️ Le funzioni online di Casa sono spente fino alla fase 7. Dentro il
-// contenitore del database `127.0.0.1` e' il contenitore stesso, dove non
-// risponde nessuno: una chiamata partita per sbaglio fallisce sul posto.
+// ⚠️ Delle funzioni di Casa e' accesa solo `operazioni-atomiche` (01/11/2026,
+// FUNZIONI_DI_CASA in casa-comune.mjs), e la chiama solo l'app; le altre
+// restano spente fino alla fase 7. Dal DATABASE non se ne raggiunge
+// nessuna, ed e' voluto: dentro il suo contenitore `127.0.0.1` e' il
+// contenitore stesso, dove non risponde nessuno, quindi una chiamata
+// partita da un trigger o da un lavoro pianificato fallisce sul posto.
 const URL_FUNZIONI_CASA = `http://127.0.0.1:${PORTA_API_CASA}/functions/v1`;
 
 // ⚠️ Se una costruzione si ferma a meta' non si riprende (vedi sotto): si
@@ -149,7 +154,7 @@ sql(
      where not exists (select 1 from vault.secrets where name = 'notifiche_firma');
    select vault.create_secret('${ANON}', 'chiave_anon', 'Chiave pubblica di CASA, il Supabase sul PC.')
      where not exists (select 1 from vault.secrets where name = 'chiave_anon');
-   select vault.create_secret('${URL_FUNZIONI_CASA}', 'url_funzioni', 'Indirizzo delle funzioni di CASA: spente fino alla fase 7.')
+   select vault.create_secret('${URL_FUNZIONI_CASA}', 'url_funzioni', 'Indirizzo delle funzioni di CASA: dal database non si raggiungono.')
      where not exists (select 1 from vault.secrets where name = 'url_funzioni');`,
   "La preparazione del Vault"
 );
@@ -337,6 +342,7 @@ titolo("Spengo i lavori pianificati e verifico Casa");
 sql("select cron.alter_job(jobid, active := false) from cron.job where active;", "Lo spegnimento dei lavori pianificati");
 const registro = scriviIlResoconto();
 const { problemi, registrate } = problemiDiCasa({ esitoRegistro });
+problemi.push(...(await problemiDelleFunzioni()));
 if (problemi.length > 0) {
   fermati("Casa NON e' a posto:", ...problemi.map((p) => `  · ${p}`), "", `Resoconto: ${registro}`);
 }
@@ -352,6 +358,7 @@ for (const e of ECCEZIONI_STORICHE.filter((x) => x.attesa && !fermateQui.has(x.v
 titolo("Risultato");
 console.log(`   tabelle:                 ${sql("select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE';", "Il conteggio")}`);
 console.log(`   ruoli:                   ${sql("select string_agg(role::text, ', ' order by role) from user_roles;", "Il conteggio")}`);
+console.log(`   funzioni accese:         ${FUNZIONI_DI_CASA.join(", ")}`);
 console.log(`   lavori pianificati:      ${sql("select count(*) || ' (attivi: ' || count(*) filter (where active) || ')' from cron.job;", "Il conteggio")}`);
 console.log("");
 console.log(`Casa costruita. Resoconto: ${registro}`);

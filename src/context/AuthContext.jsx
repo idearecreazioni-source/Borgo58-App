@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { ambienteCorrente } from "../lib/ambiente";
 
 const AuthContext = createContext(null);
 
@@ -37,6 +38,34 @@ const [, TITOLARE_CODIFICATO, STAFF_CODIFICATO] = __INDIRIZZI_ACCESSO__.split(",
 const TITOLARE_EMAIL = decodeURIComponent(TITOLARE_CODIFICATO);
 const STAFF_EMAIL = decodeURIComponent(STAFF_CODIFICATO);
 
+// 🔴 SU CASA IL RUOLO SI RICORDA (fase 4, 31/10/2026). Casa si apre anche
+// senza rete (la coda delle foto): se il ruolo si potesse solo chiedere al
+// database, all'avvio senza rete il titolare risulterebbe nessuno e la coda
+// gli sarebbe chiusa. Quindi l'ultimo ruolo LETTO si tiene nel telefono, per
+// utente, e si usa solo quando la lettura fallisce.
+// ⚠️ SOLO SU CASA: sul locale niente cambia. E non apre niente che il
+// database non apra: la barriera vera resta la RLS, e senza rete il database
+// non si tocca comunque.
+const SU_CASA = ambienteCorrente().genere === "casa";
+const chiaveRuolo = (userId) => `casa-ruolo:${userId}`;
+function ricordaRuolo(userId, ruolo) {
+  if (!SU_CASA) return;
+  try {
+    if (ruolo) localStorage.setItem(chiaveRuolo(userId), ruolo);
+    else localStorage.removeItem(chiaveRuolo(userId));
+  } catch {
+    // Senza memoria del browser si torna al comportamento di sempre.
+  }
+}
+function ruoloRicordato(userId) {
+  if (!SU_CASA) return null;
+  try {
+    return localStorage.getItem(chiaveRuolo(userId));
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
@@ -49,7 +78,14 @@ export function AuthProvider({ children }) {
   const [ruoloNonLetto, setRuoloNonLetto] = useState(false);
   const [sessioneAttuale, setSessioneAttuale] = useState(null);
 
+  // ⚠️ Solo l'ultima lettura conta (01/11/2026, revisione
+  //    ecc:react-reviewer): al ritorno della rete partono insieme la
+  //    rilettura dell'evento «online» e quella del token rinnovato, e una
+  //    vecchia fallita arrivata dopo rimetteva il riquadro sull'accesso.
+  const ultimaLettura = useRef(0);
+
   const fetchRole = async (activeSession) => {
+    const questa = ++ultimaLettura.current;
     if (!activeSession) {
       setRole(null);
       setRuoloNonLetto(false);
@@ -61,10 +97,15 @@ export function AuthProvider({ children }) {
         .select("role")
         .eq("user_id", activeSession.user.id)
         .maybeSingle();
+      if (questa !== ultimaLettura.current) return;
       if (error) throw error;
       setRole(data?.role ?? null);
+      ricordaRuolo(activeSession.user.id, data?.role ?? null);
       setRuoloNonLetto(false);
     } catch (e) {
+      if (questa !== ultimaLettura.current) return;
+      const ricordato = ruoloRicordato(activeSession.user.id);
+      if (ricordato) setRole((attuale) => attuale ?? ricordato);
       setRuoloNonLetto(e?.message || true);
     }
   };
@@ -93,6 +134,16 @@ export function AuthProvider({ children }) {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
+  // Quando la rete torna il ruolo si rilegge da solo: senza, il riquadro
+  // sull'accesso restava finche' non si premeva «Riprova» o si cambiava
+  // pagina (prova in modalita' aereo, 01/11/2026).
+  useEffect(() => {
+    if (!sessioneAttuale) return undefined;
+    const rileggi = () => fetchRole(sessioneAttuale);
+    window.addEventListener("online", rileggi);
+    return () => window.removeEventListener("online", rileggi);
+  }, [sessioneAttuale]);
+
   // Prova titolare, poi staff: il PIN corretto determina l'account e quindi il ruolo.
   const login = async (pin) => {
     let result = await supabase.auth.signInWithPassword({
@@ -109,7 +160,14 @@ export function AuthProvider({ children }) {
     return { ok: true };
   };
 
-  const logout = () => supabase.auth.signOut();
+  const logout = async () => {
+    // Su Casa il ruolo ricordato si dimentica uscendo.
+    // SILENZIO MOTIVATO: senza sessione leggibile non c'e' ruolo da
+    // dimenticare, e l'uscita deve avvenire comunque.
+    const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
+    if (data?.session) ricordaRuolo(data.session.user.id, null);
+    return supabase.auth.signOut();
+  };
 
   return (
     <AuthContext.Provider

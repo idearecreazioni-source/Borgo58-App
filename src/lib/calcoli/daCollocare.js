@@ -119,3 +119,20 @@ export function giaCaricata(error) {
   const stato = String(error?.statusCode ?? error?.status ?? "");
   return stato === "409" || /already exists|duplicate/i.test(String(error?.message ?? ""));
 }
+
+/**
+ * La frase per chi prova a rimuovere dalla prima nota un movimento nato da
+ * «Da collocare». Il database lo rifiuta (la spesa punta al movimento,
+ * `on delete restrict`): senza questa frase arrivava il testo di Postgres,
+ * e in cima alla pagina, fuori vista.
+ *
+ * @returns {?string} la frase italiana, o null se l'errore è un'altra cosa
+ */
+export function fraseMovimentoDaCollocare(errore) {
+  const t = String(errore?.message ?? errore ?? "");
+  const eQuesto =
+    /spese_da_collocare/i.test(t) &&
+    (/foreign key|fkey|restrict|23503/i.test(t) || String(errore?.code ?? "") === "23503");
+  if (!eQuesto) return null;
+  return "Questo movimento viene da «Da collocare», quindi non si toglie da qui. Vai in «Da collocare» e usa «Annulla la collocazione»: il movimento sparisce da solo e la spesa torna da collocare.";
+}

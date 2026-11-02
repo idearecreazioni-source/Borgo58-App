@@ -276,7 +276,7 @@ export async function leggiAPagine(leggiPagina, { perPagina = PER_PAGINA, pagine
 }
 
 // ---------------------------------------------------------------------
-// 6. LE DUE FONTI: LA PRIMA NOTA E «ANTICIPO IO, POI MI RIMBORSO»
+// 6. LE DUE FONTI: LA PRIMA NOTA E «ANTICIPO DA RIMBORSARMI»
 // ---------------------------------------------------------------------
 // 🔴 PERCHE' SONO DUE. Un investimento pagato di tasca propria **per conto
 //    della societa'** non passa da `cash_movements`: vive in
@@ -368,7 +368,7 @@ export function inCosa(riga) {
 /**
  * Dove va a finire una spesa marcata, per il soggetto che si ha davanti.
  *
- * 🔴 PERCHE' ESISTE (21/09/2026). In «Anticipo io, poi mi rimborso» il
+ * 🔴 PERCHE' ESISTE (21/09/2026). In «Anticipo da rimborsarmi» il
  *    soggetto si sceglie da un menu — Borgo 58 **oppure** Orto Borgo 58 — e
  *    l'aiuto dell'etichetta diceva sempre «entra sotto Borgo 58». Su una nota
  *    dell'orto era **falso**: quella spesa finisce sotto l'orto, e l'orto sta

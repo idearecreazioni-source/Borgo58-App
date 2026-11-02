@@ -41,11 +41,16 @@ export default function CampoGiornata({
         {/* ⚠️ Senza l'ora vera la frase non si scrive: inventarne una qui
             sarebbe il secondo orologio, e direbbe «fino alle 05:00» anche
             il giorno che Alessio cambia quel numero. */}
+        {/* ⚠️ Il bersaglio del «?» è alto più della riga dell'etichetta:
+            senza i margini negativi alzava l'etichetta e la casella finiva
+            più in basso delle altre della stessa riga. */}
         {oraFineSerata && (
-          <Didascalia etichetta="Quale serata">
-            {frase} <strong>{formatDate(value)}</strong>. Fino alle{" "}
-            {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
-          </Didascalia>
+          <span className="inline-block align-middle -my-4">
+            <Didascalia etichetta="Quale serata">
+              {frase} <strong>{formatDate(value)}</strong>. Fino alle{" "}
+              {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
+            </Didascalia>
+          </span>
         )}
       </label>
       {/* 🔴 LA LARGHEZZA STA QUI DENTRO, NON NEI CHIAMANTI — 21/09/2026.

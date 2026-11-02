@@ -119,3 +119,12 @@ export function useSchermo() {
   const scelta = useSyncExternalStore(ascolta, leggiCorrente, () => "telefono");
   return [scelta, scegliSchermo];
 }
+
+// 🔴 Le Comande di sala e cucina restano calibrate sul tablet e fuori dal
+// profilo «Computer»; `/comande/stampanti` no: è una pagina d'ufficio
+// (M8 del controllo finale, 31/10/2026) e deve rimpicciolirsi col resto.
+export function percorsoComande(percorso) {
+  if (typeof percorso !== "string") return false;
+  if (/^\/comande\/stampanti(\/|$)/.test(percorso)) return false;
+  return percorso === "/comande" || percorso.startsWith("/comande/");
+}

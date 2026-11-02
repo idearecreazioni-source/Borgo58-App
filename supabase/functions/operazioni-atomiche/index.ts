@@ -164,6 +164,10 @@ const OPERAZIONI = new Set([
   // stia nella funzione e la funzione si chiami dal corridoio, perché è
   // la forma che rende l'elenco delle cancellazioni controllabile.
   "delete_anticipazione",
+  // L'anticipo che paga la fattura (01/11/2026): la nota nasce E la fattura
+  // collegata diventa «pagata (anticipo)», senza nessun movimento di cassa.
+  // A meta' resterebbe una fattura ancora da pagare con la nota gia' scritta.
+  "registra_anticipazione",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",
