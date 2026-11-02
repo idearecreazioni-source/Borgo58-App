@@ -10,6 +10,7 @@ import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 import Scorciatoia from "../../components/Scorciatoia";
+import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
 import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
 import { AvvisiDellaStampante, InCoda } from "./StampaInCoda";
 import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
@@ -124,8 +125,8 @@ export default function Cucina() {
   // «uscito» subito dopo l'invio, non dieci secondi dopo.
   useEffect(() => {
     load();
-    const interval = setInterval(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
-    return () => clearInterval(interval);
+    // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
+    return ogniTantoSeVisibile(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
   }, [conStampante]);
 
   const pontePronto = Boolean(coda?.ponte_acceso);
