@@ -97,7 +97,7 @@ export default function EditorMenuHome() {
   const riprovaAllergeni = async () => setAllergensByRecipe(await leggiAllergeni(items));
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -125,7 +125,7 @@ export default function EditorMenuHome() {
           </div>
         </div>
 
-        {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+        {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
@@ -270,7 +270,7 @@ export default function EditorMenuHome() {
                 <button
                   type="button"
                   onClick={() => setExcluded({})}
-                  className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                  className="tocco-testo testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
                 >
                   Rimettili tutti
                 </button>
@@ -299,7 +299,7 @@ export default function EditorMenuHome() {
                   <button
                     type="button"
                     onClick={() => setExcluded((x) => ({ ...x, [i.id]: !x[i.id] }))}
-                    className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                    className="tocco-testo testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo shrink-0"
                   >
                     {excluded[i.id] ? "rimetti nella stampa" : "non stampare"}
                   </button>
@@ -367,7 +367,7 @@ export default function EditorMenuHome() {
                             )}
                           </span>
                           {showPrices && (
-                            <span className="text-b58-gold-dark testo-sala-grande whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
+                            <span className="text-b58-gold-dark-testo testo-sala-grande whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
                           )}
                         </div>
                         {showDescriptions && d.recipe?.menu_description && (

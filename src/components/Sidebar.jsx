@@ -4,6 +4,41 @@ import Icon from "./Icon";
 import { MODULES } from "../data/modules";
 import { useAuth } from "../context/AuthContext";
 import { INDIRIZZO_MEMO, statoVersoMemo } from "../lib/calcoli/ritornoMemo";
+import { SCELTE_TEMA, useTema } from "../lib/tema";
+
+// Chiaro o scuro (27/10/2026): sta nel piede del menu, accanto a «Esci»,
+// perché qui la si trova da ogni schermata e si cambia anche a metà serata.
+// ⚠️ Dal 29/10/2026 la pagina delle impostazioni c'è (`/impostazioni`), ma
+//    Alessio ci ha spostato SOLO lo schermo dell'apparecchio: «chiaro/scuro
+//    resta nel piede del menu». Lo schermo si sceglie una volta sola e fisso
+//    qui rubava spazio.
+function SceltaTema() {
+  const [scelta, scegli] = useTema();
+  return (
+    <div role="group" aria-labelledby="titolo-tema" className="mb-3 px-3">
+      <p id="titolo-tema" className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/80 mb-1">
+        Aspetto
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {SCELTE_TEMA.map((t) => (
+          <button
+            key={t.valore}
+            type="button"
+            aria-pressed={scelta === t.valore}
+            onClick={() => scegli(t.valore)}
+            className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
+              scelta === t.valore
+                ? "bg-b58-azione text-b58-sul-colore"
+                : "text-b58-charcoal-soft ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark"
+            }`}
+          >
+            {t.etichetta}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // `sopra`: un avviso da mostrare in cima al menu, sotto il logo (12/09/2026:
 // «stai registrando», quando si tocca una voce a microfono acceso). Sta
@@ -38,7 +73,7 @@ export default function Sidebar({ onNavigate, sopra = null }) {
   const linkClasses = ({ isActive }) =>
     `tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala transition-colors ${
       isActive
-        ? "bg-b58-azione text-b58-parchment"
+        ? "bg-b58-azione text-b58-sul-colore"
         : "text-b58-charcoal-soft hover:bg-b58-cream-dark"
     }`;
 
@@ -121,15 +156,31 @@ export default function Sidebar({ onNavigate, sopra = null }) {
       </nav>
 
       <div className="px-3 py-4 border-t border-b58-charcoal/10">
-        {/* `data-esci`: anche uscire chiude MEMO, quindi a microfono acceso
-            il telaio chiede prima (12/09/2026). */}
-        <button
-          data-esci=""
-          onClick={logout}
-          className="tocco-bottone w-full text-left flex items-center gap-3 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
-        >
-          Esci
-        </button>
+        <SceltaTema />
+        {/* Impostazioni ed Esci sulla stessa riga: due voci piccole, che si
+            toccano di rado (29/10/2026). Il link passa dal controllo del
+            microfono del telaio come ogni altra voce del menu. */}
+        <div className="flex gap-1">
+          <NavLink
+            to="/impostazioni"
+            onClick={onNavigate}
+            // ⚠️ Mai verde, nemmeno quando la pagina è aperta: Alessio la
+            //    vuole uguale a «Esci» (30/10/2026). È una voce di servizio,
+            //    non un modulo del menu.
+            className="tocco-bottone flex-1 min-w-0 flex items-center rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          >
+            Impostazioni
+          </NavLink>
+          {/* `data-esci`: anche uscire chiude MEMO, quindi a microfono acceso
+              il telaio chiede prima (12/09/2026). */}
+          <button
+            data-esci=""
+            onClick={logout}
+            className="tocco-bottone flex-1 min-w-0 text-left flex items-center rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          >
+            Esci
+          </button>
+        </div>
       </div>
     </div>
   );

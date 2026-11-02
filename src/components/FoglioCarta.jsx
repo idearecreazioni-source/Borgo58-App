@@ -10,7 +10,7 @@ import { useState } from "react";
 // l'orto dell'azienda agricola. Separa le sezioni della carta.
 export function Sprig() {
   return (
-    <svg viewBox="0 0 150 22" width="120" height="18" className="mx-auto my-3 text-b58-olive" aria-hidden="true">
+    <svg viewBox="0 0 150 22" width="120" height="18" className="mx-auto my-3 text-b58-olive-testo" aria-hidden="true">
       <line x1="0" y1="12" x2="58" y2="12" stroke="currentColor" strokeWidth="0.7" />
       <line x1="92" y1="12" x2="150" y2="12" stroke="currentColor" strokeWidth="0.7" />
       <path d="M75 12 C 75 5 80 2 87 3.5 C 84.5 9.5 80 12 75 12 Z" fill="currentColor" opacity="0.85" />
@@ -46,7 +46,7 @@ export default function FoglioCarta({ children, ...attributi }) {
   return (
     <div
       {...attributi}
-      className="mx-auto max-w-2xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-10 py-12 md:px-14 md:py-16 print:ring-0 print:max-w-none"
+      className="tema-chiaro mx-auto max-w-2xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-10 py-12 md:px-14 md:py-16 print:ring-0 print:max-w-none"
       style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact", fontFamily: "var(--font-menu)" }}
     >
       {children}
@@ -58,7 +58,7 @@ export default function FoglioCarta({ children, ...attributi }) {
 export function TitoloSezione({ children }) {
   return (
     <h3
-      className="text-center text-[1.6rem] leading-none text-b58-terracotta-dark tracking-[0.08em]"
+      className="text-center text-[1.6rem] leading-none text-b58-terracotta-dark-testo tracking-[0.08em]"
       style={{ fontFamily: "var(--font-menu)", fontWeight: 500 }}
     >
       {children}

@@ -164,6 +164,10 @@ const OPERAZIONI = new Set([
   // stia nella funzione e la funzione si chiami dal corridoio, perché è
   // la forma che rende l'elenco delle cancellazioni controllabile.
   "delete_anticipazione",
+  // L'anticipo che paga la fattura (01/11/2026): la nota nasce E la fattura
+  // collegata diventa «pagata (anticipo)», senza nessun movimento di cassa.
+  // A meta' resterebbe una fattura ancora da pagare con la nota gia' scritta.
+  "registra_anticipazione",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",
@@ -347,6 +351,11 @@ const OPERAZIONI = new Set([
   "annulla_collocazione_spesa",
   // Una tabella sola, ma e' una cancellazione: passa di qui come le altre.
   "elimina_spesa_da_collocare",
+  // 🔴 «Fallo a mano» di una spesa detta (20261027000002): la spesa entra
+  // fra quelle da collocare e la cosa detta si chiude, in una transazione.
+  // A meta' resterebbe la spesa scritta e l'appunto ancora da approvare: la
+  // volta dopo, «Approva» la scriverebbe una seconda volta.
+  "annota_spesa_dettata_a_mano",
   // 🔴 La banca e le fatture entrano da file (20261024000001). Una fattura
   // elettronica può creare il fornitore E la fattura (col suo promemoria):
   // a meta' resterebbe un fornitore nato per niente, o una fattura senza
@@ -362,6 +371,15 @@ const OPERAZIONI = new Set([
   // la cosa ancora da fare, e la volta dopo entrava una seconda volta.
   "registra_movimento_cassa",
   "aggiungi_spesa_spicciola",
+  // 🔴 Il secondo lotto (20261027000001): le gemelle «_da_voce» chiudono la
+  // cosa detta e chiamano la funzione di sempre, in una transazione. Senza
+  // voce le schermate chiamano quella di sempre.
+  "record_stock_consumption_da_voce",
+  "allinea_giacenza_da_voce",
+  "register_stock_delivery_da_voce",
+  "registra_temperatura_da_voce",
+  "registra_pulizia_da_voce",
+  "add_shopping_list_item_da_voce",
 ]);
 
 const CORS = {

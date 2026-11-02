@@ -47,6 +47,12 @@ export async function deactivateCausale(id) {
   if (error) throw error;
 }
 
+// Riaccende una causale spenta con la ✕: torna nei menu e nell'elenco.
+export async function reactivateCausale(id) {
+  const { error } = await supabase.from("cash_causali").update({ active: true }).eq("id", id);
+  if (error) throw error;
+}
+
 // Quali uscite sono costi fissi lo decide Alessio, non un elenco di
 // parole scritto da noi: il giorno che aggiunge una causale nuova,
 // indovinarla la farebbe finire dalla parte sbagliata in silenzio.

@@ -74,7 +74,7 @@ export default function ClientePagante({ order, onFatto, onErrore, compatto = fa
   };
 
   const campo =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 tocco-bottone testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 tocco-bottone testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   if (cliente) {
     return (
@@ -93,7 +93,7 @@ export default function ClientePagante({ order, onFatto, onErrore, compatto = fa
           type="button"
           disabled={busy}
           onClick={() => scrivi({})}
-          className="tocco-bottone rounded border border-stone-300 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 mt-2"
+          className="tocco-bottone rounded border border-stone-300 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo disabled:opacity-50 mt-2"
         >
           Non è lui
         </button>
@@ -135,7 +135,7 @@ export default function ClientePagante({ order, onFatto, onErrore, compatto = fa
           type="button"
           disabled={busy || (!nome.trim() && !telefono.trim())}
           onClick={() => scrivi({ nome, telefono })}
-          className="tocco-bottone w-full rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium"
+          className="tocco-bottone w-full rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-sul-colore testo-sala font-medium"
         >
           Registra
         </button>

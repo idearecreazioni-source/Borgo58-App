@@ -13,6 +13,7 @@
 //
 // Uso:  node scripts/icone-app.mjs
 import { readFileSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { deflateSync, inflateSync } from "node:zlib";
 
 const CREMA = [0xfb, 0xf7, 0xee, 0xff]; // --color-b58-parchment
@@ -26,7 +27,7 @@ const MISURE = [
 ];
 
 // --- Leggere un PNG a colori con trasparenza (tipo 6, 8 bit) ---
-function leggiPng(buf) {
+export function leggiPng(buf) {
   if (buf.readUInt32BE(0) !== 0x89504e47) throw new Error("Non e' un PNG.");
   const larghezza = buf.readUInt32BE(16);
   const altezza = buf.readUInt32BE(20);
@@ -67,7 +68,7 @@ function leggiPng(buf) {
   return { larghezza, altezza, pixel };
 }
 
-function scriviPng(larghezza, altezza, pixel, dove) {
+export function scriviPng(larghezza, altezza, pixel, dove) {
   const riga = larghezza * 4;
   const grezzo = Buffer.alloc((riga + 1) * altezza);
   for (let y = 0; y < altezza; y++) {
@@ -154,10 +155,15 @@ function icona(logo, lato) {
   return out;
 }
 
-const logo = leggiPng(readFileSync(SORGENTE));
-for (const m of MISURE) {
-  const dove = new URL(`../public/${m.file}`, import.meta.url);
-  scriviPng(m.lato, m.lato, icona(logo, m.lato), dove);
-  console.log(`  ${m.file} — ${m.lato}×${m.lato}`);
+// Lettura e scrittura dei PNG servono anche alle icone di Casa
+// (scripts/casa-impacchetta.mjs): le icone si rifanno solo lanciando QUESTO
+// file, non importandolo.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const logo = leggiPng(readFileSync(SORGENTE));
+  for (const m of MISURE) {
+    const dove = new URL(`../public/${m.file}`, import.meta.url);
+    scriviPng(m.lato, m.lato, icona(logo, m.lato), dove);
+    console.log(`  ${m.file} — ${m.lato}×${m.lato}`);
+  }
+  console.log(`Icone rifatte dal logo vero (${logo.larghezza}×${logo.altezza}).`);
 }
-console.log(`Icone rifatte dal logo vero (${logo.larghezza}×${logo.altezza}).`);

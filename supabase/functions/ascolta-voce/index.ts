@@ -112,7 +112,8 @@ Se la frase poteva ragionevolmente voler dire due cose — un promemoria oppure 
 LE COSE CHE IL GESTIONALE SA GIA' FARE
 - "giacenza": quanto ce n'è davvero di un prodotto. dati: { "prodotto": <numero del catalogo>, "quanto_ce": <numero>, "note": "..."|null }
 - "temperatura": la temperatura letta su un frigo o sull'abbattitore. dati: { "frigorifero": <numero del catalogo>|null, "gradi": <numero>, "note": "..."|null }
-- "promemoria": una cosa NUOVA da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null, "categoria": "lavori"|null }
+- "promemoria": una cosa NUOVA da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null, "categoria": "lavori"|null, "luogo": "cantina"|"casa"|null }
+  🔴 "luogo" SOLO SE HA DETTO DOVE GLIELO DEVI RICORDARE — «quando arrivo a casa ricordami di pesare la mamma», «appena sono in cantina ricordami di chiamare il fornitore» (se dice «al ristorante» e' la stessa cosa: "cantina"). Il telefono glielo ricordera' quando arriva in quel posto. Il luogo NON va nel titolo: il titolo e' la cosa da fare («Pesare la mamma»). Se non ha detto un luogo, oppure ne ha detto uno diverso da casa e cantina, resta **null**: non dedurlo da cosa bisogna fare.
   🔴 "categoria" VALE "lavori" SOLO SE HA DETTO CHE È UN LAVORO DA FARE — «mettilo tra i lavori da fare», «aggiungi ai lavori: sistemare la porta». Finisce nella sezione «Lavori da fare» dell'Agenda. In ogni altro caso resta **null**: non decidere tu che «chiamare l'elettricista» è un lavoro, perché una sezione riempita con cose che lui non ci ha messo smette di dire quello che deve fare.
   🔴 "ora" E' L'ORA DELL'IMPEGNO — a che ora succede la cosa: «alle 10 ho il dentista» → "ora": "10:00", «alle tre e mezza del pomeriggio» → "15:30". Mettila SOLO se ha detto un'ora precisa; «di mattina», «in serata», «verso pranzo» NON sono un'ora: "ora" resta null. Non e' l'ora dell'avviso, che va in "avviso_ora". E NON RIPETERLA nella "descrizione": finisce nel campo Ora dell'Agenda, e scritta anche nella descrizione sarebbe detta due volte.
   🔴 "data" è IL GIORNO DELL'IMPEGNO — quando la cosa succede. "avviso_data" e "avviso_ora" sono QUANDO VUOLE ESSERE AVVISATO, che è un'altra cosa e quasi sempre un altro giorno. «Segna che ho appuntamento in banca sabato 13 e ricordamelo con una notifica il giorno prima alle 15» → "data": il 13, "avviso_data": il 12, "avviso_ora": "15:00".
@@ -273,6 +274,28 @@ function errore(
   });
 }
 
+/** Frase fissa per chi chiama quando il salvataggio della frase fallisce. */
+const FRASE_SCRITTURA = "Non sono riuscito a salvare quello che hai detto: riprova tra poco.";
+
+/**
+ * Il salvataggio della frase è fallito: il dettaglio del database resta nei
+ * registri della funzione, a chi chiama va una frase fissa (500).
+ */
+function scritturaFallita(dove: string, dettaglio: unknown) {
+  console.error(`registra_dettatura (${dove}):`, dettaglio);
+  return errore(500, "scrittura", FRASE_SCRITTURA);
+}
+
+// Messaggi che la porta della chiave scrive apposta per chi la usa: gli altri
+// sono errori del database e non si inoltrano.
+const RIFIUTI_CHIAVE = [
+  "Manca la chiave.",
+  "Questa chiave non vale.",
+  "La chiave appartiene",
+  // Il freno orario: la frase la scrive voce_limite_dettature().
+  "Sono gia' arrivate",
+];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return errore(405, "metodo", "Metodo non ammesso");
@@ -345,7 +368,12 @@ Deno.serve(async (req) => {
 
   if (conChiave) {
     const { data, error } = await supabase.rpc("voce_apri_sessione", { p_chiave: chiaveVoce });
-    if (error) return errore(401, "chiave", error.message);
+    if (error) {
+      const msg = error.message ?? "";
+      if (RIFIUTI_CHIAVE.some((r) => msg.startsWith(r))) return errore(401, "chiave", msg);
+      console.error("voce_apri_sessione:", msg);
+      return errore(500, "chiave", "Errore interno: riprova più tardi.");
+    }
     catalogo = (data?.catalogo ?? {}) as Record<string, unknown>;
     spesa = (data?.spesa ?? null) as Record<string, unknown> | null;
     scambi = (Array.isArray(data?.scambi) ? data.scambi : []) as Scambio[];
@@ -366,11 +394,17 @@ Deno.serve(async (req) => {
       return errore(401, "auth", "Sessione non valida: rifare l'accesso");
     }
     const { data: sp, error: erroreSpesa } = await supabase.rpc("spesa_ai_del_mese");
-    if (erroreSpesa) return errore(403, "spesa", erroreSpesa.message);
+    if (erroreSpesa) {
+      console.error("spesa_ai_del_mese:", erroreSpesa.message);
+      return errore(403, "spesa", "Non riesco a leggere la spesa del mese: riprova più tardi.");
+    }
     spesa = (Array.isArray(sp) ? sp[0] : sp) as Record<string, unknown> | null;
 
     const { data: cat, error: erroreCat } = await supabase.rpc("voce_catalogo");
-    if (erroreCat) return errore(403, "catalogo", erroreCat.message);
+    if (erroreCat) {
+      console.error("voce_catalogo:", erroreCat.message);
+      return errore(403, "catalogo", "Non riesco a leggere il catalogo: riprova più tardi.");
+    }
     catalogo = (cat ?? {}) as Record<string, unknown>;
 
     // ⚠️ LA MEMORIA BREVE NON E' INDISPENSABILE, e una lettura che fallisce
@@ -403,12 +437,13 @@ Deno.serve(async (req) => {
     // ⚠️ Si registra anche la dettatura che NON è avvenuta: senza, il
     //    registro direbbe che quel giorno nessuno ha provato a parlare,
     //    mentre qualcuno ci ha provato e ha trovato la porta chiusa.
-    await registra({
+    const { error: erroreTetto } = await registra({
       p_testo: testo,
       p_azioni: [],
       p_esito: "tetto",
       p_messaggio: (spesa?.frase as string) ?? null,
     });
+    if (erroreTetto) return scritturaFallita("tetto", erroreTetto.message);
     return errore(429, "tetto", (spesa?.frase as string) ?? "La spesa del mese ha raggiunto il tetto.", {
       spesa,
     });
@@ -456,7 +491,7 @@ Deno.serve(async (req) => {
     cache = tokenCache(esito.usage as unknown as Record<string, unknown>);
 
     if (esito.stop_reason === "max_tokens") {
-      await registra({
+      const { error: erroreTroncata } = await registra({
         p_testo: testo,
         p_azioni: [],
         p_esito: "errore",
@@ -465,6 +500,7 @@ Deno.serve(async (req) => {
         p_token_risposta: esito.usage.output_tokens,
         p_messaggio: "La risposta si è interrotta a metà.",
       });
+      if (erroreTroncata) return scritturaFallita("troncata", erroreTroncata.message);
       return errore(
         502,
         "troncata",
@@ -491,12 +527,13 @@ Deno.serve(async (req) => {
     //    domanda no.
     const perche = causaInItaliano((e as Error).message);
     const tace = quandoLAssistenteTace(testo, perche);
-    const { data } = await registra({
+    const { data, error: erroreRete } = await registra({
       p_testo: testo,
       p_azioni: tace.azioni,
       p_esito: "errore",
       p_messaggio: (e as Error).message,
     });
+    if (erroreRete) return scritturaFallita("assistente", erroreRete.message);
     return new Response(
       JSON.stringify({
         esito: "errore",
@@ -524,7 +561,7 @@ Deno.serve(async (req) => {
       testo,
       "L'assistente ha risposto in un modo che non si riesce a leggere.",
     );
-    await registra({
+    const { error: erroreLettura } = await registra({
       p_testo: testo,
       p_azioni: tace.azioni,
       p_esito: "errore",
@@ -533,6 +570,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: `Risposta non leggibile: ${(e as Error).message}`,
     });
+    if (erroreLettura) return scritturaFallita("formato", erroreLettura.message);
     return errore(502, "formato", tace.messaggio);
   }
 
@@ -571,7 +609,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: `Ho chiesto: ${chiarimento}`,
     });
-    if (erroreChiedo) return errore(500, "scrittura", erroreChiedo.message);
+    if (erroreChiedo) return scritturaFallita("erroreChiedo", erroreChiedo.message);
     return new Response(
       JSON.stringify({
         esito: "chiarimento",
@@ -608,7 +646,7 @@ Deno.serve(async (req) => {
       p_token_risposta: usoRisposta,
       p_messaggio: messaggio ?? "Era una domanda: non ho scritto niente.",
     });
-    if (erroreDomanda) return errore(500, "scrittura", erroreDomanda.message);
+    if (erroreDomanda) return scritturaFallita("erroreDomanda", erroreDomanda.message);
 
     return new Response(
       JSON.stringify({
@@ -752,7 +790,7 @@ Deno.serve(async (req) => {
   });
 
   if (erroreScrittura) {
-    return errore(500, "scrittura", erroreScrittura.message);
+    return scritturaFallita("erroreScrittura", erroreScrittura.message);
   }
 
   return new Response(

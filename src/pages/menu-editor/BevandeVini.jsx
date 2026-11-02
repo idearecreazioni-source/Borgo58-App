@@ -263,7 +263,7 @@ export default function BevandeVini() {
         )}
 
         {nonLetto(margini) ? (
-          <span className="testo-sala text-b58-terracotta-dark">
+          <span className="testo-sala text-b58-terracotta-dark-testo">
             il margine non è stato letto —{" "}
             <button type="button" onClick={caricaMargini} className="underline tocco-testo">
               riprova
@@ -330,7 +330,7 @@ export default function BevandeVini() {
   ];
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   // N19 (11/10/2026): il foglio stampato, nella stessa forma del menu.
   const daStampare = sezioni
@@ -364,7 +364,7 @@ export default function BevandeVini() {
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* LA CARTA STAMPATA --------------------------------------------- */}
@@ -392,13 +392,13 @@ export default function BevandeVini() {
           //    carte «mai stampate» disegnate su una lettura fallita sono una
           //    risposta inventata (regola del 19/08).
           <div data-carta-non-letta>
-            <p className="testo-sala-grande text-b58-terracotta-dark">
+            <p className="testo-sala-grande text-b58-terracotta-dark-testo">
               Non ho letto lo stato della carta: non so da quando è ferma.
             </p>
             <button
               type="button"
               onClick={caricaCarta}
-              className="tocco-testo testo-sala-grande font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-testo testo-sala-grande font-medium text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo"
             >
               Riprova
             </button>
@@ -417,7 +417,7 @@ export default function BevandeVini() {
                 <li
                   key={c.sezione}
                   data-carta={c.sezione}
-                  className="rounded-lg bg-white/60 ring-1 ring-b58-charcoal/10 px-3 py-2"
+                  className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 px-3 py-2"
                 >
                   <p className="testo-sala-grande font-medium text-b58-charcoal">{nome}</p>
                   {/* ⚠️ Vuoto non è zero: «mai stampata» non è «stampata zero
@@ -552,7 +552,7 @@ export default function BevandeVini() {
           <button
             type="submit"
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
           >
             {saving ? "Aggiungo…" : "+ Metti in carta"}
           </button>
@@ -582,7 +582,7 @@ export default function BevandeVini() {
             ) : (
               s.categorie.map((cat) => (
                 <div key={cat.nome} className="mb-4">
-                  <h3 className="testo-sala-grande font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-1">
+                  <h3 className="testo-sala-grande font-semibold text-b58-terracotta-dark-testo border-b border-dashed border-b58-charcoal/15 pb-1 mb-1">
                     {cat.nome}
                   </h3>
                   {/* Sul telefono ogni voce va su due righe: il nome a tutta
@@ -638,7 +638,7 @@ export default function BevandeVini() {
                                 onClick={() =>
                                   setBarItemActive(v.id, !v.active).then(load).catch((e) => setError(e.message))
                                 }
-                                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                               >
                                 {v.active ? "togli dalla carta" : "rimetti in carta"}
                               </button>
@@ -705,7 +705,7 @@ export default function BevandeVini() {
                           {r.produttore && (
                             <p className="testo-sala-grande italic text-b58-charcoal-soft/85 leading-snug">{r.produttore}</p>
                           )}
-                          <p className="testo-sala-grande text-b58-gold-dark mt-0.5">
+                          <p className="testo-sala-grande text-b58-gold-dark-testo mt-0.5">
                             {r.formati
                               .map((f) => [f.formato, formatEUR(f.prezzo)].filter(Boolean).join(" "))
                               .join(" · ")}

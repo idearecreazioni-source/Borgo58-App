@@ -17,7 +17,7 @@ export default function Logo({ size = "md" }) {
         src="/logo-borgo58.png"
         alt="Borgo 58 · Osteria Contemporanea"
         onError={() => setImgOk(false)}
-        className={`${dims.img} w-auto object-contain`}
+        className={`logo-b58 ${dims.img} w-auto object-contain`}
       />
     );
   }
@@ -25,7 +25,7 @@ export default function Logo({ size = "md" }) {
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`${dims.box} shrink-0 rounded-full bg-b58-azione text-b58-parchment flex items-center justify-center font-display font-semibold ${dims.text} tracking-tight ring-1 ring-b58-terracotta-dark/30`}
+        className={`${dims.box} shrink-0 rounded-full bg-b58-azione text-b58-sul-colore flex items-center justify-center font-display font-semibold ${dims.text} tracking-tight ring-1 ring-b58-terracotta-dark/30`}
       >
         B58
       </div>

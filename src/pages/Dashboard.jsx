@@ -17,7 +17,7 @@ import Didascalia from "../components/Didascalia";
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
   media: "bg-b58-gold",
-  bassa: "bg-b58-charcoal-soft/50",
+  bassa: "bg-b58-inverso-soft/50",
 };
 
 // Dashboard home (§3.12): non più una griglia di moduli (già nella sidebar,
@@ -71,8 +71,11 @@ export default function Dashboard() {
       .catch((e) => setError(e.message));
   };
 
-  const load = () =>
-    Promise.all([
+  // ⚠️ L'errore di prima si toglie a ogni nuova lettura (notte del 28/10):
+  //    dopo un «Riprova» riuscito restava il riquadro «Errore: …».
+  const load = () => {
+    setError("");
+    return Promise.all([
       listDashboardTasks()
         .then(setTasks)
         .catch((e) => setError(e.message)),
@@ -105,6 +108,7 @@ export default function Dashboard() {
       //    c'è niente da comprare».
       isStaff ? Promise.resolve() : leggi(listSpesaSpicciola()).then(setSpicciola),
     ]).finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     load();
@@ -133,7 +137,12 @@ export default function Dashboard() {
     if (ok && esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
   };
 
-  const today = tasks.filter((t) => t.due_date);
+  // 🔴 GLI SCADUTI IN UNA SEZIONE LORO, SOPRA «OGGI» — 27/10/2026, sera:
+  //    mescolati a quelli di oggi con «scaduto il …» su ogni riga erano
+  //    «confusionari» (Alessio). Le date sono `AAAA-MM-GG`, quindi il
+  //    confronto fra stringhe è quello fra giorni.
+  const inRitardo = tasks.filter((t) => t.due_date && t.due_date < oggi);
+  const today = tasks.filter((t) => t.due_date && t.due_date >= oggi);
   const undated = tasks.filter((t) => !t.due_date);
   const todayLabel = formatDate(oggi);
   const daGuardare = richieste.length + posta;
@@ -203,9 +212,9 @@ export default function Dashboard() {
       </div>
 
       {notice && (
-        <p className="testo-sala text-b58-azione-dark bg-b58-azione/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+        <p className="testo-sala text-b58-azione-dark-testo bg-b58-azione/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
-      {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
@@ -243,7 +252,7 @@ export default function Dashboard() {
               ⚠️ Compare solo se c'è qualcosa, come i due riquadri accanto:
               uno che dice «niente» tutte le mattine diventa arredamento. */}
           {!isStaff && nonLetto(dettate) && (
-            <p className="testo-sala text-b58-terracotta-dark">
+            <p className="testo-sala text-b58-terracotta-dark-testo">
               Non sono riuscito a leggere le cose che hai dettato.{" "}
               <button type="button" onClick={load} className="tocco-inline underline">
                 Riprova
@@ -275,7 +284,7 @@ export default function Dashboard() {
               titolo: «di persona» è la sola cosa che le distingue a colpo
               d'occhio. */}
           {!isStaff && nonLetto(spicciola) && (
-            <p className="testo-sala text-b58-terracotta-dark">
+            <p className="testo-sala text-b58-terracotta-dark-testo">
               Non sono riuscito a leggere la spesa spicciola.{" "}
               <button type="button" onClick={load} className="tocco-inline underline">
                 Riprova
@@ -303,7 +312,7 @@ export default function Dashboard() {
                 </span>{" "}
                 di persona — spesa spicciola
               </span>
-              <span aria-hidden="true" className="testo-sala text-b58-azione-dark shrink-0">
+              <span aria-hidden="true" className="testo-sala text-b58-azione-dark-testo shrink-0">
                 →
               </span>
             </Link>
@@ -340,6 +349,17 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6 mt-6 2xl:mt-0">
+          {/* ⚠️ Sempre aperta e prima di «Oggi»: «così leggo prima cosa mi
+              sono lasciato indietro». Sparisce solo quando è vuota. */}
+          {inRitardo.length > 0 && (
+            <section data-sezione-ritardo>
+              <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-terracotta-dark-testo mb-2">
+                In ritardo ({inRitardo.length})
+              </h2>
+              <TaskGroup tasks={inRitardo} onComplete={toggleComplete} conData />
+            </section>
+          )}
+
           <section>
             <div className="flex items-baseline justify-between gap-3 mb-2">
               <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">
@@ -347,7 +367,7 @@ export default function Dashboard() {
               </h2>
               <Link
                 to="/agenda"
-                className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
+                className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione-testo hover:text-b58-azione-dark-testo hover:bg-b58-cream-dark/40 transition-colors"
               >
                 Agenda completa →
               </Link>
@@ -372,7 +392,7 @@ export default function Dashboard() {
 
           <Link
             to="/agenda/nuovo"
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 testo-sala"
           >
             + Nuovo impegno
           </Link>
@@ -393,7 +413,7 @@ function RichiesteDeiClienti({ richieste, posta }) {
   return (
     <section className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
       <div className="flex items-center gap-2.5 mb-2">
-        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
+        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
           {richieste.length + posta}
         </span>
         <h2 className="font-display testo-sala-grande text-b58-charcoal">
@@ -470,7 +490,7 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span
                       className={`shrink-0 inline-flex items-center justify-center rounded-full ${
                         a.gravita === "alta" ? "bg-b58-terracotta" : "bg-b58-gold"
-                      } text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+                      } text-b58-sul-colore testo-sala font-medium px-2 py-0.5`}
                     >
                       {a.quanti}
                     </span>
@@ -516,7 +536,7 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
               <button
                 type="button"
                 onClick={() => onRiprendi(a.chiave)}
-                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-azione hover:bg-b58-cream-dark/40 transition-colors"
+                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-azione-testo hover:bg-b58-cream-dark/40 transition-colors"
               >
                 Rimettilo
               </button>
@@ -549,7 +569,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
         </h2>
         <Link
           to="/calendario-eventi/pianta"
-          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
+          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione-testo hover:text-b58-azione-dark-testo hover:bg-b58-cream-dark/40 transition-colors"
         >
           La sala →
         </Link>
@@ -564,7 +584,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
           <button
             type="button"
             onClick={onRiprova}
-            className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-medium px-4 transition-colors"
+            className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala font-medium px-4 transition-colors"
           >
             Riprova
           </button>
@@ -605,7 +625,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
                       può essere vista. */}
                   <span
                     className={`testo-sala ${
-                      tavoli ? "text-b58-charcoal" : "text-b58-terracotta"
+                      tavoli ? "text-b58-charcoal" : "text-b58-terracotta-testo"
                     }`}
                   >
                     {tavoli || "da assegnare"}
@@ -619,7 +639,16 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
   );
 }
 
-function TaskGroup({ tasks, onComplete }) {
+// «30 ago»: dentro «In ritardo» basta il giorno, piccolo e grigio a destra.
+// ⚠️ L'anno solo se non è quest'anno: «30 ago» dell'anno scorso ingannerebbe.
+const giornoBreve = (iso) =>
+  new Intl.DateTimeFormat("it-IT", {
+    day: "numeric",
+    month: "short",
+    ...(iso.slice(0, 4) !== oggiLocale().slice(0, 4) && { year: "numeric" }),
+  }).format(new Date(`${iso}T12:00:00`));
+
+function TaskGroup({ tasks, onComplete, conData = false }) {
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
       {/* ⚠️ MISURATO IL 24/08, e il difetto era qui da prima: la riga di un
@@ -661,11 +690,16 @@ function TaskGroup({ tasks, onComplete }) {
             </Link>
             {t.priority === "alta" && <span
               data-priorita-impegno
-              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-sul-colore testo-sala font-medium px-2 py-0.5`}
             >
               Urgente
             </span>}
           </div>
+          {conData && (
+            <span data-scaduto-impegno className="shrink-0 testo-sala text-b58-charcoal-soft">
+              {giornoBreve(t.due_date)}
+            </span>
+          )}
         </div>
       ))}
     </div>

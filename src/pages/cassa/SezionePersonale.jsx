@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   annullaPareggioAnticipazione,
@@ -16,6 +16,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import { avvisoImportoAnticipo } from "../../lib/calcoli/fatturaAnticipo";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -29,14 +30,15 @@ import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 // della società. Il verso opposto — prendere dalla cassa per spese
 // personali — è escluso per decisione di Alessio, e infatti qui non c'è.
 
-const annoCorrente = new Date().getFullYear();
-const meseCorrente = new Date().getMonth() + 1;
 
 // ⚠️ CALENDARIO, e non serata: una nota pagata di tasca propria è una
 // spesa fatta in un giorno, non in un servizio. Dichiarato qui perché non
 // venga «uniformato» alla cassa: il perimetro della serata è di due gesti
 // soli (19/08).
-const formaVuota = {
+// ⚠️ Una FUNZIONE e non un oggetto (notte del 28/10/2026): l'oggetto si
+//    calcolava una volta all'apertura del gestionale, e su un tablet
+//    lasciato acceso per giorni la data proposta restava quella di allora.
+const formaVuotaOggi = () => ({
   importo: "",
   pagataIl: oggiLocale(),
   tagId: "",
@@ -48,9 +50,14 @@ const formaVuota = {
   //    nota non e' un investimento. Nessuna regola lo deduce dal motivo,
   //    dall'importo o dal testo.
   eInvestimento: false,
-};
+});
 
 export default function SezionePersonale() {
+  // ⚠️ Dentro la schermata (notte del 28/10): calcolati all'apertura del
+  //    gestionale, dopo il cambio di mese «da dire alla commercialista»
+  //    restava quello del mese prima.
+  const annoCorrente = new Date().getFullYear();
+  const meseCorrente = new Date().getMonth() + 1;
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [saldo, setSaldo] = useState(null);
@@ -61,9 +68,13 @@ export default function SezionePersonale() {
   const [fatture, setFatture] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState(formaVuota);
+  const [form, setForm] = useState(formaVuotaOggi);
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
+  // L'avviso sul riferimento compare solo DOPO aver premuto Registra senza
+  // riferimento e senza fattura: a modulo vuoto non deve rimproverare nessuno.
+  const [avvisoRif, setAvvisoRif] = useState(false);
+  const campoRifRef = useRef(null);
   // 🔴 L'ESITO VA SULLA RIGA TOCCATA, non in cima alla pagina: un rifiuto
   //    lontano dal gesto e' un rifiuto che non c'e' (lezione del 17/08,
   //    pagata una volta proprio in Cassa).
@@ -76,7 +87,11 @@ export default function SezionePersonale() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const ricarica = () => {
@@ -111,7 +126,7 @@ export default function SezionePersonale() {
   }, [entityId]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -127,13 +142,18 @@ export default function SezionePersonale() {
     }
   };
 
-  const registra = async () => {
+  const registra = async (senzaAvviso = false) => {
     if (!form.importo || !form.tagId) return;
+    if (!senzaAvviso && !form.documento.trim() && !form.supplierInvoiceId) {
+      setAvvisoRif(true);
+      return;
+    }
+    setAvvisoRif(false);
     setSaving(true);
     setError("");
     try {
       await createAnticipazione({ ...form, entityId });
-      setForm({ ...formaVuota, tagId: form.tagId, pagataIl: form.pagataIl });
+      setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
       await ricarica();
     } catch (e) {
       setError(e.message);
@@ -213,14 +233,14 @@ export default function SezionePersonale() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa, Banca e Prima Nota
         </Link>
         {entities && (
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -237,7 +257,7 @@ export default function SezionePersonale() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -261,7 +281,7 @@ export default function SezionePersonale() {
             {/* ⚠️ Il limite viaggia col numero: questo saldo non entra
                 nella previsione di cassa, perché una nota aperta non ha
                 una scadenza. */}
-            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
+            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
               {saldo?.avvertenza}
             </p>
           </div>
@@ -293,7 +313,7 @@ export default function SezionePersonale() {
             <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ho pagato io</h2>
 
             {tag.length === 0 ? (
-              <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+              <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
                 <p className="testo-sala-grande text-b58-charcoal mb-1">
                   Prima serve almeno un <strong>motivo</strong>.
                 </p>
@@ -317,14 +337,14 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Crea
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+              <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
                 {/* SPEC-0010, 11/09/2026: «Quando» in mezza riga (132 punti)
                     si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
                 <div className="riga-campi mb-3">
@@ -386,7 +406,11 @@ export default function SezionePersonale() {
                     <label className={labelClass}>Rif. documento</label>
                     <input
                       value={form.documento}
-                      onChange={(e) => setForm((f) => ({ ...f, documento: e.target.value }))}
+                      ref={campoRifRef}
+                      onChange={(e) => {
+                        setAvvisoRif(false);
+                        setForm((f) => ({ ...f, documento: e.target.value }));
+                      }}
                       placeholder="numero dello scontrino o della ricevuta"
                       className={inputClass}
                     />
@@ -398,7 +422,16 @@ export default function SezionePersonale() {
                     <label className={labelClass}>C&apos;è già una fattura?</label>
                     <select
                       value={form.supplierInvoiceId}
-                      onChange={(e) => setForm((f) => ({ ...f, supplierInvoiceId: e.target.value }))}
+                      onChange={(e) => {
+                        const scelta = fattureAperte.find((x) => x.id === e.target.value);
+                        // Scelta la fattura, la cifra proposta è quella che
+                        // resta da pagare (l'anticipo deve coincidere).
+                        setForm((f) => ({
+                          ...f,
+                          supplierInvoiceId: e.target.value,
+                          importo: scelta && !f.importo ? String(scelta.da_pagare ?? scelta.amount) : f.importo,
+                        }));
+                      }}
                       className={inputClass}
                     >
                       <option value="">no, la spesa è solo questa</option>
@@ -416,16 +449,64 @@ export default function SezionePersonale() {
                     {nonLetto(fatture) && (
                       <DatoNonLetto cosa="le fatture ancora da pagare" className="mt-1" />
                     )}
+                    {/* 🔴 Collegata a una fattura, l'anticipo LA PAGA: esce
+                        dalle scadenze e resta «pagata (anticipo)». Il
+                        debito verso di te resta qui, e la cassa non si
+                        muove. Se la cifra non coincide, il database
+                        rifiuta: meglio dirlo prima. */}
+                    {form.supplierInvoiceId && (
+                      <p className="testo-sala text-b58-charcoal-soft mt-1" data-prova="anticipo-paga-fattura">
+                        La fattura risulterà <strong>pagata (anticipo)</strong> e uscirà dalle scadenze;
+                        la cassa non si muove e il debito verso di te resta qui.
+                      </p>
+                    )}
+                    {avvisoImportoAnticipo(
+                      form.importo,
+                      fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                    ) && (
+                      <p className="testo-sala text-b58-terracotta-dark-testo mt-1" data-prova="anticipo-importo-diverso">
+                        {avvisoImportoAnticipo(
+                          form.importo,
+                          fattureAperte.find((x) => x.id === form.supplierInvoiceId)
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {!form.documento.trim() && (
-                  <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-                    Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
-                    registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
-                    non aggiungi il documento.
-                  </p>
-                )}
+                {/* Il contenitore live resta sempre nel DOM, così chi usa uno
+                    screen reader sente l'avviso quando compare. */}
+                <div aria-live="polite">
+                  {avvisoRif && !form.documento.trim() && !form.supplierInvoiceId && (
+                    <div
+                      role="alert"
+                      className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
+                    >
+                      <p className="mb-2">
+                        Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
+                        registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
+                        non aggiungi il documento.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => campoRifRef.current?.focus()}
+                          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-3 py-1.5"
+                        >
+                          Aggiungo il riferimento
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => registra(true)}
+                          className="tocco-campo rounded-lg ring-1 ring-b58-charcoal/30 text-b58-charcoal testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                        >
+                          Registra lo stesso
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* 🔴 «INVESTIMENTO PER IL PROGETTO» ANCHE QUI — C11,
                     21/09/2026, decisione di Alessio. È il punto in cui la
@@ -509,8 +590,8 @@ export default function SezionePersonale() {
                   <button
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
-                    onClick={registra}
-                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    onClick={() => registra()}
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
@@ -587,7 +668,7 @@ export default function SezionePersonale() {
                       {erroreRiga[n.id] && (
                         <p
                           data-prova="investimento-nota-errore"
-                          className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1"
+                          className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1"
                         >
                           {erroreRiga[n.id]}
                         </p>
@@ -596,7 +677,7 @@ export default function SezionePersonale() {
                     <span className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => pareggia(n.id)}
-                        className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5"
+                        className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3 py-1.5"
                       >
                         Mi sono rimborsato
                       </button>
@@ -675,7 +756,7 @@ export default function SezionePersonale() {
                         </span>
                       </label>
                       {erroreRiga[n.id] && (
-                        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
+                        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
                           {erroreRiga[n.id]}
                         </p>
                       )}

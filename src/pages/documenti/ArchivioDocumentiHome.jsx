@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createDocument,
@@ -8,6 +8,7 @@ import {
   updateDocument,
   uploadDocumentFile,
 } from "../../lib/api/documents";
+import { scadenzaDaSeguire } from "../../lib/calcoli/documentiCollegabili";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -19,7 +20,7 @@ import {
   dateDaDistinguere,
 } from "../../lib/calcoli/propostaDocumento";
 import { contaPostaInAttesa } from "../../lib/api/posta";
-import { formatDate, formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR, giorniDaOggi } from "../../lib/constants";
 
 // 🔴 L'ELENCO DEI TIPI E' CHIUSO DAL 30/08/2026, e non vive piu' qui.
 // Prima erano otto SUGGERIMENTI su un campo di testo libero: si potevano
@@ -34,7 +35,8 @@ const emptyForm = {
   title: "", doc_type: "", document_date: "", counterparties: "", amount: "", expiry_date: "", note: "",
 };
 
-const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
+// Sul calendario italiano (`giorniDaOggi`, notte del 28/10/2026).
+const daysTo = (d) => giorniDaOggi(String(d).slice(0, 10));
 
 export default function ArchivioDocumentiHome() {
   const navigate = useNavigate();
@@ -78,7 +80,7 @@ export default function ArchivioDocumentiHome() {
     leggi(sezioniArchivio()).then(setSezioni);
   }, []);
 
-  const reload = () => listDocuments({ search: cercato || undefined }).then(setDocuments);
+  const reload = () => listDocuments({ search: cercato || undefined, conStatoFattura: true }).then(setDocuments);
 
   // Stessa attesa del salvataggio automatico delle note (700 ms sarebbe
   // troppo per una ricerca, che deve sembrare istantanea): si aspetta che
@@ -138,7 +140,7 @@ export default function ArchivioDocumentiHome() {
   }, [documents, elencoSezioni]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // 🔴 IL DOCUMENTO PRIMA, I DATI DOPO — 10/09/2026, Blocco 4 del mandato.
@@ -153,7 +155,13 @@ export default function ArchivioDocumentiHome() {
   //    deposito e non tocca il database. È una **proprietà**, non un
   //    controllo — non c'è nessun posto da cui togliere qualcosa se poi
   //    Alessio cambia idea.
+  // ⚠️ Conta le letture (notte del 28/10, dalla revisione): scelto un file
+  //    lento e poi un altro, se il primo rispondeva per ultimo il suo testo
+  //    finiva sulla scheda del secondo — e «Chiedi all'archivio» avrebbe
+  //    risposto col contenuto sbagliato, senza nessun errore.
+  const giroLettura = useRef(0);
   const scegliFile = async (scelto) => {
+    const giro = ++giroLettura.current;
     setFile(scelto);
     setProposta(null);
     setTesto(null);
@@ -162,6 +170,7 @@ export default function ArchivioDocumentiHome() {
     setLeggendo(true);
     try {
       const r = await leggiFileDaArchiviare(scelto);
+      if (giro !== giroLettura.current) return;
       setProposta(r?.proposta ?? null);
       setTesto(r?.testo ?? null);
       const campi = campiProposti(r?.proposta, elencoSezioni);
@@ -179,11 +188,12 @@ export default function ArchivioDocumentiHome() {
         expiry_date: f.expiry_date || campi.expiry_date,
       }));
     } catch (e) {
+      if (giro !== giroLettura.current) return;
       // ⚠️ Una lettura fallita NON impedisce di archiviare: la scheda si
       //    compila a mano come si è sempre fatto, e lo si dice.
       setError(`Non sono riuscito a leggere il file: ${e.message} — la scheda si compila a mano.`);
     } finally {
-      setLeggendo(false);
+      if (giro === giroLettura.current) setLeggendo(false);
     }
   };
 
@@ -249,7 +259,7 @@ export default function ArchivioDocumentiHome() {
   };
 
   const expiringSoon = useMemo(
-    () => documents.filter((d) => d.expiry_date && daysTo(d.expiry_date) <= 60),
+    () => documents.filter((d) => scadenzaDaSeguire(d) && daysTo(d.expiry_date) <= 60),
     [documents]
   );
 
@@ -279,17 +289,17 @@ export default function ArchivioDocumentiHome() {
           >
             Posta in arrivo
             {nonLetto(postaInAttesa) && (
-              <span className="ml-2 testo-sala text-b58-terracotta-dark">· non so quanta ce n&apos;è</span>
+              <span className="ml-2 testo-sala text-b58-terracotta-dark-testo">· non so quanta ce n&apos;è</span>
             )}
             {!nonLetto(postaInAttesa) && postaInAttesa > 0 && (
-              <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2 py-0.5">
+              <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2 py-0.5">
                 {postaInAttesa}
               </span>
             )}
           </button>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo documento"}
           </button>
@@ -308,7 +318,7 @@ export default function ArchivioDocumentiHome() {
       </p>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {showForm && (
@@ -316,7 +326,7 @@ export default function ArchivioDocumentiHome() {
           {/* 🔴 IL DOCUMENTO PRIMA, I DATI DOPO — 10/09/2026.
               Il file sta in CIMA e non più in fondo: è il primo gesto, non
               un allegato. Sotto, quello che il gestionale ne ha ricavato. */}
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-3">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4 mb-3">
             <label className={labelClass}>1 · Il documento</label>
             {/* ⚠️ Il pulsante «Scegli file» lo disegna il browser con una
                 misura sua: non si può ingrandire, e non è un nostro
@@ -333,7 +343,7 @@ export default function ArchivioDocumentiHome() {
             )}
             {!leggendo && proposta && (
               <div className="mt-2">
-                <p className="testo-sala-grande text-b58-olive-dark">
+                <p className="testo-sala-grande text-b58-olive-dark-testo">
                   L&apos;ho letto: qui sotto c&apos;è quello che ne ho ricavato. Correggi
                   quello che non va — <strong>niente entra nell&apos;Archivio finché non
                   premi Salva</strong>.
@@ -345,7 +355,7 @@ export default function ArchivioDocumentiHome() {
                 {[...cosaNonHoCapito(proposta, campiProposti(proposta, elencoSezioni)),
                   ...(Array.isArray(proposta.non_ho_capito) ? proposta.non_ho_capito : [])]
                   .length > 0 && (
-                  <p className="testo-sala text-b58-terracotta-dark mt-1">
+                  <p className="testo-sala text-b58-terracotta-dark-testo mt-1">
                     Non ho capito:{" "}
                     {[...cosaNonHoCapito(proposta, campiProposti(proposta, elencoSezioni)),
                       ...(Array.isArray(proposta.non_ho_capito) ? proposta.non_ho_capito : [])]
@@ -371,7 +381,7 @@ export default function ArchivioDocumentiHome() {
             )}
           </div>
 
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
             <label className={labelClass}>2 · La scheda</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Titolo del documento" className={`${inputClass} sm:col-span-2`} />
@@ -431,7 +441,7 @@ export default function ArchivioDocumentiHome() {
                 type="button"
                 disabled={saving || leggendo || !form.title.trim()}
                 onClick={handleAdd}
-                className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
               >
                 {saving ? "Salvo…" : "+ Salva nell'Archivio"}
               </button>
@@ -456,11 +466,11 @@ export default function ArchivioDocumentiHome() {
                   <button
                     onClick={() => navigate(`/documenti/${d.id}`)}
                     data-documento-in-scadenza
-                    className="tocco-campo inline-flex items-center text-b58-charcoal hover:text-b58-terracotta text-left"
+                    className="tocco-campo inline-flex items-center text-b58-charcoal hover:text-b58-terracotta-testo text-left"
                   >
                     {d.title}
                   </button>
-                  <span className={days < 0 ? "text-b58-terracotta-dark font-medium" : "text-b58-gold-dark"}>
+                  <span className={days < 0 ? "text-b58-terracotta-dark-testo font-medium" : "text-b58-gold-dark-testo"}>
                     {days < 0 ? `scaduto (${formatDate(d.expiry_date)})` : `${formatDate(d.expiry_date)} (${days}gg)`}
                   </span>
                 </li>
@@ -512,7 +522,7 @@ export default function ArchivioDocumentiHome() {
               </button>
               <div className="flex items-center gap-3 shrink-0">
                 {d.storage_path && (
-                  <button onClick={() => openFile(d)} className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark">
+                  <button onClick={() => openFile(d)} className="tocco-testo testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo">
                     Apri file
                   </button>
                 )}

@@ -16,4 +16,4 @@ export const SELECT_FATTURA =
   "*, da_pagare, note_scalate," +
   " supplier:supplier_id(id, name), entity:entity_id(id, name)," +
   " utilizzi:note_credito_utilizzi!fattura_id(id, importo, nota:nota_id(id, numero, data, importo))," +
-  " documenti:documents!supplier_invoice_id(id, title, doc_type, document_date)";
+  " documenti:documents!supplier_invoice_id(id, title, doc_type, document_date, storage_path, file_name)";

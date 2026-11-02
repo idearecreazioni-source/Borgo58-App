@@ -23,7 +23,7 @@ export default function RicettarioHome() {
             to="/ricettario/ingredienti"
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name="box" className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Ingredienti</h3>
@@ -38,7 +38,7 @@ export default function RicettarioHome() {
             to="/ricettario/schede"
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name="box" className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Schede dei prodotti</h3>
@@ -60,7 +60,7 @@ export default function RicettarioHome() {
           to="/ricettario/ricette"
           className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
         >
-          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
             <Icon name="book" className="w-5 h-5" />
           </div>
           <h3 className="font-display testo-sala-grande text-b58-charcoal">Ricette</h3>
@@ -76,7 +76,7 @@ export default function RicettarioHome() {
             to="/ricettario/bozze"
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name="book" className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Bozze</h3>
@@ -91,7 +91,7 @@ export default function RicettarioHome() {
             to="/ricettario/estrapola"
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name="box" className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Estrapola la spesa</h3>
@@ -106,7 +106,7 @@ export default function RicettarioHome() {
             to="/ricettario/menu"
             className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo mb-3">
               <Icon name="calendar" className="w-5 h-5" />
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Menu</h3>

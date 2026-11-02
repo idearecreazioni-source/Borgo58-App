@@ -23,7 +23,7 @@ const SEGNO = {
   // ⚠️ I tre casi storti si vedono che sono storti, e si vedono DIVERSI fra
   //    loro: «non lo so» non è «non ce n'è», e nessuno dei due è «dimmi di
   //    che cosa».
-  non_lo_so: { icona: "⚠️", sfondo: "bg-b58-terracotta/10", testo: "text-b58-terracotta-dark" },
+  non_lo_so: { icona: "⚠️", sfondo: "bg-b58-terracotta/10", testo: "text-b58-terracotta-dark-testo" },
   chiarimento: { icona: "❓", sfondo: "bg-b58-gold/15", testo: "text-b58-charcoal" },
   scegli: { icona: "❓", sfondo: "bg-b58-gold/15", testo: "text-b58-charcoal" },
   non_so_farlo: { icona: "—", sfondo: "bg-b58-cream", testo: "text-b58-charcoal" },
@@ -34,7 +34,7 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
   const segno = SEGNO[risposta.stato] ?? null;
 
   return (
-    <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+    <div className="mt-6 rounded-xl border border-b58-cream-dark bg-b58-campo p-4 md:p-6">
       <h2 className="testo-sala-lontano font-medium text-b58-charcoal">{titolo}</h2>
       {testoDetto && (
         <p className="testo-sala mt-1 text-b58-charcoal-soft">Hai detto: «{testoDetto}»</p>
@@ -62,7 +62,7 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
               <li key={r.chiave} className="testo-sala text-b58-charcoal">
                 ·{" "}
                 {r.a ? (
-                  <Link to={r.a} className="text-b58-terracotta hover:underline">
+                  <Link to={r.a} className="text-b58-terracotta-testo hover:underline">
                     {r.testo}
                   </Link>
                 ) : (
@@ -109,7 +109,7 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
               type="button"
               onClick={() => onScegli?.(c)}
               disabled={occupato}
-              className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment disabled:opacity-60"
+              className="tocco-riga rounded-lg bg-b58-inverso px-4 testo-sala text-b58-sul-colore disabled:opacity-60"
             >
               {c.testo}
             </button>
@@ -119,7 +119,7 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
 
       {risposta.a && (
         <p className="testo-sala mt-3">
-          <Link to={risposta.a} className="text-b58-terracotta hover:underline">
+          <Link to={risposta.a} className="text-b58-terracotta-testo hover:underline">
             {risposta.apri} →
           </Link>
         </p>

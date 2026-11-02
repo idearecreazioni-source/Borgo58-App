@@ -12,7 +12,7 @@ import Didascalia from "../../components/Didascalia";
 const STATUS_BADGE = {
   attivo: "bg-b58-olive",
   da_verificare: "bg-b58-gold",
-  scaduto: "bg-b58-charcoal-soft/60",
+  scaduto: "bg-b58-inverso-soft/60",
   abolito: "bg-b58-terracotta",
 };
 
@@ -45,7 +45,7 @@ export default function CatalogoStrumenti() {
   }, []);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -95,12 +95,12 @@ export default function CatalogoStrumenti() {
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Proiezione fiscale
         </Link>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
         >
           {showForm ? "Annulla" : "+ Nuovo strumento"}
         </button>
@@ -123,12 +123,12 @@ export default function CatalogoStrumenti() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {showForm && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+          <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               <input
                 value={form.name}
@@ -215,7 +215,7 @@ export default function CatalogoStrumenti() {
                 type="button"
                 disabled={saving || !form.name.trim()}
                 onClick={handleAdd}
-                className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
               >
                 {saving ? "Salvo…" : "+ Aggiungi"}
               </button>
@@ -238,14 +238,14 @@ export default function CatalogoStrumenti() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-b58-charcoal font-medium">{t.name}</span>
-                    <span className={`inline-flex items-center rounded-full ${STATUS_BADGE[t.status]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}>
+                    <span className={`inline-flex items-center rounded-full ${STATUS_BADGE[t.status]} text-b58-sul-colore testo-sala font-medium px-2 py-0.5`}>
                       {labelFor(FISCAL_TOOL_STATUSES, t.status)}
                     </span>
                     <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5">
                       {labelFor(FISCAL_TOOL_CATEGORIES, t.category)}
                     </span>
                     {t.in_use && (
-                      <span className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-full px-2 py-0.5">
+                      <span className="testo-sala text-b58-olive-dark-testo bg-b58-olive/10 rounded-full px-2 py-0.5">
                         in uso
                       </span>
                     )}
@@ -284,13 +284,13 @@ export default function CatalogoStrumenti() {
                 >
                   <button
                     onClick={() => toggleInUse(t)}
-                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-testo"
                   >
                     {t.in_use ? "Segna non in uso" : "Segna in uso"}
                   </button>
                   <button
                     onClick={() => handleDelete(t)}
-                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                   >
                     Rimuovi
                   </button>

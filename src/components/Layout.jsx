@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
+import Caricamento from "./Caricamento";
+import PezzoMancante from "./PezzoMancante";
 import { useAuth } from "../context/AuthContext";
 import { lasciaPerdereRegistrazione, registrazioneInCorso } from "../lib/registrazioneInCorso";
 import Sidebar from "./Sidebar";
@@ -12,6 +14,8 @@ import AvvisoAggiornamento from "./AvvisoAggiornamento";
 import ApriMemo from "./ApriMemo";
 import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
 import { useSegnala } from "./useSegnala";
+import { percorsoComande } from "../lib/schermo";
+import { avvisoAccesso } from "../lib/calcoli/avvisoAccesso";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,7 +29,9 @@ export default function Layout() {
   // larghezze lì dentro sono calibrate sul tablet di sala (vedi il
   // commento su `max-w-3xl` in Sala.jsx), non su un monitor da ufficio.
   // Il telaio desktop qui sotto non deve toccarle.
-  const isComande = pathname === "/comande" || pathname.startsWith("/comande/");
+  // `/comande/stampanti` è l'eccezione: si apre dal computer d'ufficio e segue
+  // il profilo «Computer» (M8, 31/10/2026), vedi `percorsoComande`.
+  const isComande = percorsoComande(pathname);
 
   // 🔴 A MICROFONO ACCESO IL MENU CHIEDE PRIMA DI CAMBIARE PAGINA — 12/09/2026,
   //    mandato notturno, blocco C (dal collaudo sull'iPhone). Cambiare pagina
@@ -38,7 +44,20 @@ export default function Layout() {
   //    ⚠️ Sta nella fase di cattura: la voce del menu non riceve il tocco,
   //       quindi non naviga e non chiude il menu.
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, ruoloNonLetto, riprovaRuolo } = useAuth();
+  // Senza rete il ruolo non si legge, ma non e' un guasto: il riquadro lo
+  // dice com'e' (calcoli/avvisoAccesso.js, 01/11/2026).
+  const [inRete, setInRete] = useState(() => (typeof navigator === "undefined" ? undefined : navigator.onLine));
+  useEffect(() => {
+    const aggiorna = () => setInRete(navigator.onLine);
+    window.addEventListener("online", aggiorna);
+    window.addEventListener("offline", aggiorna);
+    return () => {
+      window.removeEventListener("online", aggiorna);
+      window.removeEventListener("offline", aggiorna);
+    };
+  }, []);
+  const riquadroAccesso = avvisoAccesso({ ruoloNonLetto, inRete });
   // `da` dice dove si è toccato — il menu del telefono, la barra del
   // computer o la testata (il logo) — perché la domanda compaia lì.
   // ⚠️ IL LOGO CHIEDE ANCHE LUI (decisione di Alessio del 12/09/2026): porta
@@ -74,7 +93,7 @@ export default function Layout() {
         <button
           type="button"
           onClick={continua}
-          className="tocco-bottone rounded-lg bg-b58-charcoal text-b58-parchment testo-sala font-medium px-3"
+          className="tocco-bottone rounded-lg bg-b58-inverso text-b58-sul-colore testo-sala font-medium px-3"
         >
           Continua a registrare
         </button>
@@ -140,7 +159,10 @@ export default function Layout() {
           com'era. */}
       {mobileOpen && (
         <div role="dialog" aria-modal="true" aria-label="Menu" className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
+          {/* `telaio-del-gestionale` (31/10/2026): col profilo «Computer» il
+              menu a cassetto ha le misure della barra laterale, non quelle
+              calibrate del tablet (index.css). */}
+          <div className="telaio-del-gestionale w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
             <Sidebar
               onNavigate={() => setMobileOpen(false)}
               sopra={sospeso?.da === "menu" ? avviso : null}
@@ -148,7 +170,7 @@ export default function Layout() {
           </div>
           <button
             aria-label="Chiudi menu"
-            className="flex-1 bg-b58-charcoal/40"
+            className="flex-1 bg-b58-velo/40"
             onClick={() => {
               setSospeso(null);
               setMobileOpen(false);
@@ -161,7 +183,7 @@ export default function Layout() {
         {/* Topbar mobile */}
         <header
           onClickCapture={trattieni("testata")}
-          className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment"
+          className="telaio-del-gestionale lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment"
         >
           {/* 🔴 DALLA DASHBOARD NON SI TORNAVA INDIETRO (27/08, visto da
               Alessio col telefono): si tocca una sezione, si arriva nel
@@ -202,7 +224,8 @@ export default function Layout() {
               sta dappertutto non compare in nessun elenco per schermata.*
               ⚠️ E compare **solo sugli schermi stretti** (`lg:hidden`) —
               cioè esattamente sul tablet e sul telefono, dove si tocca col
-              dito. Sul computer non c'è. */}
+              dito. Sul computer c'è solo a finestra stretta, e lì ha le
+              misure del profilo «Computer» (`telaio-del-gestionale`). */}
           {/* 🔴 MEMO VOCE DA QUALUNQUE MODULO — 11/09/2026. Qui, e non in
               un pulsante che galleggia sopra la schermata: la testata sta
               FUORI dal contenuto, quindi non copre nessun gesto della
@@ -229,7 +252,7 @@ export default function Layout() {
         {/* La domanda del logo compare subito sotto la testata, dove si è
             appena toccato: il menu in quel momento è chiuso. */}
         {sospeso?.da === "testata" && (
-          <div className="lg:hidden print:hidden pt-3">{avviso}</div>
+          <div className="telaio-del-gestionale lg:hidden print:hidden pt-3">{avviso}</div>
         )}
 
         {/* 🔴 IL TELAIO DESKTOP (05/09/2026): molte pagine restano incollate
@@ -259,15 +282,41 @@ export default function Layout() {
           <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
           </div>
+          {/* ⚠️ `data-fuori-dalla-foto` (28/10/2026): il riquadro si apre
+              mentre si fa l'immagine della pagina, e non deve finirci. */}
           {segnala.aperto && (
-            <div className="print:hidden mb-4">
-              <RiquadroSegnala momento={segnala.momento} onChiudi={segnala.chiudi} />
+            <div data-fuori-dalla-foto className="print:hidden mb-4">
+              <RiquadroSegnala
+                momento={segnala.momento}
+                scatto={segnala.scatto}
+                onTogliImmagine={segnala.togliImmagine}
+                onChiudi={segnala.chiudi}
+              />
             </div>
+          )}
+          {riquadroAccesso && !riquadroAccesso.riprova && (
+            <p role="status" className="print:hidden mb-4 rounded-lg bg-b58-olive/15 ring-1 ring-b58-olive/40 px-3 py-2 testo-sala text-b58-charcoal">
+              {riquadroAccesso.testo}
+            </p>
+          )}
+          {riquadroAccesso?.riprova && (
+            <p role="alert" className="print:hidden mb-4 rounded-lg bg-b58-terracotta/10 px-3 py-2 testo-sala text-b58-terracotta-dark-testo">
+              {riquadroAccesso.testo}{" "}
+              <button type="button" onClick={riprovaRuolo} className="tocco-riga underline font-medium">
+                Riprova
+              </button>
+            </p>
           )}
           <AvvisoLettureTagliate />
           <AvvisoAggiornamento />
           <RipresaBozza />
-          <Outlet />
+          {/* La cornice resta ferma mentre arriva il pezzo della schermata
+              (27/10/2026): sparirebbe tutta, menu compreso, a ogni cambio. */}
+          <PezzoMancante key={pathname}>
+            <Suspense fallback={<Caricamento />}>
+              <Outlet />
+            </Suspense>
+          </PezzoMancante>
         </main>
       </div>
     </div>

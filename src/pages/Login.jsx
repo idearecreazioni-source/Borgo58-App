@@ -51,14 +51,14 @@ export default function Login() {
               setError("");
             }}
             placeholder="••••••"
-            className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 testo-sala-titolo tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-4 py-3 testo-sala-titolo tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
-          {error && <p className="testo-sala-grande text-b58-terracotta-dark mt-2">{error}</p>}
+          {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo mt-2">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="mt-6 w-full rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
+            className="mt-6 w-full rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore font-medium py-3"
           >
             {submitting ? "Accesso in corso…" : "Entra"}
           </button>

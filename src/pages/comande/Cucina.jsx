@@ -10,6 +10,11 @@ import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 import Scorciatoia from "../../components/Scorciatoia";
+import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
+import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
+import { AvvisiDellaStampante, InCoda } from "./StampaInCoda";
+import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
+import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 
 // CUCINA — postazione di stampa, non schermata di lavoro (§3.2.1).
 //
@@ -37,7 +42,18 @@ import Scorciatoia from "../../components/Scorciatoia";
 // sono un foglio come gli altri, con la stessa vita (da stampare → stampato
 // → ristampabile). Il giorno del mini-PC la coda li prende senza doverli
 // distinguere, perché non c'è niente da distinguere.
+//
+// 🔴 DAL 29/10/2026 C'È ANCHE LA STAMPANTE (migrazione 20261029000001).
+// Se in «Stampanti» c'è una stampante attiva per la cucina, ogni invio
+// esce da solo dal ponte, e questa pagina diventa il CONTROLLO: per ogni
+// foglio dice se è in coda, uscito, non uscito o incerto. «Stampa da qui»
+// resta, ed è la strada quando il ponte è spento: quello che si stampa da
+// qui esce dalla coda (il database lo toglie), così non esce due volte.
+// ⚠️ Un foglio incerto non si ristampa mai da solo: decide chi
+// guarda la stampante («È uscito» o «Ristampa»).
+// ⚠️ Senza stampante la pagina è quella di prima, pulsante per pulsante.
 const POLL_MS = 10000;
+const POLL_CON_STAMPANTE_MS = 4000;
 
 export default function Cucina() {
   const [righe, setRighe] = useState([]);
@@ -45,6 +61,10 @@ export default function Cucina() {
   const [error, setError] = useState("");
   const [letto, setLetto] = useState(false);
   const [stampaKey, setStampaKey] = useState(null);
+  const [coda, setCoda] = useState(null);
+  const [mandando, setMandando] = useState(() => new Set());
+  const [erroreTasto, setErroreTasto] = useState("");
+  const [codaNonLetta, setCodaNonLetta] = useState(false);
 
   // ⚠️ Quanti salvataggi sono in volo. Finché è più di zero il ricarico
   // periodico NON applica ciò che legge: il database non ha ancora
@@ -65,24 +85,77 @@ export default function Cucina() {
   // nessuna: se le chiamate fallissero e le righe no, la cucina vedrebbe una
   // coda plausibile **senza i biglietti dei turni** — cioè un elenco che
   // sembra completo e non lo è (§8).
-  const load = () =>
-    Promise.all([listRepartoTickets("cucina"), listChiamateTurno()])
-      .then(([r, c]) => {
+  // ⚠️ Le letture si numerano: una partita prima di «Riprova» e tornata
+  // dopo riporterebbe il foglio a «non uscito» per qualche secondo, e
+  // inviterebbe a premere di nuovo (revisione, 29/10).
+  const ultimaLettura = useRef(0);
+  const load = () => {
+    const questa = ++ultimaLettura.current;
+    return Promise.all([
+      listRepartoTickets("cucina"),
+      listChiamateTurno(),
+      // ⚠️ La coda è un di più: se non risponde, le comande si vedono lo
+      // stesso. E una lettura storta NON cancella quello che si sapeva della
+      // stampante: la pagina non deve saltare fra «con stampante» e
+      // «senza» a ogni guasto di rete. Lo dice, e tiene l'ultimo stato letto.
+      statoStampa("cucina").catch(() => NON_LETTO),
+    ])
+      .then(([r, c, q]) => {
         if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
+        if (questa !== ultimaLettura.current) return; // ne è già partita una più nuova
         setRighe(r);
         setChiamate(c);
+        if (nonLetto(q)) setCodaNonLetta(true);
+        else {
+          setCoda(q);
+          setCodaNonLetta(false);
+        }
         setLetto(true);
         setError("");
       })
       // Un errore non va ingoiato: una pagina vuota per un problema di
       // rete è indistinguibile da una serata tranquilla.
       .catch((e) => setError(e.message));
+  };
 
+  const stampante = coda?.stampante ?? null;
+  const conStampante = Boolean(stampante);
+
+  // Con la stampante si rilegge più spesso: chi guarda aspetta di vedere
+  // «uscito» subito dopo l'invio, non dieci secondi dopo.
   useEffect(() => {
     load();
-    const interval = setInterval(load, POLL_MS);
-    return () => clearInterval(interval);
-  }, []);
+    // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
+    return ogniTantoSeVisibile(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
+  }, [conStampante]);
+
+  const pontePronto = Boolean(coda?.ponte_acceso);
+
+  // «Riprova», «Ristampa», «Mandalo alla stampante»: il foglio di nuovo in
+  // coda, al posto di quello fallito o incerto.
+  // ⚠️ L'errore di un tasto sta a parte da quello delle letture: la
+  // lettura successiva (fra quattro secondi) lo cancellerebbe prima che
+  // qualcuno lo legga.
+  const manda = async (g) => {
+    setMandando((m) => new Set(m).add(g.chiave));
+    setErroreTasto("");
+    try {
+      await mandaAllaStampante(
+        g.tipo === "chiamata"
+          ? { chiamata: g.id }
+          : { righe: g.items.map((i) => i.id), aggiunta: Boolean(g.aggiunta) }
+      );
+      await load();
+    } catch (e) {
+      setErroreTasto(e.message);
+    } finally {
+      setMandando((m) => {
+        const n = new Set(m);
+        n.delete(g.chiave);
+        return n;
+      });
+    }
+  };
 
   const fogli = bigliettiCucina(righe, chiamate);
   const daStampare = fogli.filter((g) => !g.stampato);
@@ -160,7 +233,7 @@ export default function Cucina() {
       // classe da cui il blocco @media print riconosce che questo foglio
       // va alla termica della cucina e vuole 6,8 mm invece di 3,2 (il
       // preconto, che condivide `stampa-ticket`, non la porta).
-      className={`ticket-cucina ${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-white border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
+      className={`ticket-cucina ${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-b58-campo border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
         g.tipo === "chiamata" ? "border-t-b58-gold-dark" : "border-t-b58-terracotta"
       } ${giaStampato ? "opacity-60" : ""}`}
     >
@@ -267,6 +340,7 @@ export default function Cucina() {
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Cucina — stampa</h1>
           <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
             {daStampare.length === 0 ? "Niente da stampare" : `${daStampare.length} da stampare`}
+            {conStampante && ` · stampante «${stampante.nome}»`}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -280,10 +354,17 @@ export default function Cucina() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
+      <AvvisiDellaStampante
+        stampante={stampante}
+        pontePronto={pontePronto}
+        codaNonLetta={codaNonLetta}
+        erroreTasto={erroreTasto}
+        senzaPonte="Stampali da qui con «Stampa da qui»."
+      />
 
       {/* 🔴 QUI C'ERA UNA DIDASCALIA (tolta il 22/08): «La cucina lavora di
           carta (§3.2.1)… Quando arriverà il mini-PC, la stampa partirà da
@@ -311,13 +392,24 @@ export default function Cucina() {
           {daStampare.map((g) => (
             <div key={g.chiave}>
               <Foglio g={g} giaStampato={false} />
-              <button
-                type="button"
-                onClick={() => stampa(g, false)}
-                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala-grande font-semibold print:hidden"
-              >
-                🖨 Stampa
-              </button>
+              {conStampante ? (
+                <InCoda
+                  come={lavoroDelFoglio(g, coda?.lavori)}
+                  pontePronto={pontePronto}
+                  occupato={mandando.has(g.chiave)}
+                  onManda={() => manda(g)}
+                  onUscito={() => segnaSubito(g, true)}
+                  onStampaQui={() => stampa(g, false)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => stampa(g, false)}
+                  className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala-grande font-semibold print:hidden"
+                >
+                  🖨 Stampa
+                </button>
+              )}
             </div>
           ))}
 
@@ -330,16 +422,26 @@ export default function Cucina() {
             <div key={g.chiave}>
               <Foglio g={g} giaStampato />
               <div className="flex gap-2 mt-1.5 print:hidden">
+                {conStampante && (
+                  <button
+                    type="button"
+                    disabled={mandando.has(g.chiave)}
+                    onClick={() => manda(g)}
+                    className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium disabled:opacity-50"
+                  >
+                    Ristampa sulla stampante
+                  </button>
+                )}
                 <button
                   type="button"
-                    onClick={() => stampa(g, true)}
+                  onClick={() => stampa(g, true)}
                   className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium"
                 >
-                  Ristampa
+                  {conStampante ? "Ristampa da qui" : "Ristampa"}
                 </button>
                 <button
                   type="button"
-                    onClick={() => nonStampato(g)}
+                  onClick={() => nonStampato(g)}
                   className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal-soft testo-sala"
                 >
                   ↺ Segna non stampato

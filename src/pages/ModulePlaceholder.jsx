@@ -15,19 +15,19 @@ export default function ModulePlaceholder() {
     <div className="max-w-3xl mx-auto">
       <Link
         to="/dashboard"
-        className="tocco-bottone inline-flex items-center gap-1.5 testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mb-6"
+        className="tocco-bottone inline-flex items-center gap-1.5 testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo mb-6"
       >
         ← Torna alla dashboard
       </Link>
 
       <div className="rounded-2xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-8 md:p-10">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 shrink-0 rounded-xl bg-b58-cream-dark flex items-center justify-center text-b58-terracotta">
+          <div className="w-12 h-12 shrink-0 rounded-xl bg-b58-cream-dark flex items-center justify-center text-b58-terracotta-testo">
             <Icon name={module.icon} className="w-6 h-6" />
           </div>
           <div>
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full ${phase.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1 mb-2`}
+              className={`inline-flex items-center gap-1.5 rounded-full ${phase.colorClass} text-b58-sul-colore testo-sala font-medium px-2.5 py-1 mb-2`}
             >
               {phase.label}
             </span>
@@ -56,7 +56,7 @@ export default function ModulePlaceholder() {
                 <Link
                   key={p.a}
                   to={p.a}
-                  className="tocco-bottone rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment inline-flex items-center"
+                  className="tocco-bottone rounded-lg bg-b58-inverso px-4 testo-sala text-b58-sul-colore inline-flex items-center"
                 >
                   {p.nome} →
                 </Link>

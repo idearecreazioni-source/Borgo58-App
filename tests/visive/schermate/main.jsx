@@ -1,7 +1,7 @@
 // LE SCHERMATE VERE, MONTATE COME NEL GESTIONALE — prova visiva del 26/09/2026.
 //
 // Una pagina sola, e la schermata si sceglie dall'indirizzo:
-//   ?pagina=dashboard | agenda | primanota | causali | salaorari | spesa | ingrediente | archivio
+//   ?pagina=dashboard | agenda | primanota | causali | salaorari | spesa | ingrediente | archivio | stampanti
 //
 // ⚠️ Il telaio è quello vero (`Layout.jsx`): la barra laterale occupa lo
 //    stesso spazio da 1024 punti in su, e il contenuto ha gli stessi
@@ -16,7 +16,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "../../../src/index.css";
 // Inter locale, come quello che il gestionale carica da Google Fonts (27/09/2026).
 import "../caratteri/inter.css";
-import "../caratteri/fraunces.css";
+import "../caratteri/bricolage.css";
 import { applyPxCm } from "../../../src/lib/touch";
 import Dashboard from "../../../src/pages/Dashboard";
 import AgendaList from "../../../src/pages/agenda/AgendaList";
@@ -26,9 +26,21 @@ import SalaEOrari from "../../../src/pages/calendario/SalaEOrari";
 import SpesaSpicciola from "../../../src/pages/magazzino/SpesaSpicciola";
 import IngredienteForm from "../../../src/pages/ricettario/IngredienteForm";
 import ArchivioDocumentiHome from "../../../src/pages/documenti/ArchivioDocumentiHome";
+import Stampanti from "../../../src/pages/comande/Stampanti";
 import { agendaCorsie } from "../finti/tasks.js";
 
 applyPxCm();
+// Lo schermo dell'apparecchio (29/10/2026): come lo propone il gestionale,
+// guardando la larghezza della finestra di prova — sul banco il puntatore non
+// dice niente. `?schermo=…` lo forza, per le foto «prima / dopo».
+document.documentElement.setAttribute(
+  "data-schermo",
+  new URLSearchParams(location.search).get("schermo") ??
+    // La scelta salvata, come nel gestionale (31/10/2026): la forma
+    // «computer 900 calibrato» la scrive prima che la pagina parta.
+    localStorage.getItem("b58-schermo") ??
+    (innerWidth >= 1024 ? "computer" : innerWidth < 768 ? "telefono" : "tablet"),
+);
 
 const impegno = (id, title, category, priority) => ({
   id,
@@ -79,6 +91,11 @@ const movimento = (n, direction, amount, etichetta, mezzo, extra = {}) => {
     ...resto,
   };
 };
+
+// Un'ora fissa e non quella del momento: le foto «prima / dopo» del
+// 29/10 si confrontano byte per byte, e un orologio che cambia le farebbe
+// diverse sempre.
+const ORA_FISSA = "2026-10-28T20:30:00.000Z";
 
 const DATI = {
   dashboard: {
@@ -186,6 +203,26 @@ const DATI = {
       ],
     },
   },
+  // Le stampanti (28/10/2026): un registratore, una stampante con la carta
+  // finita e la sua frase lunga, e un lavoro «incerto» col suo testo — i
+  // casi che vanno a capo.
+  stampanti: {
+    tabelle: {
+      dispositivi: [
+        { id: "s1", nome: "Registratore telematico della cassa", tipo: "registratore_fiscale", protocollo: "fpmate_http", indirizzo: "192.168.100.250", porta: 8043, reparto: null, attivo: true, ultimo_contatto_il: ORA_FISSA, ultimo_stato: "pronto", ultimo_stato_testo: null },
+        { id: "s2", nome: "Stampante cucina", tipo: "stampante_comande", protocollo: "escpos_tcp", indirizzo: "192.168.1.51", porta: 9100, reparto: "cucina", attivo: true, ultimo_contatto_il: ORA_FISSA, ultimo_stato: "carta_finita", ultimo_stato_testo: "La stampante dice che la carta è finita: cambia il rotolo e riprova." },
+      ],
+      lavori_stampa: [
+        { id: "l1", dispositivo_id: "s2", tipo: "prova", stato: "incerto", tentativi: 1, creato_il: ORA_FISSA, finito_il: ORA_FISSA, errore_codice: "interrotto", errore_testo: "Il ponte ha preso questo lavoro e non ha più risposto: forse è uscito, forse no. Guarda la stampante e decidi tu." },
+        { id: "l2", dispositivo_id: "s1", tipo: "stato", stato: "stampato", tentativi: 1, creato_il: ORA_FISSA, finito_il: ORA_FISSA, errore_codice: null, errore_testo: null },
+      ],
+    },
+    rpc: {
+      chiavi_ponte_elenco: [
+        { id: "k1", nome: "Mini-PC ristorante", creata_il: ORA_FISSA, ultimo_battito: ORA_FISSA, versione: "0.1.0", host: "MINIPC-BORGO58", acceso: true, revocata_il: null },
+      ],
+    },
+  },
 };
 
 const PAGINE = {
@@ -197,9 +234,29 @@ const PAGINE = {
   spesa: ["/magazzino/spesa-spicciola", <SpesaSpicciola key="sp" />],
   ingrediente: ["/ricettario/ingredienti/nuovo", <IngredienteForm key="i" />],
   archivio: ["/documenti", <ArchivioDocumentiHome key="ar" />],
+  stampanti: ["/comande/stampanti", <Stampanti key="st" />],
 };
 
 const nome = new URLSearchParams(location.search).get("pagina") ?? "dashboard";
+
+// 🔴 LA BARRA IN ALTO E IL MENU A CASSETTO (31/10/2026, M14): il banco non
+//    monta il Layout vero (chiede login e quaderno dei difetti), quindi ne
+//    rifà i due pezzi con le stesse classi: quelle che contano per il
+//    profilo «Computer». Solo a finestra stretta col profilo «Computer»:
+//    sulle altre forme il banco resta quello di sempre.
+const conTelaio = document.documentElement.dataset.schermo === "computer" && innerWidth < 1024;
+const telaio = conTelaio && (
+  <>
+    <header className="telaio-del-gestionale lg:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
+      <span className="tocco-bottone inline-flex items-center rounded-lg pr-2 testo-sala">Borgo 58</span>
+      <button type="button" aria-label="Apri menu" className="tocco-bottone inline-flex items-center justify-center rounded-lg">☰</button>
+    </header>
+    <div className="telaio-del-gestionale lg:hidden fixed bottom-0 right-0 w-72 bg-b58-parchment shadow-xl" data-cassetto>
+      <a className="tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala">Agenda</a>
+      <a className="tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala">Prima nota</a>
+    </div>
+  </>
+);
 window.__DATI_FINTI = DATI[nome] ?? {};
 const [percorso, schermata] = PAGINE[nome] ?? PAGINE.dashboard;
 
@@ -208,6 +265,7 @@ createRoot(document.getElementById("root")).render(
     <div className="min-h-screen bg-b58-cream flex">
       <aside className="hidden lg:block lg:w-64 xl:w-80 shrink-0 border-r border-b58-charcoal/10" />
       <div className="flex-1 min-w-0 flex flex-col">
+        {telaio}
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8 contenuto-ampio" data-pagina={nome}>
           <Routes>
             <Route path={percorso} element={schermata} />

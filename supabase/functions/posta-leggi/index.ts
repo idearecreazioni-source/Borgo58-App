@@ -37,6 +37,7 @@
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.65.0";
 import { unzipSync } from "npm:fflate@0.8.2";
+import { firmaCorretta } from "../_shared/uguali.ts";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -1034,7 +1035,7 @@ async function leggiLaPosta() {
 // sapere che abbiamo preso in carico. L'esito si guarda dove va guardato
 // — sulla mail, in schermata.
 Deno.serve((req) => {
-  if (!NOTIFICHE_FIRMA || req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
+  if (!firmaCorretta(req.headers.get("x-borgo58-firma"), NOTIFICHE_FIRMA)) {
     return risposta({ errore: "Chiamante non riconosciuto" }, 401);
   }
   if (!ANTHROPIC_API_KEY || !SERVICE_ROLE) {

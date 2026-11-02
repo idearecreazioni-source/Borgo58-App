@@ -36,7 +36,7 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
         <button
           type="button"
           onClick={onRiprova}
-          className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala-grande font-semibold px-6"
+          className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-sul-colore testo-sala-grande font-semibold px-6"
         >
           Riprova
         </button>
@@ -45,7 +45,7 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
   }
 
   return (
-    <p className={`testo-sala text-b58-terracotta-dark ${className}`}>
+    <p className={`testo-sala text-b58-terracotta-dark-testo ${className}`}>
       {nonVuolDire ? (
         <>
           Non riesco a leggere {cosa}. {fraseNonVuolDire(nonVuolDire)}

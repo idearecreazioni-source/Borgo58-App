@@ -37,16 +37,20 @@ export default function DocumentoDetail() {
   //    una sezione poi spenta, aprire la scheda e salvare gliela
   //    cambierebbe — e il difetto sarebbe indistinguibile da una scelta.
   // ⚠️ Si aspetta il documento, perche' la sua sezione e' il parametro.
+  // ⚠️ `haDoc` e non `doc` (notte del 28/10): `doc` cambia a ogni lettera
+  //    scritta nella scheda, e ogni lettera rifaceva questa lettura.
+  const haDoc = Boolean(doc);
   useEffect(() => {
     if (!doc) return;
     // ⚠️ `leggi` invece di un `catch` che svuota: se la lettura fallisce il
     //    valore resta il segno «non letto», e la schermata lo dichiara invece
     //    di mostrare un menu vuoto che si legge «non ce ne sono».
     leggi(sezioniArchivio(doc.doc_type ?? null)).then(setSezioni);
-  }, [doc?.doc_type, doc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.doc_type, haDoc]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setField = (field, value) => setDoc((d) => ({ ...d, [field]: value }));
@@ -120,12 +124,12 @@ export default function DocumentoDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Archivio documenti
       </Link>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">{error}</p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-3">
@@ -181,7 +185,7 @@ export default function DocumentoDetail() {
         {doc.storage_path ? (
           <div className="mb-4 testo-sala-grande">
             <span className="text-b58-charcoal-soft">File: </span>
-            <button onClick={openFile} className="text-b58-terracotta hover:text-b58-terracotta-dark">
+            <button onClick={openFile} className="text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo">
               {doc.file_name || "apri"}
             </button>
           </div>
@@ -192,7 +196,7 @@ export default function DocumentoDetail() {
         {/* Il contenuto letto dentro il file. Senza, l'assistente conosce
             di questo documento solo i campi qui sopra. */}
         {doc.storage_path && (
-          <div className="mb-4 rounded-lg bg-white border border-b58-charcoal/10 p-3">
+          <div className="mb-4 rounded-lg bg-b58-campo border border-b58-charcoal/10 p-3">
             {doc.testo ? (
               <p className="testo-sala text-b58-charcoal-soft">
                 Contenuto letto: <strong>{doc.testo.length}</strong> caratteri. «Chiedi
@@ -260,7 +264,7 @@ export default function DocumentoDetail() {
             domanda="Eliminare documento e file?"
             onConferma={handleDelete}
           />
-          <button onClick={handleSave} disabled={saving} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+          <button onClick={handleSave} disabled={saving} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2">
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
         </div>

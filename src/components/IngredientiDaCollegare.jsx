@@ -65,7 +65,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
   };
 
   const campo =
-    "w-full tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white px-2 testo-sala text-b58-charcoal";
+    "w-full tocco-bottone rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 testo-sala text-b58-charcoal";
 
   return (
     <div className="mt-4">
@@ -86,7 +86,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
       )}
       <ul className="space-y-2">
         {righe.map((r) => (
-          <li key={r.id} className="rounded-lg bg-white border border-dashed border-b58-charcoal/25 p-3">
+          <li key={r.id} className="rounded-lg bg-b58-campo border border-dashed border-b58-charcoal/25 p-3">
             {modificabile ? (
               <div className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr] gap-2">
                 <div className="col-span-2 sm:col-span-1">
@@ -135,7 +135,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
                     <>
                       <button
                         onClick={() => togli(r.id)}
-                        className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3"
+                        className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-sul-colore testo-sala px-3"
                       >
                         Sì, togli
                       </button>
@@ -164,7 +164,7 @@ export default function IngredientiDaCollegare({ righe, prodotti, unita, modific
               </p>
             )}
             {r.nota && <p className="testo-sala text-b58-charcoal-soft mt-1">{r.nota}</p>}
-            {esiti[r.id] && <p className="testo-sala text-b58-terracotta mt-1">{esiti[r.id]}</p>}
+            {esiti[r.id] && <p className="testo-sala text-b58-terracotta-testo mt-1">{esiti[r.id]}</p>}
           </li>
         ))}
       </ul>

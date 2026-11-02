@@ -235,7 +235,7 @@ export default function PreventivoDetail() {
   if (errore && !prev) {
     return (
       <div className="max-w-3xl mx-auto">
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{errore}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">{errore}</p>
         <button onClick={carica} className="underline testo-sala mt-2">
           Riprova
         </button>
@@ -245,14 +245,14 @@ export default function PreventivoDetail() {
   if (!prev) return <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>;
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
         <Link
           to="/calendario-eventi/preventivi"
-          className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo"
         >
           ← Preventivi
         </Link>
@@ -274,7 +274,7 @@ export default function PreventivoDetail() {
             type="button"
             onClick={() => setVista(VISTA_COSTO)}
             className={`rounded-full testo-sala px-3 py-1.5 ${
-              vista === VISTA_COSTO ? "bg-b58-azione text-b58-parchment" : "text-b58-charcoal-soft"
+              vista === VISTA_COSTO ? "bg-b58-azione text-b58-sul-colore" : "text-b58-charcoal-soft"
             }`}
           >
             Per me
@@ -283,7 +283,7 @@ export default function PreventivoDetail() {
       </div>
 
       {errore && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {errore}
         </p>
       )}
@@ -394,7 +394,7 @@ export default function PreventivoDetail() {
               onClick={mandaLaMail}
               disabled={inCorso !== "" || !prev.cliente_email}
               title={prev.cliente_email ? undefined : "Di questo cliente non hai l'email"}
-              className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {inCorso === "mail" ? "…" : "Manda la mail"}
             </button>
@@ -588,7 +588,7 @@ function VistaCosto({
             onBlur={(e) =>
               salva({ prezzo_a_persona_scavalcato: e.target.value === "" ? null : Number(e.target.value) })
             }
-            className="w-40 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
+            className="w-40 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande"
           />
           <span className="testo-sala text-b58-charcoal-soft ml-2">
             Lascialo vuoto per usare quello proposto.
@@ -613,7 +613,7 @@ function VistaCosto({
               className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
             />
             <span className="testo-sala text-b58-charcoal-soft w-28">porzioni a testa</span>
-            <button onClick={() => togliRiga(r.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+            <button onClick={() => togliRiga(r.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo">
               Togli
             </button>
           </div>
@@ -623,7 +623,7 @@ function VistaCosto({
         </p>
 
         <div className="flex gap-2 mt-4">
-          <select value={nuovoPiatto} onChange={(e) => setNuovoPiatto(e.target.value)} className="flex-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande">
+          <select value={nuovoPiatto} onChange={(e) => setNuovoPiatto(e.target.value)} className="flex-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande">
             <option value="">Aggiungi un piatto…</option>
             {nonLetto(piatti) && (
               <option disabled>— non riesco a leggere il Ricettario —</option>
@@ -638,7 +638,7 @@ function VistaCosto({
               salva(null, [...prev.righe, { natura: "cibo", recipe_id: nuovoPiatto, porzioni_per_persona: 1 }]);
               setNuovoPiatto("");
             }}
-            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
+            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-sul-colore testo-sala-grande px-4"
           >
             Aggiungi
           </button>
@@ -659,7 +659,7 @@ function VistaCosto({
             <span className="flex-1 testo-sala-grande text-b58-charcoal">{r.descrizione}</span>
             <span className="testo-sala-grande text-b58-charcoal-soft">× {Number(r.quantita)}</span>
             <span className="testo-sala-grande text-b58-charcoal">{formatEUR(r.prezzo)}</span>
-            <button onClick={() => togliRiga(r.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+            <button onClick={() => togliRiga(r.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo">
               Togli
             </button>
           </div>
@@ -669,7 +669,7 @@ function VistaCosto({
             value={extraNome}
             onChange={(e) => setExtraNome(e.target.value)}
             placeholder="Cosa"
-            className="flex-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
+            className="flex-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande"
           />
           <input
             type="number"
@@ -677,7 +677,7 @@ function VistaCosto({
             value={extraPrezzo}
             onChange={(e) => setExtraPrezzo(e.target.value)}
             placeholder="€"
-            className="w-28 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
+            className="w-28 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande"
           />
           <button
             disabled={!extraNome.trim() || extraPrezzo === "" || salvando}
@@ -689,7 +689,7 @@ function VistaCosto({
               setExtraNome("");
               setExtraPrezzo("");
             }}
-            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
+            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-sul-colore testo-sala-grande px-4"
           >
             Aggiungi
           </button>
@@ -734,7 +734,7 @@ function VistaCosto({
         {prev.stato === "accettato" ? (
           <Link
             to={`/calendario-eventi/${prev.reservation_id}`}
-            className="testo-sala-grande text-b58-charcoal underline hover:text-b58-terracotta"
+            className="testo-sala-grande text-b58-charcoal underline hover:text-b58-terracotta-testo"
           >
             L&apos;evento è in calendario →
           </Link>
@@ -743,14 +743,14 @@ function VistaCosto({
             type="button"
             onClick={onAccetta}
             disabled={accettando}
-            className="rounded-lg bg-b58-olive hover:bg-b58-olive/90 text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-olive hover:bg-b58-olive/90 text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {accettando ? "…" : "Il cliente ha accettato"}
           </button>
         )}
         <button
           onClick={onVersione}
-          className="testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta"
+          className="testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta-testo"
         >
           Fai una versione nuova
         </button>

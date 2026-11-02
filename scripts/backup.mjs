@@ -21,6 +21,9 @@
 //   05_conteggi.txt quante righe c'era in ogni tabella al momento della
 //                   copia — serve a dimostrare che un ripristino ha
 //                   davvero rimesso tutto
+//   09_file_conteggi.txt quanti documenti il database dichiarava, cartella
+//                   per cartella: senza, un file non copiato non lo vede
+//                   nessuno
 //
 // Sola lettura sul database vero: non scrive nulla, non cancella nulla.
 
@@ -37,7 +40,12 @@ import {
   fermati,
   titolo,
   timbroLocale,
+  pretendiProgetto,
+  REF_PRODUZIONE,
+  urlApiDi,
+  elencaTuttoIlDeposito,
 } from "./comune.mjs";
+import { conteggiDichiarati, differenze } from "./backup-verifica.mjs";
 
 const SQL_CONTEGGI = `
 select relname || ' = ' || (xpath('/row/c/text()', xml_count))[1]::text as riga
@@ -53,6 +61,21 @@ order by relname;
 
 const config = leggiConfigurazione();
 const url = obbligatorio(config, "DB_URL_PRODUZIONE", "E' la stringa 'Session pooler' del progetto vero (docs/BACKUP.md).");
+// 🔴 SENZA QUESTA CHIAVE NON SI PARTE (31/10/2026). Fino a oggi mancava e
+//    il backup andava avanti: una riga «ATTENZIONE» in mezzo all'uscita e
+//    poi «Copia completata», con PDF e foto rimasti fuori. Una copia senza
+//    i documenti ha l'aria di essere intera e non lo e'.
+const service = obbligatorio(
+  config,
+  "SERVICE_ROLE_PRODUZIONE",
+  "Senza, i documenti caricati (PDF, foto) non si copiano (docs/BACKUP.md §2)."
+);
+// ⚠️ L'indirizzo dei documenti si ricava dal progetto, non da
+//    VITE_SUPABASE_URL: quella serve al gestionale e puo' puntare a Prova.
+const urlApi = urlApiDi(REF_PRODUZIONE);
+// 🔴 Prima di creare la cartella e di leggere qualunque cosa: tutto cio'
+//    che si usa deve essere della produzione (vedi problemiDiProgetto).
+pretendiProgetto(REF_PRODUZIONE, { dbUrl: url, apiUrl: urlApi, chiave: service }, "La copia di sicurezza");
 const pgDump = strumento("pg_dump");
 
 const radice = config.BACKUP_CARTELLA || path.join(os.homedir(), "Desktop", "Backup Borgo 58");
@@ -173,44 +196,52 @@ console.log(`   ${conteggi.split("\n").length} tabelle, ${righeTotali} righe in 
 // ---------------------------------------------------------------------
 // I documenti veri (Archivio Documenti). Vivono fuori dal database.
 // ---------------------------------------------------------------------
-const service = config.SERVICE_ROLE_PRODUZIONE;
-const urlApi = config.VITE_SUPABASE_URL;
-if (!service || !urlApi) {
-  console.log("");
-  console.log("  ATTENZIONE: i documenti caricati (PDF, foto) NON sono stati copiati.");
-  console.log("  Mancano VITE_SUPABASE_URL e SERVICE_ROLE_PRODUZIONE in .env.");
-} else {
-  titolo("Documenti caricati");
-  const sb = createClient(urlApi, service, { auth: { persistSession: false } });
-  const { data: buckets, error: e1 } = await sb.storage.listBuckets();
-  if (e1) fermati("Non riesco a leggere l'archivio documenti:", e1.message);
+titolo("Documenti caricati");
+const sb = createClient(urlApi, service, { auth: { persistSession: false } });
+const { data: buckets, error: e1 } = await sb.storage.listBuckets();
+if (e1) fermati("Non riesco a leggere l'archivio documenti:", e1.message);
 
-  let quanti = 0;
-  for (const bucket of buckets) {
-    for (const oggetto of await elenca(sb, bucket.name, "")) {
-      const { data, error } = await sb.storage.from(bucket.name).download(oggetto);
-      if (error) fermati(`Non riesco a scaricare ${bucket.name}/${oggetto}:`, error.message);
-      const destinazione = path.join(cartella, "file", bucket.name, oggetto);
-      mkdirSync(path.dirname(destinazione), { recursive: true });
-      writeFileSync(destinazione, Buffer.from(await data.arrayBuffer()));
-      quanti++;
-    }
+const copiati = new Map();
+for (const bucket of buckets) {
+  const deposito = sb.storage.from(bucket.name);
+  let oggetti;
+  try {
+    oggetti = await elencaTuttoIlDeposito((prefisso, pagina) => deposito.list(prefisso, pagina));
+  } catch (e) {
+    fermati(`Non riesco a elencare i documenti di ${bucket.name}:`, e.message);
   }
-  console.log(`   ${quanti} documenti salvati in file/`);
+  for (const oggetto of oggetti) {
+    const { data, error } = await deposito.download(oggetto);
+    if (error) fermati(`Non riesco a scaricare ${bucket.name}/${oggetto}:`, error.message);
+    const destinazione = path.join(cartella, "file", bucket.name, oggetto);
+    mkdirSync(path.dirname(destinazione), { recursive: true });
+    writeFileSync(destinazione, Buffer.from(await data.arrayBuffer()));
+  }
+  // Una cartella vuota non compare nel conto del database: non si scrive.
+  if (oggetti.length > 0) copiati.set(bucket.name, oggetti.length);
 }
+const quanti = [...copiati.values()].reduce((a, b) => a + b, 0);
+console.log(`   ${quanti} documenti salvati in file/`);
 
-async function elenca(sb, bucket, prefisso) {
-  const { data, error } = await sb.storage.from(bucket).list(prefisso, { limit: 1000 });
-  if (error) fermati(`Non riesco a elencare ${bucket}/${prefisso}:`, error.message);
-  const trovati = [];
-  for (const voce of data) {
-    const completo = prefisso ? `${prefisso}/${voce.name}` : voce.name;
-    // Una "cartella" non ha metadati: si riconosce cosi'.
-    if (voce.id === null) trovati.push(...(await elenca(sb, bucket, completo)));
-    else trovati.push(completo);
-  }
-  return trovati;
+// 🔴 E SI CONTANO CONTRO IL DATABASE (31/10/2026). L'elenco del deposito
+//    e il database dicono la stessa cosa da due strade diverse: se i
+//    numeri non tornano, nella copia mancano file e lo si dice qui, non
+//    al ripristino. Il conto va anche in `09_file_conteggi.txt`, cosi'
+//    `npm run backup:verifica` lo ricontrolla sulla cartella.
+const fileDichiarati = interroga(
+  url,
+  "select bucket_id || ' = ' || count(*) from storage.objects group by bucket_id order by bucket_id;"
+);
+writeFileSync(path.join(cartella, "09_file_conteggi.txt"), fileDichiarati + "\n", "utf8");
+const mancanoFile = differenze(conteggiDichiarati(fileDichiarati), copiati);
+if (mancanoFile.length > 0) {
+  fermati(
+    "LA COPIA DEI DOCUMENTI NON E' COMPLETA.",
+    ...mancanoFile.map((d) => `  ${d.tabella}: il database ne dichiara ${d.attese}, copiati ${d.trovate}`),
+    "NON portarla fuori: rifalla. Se si ripete, qualcosa non legge tutto il deposito."
+  );
 }
+console.log("   tanti quanti il database ne dichiara, cartella per cartella");
 
 writeFileSync(
   path.join(cartella, "LEGGIMI.txt"),
@@ -226,6 +257,9 @@ writeFileSync(
     "progetto, paragrafo 4.",
     "",
     `Righe salvate in tutto: ${righeTotali}`,
+    // ⚠️ Questa riga la cerca `backup:verifica`: se c'e' e 09 manca, la
+    //    copia e' stata toccata dopo, e non passa.
+    `Documenti salvati in tutto: ${quanti} (conteggio in 09_file_conteggi.txt)`,
   ].join("\n"),
   "utf8"
 );
@@ -237,9 +271,10 @@ writeFileSync(
 // la cartella resta (serve a `npm run backup:verifica` e alla prova di
 // ripristino), ma accanto nasce lo zip, che e' quello che si porta via.
 //
-// ⚠️ Se lo zip non riesce, la copia NON e' persa: la cartella c'e' e il
-// comando lo dice. Un guasto qui non deve far sembrare fallito un backup
-// riuscito.
+// ⚠️ Se lo zip non riesce, la copia NON e' persa: la cartella c'e', e il
+// controllo qui sotto la verifica lo stesso. Ma il comando NON dice
+// «Copia completata» (31/10/2026): lo zip e' il file che si porta via, e
+// senza si chiude con un'uscita d'errore che dice cosa fare a mano.
 titolo("Un file solo da portare via");
 const zip = path.join(radice, `Borgo58_backup_${path.basename(cartella)}.zip`);
 const fattoZip = esegui(
@@ -251,12 +286,12 @@ const fattoZip = esegui(
   ],
   { silenzioso: true }
 );
-if (fattoZip.ok && existsSync(zip)) {
+const zipRiuscito = fattoZip.ok && existsSync(zip);
+if (zipRiuscito) {
   console.log(`   ${zip}`);
   console.log(`   ${Math.round(statSync(zip).size / 1024)} KB — e' questo il file da copiare fuori`);
 } else {
   console.log("   ATTENZIONE: non sono riuscito a fare lo zip.");
-  console.log(`   La copia pero' c'e' tutta, nella cartella: ${cartella}`);
   if (fattoZip.uscita) console.log("   " + fattoZip.uscita.trim().split("\n")[0]);
 }
 
@@ -288,6 +323,14 @@ if (!controllo.ok) {
   fermati(
     "LA COPIA APPENA FATTA NON PASSA IL CONTROLLO.",
     "Sopra c'e' cosa non torna. NON portarla fuori: rifalla."
+  );
+}
+
+if (!zipRiuscito) {
+  fermati(
+    "COPIA FATTA, MA SENZA LO ZIP.",
+    `I dati e i documenti ci sono tutti, controllati, nella cartella: ${cartella}`,
+    "Copia fuori dal computer la CARTELLA intera, oppure rifai: npm run backup"
   );
 }
 

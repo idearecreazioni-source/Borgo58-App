@@ -14,7 +14,7 @@ import {
 // 🔴 DUE COSE CHE SI SOMIGLIANO ABBASTANZA DA SCAMBIARSI, e il gestionale lo
 //    sa da sé: in Cassa i due pulsanti stanno uno accanto all'altro.
 //      · **La mia tasca** — soldi di Alessio che NON tornano indietro.
-//      · **Anticipo io, poi mi rimborso** — soldi che la società gli pareggia.
+//      · **Anticipo da rimborsarmi** — soldi che la società gli pareggia.
 //
 // 🔴 QUALI PAROLE SCELGONO QUALE LO HA DECISO LUI il 07/09/2026, ed è una
 //    scelta di prodotto: «di tasca mia» è sempre la tasca; per l'altro caso
@@ -43,7 +43,7 @@ describe("di chi erano i soldi", () => {
     const dopo = destinazioneDellaSpesa(spesa({ soldi: "poi mi rimborso" }));
     expect(dopo.tipo).toBe(TIPO_DA_RIMBORSARE);
     expect(dopo.tipo).not.toBe(TIPO_TASCA);
-    expect(dopo.destinazione).toBe("Anticipo io, poi mi rimborso");
+    expect(dopo.destinazione).toBe("Anticipo da rimborsarmi");
   });
 
   it("🔴 e se ci sono TUTT'E DUE, prevale il rimborso", () => {
@@ -155,7 +155,7 @@ describe("🔴 dalla tasca escono soldi e basta", () => {
     const dopo = destinazioneDellaSpesa(spesa({ soldi: "di tasca mia", verso: "entrata" }));
     expect(dopo.tipo).toBe(TIPO_DI_CHI_SONO);
     expect(dopo.motivo).toMatch(/pareggio|restituisce/i);
-    expect(dopo.motivo).toMatch(/Anticipo io/);
+    expect(dopo.motivo).toMatch(/Anticipo da rimborsarmi/);
   });
 
   it("...e un'uscita, o un verso non detto, passano", () => {

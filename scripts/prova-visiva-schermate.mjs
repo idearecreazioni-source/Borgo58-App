@@ -66,6 +66,17 @@ export const FORME = [
   { nome: "tablet 768", larghezza: 768, altezza: 1024, scala: 2, mobile: true, pxcm: 64 },
   { nome: "computer 1280", larghezza: 1280, altezza: 800, scala: 1, mobile: false },
   { nome: "computer 1920", larghezza: 1920, altezza: 1080, scala: 1, mobile: false },
+  // 🔴 IL PC DI ALESSIO (30/10/2026, difetto in produzione): calibrato col
+  //    righello, un centimetro vale circa 81 punti. Col profilo «Computer»
+  //    le scritte misurate in centimetri restavano a 26 punti e le altre a
+  //    14; sul banco, a 37,8, non si vedeva.
+  { nome: "computer 1920 calibrato", larghezza: 1920, altezza: 1080, scala: 1, mobile: false, pxcm: 81 },
+  // 🔴 E LO STESSO PC CON LA FINESTRA STRETTA (31/10/2026, M14): sotto i
+  //    1024 punti compaiono la barra in alto e il menu a cassetto, che la
+  //    #279 non copriva. Il profilo resta «Computer» perché lo dice lo
+  //    SCHERMO, non la finestra: qui lo si scrive in memoria come la scelta
+  //    salvata, perché il banco emula uno schermo largo quanto la finestra.
+  { nome: "computer 900 calibrato", larghezza: 900, altezza: 900, scala: 1, mobile: false, pxcm: 81, schermo: "computer" },
 ];
 
 /** Da quale larghezza la riga non è più «telefono» (`sm:` di Tailwind). */
@@ -78,11 +89,22 @@ const MISURA = `(() => {
   const main = document.querySelector("main[data-pagina]");
   if (!main || !main.firstElementChild) return null;
   if (/Caricamento/.test(main.innerText) && main.innerText.length < 200) return null;
-  const pxcm = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm"));
+  // ⚠️ Il centimetro che vale DENTRO la schermata, non quello della radice:
+  //    col profilo «Computer» il contenuto torna al valore di fabbrica.
+  const pxcm = parseFloat(getComputedStyle(main).getPropertyValue("--pxcm"));
   const r = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, destra: b.right, basso: b.bottom }; };
   const tutti = (sel) => [...document.querySelectorAll(sel)];
   return {
     pagina: main.dataset.pagina,
+    // Le scritte (titoli esclusi) più grandi di 17 punti, cioè del titolo
+    // di sezione del profilo «Computer»: servono solo su quel profilo.
+    // ⚠️ Anche i campi, che non hanno testo proprio: erano metà del difetto.
+    scritteGrandi: tutti("main *").filter((e) => !/^H[1-6]$/.test(e.tagName) && !e.closest("h1, h2, h3, h4, h5, h6") && (/^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) || [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) && e.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(e).fontSize) > 17.5).slice(0, 5).map((e) => ({ testo: (e.value || e.placeholder || e.textContent).trim().slice(0, 24) || e.tagName.toLowerCase(), px: Math.round(parseFloat(getComputedStyle(e).fontSize)) })),
+    // La barra in alto e il menu a cassetto del banco (main.jsx), solo col
+    // profilo «Computer» a finestra stretta: scritte e pulsanti.
+    telaio: tutti(".telaio-del-gestionale").filter((t) => t.getBoundingClientRect().width > 0).length,
+    telaioGrande: tutti(".telaio-del-gestionale *").filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && e.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(e).fontSize) > 17.5).slice(0, 5).map((e) => ({ testo: e.textContent.trim().slice(0, 24), px: Math.round(parseFloat(getComputedStyle(e).fontSize)) })),
+    telaioBottoni: tutti(".telaio-del-gestionale .tocco-bottone").map((b) => Math.round(b.getBoundingClientRect().height)),
     rete: window.__tentativiDiRete ?? -1,
     reteDove: [...new Set(window.__richiesteFermate ?? [])].join(", "),
     pxcm,
@@ -110,7 +132,7 @@ const MISURA = `(() => {
     collegamentoLista: r(document.querySelector("[data-collegamento-lista]")),
     provenienze: tutti("button[aria-pressed]").map((b) => ({ testo: b.textContent.trim(), premuto: b.getAttribute("aria-pressed") })),
     inScadenza: tutti("[data-documento-in-scadenza]").map(r),
-    // I titoli in Fraunces, stampati a ogni giro (27/09/2026): e' il modo di
+    // I titoli nel carattere dei titoli (Bricolage dal 27/10/2026), stampati a ogni giro (27/09/2026): e' il modo di
     // confrontare Windows e Linux sul carattere dei titoli, che le misure
     // qui sopra usano solo di sbieco (il saluto della Dashboard).
     // --- 27/09/2026, «niente tagliato, niente nascosto» ---
@@ -167,7 +189,7 @@ const MISURA = `(() => {
     }),
     resaRighe: (() => { const e = tutti("main span").find((x) => /ne restano$/.test(x.textContent.trim())); if (!e) return null; const s = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / (parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.25)); })(),
     testo: main.innerText,
-    titoli: tutti("main h1, main h2").filter((t) => /Fraunces/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
+    titoli: tutti("main h1, main h2").filter((t) => /Bricolage/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
   };
 })()`;
 
@@ -193,6 +215,17 @@ export function controlla(forma, m, difetti) {
   if (m.rete === -1) no("il blocco della rete non è caricato nella pagina: la prova non può garantire che niente esca");
   else if (m.rete !== 0) no(`la pagina ha provato a uscire dal computer (${m.rete} tentativi verso ${m.reteDove || "?"}) — un alias non passa dal collegamento finto`);
   if (m.sbordo > 1) no(`la pagina scorre di lato di ${m.sbordo} punti`);
+  // 🔴 Col profilo «Computer» nessuna scritta supera i 17 punti, qualunque
+  //    sia la calibrazione dell'apparecchio (30/10/2026).
+  if (!forma.mobile && (forma.larghezza >= 1024 || forma.schermo === "computer")) {
+    for (const s of m.scritteGrandi ?? []) no(`col profilo «Computer» «${s.testo}» è a ${s.px} punti`);
+  }
+  // 🔴 E la barra in alto e il menu a cassetto, a finestra stretta (M14).
+  if (forma.schermo === "computer" && forma.larghezza < 1024) {
+    if (!m.telaio) no("la barra in alto e il menu a cassetto non sono sul banco: la prova non li vede");
+    for (const s of m.telaioGrande ?? []) no(`col profilo «Computer» la barra o il menu hanno «${s.testo}» a ${s.px} punti`);
+    for (const h of m.telaioBottoni ?? []) if (h > 40) no(`col profilo «Computer» un pulsante della barra o del menu è alto ${h} punti`);
+  }
 
   // Niente tagliato, niente nascosto (27/09/2026) — su OGNI schermata.
   for (const s of m.scorrono ?? []) no(`un riquadro scorre di lato: chiede ${s.serve} punti e ne ha ${s.w} («${s.testo}»)`);
@@ -393,7 +426,7 @@ async function toccaIlPerche(manda, forma) {
 // che trova un tentativo è ROSSA.
 
 // --- Il giro -----------------------------------------------------------
-export const PAGINE = ["dashboard", "agenda", "primanota", "causali", "salaorari", "spesa", "ingrediente", "archivio"];
+export const PAGINE = ["dashboard", "agenda", "primanota", "causali", "salaorari", "spesa", "ingrediente", "archivio", "stampanti"];
 
 async function principale() {
   // Si possono chiedere solo alcune schermate: `node scripts/prova-visiva-schermate.mjs agenda causali`.

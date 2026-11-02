@@ -10,7 +10,11 @@ import {
   listQuadraturaPagamenti,
   registraConteggioCassa,
   versaInBanca,
+  costoDelProgetto,
+  righeCostoDelProgetto,
 } from "../../lib/api/cash";
+import { esisteUnoScontrino } from "../../lib/api/orders";
+import { riepilogoProgetto, riquadroInQuartaPosizione } from "../../lib/calcoli/progettoFinora";
 import { CAUSALE_ALTRO, omaggiAListino, percentualeOmaggi } from "../../lib/calcoli/omaggi";
 import { getEntities } from "../../lib/api/entities";
 import { contaSpeseDaCollocare } from "../../lib/api/speseDaCollocare";
@@ -20,7 +24,7 @@ import CampoGiornata from "../../components/CampoGiornata";
 import Scorciatoia from "../../components/Scorciatoia";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
-import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Primo del mese in ora locale: la versione precedente passava per
 // toISOString() e restituiva l'ULTIMO giorno del mese prima (mezzanotte
@@ -52,6 +56,27 @@ export default function CassaHome() {
   // denominatore della percentuale degli omaggi, e si chiede alla stessa
   // funzione che risponde in «Incassato e scontrinato» — un solo calcolo.
   const [fiscale, setFiscale] = useState(null);
+  // «Il progetto finora» sta al posto degli omaggi fino al primo scontrino.
+  // undefined = lettura in corso, null = lettura fallita (riquadro di sempre).
+  const [scontrino, setScontrino] = useState(undefined);
+  const [progetto, setProgetto] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    leggi(esisteUnoScontrino()).then((v) => {
+      if (!vivo) return;
+      const emesso = nonLetto(v) ? null : v;
+      setScontrino(emesso);
+      if (riquadroInQuartaPosizione(emesso) !== "progetto") return;
+      leggi(Promise.all([costoDelProgetto("", ""), righeCostoDelProgetto("", "")])).then((r) => {
+        if (vivo) setProgetto(nonLetto(r) ? NON_LETTO : riepilogoProgetto(r[0], r[1]));
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const quartoRiquadro = riquadroInQuartaPosizione(scontrino);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -61,7 +86,11 @@ export default function CassaHome() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -72,7 +101,9 @@ export default function CassaHome() {
       getCashBalance(entityId),
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
-      listCashMovements({ entityId, from: monthStart }),
+      // ⚠️ Fino a oggi (notte del 28/10): un pagamento postdatato e' scritto
+      //    ma non e' ancora uscito, e la scheda «In cassa» accanto lo dice gia'.
+      listCashMovements({ entityId, from: monthStart, to: oggiLocale() }),
       leggi(listDiscountsGifts({ entityId, from: monthStart })),
       leggi(getQuadraturaFiscale(entityId, monthStart, oggiLocale())),
       listQuadraturaPagamenti(),
@@ -195,7 +226,7 @@ export default function CassaHome() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -204,7 +235,7 @@ export default function CassaHome() {
       </div>
 
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -236,20 +267,20 @@ export default function CassaHome() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className={`rounded-xl p-4 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">In cassa</div>
-              <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
+              <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal"}`}>
                 {tesoreria ? formatEUR(tesoreria.contante_atteso) : "—"}
               </div>
               {/* La parte che non è sua: è un avviso, non una spiegazione —
                   quei soldi stanno nel cassetto e sono di altri. */}
               {tesoreria && Number(tesoreria.di_cui_non_tuo) > 0 && (
-                <div className="testo-sala text-b58-gold-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-gold-dark-testo mt-1 font-medium">
                   di cui {formatEUR(tesoreria.di_cui_non_tuo)} sono mance del personale, non tuoi
                 </div>
               )}
               {/* L'avviso resta (il riquadro è rosso e lo dice); la
                   spiegazione del perché sta dietro il «?» — 25/10/2026. */}
               {negativeBalance && (
-                <div className="testo-sala text-b58-terracotta-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-terracotta-dark-testo mt-1 font-medium">
                   Saldo negativo
                   <Didascalia etichetta="Perché è negativo">
                     Un&apos;uscita senza provenienza: è uscito dal cassetto più contante di quello che
@@ -293,16 +324,51 @@ export default function CassaHome() {
                   «+0,00» e «−152,94» uno sotto l'altro, senza dire di cosa.
                   In prima nota il verso è proprio quello che si vuole sapere
                   a colpo d'occhio. */}
-              <div className="testo-sala-grande text-b58-olive-dark font-medium">
+              <div className="testo-sala-grande text-b58-olive-dark-testo font-medium">
                 +{formatEUR(monthIn)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">entrati</span>
               </div>
-              <div className="testo-sala-grande text-b58-terracotta-dark font-medium">
+              <div className="testo-sala-grande text-b58-terracotta-dark-testo font-medium">
                 −{formatEUR(monthOut)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">usciti</span>
               </div>
             </div>
 
+            {quartoRiquadro === "attesa" ? (
+              <div
+                data-prova="riquadro-attesa"
+                aria-hidden="true"
+                className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4"
+              >
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">&nbsp;</div>
+                <div className="text-2xl font-medium text-b58-charcoal">&nbsp;</div>
+                <div className="testo-sala mt-1">&nbsp;</div>
+              </div>
+            ) : quartoRiquadro === "progetto" ? (
+              <Link
+                to="/cassa/costo-progetto"
+                data-prova="riquadro-progetto"
+                className="block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 hover:ring-b58-terracotta focus-visible:ring-2 focus-visible:ring-b58-terracotta"
+              >
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Il progetto finora</div>
+                {progetto === null ? (
+                  <div className="text-2xl font-medium text-b58-charcoal">—</div>
+                ) : nonLetto(progetto) ? (
+                  <DatoNonLetto cosa="quanto è costato il progetto" />
+                ) : (
+                  <>
+                    <div data-prova="progetto-totale" className="text-2xl font-medium text-b58-charcoal">
+                      {formatEUR(progetto.totale)}
+                    </div>
+                    {progetto.anticipato !== null && (
+                      <div data-prova="progetto-anticipato" className="testo-sala text-b58-charcoal-soft mt-1">
+                        di cui {formatEUR(progetto.anticipato)} anticipati da te
+                      </div>
+                    )}
+                  </>
+                )}
+              </Link>
+            ) : (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
                 Omaggi «{CAUSALE_ALTRO}»
@@ -316,7 +382,10 @@ export default function CassaHome() {
                       regalata: omaggi «Altro» sul venduto a listino (incassato
                       + tutti gli omaggi). Senza niente di servito non è zero
                       per cento — è «non lo so», e si tace. */}
-                  {percentuale === null ? (
+                  {nonLetto(fiscale) ? (
+                    // ⚠️ Non letto non e' «non servito» (notte del 28/10).
+                    <DatoNonLetto cosa="l'incassato del mese" />
+                  ) : percentuale === null ? (
                     <div className="testo-sala text-b58-charcoal-soft mt-1">
                       Questo mese non è ancora stato servito niente.
                     </div>
@@ -335,6 +404,7 @@ export default function CassaHome() {
                   sulla stessa schermata sono ingombro — *se un comando si
                   ripete, quasi sempre ne basta uno*. */}
             </div>
+            )}
           </div>
 
           <IlCassetto
@@ -350,7 +420,7 @@ export default function CassaHome() {
               scadenze non parte quando non c'è niente da dire. */}
           {quadratura.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6">
-              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-3">
+              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark-testo mb-3">
                 Non torna ({quadratura.length})
                 <Didascalia>
                   Non sono errori certi: sono le differenze fra fatture e prima nota che
@@ -422,7 +492,7 @@ export default function CassaHome() {
                 La tasca è l'altra cosa: soldi tuoi che non torneranno
                 indietro, e non c'è niente da pareggiare. */}
             <Scorciatoia to="/cassa/personale">
-              Anticipo io, poi mi rimborso
+              Anticipo da rimborsarmi
             </Scorciatoia>
             {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
                 Preventivi è rimasta irraggiungibile per giorni perché la
@@ -529,7 +599,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
     contato !== "" && teorico != null ? Number(contato) - teorico : null;
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -617,7 +687,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
           inputClass={inputClass}
         />
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>Ho contato €</label>
           <div className="flex flex-wrap gap-2">
             <input
@@ -633,7 +703,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               type="button"
               disabled={inCorso !== "" || contato === ""}
               onClick={() => conta(false)}
-              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3  disabled:opacity-60 shrink-0"
             >
               {inCorso === "conteggio" ? "…" : "Conta"}
             </button>
@@ -643,11 +713,11 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               che si impara a ignorare. */}
           {daFiscalizzare && (
             <div className="mt-2 rounded-lg bg-b58-terracotta/10 border border-b58-terracotta/30 px-3 py-2">
-              <p className="text-[12px] text-b58-terracotta-dark">{daFiscalizzare}</p>
+              <p className="text-[12px] text-b58-terracotta-dark-testo">{daFiscalizzare}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Link
                   to="/cassa/scontrinato"
-                  className="tocco-bottone inline-flex items-center text-[12px] underline text-b58-charcoal hover:text-b58-terracotta"
+                  className="tocco-bottone inline-flex items-center text-[12px] underline text-b58-charcoal hover:text-b58-terracotta-testo"
                 >
                   Vai a sistemarli
                 </Link>
@@ -655,7 +725,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
                   type="button"
                   disabled={inCorso !== ""}
                   onClick={() => conta(true)}
-                  className="tocco-bottone text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+                  className="tocco-bottone text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta-testo disabled:opacity-60"
                 >
                   Chiudi lo stesso, ne prendo atto
                 </button>
@@ -663,14 +733,14 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
             </div>
           )}
           {differenza != null && differenza !== 0 && (
-            <p className="testo-sala text-b58-gold-dark mt-1.5">
+            <p className="testo-sala text-b58-gold-dark-testo mt-1.5">
               {differenza < 0 ? "Mancano" : "Ci sono"} {formatEUR(Math.abs(differenza))}{" "}
               {differenza < 0 ? "rispetto al teorico" : "in più del teorico"}.
             </p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>
             Verso in banca €
             <Didascalia>
@@ -698,7 +768,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
         </div>
       </div>
 
-      {esito && <p className="testo-sala text-b58-olive-dark mt-3">{esito}</p>}
+      {esito && <p className="testo-sala text-b58-olive-dark-testo mt-3">{esito}</p>}
 
       {tesoreria?.ultimo_conteggio_il && (
         <p className="testo-sala text-b58-charcoal-soft/70 mt-3 border-t border-b58-charcoal/10 pt-2">

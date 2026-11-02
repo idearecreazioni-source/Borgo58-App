@@ -92,6 +92,17 @@ export const SUPPLIER_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+// 🔴 I LUOGHI DEI PROMEMORIA — 28/10/2026, chiesto da Alessio: «ricordami di
+//    fare questo quando arrivo a casa». Lo stesso elenco del vincolo
+//    `luogo_chiuso` (migrazione 20261028000001) e della funzione
+//    `promemoria-luogo`: aggiungerne uno vuol dire toccare tutti e tre.
+export const TASK_LUOGHI = [
+  // `arrivo`: come si dice nella frase «ricordamelo quando arrivo …».
+  { value: "casa", label: "Casa", arrivo: "a casa" },
+  // ⚠️ Era «ristorante» fino al 28/10/2026: Alessio l'ha chiamata cantina.
+  { value: "cantina", label: "Cantina", arrivo: "in cantina" },
+];
+
 // LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
 // docs/mandati/20260824_le_linee_della_previsione.md).
 //
@@ -197,10 +208,10 @@ export const eComponente = (recipeType) => recipeType !== "piatto_finito";
 // in sviluppo → pronta → in carta → ritirata. Le prime tre si attraversano
 // in avanti, l'ultima è un'uscita di lato.
 export const RECIPE_STATI = [
-  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-inverso-soft" },
   { value: "pronta", label: "Pronta per la carta", colorClass: "bg-b58-gold" },
   { value: "in_carta", label: "In carta", colorClass: "bg-b58-olive" },
-  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-inverso-soft/60" },
 ];
 
 // ⚠️ «Ritirata» VINCE su tutto il resto, e non è una scelta di comodo: il
@@ -238,9 +249,9 @@ export const recipeStatusLabel = (prontaPerCarta, inCarta, ritirataIl) => {
 //    tocchi il database. «In carta» non c'è, perché è il riflesso di un
 //    menu (16/08) e una preparazione in un menu non ci sta.
 export const STATI_PREPARAZIONE = [
-  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-inverso-soft" },
   { value: "pronta", label: "Pronta per l'uso", colorClass: "bg-b58-gold" },
-  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-inverso-soft/60" },
 ];
 
 // Un tipo che non si conosce (una riga letta senza il tipo: uno storico,
@@ -399,7 +410,7 @@ export const CASH_DOCUMENT_TYPES = [
   { value: "documento_raccoglitore_occasionale", label: "Documento raccoglitore occasionale" },
   // Le spese della banca (commissioni, canone): il documento è l'estratto
   // conto. Deciso da Alessio il 25/10/2026.
-  { value: "estratto_conto", label: "Estratto conto (spese bancarie)" },
+  { value: "estratto_conto", label: "Estratto conto" },
   { value: "non_documentato", label: "Non documentato" },
 ];
 
@@ -748,6 +759,15 @@ export const dataLocale = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export const oggiLocale = () => dataLocale();
+
+// 🔴 QUANTI GIORNI MANCANO A UNA DATA «AAAA-MM-GG», contati sul calendario
+//    italiano (notte del 28/10/2026). Era `(new Date(data) - new Date())`
+//    in tre schermate: la data valeva la mezzanotte di Greenwich, quindi una
+//    scadenza di oggi risultava «scaduta» dal pomeriggio e domani diventava
+//    «0 giorni». Qui le due date sono tutt'e due a mezzogiorno di Greenwich:
+//    la differenza e' sempre un numero intero di giorni, ora legale compresa.
+export const giorniDaOggi = (data, oggi = oggiLocale()) =>
+  Math.round((Date.parse(`${data}T12:00:00Z`) - Date.parse(`${oggi}T12:00:00Z`)) / 86400000);
 
 export const meseLocale = (d = new Date()) => dataLocale(d).slice(0, 7);
 

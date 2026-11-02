@@ -168,7 +168,7 @@ export default function Fotografa() {
         <div
           data-spesa-foto
           className={`testo-sala mt-4 rounded-lg p-4 ${
-            spesaFoto.stato === "errore" ? "bg-b58-terracotta/10 text-b58-terracotta-dark" : "bg-emerald-50 text-emerald-900"
+            spesaFoto.stato === "errore" ? "bg-b58-terracotta/10 text-b58-terracotta-dark-testo" : "bg-emerald-50 text-emerald-900"
           }`}
         >
           <p className="font-semibold">
@@ -197,7 +197,7 @@ export default function Fotografa() {
               <button
                 type="button"
                 onClick={() => mettiDaCollocare(esito, ultimaFoto)}
-                className="tocco-bottone testo-sala mt-2 rounded-md bg-b58-charcoal px-4 py-2 font-semibold text-white"
+                className="tocco-bottone testo-sala mt-2 rounded-md bg-b58-inverso px-4 py-2 font-semibold text-white"
               >
                 Riprova
               </button>
@@ -245,7 +245,7 @@ export default function Fotografa() {
             <p
               className={`testo-sala mt-2 rounded-md p-2 ${
                 spesa.blocca
-                  ? "bg-b58-terracotta/15 text-b58-terracotta-dark"
+                  ? "bg-b58-terracotta/15 text-b58-terracotta-dark-testo"
                   : spesa.avvisa
                     ? "bg-amber-50 text-amber-900"
                     : "text-b58-charcoal-soft"
@@ -298,7 +298,7 @@ export default function Fotografa() {
                   type="button"
                   onClick={salvaTetto}
                   disabled={salvando}
-                  className="tocco-bottone testo-sala rounded-md bg-b58-charcoal px-4 py-2 font-semibold text-white disabled:opacity-50"
+                  className="tocco-bottone testo-sala rounded-md bg-b58-inverso px-4 py-2 font-semibold text-white disabled:opacity-50"
                 >
                   Salva
                 </button>
@@ -328,7 +328,7 @@ export default function Fotografa() {
             </div>
 
             {errore && (
-              <p className="testo-sala mt-2 text-b58-terracotta-dark">{errore}</p>
+              <p className="testo-sala mt-2 text-b58-terracotta-dark-testo">{errore}</p>
             )}
           </div>
         )}

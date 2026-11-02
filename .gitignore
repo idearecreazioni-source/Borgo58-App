@@ -103,3 +103,8 @@ _*.local.*
 # ⚠️ `dist` da solo NON le prende: sono `dist-prova-a`, `-b`, `-c`. Se una
 #    prova venisse uccisa a meta, resterebbero li — e finirebbero committate.
 dist-prova-*
+
+# Il ponte del mini-PC (28/10/2026): la configurazione ha la chiave del
+# ponte, e la cartella dei fogli finti non serve a nessuno fuori dal PC.
+ponte/config.json
+ponte/uscita/

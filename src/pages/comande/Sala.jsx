@@ -85,6 +85,38 @@ import {
 // Le misure dei tocchi sono in CENTIMETRI REALI (classi .tocco-*), non in
 // pixel: durante un servizio pieno la differenza fra 1 cm e 6 mm e'
 // mandare in cucina il piatto sbagliato.
+// 🔴 I COPERTI SI SALVANO QUANDO SI E' FINITO DI SCRIVERE (notte del
+//    28/10/2026, dalla revisione): il campo scriveva nel database a ogni
+//    tasto — «12» erano due scritture, che potevano arrivare al contrario e
+//    lasciare 1 nel conto mentre a schermo c'era 12. Adesso si scrive
+//    uscendo dal campo o con Invio, e solo un numero intero.
+function CampoCoperti({ valore, busy, onSalva }) {
+  const [bozza, setBozza] = useState(String(valore));
+  useEffect(() => setBozza(String(valore)), [valore]);
+  const salva = () => {
+    const n = Math.round(Number(bozza));
+    if (bozza === "" || !Number.isFinite(n) || n < 0) return setBozza(String(valore));
+    // Se il salvataggio fallisce si torna al numero vero del conto.
+    if (n !== valore) Promise.resolve(onSalva(n)).then((ok) => ok === false && setBozza(String(valore)));
+    else setBozza(String(valore));
+  };
+  return (
+    <input
+      type="number"
+      min="0"
+      step="1"
+      inputMode="numeric"
+      aria-label="Coperti"
+      value={bozza}
+      disabled={busy}
+      onChange={(e) => setBozza(e.target.value)}
+      onBlur={salva}
+      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-b58-campo testo-sala-grande"
+    />
+  );
+}
+
 export default function Sala() {
   const { isTitolare } = useAuth();
 
@@ -693,16 +725,35 @@ export default function Sala() {
     setScendiAlMenu(false);
   }, [scendiAlMenu, order]);
 
-  const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
+  // ⚠️ La rilettura si applica solo se il tavolo aperto e' ancora quello
+  //    (notte del 28/10): toccando un altro tavolo mentre la prima azione
+  //    finiva, il pannello del primo tornava al posto del secondo, e il «+»
+  //    dopo andava al tavolo sbagliato.
+  const ordineAperto = useRef(null);
+  ordineAperto.current = order?.id ?? null;
+  const reloadOrder = () => {
+    if (!order) return Promise.resolve();
+    const id = order.id;
+    return getOrder(id).then((o) => {
+      if (ordineAperto.current === id) setOrder(o);
+    });
+  };
 
+  // 🔴 DICE SE E' ANDATA (notte del 28/10/2026, dalla revisione): prima
+  //    l'errore si fermava qui e chi seguiva con `.then` ripartiva lo stesso
+  //    — senza rete la sala scriveva «Mandato in cucina» per un biglietto mai
+  //    partito, e «Annulla tavolo» chiudeva il pannello di un tavolo ancora
+  //    aperto. Adesso chi segue guarda `ok` prima di fare qualcosa.
   const withBusy = async (fn) => {
     setBusy(true);
     setError("");
     try {
       await fn();
       await reloadOrder();
+      return true;
     } catch (e) {
       setError(e.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -802,7 +853,7 @@ export default function Sala() {
         {/* CIÒ CHE È GIÀ STATO TOLTO si vede SEMPRE, aperto o chiuso: è
             l'informazione che riguarda il cliente seduto lì. */}
         {tolti.length > 0 && (
-          <p className="testo-sala font-semibold text-b58-olive-dark leading-tight">
+          <p className="testo-sala font-semibold text-b58-olive-dark-testo leading-tight">
             senza {tolti.map((a) => labelFor(ALLERGENS, a).toLowerCase()).join(", ")}
             {frasi.length > 0 && (
               <span className="block font-normal text-b58-charcoal-soft">↳ {frasi.join(" · ")}</span>
@@ -844,7 +895,7 @@ export default function Sala() {
                   <span
                     className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center testo-sala ${
                       a.applicata
-                        ? "bg-b58-olive border-b58-olive text-b58-parchment"
+                        ? "bg-b58-olive border-b58-olive text-b58-sul-colore"
                         : "border-b58-charcoal/25 text-transparent"
                     }`}
                   >
@@ -871,7 +922,7 @@ export default function Sala() {
                       può riferire. */}
                   <span
                     className={`shrink-0 testo-sala ${
-                      a.eliminabile ? "text-b58-charcoal-soft" : "text-b58-terracotta-dark"
+                      a.eliminabile ? "text-b58-charcoal-soft" : "text-b58-terracotta-dark-testo"
                     }`}
                   >
                     {a.stato === "non_deciso"
@@ -897,7 +948,7 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => apriAllergeni(it)}
-            className="tocco-bottone testo-sala text-b58-terracotta px-2 rounded-lg hover:bg-b58-cream-dark/60"
+            className="tocco-bottone testo-sala text-b58-terracotta-testo px-2 rounded-lg hover:bg-b58-cream-dark/60"
           >
             allergeni
           </button>
@@ -947,7 +998,7 @@ export default function Sala() {
         unitPrice: Number(freeForm.price),
         turno: turnoCorrente,
       })
-    ).then(() => setFreeForm({ name: "", price: "", destination: "bar" }));
+    ).then((ok) => ok && setFreeForm({ name: "", price: "", destination: "bar" }));
   };
 
   const handleCoperti = (n) => withBusy(() => setOrderCoperti(order.id, n));
@@ -967,8 +1018,8 @@ export default function Sala() {
   // quale turno stava chiamando e si spegneva alla fine è stata scartata da
   // lui, e non si rimette da qui.
   const handleChiamaTurno = () =>
-    withBusy(() => chiamaProssimoTurno(order.id)).then(() =>
-      setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
+    withBusy(() => chiamaProssimoTurno(order.id)).then((ok) =>
+      ok && setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
     );
 
   const handleSend = () =>
@@ -1108,14 +1159,14 @@ export default function Sala() {
         {v.producer && <span className="block testo-sala text-b58-charcoal-soft/70">{v.producer}</span>}
       </span>
       <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(v.selling_price)}</span>
-      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
+      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-sul-colore flex items-center justify-center testo-sala-grande pointer-events-none">
         +
       </span>
     </button>
   );
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const sectionLabel =
     "testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
 
@@ -1138,7 +1189,7 @@ export default function Sala() {
       type="button"
       disabled={busy || draftItems.length === 0}
       onClick={handleSend}
-      className={`tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment font-semibold px-2 ${classi}`}
+      className={`tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-sul-colore font-semibold px-2 ${classi}`}
     >
       Invia{draftItems.length > 0 ? ` (${draftItems.length})` : ""}
     </button>
@@ -1165,7 +1216,7 @@ export default function Sala() {
         type="button"
         disabled={sentItems.length === 0}
         onClick={() => setShowPrecon(true)}
-        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white disabled:opacity-40 text-b58-charcoal testo-sala px-2"
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo disabled:opacity-40 text-b58-charcoal testo-sala px-2"
       >
         Preconto
       </button>
@@ -1176,7 +1227,7 @@ export default function Sala() {
         type="button"
         disabled={sentItems.length === 0}
         onClick={() => setShowClose(true)}
-        className="tocco-bottone w-full rounded-lg bg-b58-azione disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
+        className="tocco-bottone w-full rounded-lg bg-b58-azione disabled:opacity-40 text-b58-sul-colore testo-sala font-semibold px-2"
       >
         Chiudi conto
       </button>
@@ -1195,12 +1246,12 @@ export default function Sala() {
         type="button"
         disabled={busy}
         onClick={handleChiamaTurno}
-        className="tocco-bottone w-full rounded-lg bg-b58-gold disabled:opacity-40 text-b58-charcoal testo-sala font-semibold px-2"
+        className="tocco-bottone w-full rounded-lg bg-b58-gold disabled:opacity-40 text-b58-inverso testo-sala font-semibold px-2"
       >
         Avanti prossimo turno
       </button>
       {esitoChiamata && (
-        <p className="testo-sala text-b58-olive-dark leading-tight">{esitoChiamata}</p>
+        <p className="testo-sala text-b58-olive-dark-testo leading-tight">{esitoChiamata}</p>
       )}
 
       {/* 🔴 «ANNULLA TAVOLO» STA COI GRANDI (21/08, deciso da Alessio).
@@ -1219,13 +1270,14 @@ export default function Sala() {
               )
             )
               return;
-            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(() => {
+            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then((ok) => {
+              if (!ok) return;
               setOrder(null);
               setSelezione([]);
               loadBoard();
             });
           }}
-          className="tocco-bottone w-full rounded-lg border border-b58-terracotta/40 bg-white text-b58-terracotta-dark testo-sala px-2"
+          className="tocco-bottone w-full rounded-lg border border-b58-terracotta/40 bg-b58-campo text-b58-terracotta-dark-testo testo-sala px-2"
         >
           Annulla tavolo
         </button>
@@ -1237,7 +1289,7 @@ export default function Sala() {
           setSpostando(true);
           setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
         }}
-        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal-soft testo-sala px-2"
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal-soft testo-sala px-2"
       >
         Cambia tavoli
       </button>
@@ -1248,7 +1300,7 @@ export default function Sala() {
           setSelezione([]);
           setError("");
         }}
-        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-2"
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal testo-sala px-2"
       >
         &lsaquo; Lascia aperto
       </button>
@@ -1267,7 +1319,7 @@ export default function Sala() {
               {items.map((it) => (
                 <p
                   key={it.id}
-                  className={it.sent_at ? "text-b58-charcoal-soft/70" : "text-b58-terracotta-dark"}
+                  className={it.sent_at ? "text-b58-charcoal-soft/70" : "text-b58-terracotta-dark-testo"}
                 >
                   {it.quantity}× {lineLabel(it)}
                 </p>
@@ -1300,7 +1352,7 @@ export default function Sala() {
           .join(" · ")}
       </p>
       {error && (
-        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1 leading-tight">
+        <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1 leading-tight">
           {error}
         </p>
       )}
@@ -1308,7 +1360,7 @@ export default function Sala() {
         type="button"
         disabled={loadingOrder}
         onClick={spostando ? confermaSpostamento : apriSelezione}
-        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
+        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-sul-colore testo-sala font-semibold px-2"
       >
         {spostando
           ? `Sposta qui (${selezione.length})`
@@ -1320,7 +1372,7 @@ export default function Sala() {
           setSelezione([]);
           setSpostando(false);
         }}
-        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-2"
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal testo-sala px-2"
       >
         Annulla
       </button>
@@ -1341,7 +1393,8 @@ export default function Sala() {
                 etichettaConferma="Sì, libera il tavolo"
                 disabilitato={busy}
                 onConferma={() =>
-                  withBusy(() => annullaPrenotazione(p.id)).then(() => {
+                  withBusy(() => annullaPrenotazione(p.id)).then((ok) => {
+                    if (!ok) return;
                     setSelezione([]);
                     loadBoard();
                   })
@@ -1384,7 +1437,7 @@ export default function Sala() {
             onClick={() => setTurnoCorrente(t)}
             className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
               turnoCorrente === t
-                ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                ? "bg-b58-inverso text-b58-sul-colore border-b58-charcoal"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >
@@ -1398,7 +1451,7 @@ export default function Sala() {
             setTurniAperti(prossimo);
             setTurnoCorrente(prossimo);
           }}
-          className="tocco-bottone rounded-full border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-3"
+          className="tocco-bottone rounded-full border border-b58-charcoal/15 bg-b58-campo text-b58-charcoal testo-sala px-3"
         >
           + turno
         </button>
@@ -1417,7 +1470,7 @@ export default function Sala() {
             onClick={() => setCategoriaScelta(null)}
             className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
               categoriaScelta === null
-                ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                ? "bg-b58-inverso text-b58-sul-colore border-b58-charcoal"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >
@@ -1430,7 +1483,7 @@ export default function Sala() {
               onClick={() => setCategoriaScelta(c.chiave)}
               className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
                 categoriaScelta === c.chiave
-                  ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                  ? "bg-b58-inverso text-b58-sul-colore border-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -1455,7 +1508,7 @@ export default function Sala() {
                   acceso: ripeterlo qui sarebbe la stessa parola due
                   volte a due centimetri, come «Sala» stamattina. */}
               {categoriaScelta === null && (
-              <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+              <p className="testo-sala font-semibold text-b58-terracotta-dark-testo border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                 {cat.label}
               </p>
               )}
@@ -1486,7 +1539,7 @@ export default function Sala() {
                   <span className="testo-sala text-b58-charcoal-soft shrink-0 self-start pt-1.5">
                     {formatEUR(mi.selling_price)}
                   </span>
-                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
+                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-sul-colore flex items-center justify-center testo-sala-grande pointer-events-none">
                     +
                   </span>
                 </button>
@@ -1505,7 +1558,7 @@ export default function Sala() {
         <div className="mb-3">
           {bevande.map((cat) => (
             <div key={cat.nome} className="mb-2">
-              <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+              <p className="testo-sala font-semibold text-b58-terracotta-dark-testo border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                 {cat.nome}
               </p>
               {cat.voci.map((v) => (
@@ -1523,7 +1576,7 @@ export default function Sala() {
       <button
         type="button"
         onClick={() => setShowFreeForm((v) => !v)}
-        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
+        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark-testo mb-2"
       >
         {showFreeForm ? "Nascondi voce libera" : "+ Voce libera (bevande, fuori menu)"}
       </button>
@@ -1607,7 +1660,7 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => setSerata(serataDiServizio(new Date(), oraFineSerata))}
-            className="mt-1 testo-sala-grande underline text-b58-terracotta-dark hover:text-b58-charcoal tocco-bottone"
+            className="mt-1 testo-sala-grande underline text-b58-terracotta-dark-testo hover:text-b58-charcoal tocco-bottone"
           >
             Passa alla serata di oggi
           </button>
@@ -1655,6 +1708,9 @@ export default function Sala() {
           <Scorciatoia to="/comande/scontrini">
             Scontrini
           </Scorciatoia>
+          {/* Le stampanti e il registratore (28/10/2026): indirizzi e
+              prove, quindi solo del titolare. */}
+          {isTitolare && <Scorciatoia to="/comande/stampanti">Stampanti</Scorciatoia>}
           {isTitolare && (
             <Scorciatoia onClick={() => setPanel((p) => (p ? null : "tavoli"))} premuto={Boolean(panel)}>
               {/* ⚠️ «CHIUDI IMPOSTAZIONI», non «Chiudi» (22/08). In sala
@@ -1685,7 +1741,7 @@ export default function Sala() {
           in cima: quello che si aggiunge è una COPIA accanto alla barra, non
           uno spostamento — vedi sotto. */}
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">{error}</p>
       )}
 
       {panel && isTitolare && (
@@ -1718,7 +1774,7 @@ export default function Sala() {
                   <button
                     type="button"
                     onClick={handleSavePrice}
-                    className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+                    className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
                   >
                     Salva
                   </button>
@@ -1887,7 +1943,7 @@ export default function Sala() {
           che serve a chi apre la porta. */}
       {senzaTavolo.length > 0 && (
         <div className="mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold/40 px-3 py-2">
-          <p className="testo-sala font-semibold text-b58-gold-dark mb-0.5">
+          <p className="testo-sala font-semibold text-b58-gold-dark-testo mb-0.5">
             {senzaTavolo.length === 1 ? "Una prenotazione senza tavolo" : `${senzaTavolo.length} prenotazioni senza tavolo`}
           </p>
           <p className="testo-sala-grande text-b58-charcoal leading-snug">
@@ -1981,22 +2037,16 @@ export default function Sala() {
               type="button"
               disabled={busy || coperti === 0}
               onClick={() => handleCoperti(coperti - 1)}
-              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
+              className="tocco-bottone rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
             >
               −
             </button>
-            <input
-              type="number"
-              min="0"
-              value={coperti}
-              onChange={(e) => handleCoperti(e.target.value)}
-              className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-white testo-sala-grande"
-            />
+            <CampoCoperti valore={coperti} busy={busy} onSalva={handleCoperti} />
             <button
               type="button"
               disabled={busy}
               onClick={() => handleCoperti(coperti + 1)}
-              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
+              className="tocco-bottone rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
             >
               +
             </button>
@@ -2027,8 +2077,8 @@ export default function Sala() {
                 onClick={() => handleLinea(order.linea === l.valore ? null : l.valore)}
                 className={`tocco-bottone inline-flex items-center rounded-lg px-4 testo-sala ring-1 disabled:opacity-40 ${
                   order.linea === l.valore
-                    ? "bg-b58-azione text-b58-parchment ring-b58-terracotta"
-                    : "bg-white text-b58-charcoal ring-b58-charcoal/15"
+                    ? "bg-b58-azione text-b58-sul-colore ring-b58-terracotta"
+                    : "bg-b58-campo text-b58-charcoal ring-b58-charcoal/15"
                 }`}
               >
                 {l.testo}
@@ -2049,7 +2099,7 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(true)}
-              className="tocco-riga w-full flex items-center justify-between px-3 mb-2 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold testo-sala-grande"
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-2 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark-testo font-semibold testo-sala-grande"
             >
               <span>🍷 Carta dei vini</span>
               <span className="testo-sala-grande">›</span>
@@ -2073,7 +2123,7 @@ export default function Sala() {
                 setBisElenco(null);
                 setBisErrore("");
               }}
-              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-olive/10 ring-1 ring-b58-olive/30 text-b58-olive-dark font-semibold testo-sala-grande"
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-olive/10 ring-1 ring-b58-olive/30 text-b58-olive-dark-testo font-semibold testo-sala-grande"
             >
               <span>🍢 Bis di un finger</span>
               <span className="testo-sala-grande">›</span>
@@ -2082,7 +2132,7 @@ export default function Sala() {
 
           {/* COMANDA IN CORSO ----------------------------------------- */}
           <p className={sectionLabel}>Comanda in corso — {order.table_label}</p>
-          <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-3 mb-3">
+          <div className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-3 mb-3">
             {draftItems.length === 0 && sentItems.length === 0 && (
               <p className="testo-sala text-b58-charcoal-soft/60 text-center py-3">Nessun piatto selezionato.</p>
             )}
@@ -2110,7 +2160,7 @@ export default function Sala() {
                   // separa come separerebbe la carta — una banda piena, a
                   // tutta larghezza, che si legge da lontano — invece di un
                   // titoletto che si legge da vicino.
-                  <p className="testo-sala-grande uppercase tracking-wide font-bold text-b58-parchment bg-b58-charcoal-soft rounded px-2 py-1 mt-3 mb-1.5 first:mt-0">
+                  <p className="testo-sala-grande uppercase tracking-wide font-bold text-b58-sul-colore bg-b58-inverso-soft rounded px-2 py-1 mt-3 mb-1.5 first:mt-0">
                     {etichettaTurno(turno)}
                   </p>
                 )}
@@ -2131,7 +2181,7 @@ export default function Sala() {
                         // andato in cucina (22/08). Un bersaglio piccolo su
                         // una cosa che si disfa e' fastidio; su una che non
                         // si disfa e' un'altra cosa.
-                        className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2"
+                        className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-2"
                       >
                         annulla
                       </button>
@@ -2153,7 +2203,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         −
                       </button>
@@ -2161,7 +2212,8 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
-                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                        disabled={busy}
+                        className="tocco-bottone disabled:opacity-40 rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
                       >
                         +
                       </button>
@@ -2169,7 +2221,11 @@ export default function Sala() {
                       <button
                         type="button"
                         onClick={() => withBusy(() => removeDraftItem(it.id))}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
+                        disabled={busy}
+                        aria-label={`Togli ${lineLabel(it)}`}
+                        // ⚠️ Era largo 16 punti accanto al «+»: un tocco
+                        //    mancato toglieva la riga (revisione, 28/10).
+                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo px-1 disabled:opacity-40"
                       >
                         ✕
                       </button>
@@ -2244,14 +2300,14 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => setShowWines(false)}
-            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-gold-dark text-b58-parchment font-semibold testo-sala-grande uppercase tracking-wide"
+            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-gold-dark text-b58-sul-colore font-semibold testo-sala-grande uppercase tracking-wide"
           >
             <span className="testo-sala-grande">‹</span> Torna al menu — {order.table_label}
           </button>
           <div className="flex-1 overflow-y-auto p-3 max-w-md mx-auto w-full">
             {vini.map((cat) => (
               <div key={cat.nome} className="mb-3">
-                <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                <p className="testo-sala font-semibold text-b58-terracotta-dark-testo border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                   {cat.nome}
                 </p>
                 {cat.voci.map((v) => (
@@ -2264,7 +2320,7 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(false)}
-              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande font-semibold"
+              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-sul-colore testo-sala-grande font-semibold"
             >
               Fatto — torna alla comanda
             </button>
@@ -2286,7 +2342,7 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => (bisPiatto ? setBisPiatto(null) : setShowBis(false))}
-            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-olive text-b58-parchment font-semibold testo-sala-grande uppercase tracking-wide"
+            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-olive text-b58-sul-colore font-semibold testo-sala-grande uppercase tracking-wide"
           >
             <span className="testo-sala-grande">‹</span>{" "}
             {bisPiatto ? "Cambia selezione" : `Torna al menu — ${order.table_label}`}
@@ -2300,7 +2356,7 @@ export default function Sala() {
                     key={p.recipe_id}
                     type="button"
                     onClick={() => apriBis(p)}
-                    className="tocco-riga w-full flex items-center justify-between px-3 mb-1.5 rounded-lg bg-white ring-1 ring-b58-charcoal/10 testo-sala-grande text-b58-charcoal text-left"
+                    className="tocco-riga w-full flex items-center justify-between px-3 mb-1.5 rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/10 testo-sala-grande text-b58-charcoal text-left"
                   >
                     <span className="flex-1 min-w-0 leading-tight">{p.recipe?.name}</span>
                     <span className="testo-sala-grande text-b58-charcoal-soft">›</span>
@@ -2330,7 +2386,7 @@ export default function Sala() {
                       type="button"
                       disabled={busy}
                       onClick={() => handleAddBis(f)}
-                      className="tocco-riga w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg bg-white ring-1 ring-b58-charcoal/10 text-left disabled:opacity-50"
+                      className="tocco-riga w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg bg-b58-campo ring-1 ring-b58-charcoal/10 text-left disabled:opacity-50"
                     >
                       <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
                         bis di {f.nome}
@@ -2340,7 +2396,7 @@ export default function Sala() {
                           regalare. Si dice cosa manca e dove si scrive. */}
                       <span
                         className={`shrink-0 testo-sala-grande ${
-                          f.prezzo == null ? "text-b58-terracotta-dark" : "text-b58-charcoal-soft"
+                          f.prezzo == null ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal-soft"
                         }`}
                       >
                         {f.prezzo == null ? "senza prezzo" : formatEUR(f.prezzo)}
@@ -2355,7 +2411,7 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowBis(false)}
-              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande font-semibold"
+              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-sul-colore testo-sala-grande font-semibold"
             >
               Fatto — torna alla comanda
             </button>
@@ -2369,7 +2425,7 @@ export default function Sala() {
           ci stanno senza far scorrere — che e' proprio quello che questa
           correzione toglie. */}
       {clienteAperto && order && (
-        <div role="dialog" aria-modal="true" aria-label={`Chi paga — ${order.table_label}`} className="fixed inset-0 z-50 flex items-center justify-center bg-b58-charcoal/50 p-4">
+        <div role="dialog" aria-modal="true" aria-label={`Chi paga — ${order.table_label}`} className="fixed inset-0 z-50 flex items-center justify-center bg-b58-velo/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-b58-cream p-4 shadow-xl">
             <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 className="font-display testo-sala-grande text-b58-charcoal">

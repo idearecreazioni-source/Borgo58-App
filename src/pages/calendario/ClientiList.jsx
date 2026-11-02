@@ -52,7 +52,7 @@ export default function ClientiList() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Calendario Eventi
       </Link>
       <div className="flex items-center justify-between gap-4 flex-wrap mt-1 mb-6">
@@ -67,7 +67,7 @@ export default function ClientiList() {
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo cliente"}
         </button>
@@ -89,14 +89,14 @@ export default function ClientiList() {
             value={newCustomer.name}
             onChange={(e) => setNewCustomer((c) => ({ ...c, name: e.target.value }))}
             placeholder="Nome"
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <input
             required
             value={newCustomer.phone}
             onChange={(e) => setNewCustomer((c) => ({ ...c, phone: e.target.value }))}
             placeholder="Telefono"
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <button
             type="submit"
@@ -113,10 +113,10 @@ export default function ClientiList() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Cerca per nome o telefono…"
-        className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
+        className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
       />
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>

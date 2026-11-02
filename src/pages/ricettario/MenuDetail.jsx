@@ -25,9 +25,9 @@ const SECTIONS = [
 ];
 
 const LEVEL_CLASS = {
-  ok: "text-b58-olive-dark",
+  ok: "text-b58-olive-dark-testo",
   warning: "text-yellow-700",
-  danger: "text-b58-terracotta-dark",
+  danger: "text-b58-terracotta-dark-testo",
   neutral: "text-b58-charcoal-soft",
 };
 
@@ -245,7 +245,7 @@ export default function MenuDetail() {
   }
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleActivate = async () => {
     setActivating(true);
@@ -336,12 +336,12 @@ export default function MenuDetail() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/ricettario/menu" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/ricettario/menu" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Menu
       </Link>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -360,14 +360,14 @@ export default function MenuDetail() {
                  quello che lo faceva era mostrarlo come se fosse una regola. */}
         </div>
         {menu.is_active ? (
-          <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-parchment rounded-full px-3 py-1.5">
+          <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-sul-colore rounded-full px-3 py-1.5">
             Menu attivo
           </span>
         ) : (
           <button
             onClick={handleActivate}
             disabled={activating}
-            className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande px-4 py-2"
+            className="rounded-lg bg-b58-inverso hover:bg-b58-inverso-soft disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande px-4 py-2"
           >
             {activating ? "Attivo…" : "Rendi attivo"}
           </button>
@@ -408,13 +408,13 @@ export default function MenuDetail() {
               riga, fra un anno «food cost medio» verrebbe letto come se
               fosse pesato sulle vendite — che è l'unico dei tre numeri
               che serve a decidere i prezzi, e oggi non si può calcolare. */}
-          <p className="testo-sala text-b58-charcoal-soft/80 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4">
+          <p className="testo-sala text-b58-charcoal-soft/80 bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4">
             Media su tutti i piatti del menu, <strong>non pesata su quanto si vende</strong>:
             un piatto che esce due volte a sera conta come uno che esce venti. Il food cost
             pesato sulle vendite si potrà calcolare quando ci saranno gli scontrini veri.
           </p>
           {summary.overThreshold.length > 0 && (
-            <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
               ⚠ {summary.overThreshold.length} piatt{summary.overThreshold.length === 1 ? "o" : "i"} sopra il 25% di food cost:{" "}
               {summary.overThreshold.map((i) => i.recipe.name).join(", ")}
             </p>
@@ -525,13 +525,13 @@ export default function MenuDetail() {
                   {sectionItems.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-lg border border-b58-charcoal/10 bg-white p-3"
+                      className="rounded-lg border border-b58-charcoal/10 bg-b58-campo p-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">{nomeDelPiatto(item, id, menu)}</div>
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="tocco-bottone shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                         >
                           Rimuovi
                         </button>
@@ -573,7 +573,7 @@ export default function MenuDetail() {
                         <td className="py-2 text-right">
                           <button
                             onClick={() => handleRemoveItem(item.id)}
-                            className="text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
+                            className="text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo testo-sala"
                           >
                             Rimuovi
                           </button>
@@ -586,7 +586,7 @@ export default function MenuDetail() {
             )}
 
             {candidates.length > 0 && (
-              <div className="flex flex-wrap gap-2 items-center bg-white rounded-lg border border-b58-charcoal/10 p-2">
+              <div className="flex flex-wrap gap-2 items-center bg-b58-campo rounded-lg border border-b58-charcoal/10 p-2">
                 <select
                   value={form.recipe_id}
                   onChange={(e) =>
@@ -631,7 +631,7 @@ export default function MenuDetail() {
                 <button
                   onClick={() => handleAddItem(category)}
                   disabled={!form.recipe_id}
-                  className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   + Aggiungi
                 </button>
@@ -656,7 +656,7 @@ export default function MenuDetail() {
               onClick={() => setSimMode(m.value)}
               className={`testo-sala rounded-full px-3 py-1.5 border transition-colors ${
                 simMode === m.value
-                  ? "bg-b58-azione text-b58-parchment border-b58-terracotta"
+                  ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -793,7 +793,7 @@ export default function MenuDetail() {
             </div>
 
             {simSwapItemId && simSwapRecipeId && swapCandidate?.cost && (
-              <div className="testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 p-3">
+              <div className="testo-sala-grande bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3">
                 {(() => {
                   const current = items.find((i) => i.id === simSwapItemId);
                   return (
@@ -844,7 +844,7 @@ export default function MenuDetail() {
             </div>
 
             {targetPriceResult && (
-              <div className="testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 p-3 flex items-center justify-between flex-wrap gap-2">
+              <div className="testo-sala-grande bg-b58-campo rounded-lg border border-b58-charcoal/10 p-3 flex items-center justify-between flex-wrap gap-2">
                 <p className="text-b58-charcoal">
                   Prezzo di vendita necessario:{" "}
                   <span className="font-medium testo-sala-titolo">{formatEUR(targetPriceResult.targetPrice)}</span>
@@ -855,7 +855,7 @@ export default function MenuDetail() {
                 <button
                   onClick={applyTargetPrice}
                   disabled={applyingPrice}
-                  className="rounded-lg bg-b58-charcoal text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                  className="rounded-lg bg-b58-inverso text-b58-sul-colore testo-sala-grande px-3 py-1.5 disabled:opacity-60"
                 >
                   {applyingPrice ? "Applico…" : "Applica questo prezzo"}
                 </button>
@@ -930,7 +930,7 @@ function nomeDelPiatto(item, menuId, menu) {
       <Link
         to={`/ricettario/ricette/${item.recipe_id}`}
         state={{ percorso: [{ id: menuId, nome: menu?.name ?? "", a: `/ricettario/menu/${menuId}` }] }}
-        className="tocco-testo hover:text-b58-terracotta"
+        className="tocco-testo hover:text-b58-terracotta-testo"
       >
         {item.recipe.name}
       </Link>

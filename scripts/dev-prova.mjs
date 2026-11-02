@@ -159,7 +159,8 @@ const extra = extraArgomenti;
 //
 // ⚠️ E' la rete privata di Alessio (`tailnet only`), non un indirizzo
 //    pubblico: ci arrivano solo i suoi dispositivi. Si toglie con
-//    `tailscale serve reset`.
+//    `tailscale serve --https=443 off`. ⚠️ NON con `tailscale serve reset`:
+//    dal 31/10 toglierebbe anche Casa, che sta sulla 8443.
 // ⚠️ LA REGOLA NON VIVE PIU' QUI: sta in scripts/telefono.mjs, perche' la
 //    usano in due (questo comando e `npm run telefono`) e una regola
 //    scritta in due corpi fra sei mesi cambia in uno solo.

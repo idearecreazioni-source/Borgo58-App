@@ -26,6 +26,28 @@ export async function listSpeseDaCollocare() {
   return data ?? [];
 }
 
+// Gli id dei movimenti di prima nota nati da «Da collocare»: quelli non si
+// rimuovono dalla prima nota (la spesa punta al movimento), si annulla la
+// collocazione. Si chiede solo dei movimenti che la pagina mostra, a gruppi
+// (l'elenco viaggia nell'indirizzo). Se fallisce non blocca la pagina:
+// resta l'errore sulla riga al momento di rimuovere.
+export async function idMovimentiDaCollocare(idMovimenti = []) {
+  const nati = new Set();
+  try {
+    for (let i = 0; i < idMovimenti.length; i += 150) {
+      const { data, error } = await supabase
+        .from("spese_da_collocare")
+        .select("movimento_id")
+        .in("movimento_id", idMovimenti.slice(i, i + 150));
+      if (error || !Array.isArray(data)) return new Set();
+      for (const r of data) nati.add(r.movimento_id);
+    }
+    return nati;
+  } catch {
+    return new Set();
+  }
+}
+
 // Le ultime collocate o ignorate: per vedere dove sono finite.
 export async function listSpeseCollocate(quante = 20) {
   const { data, error } = await supabase
@@ -87,6 +109,22 @@ export async function annotaSpesaDaFoto(campi, pronta, chiave = crypto.randomUUI
   });
   if (error) throw error;
   return data;
+}
+
+/**
+ * «Fallo a mano» di una spesa detta a MEMO (27/10/2026): la mette fra
+ * quelle da collocare con i campi corretti qui, e chiude la cosa detta.
+ *
+ * 🔴 PASSA DAL CORRIDOIO, in una transazione (20261027000002): a metà
+ * resterebbe la spesa scritta e l'appunto ancora da approvare, e
+ * «Approva» la scriverebbe una seconda volta. Il resto di quello che MEMO
+ * aveva capito (natura proposta, mezzo, il dettato) lo prende il database.
+ */
+export async function annotaSpesaDettataAMano(azioneDettataId, { importo, data, controparte, descrizione }) {
+  return eseguiOperazione("annota_spesa_dettata_a_mano", {
+    p_azione_dettata_id: azioneDettataId,
+    p_campi: { importo, data, controparte, descrizione },
+  });
 }
 
 export async function urlFotoSpesa(path) {

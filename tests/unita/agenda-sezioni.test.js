@@ -35,7 +35,28 @@ describe("in quale sezione entra un impegno", () => {
   });
 
   it("una riga non stellata resta nella sua corsia", () => {
-    expect(sezioneDi(r({ corsia: "in_ritardo" }))).toBe("in_ritardo");
+    expect(sezioneDi(r({ corsia: "piu_avanti" }))).toBe("piu_avanti");
+  });
+
+  // 🔴 27/10/2026, sera, chiesto da Alessio: gli scaduti in una sezione
+  //    loro, sempre aperta, PRIMA di «Questa settimana» (che apre con «Oggi»).
+  it("🔴 «In ritardo» c'è, non si chiude, e viene prima di «Questa settimana»", () => {
+    const i = SEZIONI.findIndex((s) => s.key === "in_ritardo");
+    expect(i).toBeGreaterThan(-1);
+    expect(SEZIONI[i].chiudibile).toBeFalsy();
+    expect(i).toBeLessThan(SEZIONI.findIndex((s) => s.key === "questa_settimana"));
+    const t = r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 });
+    expect(sezioneDi(t)).toBe("in_ritardo");
+    expect(sezioniDellAgenda([t]).find((s) => s.key === "in_ritardo").righe).toEqual([t]);
+    // e il badge lo conta ancora: scaduto è scaduto
+    expect(daFareAdesso([t])).toBe(1);
+  });
+
+  it("🔴 il quadrotto di uno scaduto porta solo la data, senza «scaduto da»", () => {
+    const sc = campiImpegno(r({ corsia: "in_ritardo", due_date: "2026-10-20", giorni_alla_scadenza: -7 })).find(
+      (c) => c.chiave === "scadenza",
+    );
+    expect(sc.valore).not.toMatch(/scaduto/);
   });
 
   // ⚠️ Il lavoro si prova IN RITARDO: è il caso in cui la corsia direbbe
@@ -45,7 +66,7 @@ describe("in quale sezione entra un impegno", () => {
     expect(sezioneDi(t)).toBe("lavori");
     const sezioni = sezioniDellAgenda([t]);
     expect(sezioni.find((s) => s.key === "lavori").righe).toEqual([t]);
-    expect(sezioni.find((s) => s.key === "in_ritardo").righe).toEqual([]);
+    expect(sezioni.find((s) => s.key === "questa_settimana").righe).toEqual([]);
     // e il badge lo conta ancora: scaduto è scaduto
     expect(daFareAdesso([t])).toBe(1);
   });
@@ -66,7 +87,7 @@ describe("in quale sezione entra un impegno", () => {
     const quante = sez.reduce((n, s) => n + s.righe.length, 0);
     expect(quante).toBe(1);
     expect(sez.find((s) => s.key === "per_me_conta").righe).toHaveLength(1);
-    expect(sez.find((s) => s.key === "in_ritardo").righe).toHaveLength(0);
+    expect(sez.find((s) => s.key === "questa_settimana").righe).toHaveLength(0);
   });
 
   it("nessuna riga si perde per strada", () => {
@@ -91,9 +112,9 @@ describe("in quale sezione entra un impegno", () => {
 });
 
 describe("le sezioni che si chiudono", () => {
-  it("si chiudono «in ritardo» e «più avanti», e nascono chiuse", () => {
+  it("si chiude solo «più avanti», e nasce chiusa", () => {
     const chiudibili = SEZIONI.filter((s) => s.chiudibile).map((s) => s.key);
-    expect(chiudibili).toEqual(["in_ritardo", "piu_avanti"]);
+    expect(chiudibili).toEqual(["piu_avanti"]);
     expect(SEZIONI.filter((s) => s.chiudibile).every((s) => s.chiusaDiSuo)).toBe(true);
   });
 

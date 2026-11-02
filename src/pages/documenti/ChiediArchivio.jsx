@@ -95,7 +95,7 @@ export default function ChiediArchivio() {
           rows={2}
           maxLength={800}
           placeholder="Per esempio: quanto ho speso dal notaio?"
-          className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
+          className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
         />
         <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
@@ -113,7 +113,7 @@ export default function ChiediArchivio() {
           <button
             onClick={() => chiedi()}
             disabled={attesa || !domanda.trim()}
-            className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-40 transition-colors text-b58-parchment testo-sala-grande font-medium px-5"
+            className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-40 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-5"
           >
             {attesa ? "Sto leggendo…" : "Chiedi"}
           </button>
@@ -121,7 +121,7 @@ export default function ChiediArchivio() {
       </div>
 
       {errore && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{errore}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{errore}</p>
       )}
 
       {attesa && (
@@ -137,7 +137,7 @@ export default function ChiediArchivio() {
           </p>
 
           {esito.troncato && (
-            <p className="testo-sala text-b58-terracotta-dark mt-3">
+            <p className="testo-sala text-b58-terracotta-dark-testo mt-3">
               La risposta si è interrotta perché troppo lunga: prova a chiedere una cosa per volta.
             </p>
           )}
@@ -207,7 +207,7 @@ export default function ChiediArchivio() {
             <p className="testo-sala-grande text-b58-charcoal-soft">Nessuna domanda ancora.</p>
           )}
           {storico.map((d) => (
-            <details key={d.id} className="rounded-lg bg-white border border-b58-charcoal/10 p-3">
+            <details key={d.id} className="rounded-lg bg-b58-campo border border-b58-charcoal/10 p-3">
               <summary className="tocco-testo testo-sala-grande text-b58-charcoal cursor-pointer">
                 {d.domanda}
                 <span className="testo-sala text-b58-charcoal-soft ml-2">{formatDate(d.creato_il)}</span>

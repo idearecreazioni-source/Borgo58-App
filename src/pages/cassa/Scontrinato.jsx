@@ -46,7 +46,12 @@ export default function Scontrinato() {
   // è la stessa voce aperta di «chi comanda sui ricavi».
   const { serata, oraFineSerata } = useGiornataOperativa();
   useEffect(() => {
-    if (serata) setAl((a) => (a === oggiLocale() ? serata : a));
+    if (!serata) return;
+    setAl((a) => (a === oggiLocale() ? serata : a));
+    // ⚠️ La notte del primo del mese la serata e' ancora quella del mese
+    //    prima: senza questa riga il periodo era al rovescio (dal 1° al 31
+    //    del mese passato) e tutto risultava zero (notte del 28/10).
+    setDal((d) => (d === primoDelMeseLocale() && serata < d ? `${serata.slice(0, 7)}-01` : d));
   }, [serata]);
 
   useEffect(() => {
@@ -55,7 +60,11 @@ export default function Scontrinato() {
         setEntities(ent);
         setEntityId(ent.srls.id);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        // ⚠️ Senza questa riga il «Caricamento…» restava per sempre (notte del 28/10).
+        setLoading(false);
+      });
   }, []);
 
   const ricarica = () => {
@@ -114,14 +123,14 @@ export default function Scontrinato() {
   };
 
   const inputClass =
-    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const differenza = quadratura ? Number(quadratura.da_fiscalizzare) : 0;
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
           ← Cassa, Banca e Prima Nota
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -129,7 +138,7 @@ export default function Scontrinato() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -166,7 +175,7 @@ export default function Scontrinato() {
       </h1>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
@@ -193,7 +202,7 @@ export default function Scontrinato() {
               }`}
             >
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Senza documento</div>
-              <div className={`text-2xl font-medium ${differenza > 0 ? "text-b58-gold-dark" : "text-b58-charcoal"}`}>
+              <div className={`text-2xl font-medium ${differenza > 0 ? "text-b58-gold-dark-testo" : "text-b58-charcoal"}`}>
                 {quadratura ? formatEUR(quadratura.da_fiscalizzare) : "—"}
               </div>
               {quadratura && Number(quadratura.quante_fatture) > 0 && (
@@ -207,7 +216,7 @@ export default function Scontrinato() {
           {/* ⚠️ L'avvertenza arriva dal database insieme ai numeri, e qui
               dice la cosa che eviterebbe un falso allarme: senza
               registratore telematico è normale che risulti tutto da fare. */}
-          <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-6 leading-relaxed">
+          <p className="testo-sala text-b58-charcoal-soft bg-b58-campo/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-6 leading-relaxed">
             {quadratura?.avvertenza}
           </p>
 
@@ -249,7 +258,7 @@ export default function Scontrinato() {
                     // colorato che c'è sempre smette di essere un segnale.
                     valore:
                       Number(g.da_fiscalizzare) > 0 ? (
-                        <strong className="text-b58-terracotta-dark">
+                        <strong className="text-b58-terracotta-dark-testo">
                           {formatEUR(g.da_fiscalizzare)}
                         </strong>
                       ) : (
@@ -315,7 +324,7 @@ export default function Scontrinato() {
                             setNumeroFattura((n) => ({ ...n, [c.order_id]: e.target.value }))
                           }
                           placeholder="n. fattura"
-                          className="w-28 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala text-b58-charcoal"
+                          className="w-28 tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2 py-1.5 testo-sala text-b58-charcoal"
                         />
                         {/* ⚠️ Senza numero non è una fattura: è una riga
                             che dice di esserlo, e sparisce dall'elenco
@@ -326,7 +335,7 @@ export default function Scontrinato() {
                         <button
                           disabled={inCorso === c.order_id || !(numeroFattura[c.order_id] ?? "").trim()}
                           onClick={() => segna(c.order_id, "fattura")}
-                          className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
+                          className="tocco-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Fattura fatta
                         </button>

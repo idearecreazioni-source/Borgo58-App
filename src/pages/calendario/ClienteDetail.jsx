@@ -104,7 +104,7 @@ export default function ClienteDetail() {
   }, [showMerge, mergeSearch, id]);
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleChange = (field, value) => setCustomer((c) => ({ ...c, [field]: value }));
@@ -168,12 +168,12 @@ export default function ClienteDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/calendario-eventi/clienti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi/clienti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Clienti
       </Link>
 
       {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -290,7 +290,7 @@ export default function ClienteDetail() {
                         setSalvandoConsenso(false);
                       }
                     }}
-                    className="rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande px-3 py-2 disabled:opacity-60"
+                    className="rounded-lg bg-b58-olive text-b58-sul-colore testo-sala-grande px-3 py-2 disabled:opacity-60"
                   >
                     Ha detto di sì
                   </button>
@@ -338,7 +338,7 @@ export default function ClienteDetail() {
                 <button
                   type="button"
                   onClick={() => setShowMerge((v) => !v)}
-                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark-testo"
                 >
                   {showMerge ? "Annulla unione" : "Unisci con un'altra scheda"}
                 </button>
@@ -353,7 +353,7 @@ export default function ClienteDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-sul-colore testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -372,7 +372,7 @@ export default function ClienteDetail() {
             />
             <ul className="space-y-1 max-h-48 overflow-y-auto">
               {mergeOptions.map((opt) => (
-                <li key={opt.id} className="flex items-center justify-between gap-2 bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                <li key={opt.id} className="flex items-center justify-between gap-2 bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                   <span className="testo-sala-grande text-b58-charcoal">
                     {opt.name || "—"} <span className="text-b58-charcoal-soft">· {opt.phone}</span>
                   </span>
@@ -380,7 +380,7 @@ export default function ClienteDetail() {
                     type="button"
                     disabled={merging}
                     onClick={() => handleMerge(opt.id)}
-                    className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark disabled:opacity-60"
+                    className="tocco-testo testo-sala text-b58-terracotta-testo hover:text-b58-terracotta-dark-testo disabled:opacity-60"
                   >
                     Unisci qui
                   </button>
@@ -401,7 +401,7 @@ export default function ClienteDetail() {
               <li key={r.id}>
                 <Link
                   to={`/calendario-eventi/${r.id}`}
-                  className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta flex items-center justify-between"
+                  className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta-testo flex items-center justify-between"
                 >
                   <span>
                     {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)} · {r.party_size} {r.party_size === 1 ? "persona" : "persone"}
@@ -438,13 +438,13 @@ export default function ClienteDetail() {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                   <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(giftsTotal)}</div>
                   <div className="testo-sala text-b58-charcoal-soft">
                     {gifts.length} {gifts.length === 1 ? "omaggio" : "omaggi"} · valore a listino
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                <div className="bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2">
                   <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(scontiForgone)}</div>
                   <div className="testo-sala text-b58-charcoal-soft">
                     {sconti.length} {sconti.length === 1 ? "sconto" : "sconti"} · mancato incasso
@@ -456,7 +456,7 @@ export default function ClienteDetail() {
                 {discounts.map((d) => (
                   <li
                     key={d.id}
-                    className="flex items-center justify-between gap-3 testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
+                    className="flex items-center justify-between gap-3 testo-sala-grande bg-b58-campo rounded-lg border border-b58-charcoal/10 px-3 py-2"
                   >
                     <div className="min-w-0">
                       <span className="text-b58-charcoal font-medium">

@@ -1,0 +1,31 @@
+/* =====================================================================
+   BRICOLAGE GROTESQUE, LOCALE — SOLO PER LE PROVE VISIVE (27/10/2026)
+   =====================================================================
+   🔴 PERCHÉ. I titoli del gestionale (`font-display`) sono in Bricolage
+   Grotesque dal restyling «Osteria raffinata» (prima erano in Fraunces),
+   caricato da Google Fonts (index.html: pesi 400-700, dimensione ottica
+   libera fra 12 e 96). Nelle pagine di prova ricadrebbe su un carattere di
+   sistema, diverso fra Windows e Linux, e le misure dei titoli
+   cambierebbero da un computer all'altro.
+
+   ⚠️ QUESTO FILE NON ENTRA NELL'APP: vive sotto `tests/visive/` e lo
+   importano solo le pagine delle prove visive.
+
+   ⚠️ IL FILE È IL TTF VARIABILE UFFICIALE, non un woff2: il repository
+   dell'autore pubblica la versione variabile (peso, dimensione ottica e
+   larghezza) solo così. Google manda la stessa famiglia; qui la larghezza
+   resta quella normale (100), come la chiede il gestionale.
+
+   Fonte: https://github.com/ateliertriay/bricolage, ramo main al commit
+   84745e5b96 (19/07/2023), «fonts/variable/BricolageGrotesque[opsz,wdth,
+   wght].ttf», 408.496 byte, sha256 413e7357…2ac682. Licenza: SIL Open Font
+   License 1.1, in LICENSE-Bricolage.txt accanto (OFL.txt dello stesso
+   repository). */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  /* I pesi che il gestionale chiede a Google Fonts: 400-700. */
+  font-weight: 400 700;
+  font-display: block;
+  src: url("./BricolageGrotesqueVariable.ttf") format("truetype");
+}

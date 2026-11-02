@@ -47,6 +47,7 @@ import {
   migrazioniSenzaRiepilogo,
   obbligatorio,
   REF_PRODUZIONE,
+  soloProva,
   strumento,
   testoDeiRiepiloghi,
   titolo,
@@ -201,9 +202,9 @@ if (!urlProduzione.includes(REF_PRODUZIONE)) {
     `Ci si aspetta il riferimento ${REF_PRODUZIONE}. Controlla .env.`
   );
 }
-if (urlProva.includes(REF_PRODUZIONE)) {
-  fermati("FERMO: DB_URL_PROVA punta al database VERO. Controlla .env.");
-}
+// E qui si pretende Prova, ad elenco chiuso (31/10/2026): «gia' passata
+// dalla prova» vale solo se la prova e' davvero Prova, non Casa o altro.
+soloProva(urlProva);
 
 titolo("Cosa manca in produzione");
 

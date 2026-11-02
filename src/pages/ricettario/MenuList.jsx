@@ -20,20 +20,20 @@ export default function MenuList() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
+          <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
             ← Ricettario
           </Link>
           <h1 className="font-display text-2xl text-b58-charcoal mt-1">Menu</h1>
         </div>
         <Link
           to="/ricettario/menu/nuovo"
-          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-sul-colore font-medium px-4 py-2 testo-sala-grande"
         >
           + Nuovo menu
         </Link>
       </div>
 
-      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark-testo mb-4">Errore: {error}</p>}
 
       {loading ? (
         <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
@@ -52,7 +52,7 @@ export default function MenuList() {
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-display testo-sala-grande text-b58-charcoal">{m.name}</h3>
                 {m.is_active && (
-                  <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-parchment rounded-full px-2 py-1 shrink-0">
+                  <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-sul-colore rounded-full px-2 py-1 shrink-0">
                     Attivo
                   </span>
                 )}
