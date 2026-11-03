@@ -537,7 +537,7 @@ export default function AgendaList() {
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
-                ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
+                ? "bg-b58-azione text-b58-sul-colore border-b58-azione-dark"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >

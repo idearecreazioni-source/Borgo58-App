@@ -1475,7 +1475,7 @@ export default function IngredienteForm() {
                 onClick={() => toggleArrayValue("allergens", a.value)}
                 className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.allergens.includes(a.value)
-                    ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
+                    ? "bg-b58-azione text-b58-sul-colore border-b58-azione-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >

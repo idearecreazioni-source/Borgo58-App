@@ -397,7 +397,7 @@ function PannelloAllergene({
           onClick={() => onSalvaScelta(false, nota)}
           className={`rounded-full testo-sala px-3 py-1.5 border transition-colors disabled:opacity-50 ${
             riga.stato === "non_eliminabile"
-              ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
+              ? "bg-b58-azione text-b58-sul-colore border-b58-azione-dark"
               : "border-b58-charcoal/15 text-b58-charcoal-soft"
           }`}
         >
