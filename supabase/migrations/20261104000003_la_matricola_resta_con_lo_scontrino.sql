@@ -37,7 +37,9 @@ set search_path to 'public'
 as $function$
 begin
   if new.tipo = 'scontrino' and new.matricola is null then
-    select matricola into new.matricola from dispositivi where id = new.dispositivo_id;
+    -- `for share`: se il titolare la sta scrivendo proprio ora, si aspetta
+    -- e si legge quella nuova (revisione del database, 04/11).
+    select matricola into new.matricola from dispositivi where id = new.dispositivo_id for share;
   end if;
   return new;
 end $function$;
@@ -71,6 +73,30 @@ drop trigger if exists matricola_agli_scontrini_senza on dispositivi;
 create trigger matricola_agli_scontrini_senza
   after update of matricola on dispositivi
   for each row execute function matricola_agli_scontrini_senza();
+
+-- 🔴 Una matricola scritta su uno scontrino non cambia più, da nessuna
+--    parte (revisione del database, 04/11). ⚠️ Il limite che resta: se la
+--    PRIMA matricola scritta nel gestionale è sbagliata, gli scontrini che
+--    l'hanno presa la tengono; vale comunque quella che il registratore
+--    mette nella risposta, se la mette.
+create or replace function public.matricola_dello_scontrino_non_cambia()
+returns trigger
+language plpgsql
+set search_path to 'public'
+as $function$
+begin
+  if old.matricola is not null and new.matricola is distinct from old.matricola then
+    raise exception 'La matricola di uno scontrino già fatto non si cambia.';
+  end if;
+  return new;
+end $function$;
+
+revoke all on function public.matricola_dello_scontrino_non_cambia() from public, anon, authenticated;
+
+drop trigger if exists matricola_dello_scontrino_non_cambia on lavori_stampa;
+create trigger matricola_dello_scontrino_non_cambia
+  before update of matricola on lavori_stampa
+  for each row execute function matricola_dello_scontrino_non_cambia();
 
 -- Gli scontrini già fatti prendono la matricola di oggi, se c'è: fino a
 -- adesso non è mai cambiata.
@@ -129,7 +155,8 @@ begin
   --    scritto nella risposta, poi quella salvata quando lo scontrino è
   --    entrato in coda. Cambiare la matricola nel gestionale non tocca gli
   --    scontrini già fatti.
-  v_matricola := coalesce(v_s.esito->'scontrino'->>'matricola', v_s.matricola);
+  v_matricola := case when v_s.esito->'scontrino'->>'matricola' ~ '^[0-9A-Z]{11}$'
+                     then v_s.esito->'scontrino'->>'matricola' else v_s.matricola end;
   if v_matricola is null then
     raise exception 'Manca la matricola del registratore: scrivila nella pagina Stampanti (è stampata in fondo allo scontrino).';
   end if;
@@ -175,7 +202,7 @@ begin
                  'data', s.esito->'scontrino'->>'data',
                  'ora', s.esito->'scontrino'->>'ora',
                  'chiusura', s.esito->'scontrino'->>'chiusura',
-                 'riferimento', riferimento_annullo(s.esito, coalesce(s.esito->'scontrino'->>'matricola', s.matricola)),
+                 'riferimento', riferimento_annullo(s.esito, case when s.esito->'scontrino'->>'matricola' ~ '^[0-9A-Z]{11}$' then s.esito->'scontrino'->>'matricola' else s.matricola end),
                  'annullo', (select jsonb_build_object('stato', a.stato, 'numero', a.esito->'annullo'->>'numero',
                                                        'errore', a.errore_testo)
                                from lavori_stampa a
