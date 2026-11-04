@@ -4,7 +4,16 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { eseguiLavoro } from "../../ponte/esegui.mjs";
-import { PAGAMENTI, datiScontrino, euro, leggiRisposta, scontrinoFiscale } from "../../ponte/protocolli/fpmate.mjs";
+import {
+  CHIUSURA_GIORNALIERA,
+  PAGAMENTI,
+  annulloFiscale,
+  datiChiusura,
+  datiScontrino,
+  euro,
+  leggiRisposta,
+  scontrinoFiscale,
+} from "../../ponte/protocolli/fpmate.mjs";
 import { postHttp, scambioTcp } from "../../ponte/rete.mjs";
 import { avviaSimulatore } from "../../ponte/simulatore.mjs";
 
@@ -98,6 +107,7 @@ describe("lo scontrino fiscale in FPMate", () => {
       ora: "9:33",
       importo: "1,00",
       chiusura: "1627",
+      matricola: null,
     });
     expect(datiScontrino("<response success=\"true\"/>").numero).toBeNull();
   });
@@ -151,7 +161,7 @@ describe("lo scontrino contro il registratore finto", () => {
     await conModo("muto", async () => {
       const e = await esegui(scontrino());
       expect(e.stato).toBe("incerto");
-      expect(e.errore_testo).toMatch(/guarda il registratore/);
+      expect(e.errore_testo).toMatch(/registratore.*guardalo prima di rifarlo/);
     });
   });
 
@@ -207,5 +217,75 @@ describe("lo scontrino contro il registratore finto", () => {
     expect((await esegui(scontrino("stampante_comande"))).errore_codice).toBe("rifiutato");
     const e = await esegui(scontrino("registratore_fiscale", { righe: [], pagamenti: [] }));
     expect([e.stato, e.errore_codice]).toEqual(["fallito", "rifiutato"]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// L'annullo e la chiusura giornaliera (04/11/2026), dal manuale Epson
+// «ePOS Fiscal Print Solution Development Guide» Rev. U, §5.6 e §5.8.
+// ---------------------------------------------------------------------
+const ANNULLO = { ...CONTENUTO, riferimento: "VOID 1627 0014 04112026 99IEC123456" };
+
+describe("l'annullo e la chiusura in FPMate", () => {
+  it("l'annullo comincia con il VOID di tipo 4 e porta le righe originali, come l'esempio §11.30", () => {
+    const xml = annulloFiscale(ANNULLO);
+    expect(xml.indexOf('<printRecMessage operator="1" messageType="4" message="VOID 1627 0014 04112026 99IEC123456" />')).toBeGreaterThan(
+      xml.indexOf("<printerFiscalReceipt>"),
+    );
+    expect(xml.indexOf("<printRecMessage")).toBeLessThan(xml.indexOf("<beginFiscalReceipt"));
+    expect(xml.match(/<printRecItem /g)).toHaveLength(2);
+    expect(xml).toContain('<endFiscalReceipt operator="1" />');
+    expect(xml.match(/<printerFiscalReceipt>/g)).toHaveLength(1);
+    expect(xml.trim().endsWith("</s:Envelope>")).toBe(true);
+  });
+
+  it("un riferimento sbagliato non parte", () => {
+    for (const riferimento of ["VOID 1627 14 04112026 99IEC123456", "VOID 1627 0014 4112026 99IEC123456", "VOID 1627 0014 04112026", 'VOID 1627 0014 04112026 99IEC12345" /><x', ""]) {
+      expect(() => annulloFiscale({ ...CONTENUTO, riferimento }), riferimento).toThrow(/Riferimento/);
+    }
+  });
+
+  it("la chiusura giornaliera è un printZReport, e dalla risposta si legge il numero", () => {
+    expect(CHIUSURA_GIORNALIERA).toContain("<printerFiscalReport>");
+    expect(CHIUSURA_GIORNALIERA).toContain('<printZReport operator="1" timeout="30000" />');
+    // La risposta d'esempio del manuale, §5.8.1.
+    const risposta =
+      '<response success="true" code="" status="2"><addInfo><elementList>lastCommand,printerStatus,zRepNumber,dailyAmount,serialNumber</elementList>' +
+      "<lastCommand>74</lastCommand><printerStatus>20110</printerStatus><zRepNumber>11</zRepNumber><dailyAmount>332,33</dailyAmount><serialNumber>99IEB004001</serialNumber></addInfo></response>";
+    expect(datiChiusura(risposta)).toEqual({ chiusura: "11", importo: "332,33", matricola: "99IEB004001" });
+  });
+});
+
+const fiscale = (tipo, contenuto = {}) => ({ ...scontrino("registratore_fiscale", contenuto), tipo });
+
+describe("annullo e chiusura contro il registratore finto", () => {
+  it("normale: l'annullo esce col suo numero, la chiusura fa salire il numero e riparte da 1", async () => {
+    await conModo("normale", async (s) => {
+      const a = await esegui(fiscale("annullo", ANNULLO));
+      expect(a.stato).toBe("stampato");
+      expect(a.esito.annullo.numero).toBe("1");
+      expect(readFileSync(s.fogli[0].file, "utf8")).toContain("VOID 1627 0014 04112026 99IEC123456");
+      const z = await esegui(fiscale("chiusura"));
+      expect(z.stato).toBe("stampato");
+      expect(z.esito.chiusura).toEqual({ chiusura: "2", importo: "0,00", matricola: "99IEC000000" });
+      expect((await esegui(scontrino())).esito.scontrino).toMatchObject({ numero: "1", chiusura: "2" });
+    });
+  });
+
+  it("🔴 muto e a metà: annullo e chiusura sono INCERTI, mai riprovati", async () => {
+    await conModo("muto", async () => {
+      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("incerto");
+      expect((await esegui(fiscale("chiusura"))).stato).toBe("incerto");
+    });
+    await conModo("a_meta", async () => {
+      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("incerto");
+      expect((await esegui(fiscale("chiusura"))).stato).toBe("incerto");
+    });
+  });
+
+  it("un annullo senza riferimento valido fallisce prima di partire; niente fiscale sulle stampanti", async () => {
+    const e = await esegui(fiscale("annullo", CONTENUTO));
+    expect([e.stato, e.errore_codice]).toEqual(["fallito", "rifiutato"]);
+    expect((await esegui({ ...scontrino("stampante_comande"), tipo: "chiusura" })).errore_codice).toBe("rifiutato");
   });
 });

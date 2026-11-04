@@ -6,7 +6,7 @@ import { supabase } from "../supabase";
 // ARCHITETTURA §4.2). Qui solo il titolare: lo staff non vede gli indirizzi.
 
 const COLONNE =
-  "id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, ultimo_contatto_il, ultimo_stato, ultimo_stato_testo";
+  "id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, matricola, ultimo_contatto_il, ultimo_stato, ultimo_stato_testo";
 
 export async function elencoDispositivi() {
   const { data, error } = await supabase.from("dispositivi").select(COLONNE).order("nome");
@@ -15,7 +15,7 @@ export async function elencoDispositivi() {
 }
 
 /** Scrive un apparecchio nuovo, o corregge quello con `id`. */
-export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo }) {
+export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, matricola }) {
   const riga = {
     nome: nome.trim(),
     tipo,
@@ -23,6 +23,8 @@ export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, 
     indirizzo: indirizzo.trim(),
     porta: Number(porta),
     reparto: tipo === "stampante_comande" ? reparto : null,
+    // La matricola ce l'ha solo il registratore (04/11): maiuscola, senza spazi.
+    matricola: tipo === "registratore_fiscale" && matricola?.trim() ? matricola.trim().toUpperCase() : null,
     attivo,
   };
   const q = id
@@ -55,7 +57,7 @@ export async function annullaLavoro(id) {
 export async function ultimiLavori(limite = 20) {
   const { data, error } = await supabase
     .from("lavori_stampa")
-    .select("id, dispositivo_id, tipo, stato, tentativi, creato_il, finito_il, errore_codice, errore_testo")
+    .select("id, dispositivo_id, tipo, stato, tentativi, creato_il, finito_il, errore_codice, errore_testo, esito")
     .order("creato_il", { ascending: false })
     .limit(limite);
   if (error) throw error;
@@ -117,6 +119,30 @@ export async function statoScontrino(orderId) {
 /** Chiede lo scontrino del conto al registratore. */
 export async function chiediScontrino(orderId) {
   const { data, error } = await supabase.rpc("accoda_scontrino", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+// L'ANNULLO DI UNO SCONTRINO E LA CHIUSURA GIORNALIERA (04/11/2026,
+// migrazione 20261104000002). Solo il titolare; uno alla volta.
+
+/** Gli ultimi scontrini, con il loro annullo se c'è. */
+export async function scontriniRecenti(limite = 20) {
+  const { data, error } = await supabase.rpc("scontrini_recenti", { p_limite: limite });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Chiede l'annullo dello scontrino uscito di un conto. */
+export async function annullaScontrino(orderId) {
+  const { data, error } = await supabase.rpc("accoda_annullo", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+/** Chiede la chiusura fiscale giornaliera (Z) al registratore. */
+export async function chiediChiusura(dispositivoId) {
+  const { data, error } = await supabase.rpc("chiedi_chiusura", { p_dispositivo: dispositivoId });
   if (error) throw error;
   return data;
 }

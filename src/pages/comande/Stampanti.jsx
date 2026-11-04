@@ -4,12 +4,15 @@ import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { ambienteCorrente } from "../../lib/ambiente";
 import {
   annullaLavoro,
+  annullaScontrino,
   chiaviPonte,
+  chiediChiusura,
   chiediLavoro,
   creaChiavePonte,
   elencoDispositivi,
   revocaChiavePonte,
   salvaDispositivo,
+  scontriniRecenti,
   togliDispositivo,
   ultimiLavori,
 } from "../../lib/api/stampanti";
@@ -24,8 +27,9 @@ import {
 // riscrive com'e' andata (ARCHITETTURA §4.2). Per questo la pagina dice
 // prima di tutto se il ponte e' acceso: senza, ogni prova resta in coda.
 //
-// ⚠️ NIENTE SCONTRINI IN QUESTO PASSO: la coda accetta solo prove non
-//    fiscali e letture di stato, ed e' il database a rifiutare il resto.
+// 🔴 DAL 04/11 ANCHE IL FISCALE, solo per il titolare: qui si scrive la
+//    matricola del registratore, si fa la chiusura giornaliera e si annulla
+//    uno scontrino uscito. Uno alla volta: lo impone il database.
 
 // Le «lingue» degli apparecchi, con la porta che di solito usano.
 const PROTOCOLLI = {
@@ -41,7 +45,16 @@ const PROTOCOLLI = {
 };
 
 // Le comande e i biglietti del turno passano dalla stessa coda (29/10).
-const NOMI_DEI_LAVORI = { prova: "prova di stampa", stato: "stato", comanda: "comanda", chiamata: "biglietto del turno" };
+const NOMI_DEI_LAVORI = {
+  prova: "prova di stampa",
+  stato: "stato",
+  comanda: "comanda",
+  chiamata: "biglietto del turno",
+  scontrino: "scontrino fiscale",
+  annullo: "annullo di uno scontrino",
+  chiusura: "chiusura giornaliera",
+};
+const FISCALI = ["scontrino", "annullo", "chiusura"];
 
 const TIPI = [
   { value: "registratore_fiscale", label: "Registratore telematico" },
@@ -87,6 +100,7 @@ export default function Stampanti() {
   const [apparecchi, setApparecchi] = useState(null);
   const [lavori, setLavori] = useState([]);
   const [chiavi, setChiavi] = useState(null);
+  const [scontrini, setScontrini] = useState([]);
   const [nuovaChiave, setNuovaChiave] = useState(null);
   const [scheda, setScheda] = useState(null);
   const [errore, setErrore] = useState("");
@@ -103,11 +117,17 @@ export default function Stampanti() {
   const rileggi = useCallback(async () => {
     const questa = ++ultimaLettura.current;
     try {
-      const [a, l, c] = await Promise.all([elencoDispositivi(), ultimiLavori(), chiaviPonte()]);
+      const [a, l, c, s] = await Promise.all([
+        elencoDispositivi(),
+        ultimiLavori(),
+        chiaviPonte(),
+        scontriniRecenti(),
+      ]);
       if (questa !== ultimaLettura.current) return; // ne è già partita una più nuova
       setApparecchi(a);
       setLavori(l);
       setChiavi(c);
+      setScontrini(s);
       setErroreLettura("");
     } catch (e) {
       if (questa !== ultimaLettura.current) return;
@@ -288,6 +308,7 @@ export default function Stampanti() {
                   {TIPI.find((t) => t.value === a.tipo)?.label}
                   {a.reparto ? ` · ${a.reparto}` : ""} · {a.indirizzo}:{a.porta} ·{" "}
                   {PROTOCOLLI[a.tipo]?.find((p) => p.value === a.protocollo)?.label ?? a.protocollo}
+                  {a.tipo === "registratore_fiscale" && ` · matricola ${a.matricola ?? "non scritta"}`}
                 </p>
                 {a.ultimo_stato_testo && <p className="text-b58-terracotta-dark-testo">{a.ultimo_stato_testo}</p>}
                 <div className="flex flex-wrap gap-2">
@@ -307,6 +328,16 @@ export default function Stampanti() {
                   >
                     Leggi lo stato
                   </button>
+                  {a.tipo === "registratore_fiscale" && (
+                    <ConfermaDistruttiva
+                      etichetta="Chiusura giornaliera"
+                      domanda="Chiudo la giornata fiscale? Il registratore stampa la chiusura (Z), manda i corrispettivi all'Agenzia delle Entrate e da quel momento gli scontrini contano per la giornata dopo. Non si torna indietro."
+                      etichettaConferma="Sì, chiudi la giornata"
+                      disabilitato={inCorso || !a.attivo}
+                      onConferma={() => gesto(() => chiediChiusura(a.id))}
+                      attributi={{ "data-chiusura-giornaliera": a.nome }}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => setScheda({ ...a, indirizzo: String(a.indirizzo) })}
@@ -343,18 +374,66 @@ export default function Stampanti() {
                 <span className="min-w-0">
                   {ora(l.creato_il)} · {nomeDi(l.dispositivo_id)} · {NOMI_DEI_LAVORI[l.tipo] ?? l.tipo} —{" "}
                   <b>{STATI_LAVORO[l.stato] ?? l.stato}</b>
+                  {l.tipo === "chiusura" && l.stato === "stampato" && l.esito?.chiusura?.chiusura && (
+                    <span className="block">Chiusura n. {l.esito.chiusura.chiusura}</span>
+                  )}
                   {l.errore_testo && <span className="block text-b58-terracotta-dark-testo">{l.errore_testo}</span>}
                 </span>
-                {(l.stato === "in_coda" || l.stato === "incerto") && (
+                {(l.stato === "in_coda" || l.stato === "incerto" || (l.stato === "fallito" && FISCALI.includes(l.tipo))) && (
                   <button
                     type="button"
                     disabled={inCorso}
                     onClick={() => gesto(() => annullaLavoro(l.id))}
                     className="tocco-riga rounded-lg px-3 text-b58-terracotta-dark-testo"
                   >
-                    {l.stato === "incerto" ? "Ho guardato, chiudi" : "Annulla"}
+                    {l.stato === "in_coda" ? "Annulla" : "Ho guardato, chiudi"}
                   </button>
                 )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section data-scontrini className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 space-y-3">
+        <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">4 · Gli scontrini</h2>
+        {scontrini.length === 0 ? (
+          <p className="testo-sala text-b58-charcoal-soft">Ancora nessuno scontrino dal gestionale.</p>
+        ) : (
+          <ul className="space-y-1">
+            {scontrini.map((s) => (
+              <li
+                key={s.order_id}
+                data-scontrino={s.numero ?? ""}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-b58-cream px-3 py-2 text-b58-charcoal"
+              >
+                <span className="min-w-0">
+                  Tavolo {s.tavolo}
+                  {s.numero ? ` · n. ${s.numero} del ${s.data} alle ${s.ora} · chiusura ${s.chiusura}` : ""}
+                  {s.totale != null ? ` · € ${Number(s.totale).toFixed(2).replace(".", ",")}` : ""} —{" "}
+                  <b>
+                    {s.annullo?.stato === "stampato"
+                      ? `Annullato${s.annullo.numero ? ` (documento n. ${s.annullo.numero})` : ""}`
+                      : s.annullo && s.annullo.stato !== "annullato"
+                        ? `Annullo: ${STATI_LAVORO[s.annullo.stato] ?? s.annullo.stato}`
+                        : STATI_LAVORO[s.stato] ?? s.stato}
+                  </b>
+                </span>
+                {s.stato === "stampato" && (!s.annullo || s.annullo.stato === "annullato") &&
+                  (s.riferimento ? (
+                    <ConfermaDistruttiva
+                      etichetta="Annulla scontrino"
+                      domanda={`Annullo lo scontrino n. ${s.numero} del ${s.data} (tavolo ${s.tavolo})? Il registratore emette il documento di annullo «${s.riferimento}». Controlla che numero, data e chiusura siano quelli stampati sullo scontrino. Non si torna indietro.`}
+                      etichettaConferma="Sì, annulla lo scontrino"
+                      disabilitato={inCorso}
+                      onConferma={() => gesto(() => annullaScontrino(s.order_id))}
+                      attributi={{ "data-annulla-scontrino": s.numero ?? "" }}
+                    />
+                  ) : (
+                    <span className="text-b58-charcoal-soft">
+                      Per annullarlo scrivi la matricola del registratore con «Modifica».
+                    </span>
+                  ))}
               </li>
             ))}
           </ul>
@@ -426,6 +505,20 @@ function SchedaApparecchio({ valore, onCambia, onSalva, onAnnulla, inCorso }) {
               <option value="cucina">Cucina</option>
               <option value="bar">Bar</option>
             </select>
+          </label>
+        )}
+        {valore.tipo === "registratore_fiscale" && (
+          <label className="block space-y-1">
+            <span className="text-b58-charcoal-soft">Matricola (in fondo allo scontrino)</span>
+            <input
+              value={valore.matricola ?? ""}
+              onChange={(e) => metti({ matricola: e.target.value })}
+              placeholder="99IEC123456"
+              maxLength={11}
+              autoCapitalize="characters"
+              spellCheck={false}
+              className={campo}
+            />
           </label>
         )}
         <label className="block space-y-1">

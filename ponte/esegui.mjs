@@ -34,6 +34,9 @@ const esito = (stato, { codice = null, testo = null, statoApparecchio = "sconosc
   esito: dettaglio,
 });
 
+// I lavori fiscali: lo scontrino, il suo annullo, la chiusura giornaliera.
+export const FISCALI = ["scontrino", "annullo", "chiusura"];
+
 const dallErrore = (e, { puoEssereIncerto, scontrino = false }) =>
   // Un «no» esplicito dell'apparecchio (HTTP 4xx) è un rifiuto, non un dubbio.
   e.codice === "rifiutato"
@@ -42,7 +45,7 @@ const dallErrore = (e, { puoEssereIncerto, scontrino = false }) =>
     codice: e.codice ?? "sconosciuto",
     testo: e.inviato && puoEssereIncerto
       ? scontrino
-        ? `${e.message} Forse lo scontrino è uscito, forse no: guarda il registratore prima di rifarlo.`
+        ? `${e.message} Forse il registratore l'ha fatto, forse no: guardalo prima di rifarlo.`
         : `${e.message} Forse il foglio è uscito, forse no: guarda la stampante.`
       : e.message,
     statoApparecchio: e.inviato && puoEssereIncerto ? "errore" : "non_risponde",
@@ -77,16 +80,23 @@ async function inEscpos(lavoro, d, rete) {
 
 async function inXml(lavoro, d, rete, modulo, lingua) {
   const stampa = lavoro.tipo !== "stato";
-  const scontrino = lavoro.tipo === "scontrino";
+  // `scontrino` qui vuol dire «documento fiscale»: scontrino, annullo o
+  // chiusura giornaliera seguono tutti le regole più strette.
+  const scontrino = FISCALI.includes(lavoro.tipo);
+  const chiusura = lavoro.tipo === "chiusura";
   let corpo;
   try {
     corpo = !stampa
       ? modulo.DOMANDA_STATO
-      : scontrino
+      : lavoro.tipo === "scontrino"
         ? modulo.scontrinoFiscale(lavoro.contenuto)
-        : lavoro.tipo === "prova"
-          ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
-          : modulo.foglioComanda(lavoro.contenuto);
+        : lavoro.tipo === "annullo"
+          ? modulo.annulloFiscale(lavoro.contenuto)
+          : chiusura
+            ? modulo.CHIUSURA_GIORNALIERA
+            : lavoro.tipo === "prova"
+              ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
+              : modulo.foglioComanda(lavoro.contenuto);
   } catch (e) {
     // ⚠️ Il documento non si è potuto comporre: non è partito niente.
     return esito("fallito", { codice: "rifiutato", testo: `Il ponte non ha potuto comporre il documento: ${e.message}`, statoApparecchio: "sconosciuto" });
@@ -97,7 +107,11 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
       protocollo: [443, 8043].includes(Number(d.porta)) ? "https:" : "http:",
       indirizzo: d.indirizzo,
       porta: d.porta,
-      percorso: modulo.PERCORSO,
+      // ⚠️ La chiusura giornaliera trasmette all'Agenzia e ci mette di più:
+      //    indirizzo e attesa più lunghi, perché un «fatto» in ritardo non
+      //    diventi un dubbio.
+      percorso: chiusura ? modulo.PERCORSO_CHIUSURA : modulo.PERCORSO,
+      ...(chiusura ? { attesaRisposta: modulo.ATTESA_CHIUSURA_MS } : {}),
       corpo,
     });
   } catch (e) {
@@ -107,7 +121,9 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
   const dettaglio = { lingua, risposta: r.grezzo };
   // Lo scontrino emesso lascia numero, data, ora e chiusura nell'esito:
   // è quello che il conto mostra.
-  if (r.riuscito && scontrino) dettaglio.scontrino = modulo.datiScontrino(testo);
+  if (r.riuscito && lavoro.tipo === "scontrino") dettaglio.scontrino = modulo.datiScontrino(testo);
+  if (r.riuscito && lavoro.tipo === "annullo") dettaglio.annullo = modulo.datiScontrino(testo);
+  if (r.riuscito && chiusura) dettaglio.chiusura = modulo.datiChiusura(testo);
   if (r.riuscito) return esito("stampato", { statoApparecchio: "pronto", dettaglio });
   // ⚠️ Una risposta che non è una risposta di stampa (una pagina qualunque,
   //    un apparecchio sbagliato), o un «tempo scaduto» dell'apparecchio,
@@ -136,7 +152,7 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
   // ⚠️ Un «no» esplicito del registratore su uno scontrino: non riprova
   //    nessuno, e prima di rifarlo si guarda il display (un documento
   //    fiscale fermato a metà può restare aperto).
-  const testoNo = scontrino ? `${r.testo} Prima di rifare lo scontrino guarda il display del registratore.` : r.testo;
+  const testoNo = scontrino ? `${r.testo} Prima di rifarlo guarda il display del registratore.` : r.testo;
   return esito("fallito", { codice: r.codice, testo: testoNo, statoApparecchio: r.stato, dettaglio });
 }
 
@@ -148,13 +164,13 @@ export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambi
   const d = lavoro?.dispositivo ?? {};
   const no = perchéNonSiChiama(d, { simulatore });
   if (no) return esito("fallito", { codice: "rifiutato", testo: no });
-  if (!["prova", "stato", "comanda", "chiamata", "scontrino"].includes(lavoro.tipo)) {
+  if (!["prova", "stato", "comanda", "chiamata", ...FISCALI].includes(lavoro.tipo)) {
     return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa fare lavori «${lavoro.tipo}».` });
   }
   const lingua = linguaDi(d);
-  // 🔴 Uno scontrino va solo al registratore.
-  if (lavoro.tipo === "scontrino" && lingua !== "fpmate") {
-    return esito("fallito", { codice: "rifiutato", testo: "Uno scontrino fiscale si emette solo sul registratore." });
+  // 🔴 Scontrino, annullo e chiusura vanno solo al registratore.
+  if (FISCALI.includes(lavoro.tipo) && lingua !== "fpmate") {
+    return esito("fallito", { codice: "rifiutato", testo: "Un documento fiscale si fa solo sul registratore." });
   }
   // 🔴 Una comanda va solo a una stampante delle comande: il registratore
   //    non stampa comande (e sul registratore un foglio in più è carta

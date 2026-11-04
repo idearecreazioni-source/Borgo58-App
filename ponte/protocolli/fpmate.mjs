@@ -88,6 +88,35 @@ export function scontrinoFiscale(contenuto) {
   return busta(`<printerFiscalReceipt>\n<beginFiscalReceipt operator="1" />\n${voci.join("\n")}\n${totali.join("\n")}\n<endFiscalReceipt operator="1" />\n</printerFiscalReceipt>`);
 }
 
+// 🔴 L'ANNULLO (DOCUMENTO DI ANNULLO), dal manuale Epson «ePOS Fiscal Print
+//    Solution Development Guide» Rev. U, §5.6.2 e esempio §11.30: un
+//    `printRecMessage` di tipo 4 con «VOID zzzz nnnn ggmmaaaa matricola»
+//    (chiusura e numero a quattro cifre, la matricola di undici caratteri).
+//    Se il registratore trova lo scontrino nel suo giornale lo annulla da
+//    solo e IGNORA il resto; se non lo trova, il resto sono le righe e i
+//    pagamenti dello scontrino originale, così il documento si chiude
+//    comunque e non resta aperto sul registratore.
+// ⚠️ Con SET 14/59 = SI il manuale vuole `printRecRefund` al posto di
+//    `printRecItem` nell'annullo a mano: si usa il caso di fabbrica (NO).
+export const RIFERIMENTO_ANNULLO = /^VOID \d{4} \d{4} \d{8} [0-9A-Z]{11}$/;
+
+/** L'annullo di uno scontrino, da `contenuto` come lo scrive `accoda_annullo`. */
+export function annulloFiscale(contenuto) {
+  const riferimento = String(contenuto?.riferimento ?? "");
+  if (!RIFERIMENTO_ANNULLO.test(riferimento)) throw new Error(`Riferimento dell'annullo non valido: «${riferimento}».`);
+  const originale = scontrinoFiscale(contenuto);
+  const corpo = originale.slice(originale.indexOf("<beginFiscalReceipt"), originale.indexOf("</printerFiscalReceipt>"));
+  return busta(`<printerFiscalReceipt>\n<printRecMessage operator="1" messageType="4" message="${riferimento}" />\n${corpo}</printerFiscalReceipt>`);
+}
+
+// 🔴 LA CHIUSURA GIORNALIERA (Z), dal manuale §5.8 e esempio §11.9: un
+//    `printerFiscalReport` con `printZReport`. Trasmette all'Agenzia, quindi
+//    si dà più tempo al registratore (30 secondi come nell'esempio) e
+//    all'indirizzo, e il ponte aspetta ancora di più.
+export const PERCORSO_CHIUSURA = "/cgi-bin/fpmate.cgi?devid=local_printer&timeout=40000";
+export const ATTESA_CHIUSURA_MS = 50000;
+export const CHIUSURA_GIORNALIERA = busta(`<printerFiscalReport>\n<printZReport operator="1" timeout="30000" />\n</printerFiscalReport>`);
+
 const elemento = (xml, nome) => new RegExp(`<${nome}>\\s*([^<]*?)\\s*</${nome}>`, "i").exec(xml)?.[1] || null;
 
 /**
@@ -102,6 +131,18 @@ export function datiScontrino(xml) {
     ora: elemento(testo, "fiscalReceiptTime"),
     importo: elemento(testo, "fiscalReceiptAmount"),
     chiusura: elemento(testo, "zRepNumber"),
+    // Solo dalla versione 1.042 di fpmate.cgi (manuale §5.4.1).
+    matricola: elemento(testo, "serialNumber"),
+  };
+}
+
+/** Cosa dice la risposta di una chiusura giornaliera (manuale §5.8.1). */
+export function datiChiusura(xml) {
+  const testo = String(xml ?? "");
+  return {
+    chiusura: elemento(testo, "zRepNumber"),
+    importo: elemento(testo, "dailyAmount"),
+    matricola: elemento(testo, "serialNumber"),
   };
 }
 

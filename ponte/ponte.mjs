@@ -84,11 +84,13 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
     //    prossimo invece di lasciarli tutti in corso.
     let orologio;
     let e;
+    // La chiusura giornaliera aspetta l'Agenzia: il suo tetto è più alto.
+    const tetto = lavoro.tipo === "chiusura" ? Math.max(limiteMs, LIMITE_DELLA_CHIUSURA_MS) : limiteMs;
     try {
       e = await Promise.race([
         esegui(lavoro, { simulatore }),
         new Promise((_, ko) => {
-          orologio = setTimeout(() => ko(new Error(`il lavoro non è finito in ${limiteMs / 1000} secondi`)), limiteMs);
+          orologio = setTimeout(() => ko(new Error(`il lavoro non è finito in ${tetto / 1000} secondi`)), tetto);
         }),
       ]);
     } catch (guasto) {
@@ -126,6 +128,9 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
 // stampa, chiusura), più corto dei cinque minuti dopo cui il gestionale
 // dichiara incerto un lavoro abbandonato.
 export const LIMITE_DI_UN_LAVORO_MS = 45000;
+// La chiusura giornaliera: più dei 50 secondi di attesa della risposta
+// (protocolli/fpmate.mjs), sempre sotto i cinque minuti.
+export const LIMITE_DELLA_CHIUSURA_MS = 70000;
 
 // Un nome con un a capo dentro non deve spezzare una riga del registro.
 const perIlRegistro = (t) => senzaControlli(t);

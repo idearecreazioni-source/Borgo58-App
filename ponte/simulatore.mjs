@@ -78,12 +78,12 @@ const rispostaFpmate = (successo, codice = "", info = "<elementList>simulatore</
 
 // Come risponde il registratore vero a uno scontrino emesso (collaudo del
 // 04/11): numero, importo, data, ora e numero della chiusura giornaliera.
-const infoScontrino = ({ numero, importo, adesso = new Date() }) =>
+const infoScontrino = ({ numero, importo, chiusura = 1, adesso = new Date() }) =>
   "<elementList>lastCommand,printerStatus,fiscalReceiptNumber,fiscalReceiptAmount,fiscalReceiptDate,fiscalReceiptTime,zRepNumber</elementList>" +
   `<lastCommand>74</lastCommand><printerStatus>00110</printerStatus><fiscalReceiptNumber>${numero}</fiscalReceiptNumber>` +
   `<fiscalReceiptAmount>${importo}</fiscalReceiptAmount>` +
   `<fiscalReceiptDate>${adesso.getDate()}/${adesso.getMonth() + 1}/${adesso.getFullYear()}</fiscalReceiptDate>` +
-  `<fiscalReceiptTime>${adesso.getHours()}:${String(adesso.getMinutes()).padStart(2, "0")}</fiscalReceiptTime><zRepNumber>1</zRepNumber>`;
+  `<fiscalReceiptTime>${adesso.getHours()}:${String(adesso.getMinutes()).padStart(2, "0")}</fiscalReceiptTime><zRepNumber>${chiusura}</zRepNumber>`;
 
 /**
  * Accende i due apparecchi finti. Restituisce `chiudi()` e l'elenco dei
@@ -93,6 +93,7 @@ export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, p
   if (!MODI.includes(modo)) throw new Error(`Modo sconosciuto «${modo}»: i modi sono ${MODI.join(", ")}.`);
   const fogli = [];
   let numeroScontrino = 0;
+  let numeroChiusura = 1;
   const di =(...a) => silenzioso || console.log("[simulatore]", ...a);
 
   const stampante = net.createServer((presa) => {
@@ -147,11 +148,28 @@ export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, p
           .reduce((s, m) => s + Number(m[2].replace(",", ".")), 0)
           .toFixed(2)
           .replace(".", ",");
-        const testo = `${voci.join("\n")}\n${pagati.map((m) => `${m[1]}  ${m[2]}`).join("\n")}\n----- scontrino fiscale finto n. ${numeroScontrino} -----\n`;
-        const file = scrivi(cartella, "scontrino", testo);
+        // Un annullo comincia con «VOID …» (manuale Epson §5.6.2).
+        const annullo = /<printRecMessage[^>]*message="(VOID [^"]*)"/.exec(corpo)?.[1];
+        const testo = `${annullo ? `${annullo}\n` : ""}${voci.join("\n")}\n${pagati.map((m) => `${m[1]}  ${m[2]}`).join("\n")}\n----- ${annullo ? "documento di annullo" : "scontrino fiscale"} finto n. ${numeroScontrino} -----\n`;
+        const file = scrivi(cartella, annullo ? "annullo" : "scontrino", testo);
         fogli.push({ apparecchio: "registratore", file, testo });
-        di("scontrino finto in", file);
-        xml = rispostaFpmate(true, "", infoScontrino({ numero: numeroScontrino, importo }));
+        di(annullo ? "annullo finto in" : "scontrino finto in", file);
+        xml = rispostaFpmate(true, "", infoScontrino({ numero: numeroScontrino, importo, chiusura: numeroChiusura }));
+      }
+      if (/printerFiscalReport/.test(corpo) && /printZReport/.test(corpo) && !codici[modo]) {
+        // La chiusura giornaliera finta (manuale Epson §5.8.1): il numero
+        // della chiusura sale, e lo scontrino del giorno dopo riparte da 1.
+        numeroChiusura += 1;
+        numeroScontrino = 0;
+        const testo = `----- chiusura giornaliera finta n. ${numeroChiusura} -----\n`;
+        const file = scrivi(cartella, "chiusura", testo);
+        fogli.push({ apparecchio: "registratore", file, testo });
+        di("chiusura finta in", file);
+        xml = rispostaFpmate(
+          true,
+          "",
+          `<elementList>lastCommand,printerStatus,zRepNumber,dailyAmount,serialNumber</elementList><lastCommand>74</lastCommand><printerStatus>20110</printerStatus><zRepNumber>${numeroChiusura}</zRepNumber><dailyAmount>0,00</dailyAmount><serialNumber>99IEC000000</serialNumber>`,
+        );
       }
       if (/printerNonFiscal/.test(corpo) && !codici[modo]) {
         const righe = [...corpo.matchAll(/data="([^"]*)"/g)].map((m) => m[1]);
