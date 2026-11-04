@@ -158,12 +158,32 @@ const perIlRegistro = (t) => senzaControlli(t);
 export const OGNI_QUANTO_IL_CONTROLLO = { normale: 120000, inAllarme: 30000 };
 
 /** Chiede lo stato a ogni apparecchio e lo scrive. Restituisce se qualcuno è in allarme. */
-export async function controlloApparecchi(g, dispositivi, { simulatore, esegui = eseguiLavoro } = {}) {
-  const stati = [];
-  for (const d of dispositivi ?? []) {
-    const e = await esegui({ id: null, tipo: "stato", contenuto: {}, dispositivo: d }, { simulatore });
-    stati.push({ id: d.id, stato: e.stato === "stampato" ? e.stato_dispositivo : e.stato_dispositivo === "sconosciuto" ? "errore" : e.stato_dispositivo, testo: e.errore_testo ?? null });
-  }
+// ⚠️ Tutti insieme e con un tetto (revisione del codice, 04/11): ogni
+//    apparecchio ha il suo indirizzo, quindi uno spento non fa aspettare
+//    gli altri, e il controllo non tiene ferma la coda più di dieci secondi.
+//    Un apparecchio che non finisce in tempo, o che fa inceppare il ponte,
+//    risulta in errore: gli altri si scrivono lo stesso.
+export const TETTO_DEL_CONTROLLO_MS = 10000;
+
+export async function controlloApparecchi(g, dispositivi, { simulatore, esegui = eseguiLavoro, tettoMs = TETTO_DEL_CONTROLLO_MS } = {}) {
+  const uno = async (d) => {
+    let orologio;
+    try {
+      const e = await Promise.race([
+        esegui({ id: null, tipo: "stato", contenuto: {}, dispositivo: d }, { simulatore }),
+        new Promise((_, ko) => {
+          orologio = setTimeout(() => ko(new Error(`non ha risposto in ${tettoMs / 1000} secondi`)), tettoMs);
+        }),
+      ]);
+      const stato = e.stato === "stampato" || e.stato_dispositivo !== "sconosciuto" ? e.stato_dispositivo : "errore";
+      return { id: d.id, stato, testo: e.errore_testo ?? null };
+    } catch (guasto) {
+      return { id: d.id, stato: "non_risponde", testo: `Controllo non riuscito: ${guasto.message}` };
+    } finally {
+      clearTimeout(orologio);
+    }
+  };
+  const stati = await Promise.all((dispositivi ?? []).map(uno));
   if (stati.length) await g.statoApparecchi(stati);
   return stati.some((s) => s.stato !== "pronto");
 }
@@ -177,6 +197,7 @@ export async function avvia(config = leggiConfigurazione()) {
   let ultimoErrore = "";
   let dispositivi = [];
   let prossimoControllo = 0;
+  let ultimoErroreControllo = "";
 
   scrivi(`ponte ${VERSIONE} acceso su ${host}${config.simulatore ? " (apparecchi finti ammessi)" : ""}`);
   const ferma = () => {
@@ -205,9 +226,20 @@ export async function avvia(config = leggiConfigurazione()) {
         ultimoErrore = "";
       }
       await unGiro(g, { simulatore: config.simulatore, scrivi });
+      // ⚠️ Il controllo ha il suo try: se non riesce (un gestionale più
+      //    vecchio del ponte, che non ha la porta del controllo) la coda
+      //    continua al suo ritmo, e l'errore si scrive una volta sola.
       if (Date.now() >= prossimoControllo) {
-        const inAllarme = await controlloApparecchi(g, dispositivi, { simulatore: config.simulatore });
-        prossimoControllo = Date.now() + (inAllarme ? OGNI_QUANTO_IL_CONTROLLO.inAllarme : OGNI_QUANTO_IL_CONTROLLO.normale);
+        prossimoControllo = Date.now() + OGNI_QUANTO_IL_CONTROLLO.normale;
+        try {
+          if (await controlloApparecchi(g, dispositivi, { simulatore: config.simulatore })) {
+            prossimoControllo = Date.now() + OGNI_QUANTO_IL_CONTROLLO.inAllarme;
+          }
+          ultimoErroreControllo = "";
+        } catch (e) {
+          if (e.message !== ultimoErroreControllo) scrivi(`controllo degli apparecchi non riuscito: ${e.message}`);
+          ultimoErroreControllo = e.message;
+        }
       }
     } catch (e) {
       // Lo stesso errore si scrive una volta sola, non ogni due secondi.

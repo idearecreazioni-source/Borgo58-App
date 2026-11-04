@@ -17,7 +17,10 @@ const OGNI_MS = 30000;
 
 export default function StrisciaApparecchi() {
   const [allarmi, setAllarmi] = useState([]);
-  const [vecchia, setVecchia] = useState(false);
+  // Quante letture di fila non sono riuscite: la riga «potrebbe essere
+  // vecchio» compare dalla terza, non a ogni battito di rete.
+  const [mancate, setMancate] = useState(0);
+  const [senzaRuolo, setSenzaRuolo] = useState(false);
   const ultima = useRef(0);
 
   const leggi = () => {
@@ -26,22 +29,28 @@ export default function StrisciaApparecchi() {
       .then((r) => {
         if (questa !== ultima.current) return;
         setAllarmi(r?.allarmi ?? []);
-        setVecchia(false);
+        setMancate(0);
       })
       .catch((e) => {
-        if (questa === ultima.current) setVecchia(Boolean(e));
+        if (questa !== ultima.current) return;
+        // Chi non ha un ruolo nel locale non vede gli apparecchi: niente
+        // striscia, e non si richiede più.
+        if (/solo a chi lavora nel locale/.test(e?.message ?? "")) setSenzaRuolo(true);
+        else setMancate((n) => n + 1);
       });
   };
 
   useEffect(() => {
+    if (senzaRuolo) return undefined;
     leggi();
     return ogniTantoSeVisibile(leggi, OGNI_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [senzaRuolo]);
 
-  if (allarmi.length === 0) return null;
+  const vecchia = mancate >= 3;
+  if (senzaRuolo || (allarmi.length === 0 && !vecchia)) return null;
   return (
-    <div data-striscia-apparecchi role="alert" className="print:hidden mb-4 space-y-1">
+    <div data-striscia-apparecchi role="status" className="print:hidden mb-4 space-y-1">
       {allarmi.map((a) => (
         <p
           key={a.chi}
@@ -52,7 +61,9 @@ export default function StrisciaApparecchi() {
       ))}
       {vecchia && (
         <p className="testo-sala text-b58-terracotta-dark-testo">
-          Non riesco a rileggere lo stato degli apparecchi: questo avviso potrebbe essere vecchio.
+          {allarmi.length
+            ? "Non riesco a rileggere lo stato degli apparecchi: questo avviso potrebbe essere vecchio."
+            : "Non riesco a leggere lo stato delle stampanti e del registratore."}
         </p>
       )}
     </div>

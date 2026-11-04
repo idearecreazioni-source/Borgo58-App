@@ -162,6 +162,19 @@ describe("il controllo regolare degli apparecchi", () => {
     });
   });
 
+  it("un apparecchio che fa inceppare il ponte o non finisce in tempo è in allarme, e gli altri si scrivono lo stesso", async () => {
+    const scritti = [];
+    const esegueStrano = async (l) => {
+      if (l.dispositivo.id === "s") throw new Error("guasto del ponte");
+      if (l.dispositivo.id === "r") return new Promise(() => {});
+      return { stato: "stampato", stato_dispositivo: "pronto", errore_testo: null };
+    };
+    const tre = [...apparecchi, { ...apparecchi[0], id: "b" }];
+    const inAllarme = await controlloApparecchi({ statoApparecchi: async (x) => scritti.push(...x) }, tre, { simulatore: true, esegui: esegueStrano, tettoMs: 200 });
+    expect(inAllarme).toBe(true);
+    expect(Object.fromEntries(scritti.map((x) => [x.id, x.stato]))).toEqual({ s: "non_risponde", r: "non_risponde", b: "pronto" });
+  });
+
   it("senza apparecchi accesi non chiama il gestionale", async () => {
     let chiamato = false;
     expect(await controlloApparecchi({ statoApparecchi: async () => (chiamato = true) }, [], { simulatore: true, esegui })).toBe(false);
