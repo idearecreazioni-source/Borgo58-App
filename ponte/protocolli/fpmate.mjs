@@ -37,9 +37,8 @@ export function documentoNonFiscale(contenuto) {
 
 export const DOMANDA_STATO = busta(`<printerCommand>\n<queryPrinterStatus operator="1" statusType="1" />\n</printerCommand>`);
 
-// 🔴 COME SI PAGA SUL REGISTRATORE. I contanti (0, 0) sono provati sul
-//    registratore vero il 04/11; la carta (2, 1) viene dalla documentazione
-//    Epson e va confermata al collaudo: si cambia qui e basta.
+// 🔴 COME SI PAGA SUL REGISTRATORE: contanti (0, 0) e carta (2, 1), tutti e
+//    due provati sul registratore vero al collaudo del 04/11.
 export const PAGAMENTI = {
   contante: { descrizione: "CONTANTI", paymentType: 0, index: 0 },
   carta: { descrizione: "CARTA DI CREDITO", paymentType: 2, index: 1 },

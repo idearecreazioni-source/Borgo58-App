@@ -14,7 +14,9 @@
 --    due telefoni o una rete che cade e fa ripremere trovano il primo e si
 --    fermano. Un lavoro fallito o incerto resta lì e blocca: rifare lo
 --    scontrino vuol dire che il titolare ha guardato il registratore e ha
---    annullato quel lavoro dalla pagina Stampanti.
+--    annullato quel lavoro dalla pagina Stampanti. La riga dello scontrino
+--    non si cancella mai: né il battito del ponte né la cancellazione del
+--    registratore se la portano via.
 --
 -- 🔴 IL CONTENUTO LO SCRIVE IL DATABASE, non il browser: righe e prezzi
 --    vengono da `order_items` e da `totale_conto()`, i pagamenti da
@@ -87,9 +89,88 @@ begin
      set stato = 'annullato', finito_il = now(),
          errore_testo = 'Rimasto in coda più di tre ore: non lo stampo più da solo.'
    where stato = 'in_coda' and tipo in ('comanda', 'chiamata') and creato_il < now() - interval '3 hours';
+
+  -- ⚠️ Uno scontrino fermo in coda da sei ore (ponte o registratore spenti)
+  --    non esce più da solo con la data e il numero di un altro giorno
+  --    (revisione del database, 04/11). Diventa FALLITO e non annullato:
+  --    non è uscito niente, ma resta lì e blocca, finché il titolare non
+  --    decide.
+  update lavori_stampa
+     set stato = 'fallito', finito_il = now(), errore_codice = 'interrotto',
+         errore_testo = 'Rimasto in coda più di sei ore: non lo emetto più da solo.'
+   where stato = 'in_coda' and tipo = 'scontrino' and creato_il < now() - interval '6 hours';
 end $function$;
 
 revoke all on function public.scadi_lavori_abbandonati() from public, anon, authenticated;
+
+-- 🔴 LA RIGA DELLO SCONTRINO È IL VINCOLO, quindi non si cancella mai da
+--    sola (revisione del database, 04/11). Il battito del ponte tiene corta
+--    la coda cancellando i fogli vecchi: gli scontrini no, altrimenti dopo
+--    trenta giorni lo stesso conto ne potrebbe avere un secondo. Il resto
+--    del battito è quello del 28/10.
+create or replace function public.ponte_battito(p_chiave text, p_versione text, p_host text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_chiave uuid := ponte_entra(p_chiave);
+  v_elenco jsonb;
+begin
+  if not is_titolare() then
+    raise exception 'La chiave del ponte appartiene a un accesso che non è il titolare.';
+  end if;
+
+  update chiavi_ponte
+     set ultimo_battito = now(),
+         versione = left(p_versione, 40),
+         host = left(p_host, 80)
+   where id = v_chiave;
+
+  -- La coda si tiene corta da se': i fogli usciti per un mese, quelli
+  -- andati storti per tre (servono a capire un guasto che ritorna).
+  -- Gli scontrini restano per sempre.
+  delete from lavori_stampa
+   where tipo <> 'scontrino'
+     and ((stato in ('stampato', 'annullato') and finito_il < now() - interval '30 days')
+       or (stato in ('fallito', 'incerto') and finito_il < now() - interval '90 days'));
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', d.id, 'nome', d.nome, 'tipo', d.tipo, 'protocollo', d.protocollo,
+           'indirizzo', host(d.indirizzo), 'porta', d.porta, 'reparto', d.reparto)
+           order by d.nome), '[]'::jsonb)
+    into v_elenco
+    from dispositivi d where d.attivo;
+
+  return jsonb_build_object('ora', now(), 'dispositivi', v_elenco);
+end $function$;
+
+revoke all on function public.ponte_battito(text, text, text) from public, anon, authenticated;
+grant execute on function public.ponte_battito(text, text, text) to anon, authenticated;
+
+-- 🔴 E NEMMENO CANCELLANDO IL REGISTRATORE: i lavori seguono l'apparecchio
+--    (`on delete cascade`), quindi un registratore cancellato si porterebbe
+--    via gli scontrini e il loro vincolo. Un registratore che ha emesso
+--    scontrini si spegne, non si cancella.
+create or replace function public.registratore_con_scontrini_non_si_cancella()
+returns trigger
+language plpgsql
+set search_path to 'public'
+as $function$
+begin
+  if exists (select 1 from lavori_stampa where dispositivo_id = old.id and tipo = 'scontrino') then
+    raise exception '«%» ha emesso scontrini: non si cancella, si spegne.', old.nome;
+  end if;
+  return old;
+end $function$;
+
+revoke all on function public.registratore_con_scontrini_non_si_cancella() from public, anon, authenticated;
+
+drop trigger if exists registratore_con_scontrini_non_si_cancella on dispositivi;
+create trigger registratore_con_scontrini_non_si_cancella
+  before delete on dispositivi
+  for each row execute function registratore_con_scontrini_non_si_cancella();
 
 -- Il titolare può annullare anche uno scontrino FALLITO: è il modo per
 -- rifarlo dopo aver guardato il registratore (l'indice unico, sopra, non
@@ -105,8 +186,19 @@ begin
     raise exception 'Solo il titolare può annullare un lavoro di stampa.';
   end if;
   perform scadi_lavori_abbandonati();
+  -- ⚠️ Uno scontrino «interrotto» (preso dal ponte, poi silenzio) si
+  --    annulla solo dopo mezz'ora: prima il ponte potrebbe starlo ancora
+  --    stampando (revisione del database, 04/11).
+  if exists (select 1 from lavori_stampa
+              where id = p_id and tipo = 'scontrino' and stato = 'incerto'
+                and errore_codice = 'interrotto' and preso_il > now() - interval '30 minutes') then
+    raise exception 'Il ponte potrebbe stare ancora emettendo questo scontrino: guarda il registratore e riprova fra mezz''ora.';
+  end if;
   update lavori_stampa
-     set stato = 'annullato', finito_il = now()
+     set stato = 'annullato', finito_il = now(),
+         errore_testo = case when tipo = 'scontrino'
+                             then 'Annullato dal titolare dopo aver guardato il registratore.'
+                             else errore_testo end
    where id = p_id
      and (stato in ('in_coda', 'incerto') or (stato = 'fallito' and tipo = 'scontrino'));
   if not found then
@@ -156,12 +248,18 @@ begin
   end if;
   perform scadi_lavori_abbandonati();
 
-  select * into v_order from orders where id = p_order;
+  -- ⚠️ `for update`: chi riapre il conto o lo richiude aspetta che lo
+  --    scontrino sia in coda, e due tocchi insieme passano uno alla volta
+  --    (revisione del database, 04/11).
+  select * into v_order from orders where id = p_order for update;
   if v_order.id is null then
     raise exception 'Questo conto non c''è più: ricarica la pagina.';
   end if;
   if v_order.status <> 'chiuso' then
     raise exception 'Lo scontrino si fa su un conto chiuso e pagato.';
+  end if;
+  if v_order.closed_at < now() - interval '12 hours' then
+    raise exception 'Questo conto è stato chiuso più di dodici ore fa: lo scontrino si fa a mano sul registratore.';
   end if;
   if v_order.discount_gift_id is not null then
     raise exception 'Questo conto ha uno sconto o un omaggio: per ora lo scontrino si fa a mano sul registratore.';
@@ -194,8 +292,8 @@ begin
       select i.created_at as ordine, i.quantity as quantita,
              (i.unit_price + coalesce((select sum(s.costo_aggiuntivo) from order_item_sostituzioni s
                                         where s.order_item_id = i.id), 0))::numeric(12,2) as prezzo,
-             case when r.recipe_type = 'finger' then 'bis di ' || r.name
-                  else coalesce(nullif(r.name, ''), i.free_text_name, 'Piatto') end as nome
+             left(case when r.recipe_type = 'finger' then 'bis di ' || r.name
+                       else coalesce(nullif(r.name, ''), i.free_text_name, 'Piatto') end, 60) as nome
         from order_items i
         left join recipes r on r.id = i.recipe_id
        where i.order_id = p_order and i.voided_at is null and i.sent_at is not null
@@ -306,8 +404,8 @@ begin
   select user_id into v_titolare from user_roles where role = 'titolare' limit 1;
   select user_id into v_staff from user_roles where role = 'staff' limit 1;
   select id into v_ente from entities order by created_at limit 1;
-  if v_titolare is null or v_staff is null then
-    raise exception 'VERIFICA: servono un titolare e uno staff in user_roles.';
+  if v_titolare is null or v_staff is null or v_ente is null then
+    raise exception 'VERIFICA: servono un titolare e uno staff in user_roles, e un''entità.';
   end if;
 
   if has_function_privilege('anon', 'accoda_scontrino(uuid)', 'execute')
@@ -439,6 +537,22 @@ begin
     end if;
     reset role;
     perform set_config('request.jwt.claims', null, true);
+
+    -- (8) Il battito del ponte non cancella gli scontrini vecchi, e il
+    --     registratore che li ha emessi non si cancella.
+    update lavori_stampa set finito_il = now() - interval '400 days' where order_id = v_ordine and tipo = 'scontrino';
+    perform ponte_battito(v_k->>'chiave', 'verifica', 'verifica');
+    if (select count(*) from lavori_stampa where order_id = v_ordine and tipo = 'scontrino') <> 2 then
+      raise exception 'VERIFICA (8a): il battito del ponte ha cancellato uno scontrino.';
+    end if;
+    v_ok := false;
+    begin
+      delete from dispositivi where id = v_disp;
+    exception when others then v_ok := sqlerrm like '%non si cancella%';
+    end;
+    if not v_ok then
+      raise exception 'VERIFICA (8b): il registratore con scontrini si è potuto cancellare.';
+    end if;
 
     raise exception 'ZZ_ANNULLA';
   exception when others then
