@@ -37,6 +37,9 @@ comment on column dispositivi.matricola is
   'Per il registratore: la matricola fiscale di undici caratteri (per esempio 99IEC123456), stampata in fondo a ogni scontrino. Serve ad annullare uno scontrino.';
 comment on constraint dispositivo_matricola_ben_scritta on dispositivi is
   'La matricola è di undici lettere maiuscole o cifre, e ce l''ha solo il registratore.';
+-- Il titolare la scrive dalla pagina Stampanti: le colonne che può
+-- scrivere sono elencate una per una dal 28/10 (revisione del database).
+grant insert (matricola), update (matricola) on dispositivi to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 2. La coda ammette annullo e chiusura
@@ -76,10 +79,13 @@ create unique index if not exists lavori_stampa_un_annullo_per_scontrino
   on lavori_stampa (scontrino_id) where tipo = 'annullo' and stato <> 'annullato';
 comment on index lavori_stampa_un_annullo_per_scontrino is
   'Al massimo un annullo non annullato per scontrino: niente annulli doppi, nemmeno con un doppio clic.';
+-- ⚠️ Anche una chiusura INCERTA blocca (revisione del database, 04/11):
+--    forse è già stata trasmessa all'Agenzia, e la seconda si fa solo dopo
+--    che il titolare ha guardato il registratore e l'ha tolta.
 create unique index if not exists lavori_stampa_una_chiusura_aperta_per_registratore
-  on lavori_stampa (dispositivo_id) where tipo = 'chiusura' and stato in ('in_coda', 'in_corso');
+  on lavori_stampa (dispositivo_id) where tipo = 'chiusura' and stato in ('in_coda', 'in_corso', 'incerto');
 comment on index lavori_stampa_una_chiusura_aperta_per_registratore is
-  'Una chiusura giornaliera in coda o in corso blocca la seconda sullo stesso registratore.';
+  'Una chiusura giornaliera in coda, in corso o incerta blocca la seconda sullo stesso registratore.';
 
 -- ---------------------------------------------------------------------
 -- 3. Scadenze, annullo dei lavori, battito, cancellazione del registratore
@@ -200,9 +206,12 @@ end $function$;
 revoke all on function public.ponte_battito(text, text, text) from public, anon, authenticated;
 grant execute on function public.ponte_battito(text, text, text) to anon, authenticated;
 
+-- ⚠️ `security definer`: legge la coda qualunque sia chi cancella, anche
+--    chi per la RLS non la vedrebbe (revisione del database, 04/11).
 create or replace function public.registratore_con_scontrini_non_si_cancella()
 returns trigger
 language plpgsql
+security definer
 set search_path to 'public'
 as $function$
 begin
@@ -214,6 +223,31 @@ begin
 end $function$;
 
 revoke all on function public.registratore_con_scontrini_non_si_cancella() from public, anon, authenticated;
+
+-- 🔴 E NEMMENO CANCELLANDO IL CONTO (revisione del database, 04/11): i
+--    lavori seguono anche il conto (`order_id ... on delete cascade`), e il
+--    titolare può cancellare un conto dalle API. Un conto con documenti
+--    fiscali non si cancella; i conti di prova degli script non ne hanno.
+create or replace function public.conto_con_scontrini_non_si_cancella()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  if exists (select 1 from lavori_stampa
+              where order_id = old.id and tipo in ('scontrino', 'annullo')) then
+    raise exception 'Il conto «%» ha uno scontrino fiscale: non si cancella.', old.table_label;
+  end if;
+  return old;
+end $function$;
+
+revoke all on function public.conto_con_scontrini_non_si_cancella() from public, anon, authenticated;
+
+drop trigger if exists conto_con_scontrini_non_si_cancella on orders;
+create trigger conto_con_scontrini_non_si_cancella
+  before delete on orders
+  for each row execute function conto_con_scontrini_non_si_cancella();
 
 -- ---------------------------------------------------------------------
 -- 4. Annullare uno scontrino
@@ -229,7 +263,12 @@ as $function$
   select case
     when p_esito->'scontrino'->>'chiusura' ~ '^\d{1,4}$'
      and p_esito->'scontrino'->>'numero' ~ '^\d{1,4}$'
-     and p_esito->'scontrino'->>'data' ~ '^\d{1,2}/\d{1,2}/\d{4}$'
+     -- ⚠️ `case` e non `and`: Postgres non promette l'ordine di un `and`,
+     --    e il numero si legge solo dopo che la forma è giusta.
+     and case when p_esito->'scontrino'->>'data' ~ '^\d{1,2}/\d{1,2}/\d{4}$'
+              then split_part(p_esito->'scontrino'->>'data', '/', 1)::int between 1 and 31
+               and split_part(p_esito->'scontrino'->>'data', '/', 2)::int between 1 and 12
+              else false end
      and p_matricola ~ '^[0-9A-Z]{11}$'
     then 'VOID ' || lpad(p_esito->'scontrino'->>'chiusura', 4, '0')
       || ' ' || lpad(p_esito->'scontrino'->>'numero', 4, '0')
@@ -334,6 +373,10 @@ begin
   end if;
   if not v_disp.attivo then
     raise exception '«%» è spento nel gestionale: accendilo prima.', v_disp.nome;
+  end if;
+  if exists (select 1 from lavori_stampa where dispositivo_id = p_dispositivo and tipo = 'chiusura'
+                                         and stato = 'incerto') then
+    raise exception 'L''ultima chiusura giornaliera è incerta: guarda il registratore, e se non è uscita toglila dalla pagina Stampanti prima di rifarla.';
   end if;
   if exists (select 1 from lavori_stampa where dispositivo_id = p_dispositivo and tipo = 'chiusura'
                                          and stato in ('in_coda', 'in_corso')) then
@@ -539,8 +582,14 @@ begin
       raise exception 'VERIFICA (2): l''annullo senza matricola non si è fermato.';
     end if;
 
-    -- (3) Con la matricola: un annullo, col riferimento giusto; il secondo no.
+    -- (3) Il titolare scrive la matricola come dalla pagina Stampanti; poi
+    --     un annullo, col riferimento giusto; il secondo no.
+    set local role authenticated;
     update dispositivi set matricola = '99IEC123456' where id = v_disp;
+    reset role;
+    if (select matricola from dispositivi where id = v_disp) is distinct from '99IEC123456' then
+      raise exception 'VERIFICA (3): il titolare non è riuscito a scrivere la matricola.';
+    end if;
     v_annullo := accoda_annullo(v_ordine);
     if (select contenuto->>'riferimento' from lavori_stampa where id = v_annullo) <> 'VOID 1627 0014 04112026 99IEC123456'
        or (select jsonb_array_length(contenuto->'righe') from lavori_stampa where id = v_annullo) <> 1 then
@@ -617,6 +666,16 @@ begin
       raise exception 'VERIFICA (6b): gli scontrini recenti non mostrano l''annullo: %.', v_r;
     end if;
 
+    -- (6c) Il conto con lo scontrino non si cancella.
+    v_ok := false;
+    begin
+      delete from orders where id = v_ordine;
+    exception when others then v_ok := sqlerrm like '%non si cancella%';
+    end;
+    if not v_ok then
+      raise exception 'VERIFICA (6c): il conto con lo scontrino si è potuto cancellare.';
+    end if;
+
     -- (7) La chiusura giornaliera: una sola in coda, poi esce.
     v_z := chiedi_chiusura(v_disp);
     v_ok := false;
@@ -634,8 +693,22 @@ begin
     end if;
     perform ponte_esito_lavoro(v_k->>'chiave', v_z, 'stampato', null, null, 'pronto', '{"chiusura":{"chiusura":"1628"}}'::jsonb);
     perform set_config('request.jwt.claims', v_titolare_claims, true);
-    if chiedi_chiusura(v_disp) is null then
+    v_z := chiedi_chiusura(v_disp);
+    if v_z is null then
       raise exception 'VERIFICA (7c): dopo una chiusura finita non se ne può chiedere un''altra.';
+    end if;
+    -- (7d) Quella dopo resta senza risposta: incerta, e blocca la terza.
+    perform set_config('request.jwt.claims', null, true);
+    perform ponte_prendi_lavori(v_k->>'chiave', 5);
+    perform ponte_esito_lavoro(v_k->>'chiave', v_z, 'incerto', 'risposta_a_meta', 'nessuna risposta', 'errore', '{}');
+    perform set_config('request.jwt.claims', v_titolare_claims, true);
+    v_ok := false;
+    begin
+      perform chiedi_chiusura(v_disp);
+    exception when others then v_ok := sqlerrm like '%incerta%';
+    end;
+    if not v_ok then
+      raise exception 'VERIFICA (7d): con una chiusura incerta se n''è potuta chiedere un''altra.';
     end if;
     perform set_config('request.jwt.claims', null, true);
 
