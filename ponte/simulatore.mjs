@@ -71,10 +71,19 @@ function byteDiStato(modo) {
   return Buffer.from([ferma, carta]);
 }
 
-const rispostaFpmate = (successo, codice = "") =>
+const rispostaFpmate = (successo, codice = "", info = "<elementList>simulatore</elementList>") =>
   `<?xml version="1.0" encoding="utf-8"?>\n<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body>` +
-  `<response success="${successo}" code="${codice}" status="2"><addInfo><elementList>simulatore</elementList></addInfo></response>` +
+  `<response success="${successo}" code="${codice}" status="2"><addInfo>${info}</addInfo></response>` +
   `</soapenv:Body></soapenv:Envelope>`;
+
+// Come risponde il registratore vero a uno scontrino emesso (collaudo del
+// 04/11): numero, importo, data, ora e numero della chiusura giornaliera.
+const infoScontrino = ({ numero, importo, adesso = new Date() }) =>
+  "<elementList>lastCommand,printerStatus,fiscalReceiptNumber,fiscalReceiptAmount,fiscalReceiptDate,fiscalReceiptTime,zRepNumber</elementList>" +
+  `<lastCommand>74</lastCommand><printerStatus>00110</printerStatus><fiscalReceiptNumber>${numero}</fiscalReceiptNumber>` +
+  `<fiscalReceiptAmount>${importo}</fiscalReceiptAmount>` +
+  `<fiscalReceiptDate>${adesso.getDate()}/${adesso.getMonth() + 1}/${adesso.getFullYear()}</fiscalReceiptDate>` +
+  `<fiscalReceiptTime>${adesso.getHours()}:${String(adesso.getMinutes()).padStart(2, "0")}</fiscalReceiptTime><zRepNumber>1</zRepNumber>`;
 
 /**
  * Accende i due apparecchi finti. Restituisce `chiudi()` e l'elenco dei
@@ -83,7 +92,8 @@ const rispostaFpmate = (successo, codice = "") =>
 export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, portaStampante = PORTA_STAMPANTE, portaRegistratore = PORTA_REGISTRATORE, silenzioso = false } = {}) {
   if (!MODI.includes(modo)) throw new Error(`Modo sconosciuto «${modo}»: i modi sono ${MODI.join(", ")}.`);
   const fogli = [];
-  const di = (...a) => silenzioso || console.log("[simulatore]", ...a);
+  let numeroScontrino = 0;
+  const di =(...a) => silenzioso || console.log("[simulatore]", ...a);
 
   const stampante = net.createServer((presa) => {
     const ricevuti = [];
@@ -125,7 +135,24 @@ export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, p
         return;
       }
       const codici = { carta_finita: "EPTR_REC_EMPTY", coperchio_aperto: "EPTR_COVER_OPEN", rifiuta: "EPTR_PRINTER_OFFLINE" };
-      const xml = codici[modo] ? rispostaFpmate(false, codici[modo]) : rispostaFpmate(true);
+      let xml = codici[modo] ? rispostaFpmate(false, codici[modo]) : rispostaFpmate(true);
+      if (/printerFiscalReceipt/.test(corpo) && !codici[modo]) {
+        // Lo scontrino finto: le righe e i pagamenti come li ha ricevuti,
+        // e una risposta con la forma di quella vera.
+        numeroScontrino += 1;
+        const voci = [...corpo.matchAll(/<printRecItem[^>]*description="([^"]*)"[^>]*quantity="([^"]*)"[^>]*unitPrice="([^"]*)"/g)]
+          .map((m) => `${m[2]} x ${m[1]}  ${m[3]}`);
+        const pagati = [...corpo.matchAll(/<printRecTotal[^>]*description="([^"]*)"[^>]*payment="([^"]*)"/g)];
+        const importo = pagati
+          .reduce((s, m) => s + Number(m[2].replace(",", ".")), 0)
+          .toFixed(2)
+          .replace(".", ",");
+        const testo = `${voci.join("\n")}\n${pagati.map((m) => `${m[1]}  ${m[2]}`).join("\n")}\n----- scontrino fiscale finto n. ${numeroScontrino} -----\n`;
+        const file = scrivi(cartella, "scontrino", testo);
+        fogli.push({ apparecchio: "registratore", file, testo });
+        di("scontrino finto in", file);
+        xml = rispostaFpmate(true, "", infoScontrino({ numero: numeroScontrino, importo }));
+      }
       if (/printerNonFiscal/.test(corpo) && !codici[modo]) {
         const righe = [...corpo.matchAll(/data="([^"]*)"/g)].map((m) => m[1]);
         const testo = modo === "pagina_bianca" ? "(pagina bianca)\n" : `${righe.join("\n")}\n----- documento non fiscale -----\n`;

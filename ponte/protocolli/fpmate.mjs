@@ -4,14 +4,14 @@
 // indirizzo (`/cgi-bin/fpmate.cgi`), e risponde con un XML che dice se è
 // andata (`success`), perché no (`code`) e come sta.
 //
-// 🔴 IN QUESTO PASSO SOLO DUE COSE, e nessuna delle due è fiscale:
+// 🔴 TRE COSE:
 //    · il DOCUMENTO NON FISCALE (`printerNonFiscal`): un foglio stampato dal
 //      registratore che non è uno scontrino, non ha numero fiscale e non va
 //      all'Agenzia delle Entrate;
-//    · la LETTURA DELLO STATO (`queryPrinterStatus`).
-//    Niente `printerFiscalReceipt`, niente chiusura giornaliera: il database
-//    non accetta lavori fiscali (vincolo `lavoro_tipo_di_questo_passo`), e
-//    questo file non saprebbe nemmeno scriverli.
+//    · la LETTURA DELLO STATO (`queryPrinterStatus`);
+//    · dal 04/11 lo SCONTRINO FISCALE di un conto (`printerFiscalReceipt`),
+//      provato sul registratore vero al collaudo: prezzi con la virgola,
+//      reparto 1 per tutto. Niente chiusura giornaliera, annullo o reso.
 //
 // ⚠️ NOMI DEI COMANDI E CODICI DI ERRORE DA CONFERMARE sul manuale «Fiscal
 //    ePOS-Print / FPMate» che il fornitore deve consegnare: qui sono quelli
@@ -36,6 +36,72 @@ export function documentoNonFiscale(contenuto) {
 }
 
 export const DOMANDA_STATO = busta(`<printerCommand>\n<queryPrinterStatus operator="1" statusType="1" />\n</printerCommand>`);
+
+// 🔴 COME SI PAGA SUL REGISTRATORE. I contanti (0, 0) sono provati sul
+//    registratore vero il 04/11; la carta (2, 1) viene dalla documentazione
+//    Epson e va confermata al collaudo: si cambia qui e basta.
+export const PAGAMENTI = {
+  contante: { descrizione: "CONTANTI", paymentType: 0, index: 0 },
+  carta: { descrizione: "CARTA DI CREDITO", paymentType: 2, index: 1 },
+};
+
+// Quanto è lunga, al massimo, la descrizione di una riga sullo scontrino.
+export const DESCRIZIONE_MAX = 38;
+
+/** 12.5 → «12,50»: il registratore vuole la virgola. */
+export function euro(n) {
+  const v = Number(n);
+  if (n === null || n === "" || !Number.isFinite(v) || v <= 0) throw new Error(`Importo non valido: «${n}».`);
+  return v.toFixed(2).replace(".", ",");
+}
+
+function quantita(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v <= 0) throw new Error(`Quantità non valida: «${n}».`);
+  return Number.isInteger(v) ? String(v) : v.toFixed(3).replace(".", ",");
+}
+
+/**
+ * Lo scontrino fiscale di un conto, da `contenuto` come lo scrive
+ * `accoda_scontrino`: `{ righe: [{descrizione, quantita, prezzo, reparto}],
+ * pagamenti: [{mezzo, importo}] }`.
+ * ⚠️ Lancia se qualcosa non va, PRIMA di mandare: il lavoro è fallito e non
+ *    incerto, perché al registratore non è partito niente.
+ */
+export function scontrinoFiscale(contenuto) {
+  const righe = Array.isArray(contenuto?.righe) ? contenuto.righe : [];
+  const pagamenti = Array.isArray(contenuto?.pagamenti) ? contenuto.pagamenti : [];
+  if (righe.length === 0) throw new Error("Lo scontrino non ha nessuna riga.");
+  if (pagamenti.length === 0) throw new Error("Lo scontrino non dice come è stato pagato.");
+  const voci = righe.map((r) => {
+    const descrizione = String(r.descrizione ?? "").replace(/\s+/g, " ").trim().slice(0, DESCRIZIONE_MAX) || "Piatto";
+    const reparto = Number.isInteger(Number(r.reparto)) && Number(r.reparto) > 0 ? Number(r.reparto) : 1;
+    return `<printRecItem operator="1" description="${perXml(descrizione)}" quantity="${quantita(r.quantita)}" unitPrice="${euro(r.prezzo)}" department="${reparto}" justification="1" />`;
+  });
+  const totali = pagamenti.map((p) => {
+    const modo = PAGAMENTI[p.mezzo];
+    if (!modo) throw new Error(`Mezzo di pagamento sconosciuto: «${p.mezzo}».`);
+    return `<printRecTotal operator="1" description="${modo.descrizione}" payment="${euro(p.importo)}" paymentType="${modo.paymentType}" index="${modo.index}" justification="1" />`;
+  });
+  return busta(`<printerFiscalReceipt>\n<beginFiscalReceipt operator="1" />\n${voci.join("\n")}\n${totali.join("\n")}\n<endFiscalReceipt operator="1" />\n</printerFiscalReceipt>`);
+}
+
+const elemento = (xml, nome) => new RegExp(`<${nome}>\\s*([^<]*?)\\s*</${nome}>`, "i").exec(xml)?.[1] || null;
+
+/**
+ * Cosa dice la risposta del registratore di uno scontrino emesso: numero,
+ * data, ora, importo e numero della chiusura giornaliera (`zRepNumber`).
+ */
+export function datiScontrino(xml) {
+  const testo = String(xml ?? "");
+  return {
+    numero: elemento(testo, "fiscalReceiptNumber"),
+    data: elemento(testo, "fiscalReceiptDate"),
+    ora: elemento(testo, "fiscalReceiptTime"),
+    importo: elemento(testo, "fiscalReceiptAmount"),
+    chiusura: elemento(testo, "zRepNumber"),
+  };
+}
 
 const attributo = (xml, nome) => new RegExp(`<response\\b[^>]*\\b${nome}="([^"]*)"`, "i").exec(xml)?.[1] ?? null;
 

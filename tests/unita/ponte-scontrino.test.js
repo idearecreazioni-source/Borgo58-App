@@ -1,0 +1,181 @@
+import { mkdtempSync, readFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { eseguiLavoro } from "../../ponte/esegui.mjs";
+import { PAGAMENTI, datiScontrino, euro, leggiRisposta, scontrinoFiscale } from "../../ponte/protocolli/fpmate.mjs";
+import { postHttp, scambioTcp } from "../../ponte/rete.mjs";
+import { avviaSimulatore } from "../../ponte/simulatore.mjs";
+
+// Lo scontrino fiscale dalla chiusura del conto (04/11/2026), provato senza
+// gestionale e senza registratore vero.
+
+// La risposta vera del registratore Epson FP-81 II RT al collaudo del
+// 04/11, alle 09:33 (scontrino di prova da 1,00 euro in contanti).
+const RISPOSTA_VERA = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Body>
+<response success="true" code="" status="2">
+	<addInfo>
+	<elementList>lastCommand,printerStatus,fiscalReceiptNumber,fiscalReceiptAmount,fiscalReceiptDate,fiscalReceiptTime,zRepNumber</elementList>
+		<lastCommand>74</lastCommand>
+		<printerStatus>00110</printerStatus>
+		<fiscalReceiptNumber>14</fiscalReceiptNumber>
+		<fiscalReceiptAmount>1,00</fiscalReceiptAmount>
+		<fiscalReceiptDate>4/11/2026</fiscalReceiptDate>
+		<fiscalReceiptTime>9:33</fiscalReceiptTime>
+		<zRepNumber>1627</zRepNumber>
+	</addInfo>
+</response>
+</soapenv:Body>
+</soapenv:Envelope>`;
+
+const CONTENUTO = {
+  tavolo: "7",
+  righe: [
+    { descrizione: "Tagliatelle al ragù", quantita: 2, prezzo: 12, reparto: 1 },
+    { descrizione: "Calice <rosso> & \"bianco\"", quantita: 1, prezzo: 5.5, reparto: 1 },
+  ],
+  pagamenti: [{ mezzo: "contante", importo: 29.5 }],
+  totale: 29.5,
+};
+
+describe("lo scontrino fiscale in FPMate", () => {
+  it("ha la forma provata sul registratore vero: prezzi con la virgola, reparto 1, contanti 0/0", () => {
+    const xml = scontrinoFiscale(CONTENUTO);
+    expect(xml).toContain("<printerFiscalReceipt>");
+    expect(xml).toContain('<beginFiscalReceipt operator="1" />');
+    expect(xml).toContain(
+      '<printRecItem operator="1" description="Tagliatelle al ragù" quantity="2" unitPrice="12,00" department="1" justification="1" />',
+    );
+    expect(xml).toContain(
+      '<printRecTotal operator="1" description="CONTANTI" payment="29,50" paymentType="0" index="0" justification="1" />',
+    );
+    expect(xml.indexOf("<printRecTotal")).toBeGreaterThan(xml.lastIndexOf("<printRecItem"));
+    expect(xml.trim().endsWith("</s:Envelope>")).toBe(true);
+    expect(xml).toContain('<endFiscalReceipt operator="1" />');
+  });
+
+  it("i segni di una descrizione non cambiano la forma del documento", () => {
+    const xml = scontrinoFiscale(CONTENUTO);
+    expect(xml).toContain('description="Calice &lt;rosso&gt; &amp; &quot;bianco&quot;"');
+    expect(xml.match(/<printRecItem /g)).toHaveLength(2);
+  });
+
+  it("descrizione lunga tagliata, vuota sostituita; pagamento misto = un totale per quota, carta 2/1", () => {
+    const xml = scontrinoFiscale({
+      righe: [
+        { descrizione: "x".repeat(60), quantita: 1, prezzo: 10 },
+        { descrizione: "   ", quantita: 1, prezzo: 2 },
+      ],
+      pagamenti: [
+        { mezzo: "carta", importo: 7 },
+        { mezzo: "contante", importo: 5 },
+      ],
+    });
+    expect(xml).toContain(`description="${"x".repeat(38)}"`);
+    expect(xml).toContain('description="Piatto"');
+    expect(xml).toContain(`paymentType="${PAGAMENTI.carta.paymentType}" index="${PAGAMENTI.carta.index}"`);
+    expect(xml.match(/<printRecTotal /g)).toHaveLength(2);
+  });
+
+  it("si rifiuta di comporre uno scontrino sbagliato, prima di mandare", () => {
+    expect(() => scontrinoFiscale({ righe: [], pagamenti: [{ mezzo: "contante", importo: 1 }] })).toThrow(/riga/);
+    expect(() => scontrinoFiscale({ righe: [{ descrizione: "a", quantita: 1, prezzo: 1 }], pagamenti: [] })).toThrow(/pagato/);
+    expect(() => scontrinoFiscale({ righe: [{ descrizione: "a", quantita: 1, prezzo: 1 }], pagamenti: [{ mezzo: "assegno", importo: 1 }] })).toThrow(/assegno/);
+    expect(() => scontrinoFiscale({ righe: [{ descrizione: "a", quantita: 0, prezzo: 1 }], pagamenti: [{ mezzo: "contante", importo: 1 }] })).toThrow(/Quantità/);
+    expect(() => euro(-1)).toThrow();
+    expect(() => euro(null)).toThrow();
+    expect(euro("12.5")).toBe("12,50");
+  });
+
+  it("dalla risposta vera legge numero, data, ora, importo e chiusura", () => {
+    expect(leggiRisposta(RISPOSTA_VERA).riuscito).toBe(true);
+    expect(datiScontrino(RISPOSTA_VERA)).toEqual({
+      numero: "14",
+      data: "4/11/2026",
+      ora: "9:33",
+      importo: "1,00",
+      chiusura: "1627",
+    });
+    expect(datiScontrino("<response success=\"true\"/>").numero).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------
+// Contro il registratore finto.
+// ---------------------------------------------------------------------
+const PORTA_R = 19600 + (process.pid % 190) * 2;
+const PORTA_S = PORTA_R + 1;
+
+const reteVeloce = {
+  scambioTcp: (i, p, d, o) => scambioTcp(i, p, d, { ...o, attesaConnessione: 800, attesaRisposta: 600 }),
+  postHttp: (o) => postHttp({ ...o, attesaConnessione: 800, attesaRisposta: 600 }),
+};
+
+const scontrino = (tipoApparecchio = "registratore_fiscale", contenuto = CONTENUTO) => ({
+  id: "s",
+  tipo: "scontrino",
+  contenuto,
+  dispositivo: { nome: "finto", tipo: tipoApparecchio, protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_R },
+});
+const esegui = (l) => eseguiLavoro(l, { simulatore: true, rete: reteVeloce });
+
+async function conModo(modo, prova) {
+  const cartella = mkdtempSync(path.join(os.tmpdir(), "b58-scontrino-"));
+  const s = await avviaSimulatore({ modo, cartella, portaStampante: PORTA_S, portaRegistratore: PORTA_R, silenzioso: true });
+  try {
+    return await prova(s);
+  } finally {
+    await s.chiudi();
+  }
+}
+
+describe("lo scontrino contro il registratore finto", () => {
+  it("normale: emesso, e l'esito porta numero, data, ora e chiusura", async () => {
+    await conModo("normale", async (s) => {
+      const e = await esegui(scontrino());
+      expect(e.stato).toBe("stampato");
+      expect(e.esito.scontrino.numero).toBe("1");
+      expect(e.esito.scontrino.importo).toBe("29,50");
+      expect(e.esito.scontrino.chiusura).toBe("1");
+      expect(e.esito.scontrino.data).toMatch(/^\d{1,2}\/\d{1,2}\/\d{4}$/);
+      const testo = readFileSync(s.fogli[0].file, "utf8");
+      expect(testo).toContain("Tagliatelle al ragù");
+      expect(testo).toContain("scontrino fiscale finto");
+    });
+  });
+
+  it("🔴 muto: mandato senza risposta = INCERTO, e dice di guardare il registratore", async () => {
+    await conModo("muto", async () => {
+      const e = await esegui(scontrino());
+      expect(e.stato).toBe("incerto");
+      expect(e.errore_testo).toMatch(/guarda il registratore/);
+    });
+  });
+
+  it("🔴 a metà: INCERTO, mai emesso", async () => {
+    await conModo("a_meta", async () => {
+      expect((await esegui(scontrino())).stato).toBe("incerto");
+    });
+  });
+
+  it("un «no» del registratore è fallito, e dice di guardare il display prima di rifarlo", async () => {
+    await conModo("carta_finita", async () => {
+      const e = await esegui(scontrino());
+      expect([e.stato, e.errore_codice]).toEqual(["fallito", "carta_finita"]);
+      expect(e.errore_testo).toMatch(/display/);
+    });
+  });
+
+  it("registratore spento: fallito (non è partito niente)", async () => {
+    const e = await esegui(scontrino());
+    expect([e.stato, e.stato_dispositivo]).toEqual(["fallito", "non_risponde"]);
+  });
+
+  it("uno scontrino non va a una stampante delle comande, né si compone se è sbagliato", async () => {
+    expect((await esegui(scontrino("stampante_comande"))).errore_codice).toBe("rifiutato");
+    const e = await esegui(scontrino("registratore_fiscale", { righe: [], pagamenti: [] }));
+    expect([e.stato, e.errore_codice]).toEqual(["fallito", "rifiutato"]);
+  });
+});

@@ -102,3 +102,21 @@ export async function mandaAllaStampante({ righe = null, chiamata = null, aggiun
   if (error) throw error;
   return data;
 }
+
+// LO SCONTRINO FISCALE DI UN CONTO CHIUSO (04/11/2026, migrazione
+// 20261104000001). Righe e pagamenti li scrive il database, non il browser;
+// al massimo uno per conto, anche con un doppio clic.
+
+/** Se c'è un registratore acceso e com'è andato lo scontrino di questo conto (solo frasi fisse). */
+export async function statoScontrino(orderId) {
+  const { data, error } = await supabase.rpc("stato_scontrino", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+/** Chiede lo scontrino del conto al registratore. */
+export async function chiediScontrino(orderId) {
+  const { data, error } = await supabase.rpc("accoda_scontrino", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
