@@ -74,7 +74,10 @@ export function scontrinoFiscale(contenuto) {
   if (righe.length === 0) throw new Error("Lo scontrino non ha nessuna riga.");
   if (pagamenti.length === 0) throw new Error("Lo scontrino non dice come è stato pagato.");
   const voci = righe.map((r) => {
-    const descrizione = String(r.descrizione ?? "").replace(/\s+/g, " ").trim().slice(0, DESCRIZIONE_MAX) || "Piatto";
+    // Tagliata per caratteri e non per unità UTF-16: un segno doppio non
+    // si spezza a metà.
+    const descrizione =
+      Array.from(String(r.descrizione ?? "").replace(/\s+/g, " ").trim()).slice(0, DESCRIZIONE_MAX).join("").trim() || "Piatto";
     const reparto = Number.isInteger(Number(r.reparto)) && Number(r.reparto) > 0 ? Number(r.reparto) : 1;
     return `<printRecItem operator="1" description="${perXml(descrizione)}" quantity="${quantita(r.quantita)}" unitPrice="${euro(r.prezzo)}" department="${reparto}" justification="1" />`;
   });

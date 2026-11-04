@@ -22,12 +22,28 @@ export default function ScontrinoDelConto({ order, onFatto }) {
   const [errore, setErrore] = useState("");
   const [chiesto, setChiesto] = useState(false);
   const montato = useRef(true);
+  // Il sigillo vero del tocco: lo stato di React arriva al render dopo, un
+  // ref no (revisione del codice, 04/11).
+  const inVolo = useRef(false);
+  const domanda = useRef(0);
   useChiudiConEsc(true, onFatto);
 
-  const leggi = () =>
-    statoScontrino(order.id)
-      .then((s) => montato.current && setStato(s))
-      .catch((e) => montato.current && setErrore(e.message));
+  // ⚠️ Solo l'ultima lettura partita può scrivere: una risposta vecchia
+  //    arrivata tardi non rimette a schermo uno stato superato.
+  const leggi = () => {
+    const mia = ++domanda.current;
+    return statoScontrino(order.id)
+      .then((s) => {
+        if (!montato.current || mia !== domanda.current) return s;
+        setStato(s);
+        setErrore("");
+        return s;
+      })
+      .catch((e) => {
+        if (montato.current && mia === domanda.current) setErrore(e.message);
+        return null;
+      });
+  };
 
   useEffect(() => {
     montato.current = true;
@@ -49,14 +65,27 @@ export default function ScontrinoDelConto({ order, onFatto }) {
   }, [aperto, order.id]);
 
   const chiedi = async () => {
+    if (inVolo.current) return;
+    inVolo.current = true;
     setChiesto(true);
     setErrore("");
+    let no = null;
     try {
       await chiediScontrino(order.id);
     } catch (e) {
-      setErrore(e.message);
+      no = e.message;
     }
-    await leggi();
+    const s = await leggi();
+    if (no && montato.current) {
+      setErrore(no);
+      // ⚠️ Se la richiesta non ha lasciato nessun lavoro (rete caduta prima
+      //    di arrivare, o un rifiuto), si può riprovare: il database ne
+      //    accetta comunque uno solo per conto.
+      if (s && !s.lavoro) {
+        inVolo.current = false;
+        setChiesto(false);
+      }
+    }
   };
 
   // Si può chiedere solo se non c'è un lavoro vivo (o è stato annullato).

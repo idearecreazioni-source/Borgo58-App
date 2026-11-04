@@ -1,4 +1,5 @@
 import { mkdtempSync, readFileSync } from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -171,6 +172,35 @@ describe("lo scontrino contro il registratore finto", () => {
   it("registratore spento: fallito (non è partito niente)", async () => {
     const e = await esegui(scontrino());
     expect([e.stato, e.stato_dispositivo]).toEqual(["fallito", "non_risponde"]);
+  });
+
+  it("🔴 risposta tagliata senza lunghezza, codice sconosciuto o guasto 5xx: INCERTO, mai fallito", async () => {
+    const conRisposta = (corpo) =>
+      eseguiLavoro(scontrino(), {
+        simulatore: true,
+        rete: { scambioTcp, postHttp: async () => corpo },
+      });
+    for (const corpo of ["<response suc", "<response ", '<response success="false" code="EPTR_REC_EMPTY"', '<response success="false" code="EPTR_BUSY" status="2"></response>']) {
+      const e = await conRisposta(corpo);
+      expect(e.stato, corpo).toBe("incerto");
+    }
+    // Un «no» intero per un motivo che ferma la stampa resta fallito.
+    expect((await conRisposta('<response success="false" code="EPTR_COVER_OPEN" status="2"></response>')).stato).toBe("fallito");
+    // Un registratore che risponde 503 a documento ricevuto.
+    const server = http.createServer((q, r) => {
+      q.resume();
+      q.on("end", () => {
+        r.writeHead(503);
+        r.end("guasto");
+      });
+    });
+    await new Promise((ok) => server.listen(PORTA_R, "127.0.0.1", ok));
+    try {
+      const guasto = await esegui(scontrino());
+      expect([guasto.stato, guasto.errore_codice]).toEqual(["incerto", "risposta_a_meta"]);
+    } finally {
+      await new Promise((ok) => server.close(ok));
+    }
   });
 
   it("uno scontrino non va a una stampante delle comande, né si compone se è sbagliato", async () => {

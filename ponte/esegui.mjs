@@ -114,7 +114,17 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
   //    non dicono che il foglio non è uscito: per una prova restano un
   //    dubbio. Il registratore, se si è fermato a metà di un documento non
   //    fiscale, può restare con il documento aperto: si guarda il display.
-  const nonCapita = !/<response\b/i.test(testo ?? "") || /TIMEOUT/i.test(r.grezzo.match(/code="([^"]*)"/)?.[1] ?? "");
+  const codiceGrezzo = r.grezzo.match(/<response\b[^>]*\bcode="([^"]*)"/i)?.[1] ?? "";
+  // 🔴 PER UNO SCONTRINO, «NON È USCITO» SOLO CON UNA RISPOSTA INTERA CHE
+  //    DICE NO PER UN MOTIVO CHE FERMA LA STAMPA (carta, coperchio, spento)
+  //    — revisione del codice, 04/11. Una risposta tagliata (`<response
+  //    suc` senza la fine) o un codice che non conosciamo restano un dubbio:
+  //    confonderli con un «no» vorrebbe dire uno scontrino rifatto due volte.
+  const noSicuro =
+    /<\/response>/i.test(testo ?? "") &&
+    /<response\b[^>]*\bsuccess="false"/i.test(testo ?? "") &&
+    /PAPER|REC_EMPTY|RECEIPT_END|COVER|OFFLINE/i.test(codiceGrezzo);
+  const nonCapita = !/<response\b/i.test(testo ?? "") || /TIMEOUT/i.test(codiceGrezzo) || (scontrino && !noSicuro);
   if (nonCapita && stampa) {
     return esito("incerto", {
       codice: "risposta_a_meta",
