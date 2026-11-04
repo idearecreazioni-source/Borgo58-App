@@ -242,6 +242,14 @@ describe("l'annullo e la chiusura in FPMate", () => {
     expect(DOMANDA_STATO_RT).toContain('<queryPrinterStatus operator="1" statusType="1" />');
     expect(eUnRt('<response success="true"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>')).toBe(true);
     expect(eUnRt('<response success="true"><addInfo><lastCommand>74</lastCommand></addInfo></response>')).toBe(false);
+    // 🔴 La risposta VERA del registratore del collaudo, in modalità MF (04/11).
+    const MF_VERO =
+      '<response success="true" code="" status="2"><addInfo><lastCommand>138</lastCommand><rtType>M</rtType><rtMainStatus>01</rtMainStatus><rtSubStatus>06</rtSubStatus>' +
+      "<rtDailyOpen>1</rtDailyOpen><rtNoWorkingPeriod>0</rtNoWorkingPeriod><rtFileToSend>0000</rtFileToSend><rtOldFileToSend>0000</rtOldFileToSend><rtFileRejected>0002</rtFileRejected>" +
+      "<rtExpiryCD>20270613</rtExpiryCD><rtExpiryCA>20380111</rtExpiryCA><rtTrainingMode>0</rtTrainingMode><rtUpgradeResult>0</rtUpgradeResult></addInfo></response>";
+    expect(eUnRt(MF_VERO)).toBe(false);
+    expect(eUnRt(MF_VERO.replace("<rtMainStatus>01<", "<rtMainStatus>03<"))).toBe(false);
+    expect(eUnRt(MF_VERO.replace("<rtMainStatus>01<", "<rtMainStatus>02<"))).toBe(true);
     expect(eUnRt('<response success="false"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>')).toBe(false);
   });
 

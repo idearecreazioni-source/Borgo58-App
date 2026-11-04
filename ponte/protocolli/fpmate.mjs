@@ -109,14 +109,20 @@ export function annulloFiscale(contenuto) {
   return busta(`<printerFiscalReceipt>\n<printRecMessage operator="1" messageType="4" message="${riferimento}" />\n</printerFiscalReceipt>`);
 }
 
-// Lo stato RT (§5.9.16, pag. 61-62): un registratore in modalità RT
-// risponde con `rtType` e `rtMainStatus`. Solo una domanda, niente carta.
+// Lo stato RT (§5.9.16, pag. 61-62). Solo una domanda, niente carta.
+// 🔴 I CAMPI CI SONO ANCHE IN MODALITÀ MF: il registratore del collaudo, in
+//    MF, ha risposto rtType=M, rtMainStatus=01, rtSubStatus=06 (lavoro
+//    «stato» delle 08:20:59 UTC del 04/11). Quindi l'annullo parte SOLO con
+//    rtMainStatus = 02; 01, vuoto o qualunque altro valore = non parte.
+// ⚠️ Che 02 voglia dire «RT in servizio» il Rev. U non lo dice: rimanda al
+//    documento «Communication Protocol» (nota * a pag. 62). Da confermare
+//    lì prima di riaccendere l'annullo.
 export const DOMANDA_STATO_RT = busta(`<printerCommand>\n<queryPrinterStatus operator="1" statusType="1" />\n</printerCommand>`);
 
-/** Se la risposta allo stato RT dice che il registratore è un RT. */
+/** Se la risposta allo stato RT dice che il registratore è un RT in servizio. */
 export function eUnRt(xml) {
   const testo = String(xml ?? "");
-  return /<response\b[^>]*\bsuccess="true"/i.test(testo) && Boolean(elemento(testo, "rtType")) && Boolean(elemento(testo, "rtMainStatus"));
+  return /<response\b[^>]*\bsuccess="true"/i.test(testo) && elemento(testo, "rtMainStatus") === "02";
 }
 
 // 🔴 LA CHIUSURA GIORNALIERA (Z), dal manuale §5.8 e esempio §11.9: un

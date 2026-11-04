@@ -293,10 +293,11 @@ begin
     perform ponte_esito_lavoro(v_k->>'chiave', v_s2, 'stampato', null, null, 'pronto',
       '{"scontrino":{"numero":"1","data":"5/11/2026","ora":"12:00","chiusura":"1628"}}'::jsonb);
     perform set_config('request.jwt.claims', v_claims, true);
-    v_a := accoda_annullo(v_ordine);
-    if (select contenuto->>'riferimento' from lavori_stampa where id = v_a) <> 'VOID 1627 0014 04112026 99MEX063404' then
-      raise exception 'VERIFICA (3a): l''annullo non usa la matricola dello scontrino: %.',
-        (select contenuto->>'riferimento' from lavori_stampa where id = v_a);
+    -- ⚠️ Il riferimento si guarda nell'elenco e non accodando un annullo:
+    --    dal 04/11 l'annullo è sospeso (20261104000006) e non entra in coda.
+    if not exists (select 1 from jsonb_array_elements(scontrini_recenti(10)) e
+                    where (e->>'order_id')::uuid = v_ordine and e->>'riferimento' = 'VOID 1627 0014 04112026 99MEX063404') then
+      raise exception 'VERIFICA (3a): il riferimento del primo scontrino non usa la sua matricola.';
     end if;
     if not exists (select 1 from jsonb_array_elements(scontrini_recenti(10)) e
                     where (e->>'order_id')::uuid = v_ordine2 and e->>'riferimento' = 'VOID 1628 0001 05112026 99IEC123456') then
