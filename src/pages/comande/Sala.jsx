@@ -58,6 +58,7 @@ import {
   pannelloNellaPianta,
 } from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
+import AvvisiStampaSala from "./AvvisiStampaSala";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import {
   allergeniTolti,
@@ -1666,6 +1667,10 @@ export default function Sala() {
           </button>
         </div>
       )}
+
+      {/* 🔴 LE COMANDE CHE NON SONO USCITE (04/11/2026): in cima, perché
+          chi è in sala lo sappia senza andare in cucina. */}
+      <AvvisiStampaSala />
 
       {/* ⚠️ Va a capo anche il contenitore, non solo la fila di pulsanti:
           misurato, il testo a sinistra lasciava alla barra 358 punti dei

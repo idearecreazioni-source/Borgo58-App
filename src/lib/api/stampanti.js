@@ -146,3 +146,10 @@ export async function chiediChiusura(dispositivoId) {
   if (error) throw error;
   return data;
 }
+
+/** Le comande dei conti aperti che non sono uscite (04/11/2026): per la Sala, frasi fisse. */
+export async function avvisiStampa() {
+  const { data, error } = await supabase.rpc("avvisi_stampa");
+  if (error) throw error;
+  return data ?? [];
+}

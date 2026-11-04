@@ -109,6 +109,21 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
     // `lavori_stampa.esito`: al collaudo si legge sul portatile, subito, ed
     // è quella che serve per correggere `protocolli/` (29/10/2026).
     if (e.esito) scrivi(`  risposta dell'apparecchio: ${perIlRegistro(JSON.stringify(e.esito)).slice(0, 2000)}`);
+    // 🔴 «Riprova» (04/11): la stampante non ha ricevuto niente, quindi il
+    //    gestionale rimette in coda la comanda. Se il gestionale non conosce
+    //    ancora «riprova» (database più vecchio del ponte) o non risponde,
+    //    si scrive l'esito di sempre, «fallito»: mai un lavoro appeso.
+    if (e.riprova) {
+      const { riprova: _riprova, ...diSempre } = e;
+      try {
+        await g.esito(lavoro.id, { ...diSempre, stato: "riprova" });
+        scrivi(`  la stampante non l'ha ricevuto: lo riprovo fra poco`);
+        continue;
+      } catch (errore) {
+        scrivi(`  «riprova» non accettato (${errore.message}): lo segno non riuscito`);
+        e = diSempre;
+      }
+    }
     try {
       await g.esito(lavoro.id, e);
     } catch (errore) {

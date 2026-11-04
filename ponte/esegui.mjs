@@ -26,13 +26,24 @@ export function linguaDi(d) {
   return null;
 }
 
-const esito = (stato, { codice = null, testo = null, statoApparecchio = "sconosciuto", dettaglio = null } = {}) => ({
+// `nonPartito`: l'apparecchio non ha ricevuto niente (non ha aperto la
+// connessione, o ha detto di non essere pronto prima che partisse il
+// foglio). È l'unico caso in cui una comanda si può riprovare da sola.
+const esito = (stato, { codice = null, testo = null, statoApparecchio = "sconosciuto", dettaglio = null, nonPartito = false } = {}) => ({
   stato,
   errore_codice: stato === "stampato" ? null : codice ?? "sconosciuto",
   errore_testo: testo,
   stato_dispositivo: statoApparecchio,
   esito: dettaglio,
+  ...(nonPartito ? { nonPartito: true } : {}),
 });
+
+// 🔴 COMANDE E BIGLIETTI CHE RIPROVANO DA SOLI (04/11/2026, chiesto da
+//    Alessio dopo una comanda persa con la stampante spenta): solo se NON
+//    È PARTITO NIENTE, il ponte dice «riprova» e il gestionale la rimette
+//    in coda; esce alla riaccensione, una volta sola. Un incerto non si
+//    riprova mai, e il fiscale nemmeno con «non è partito niente».
+export const SI_RIPROVANO = ["comanda", "chiamata"];
 
 // I lavori fiscali: lo scontrino, il suo annullo, la chiusura giornaliera.
 export const FISCALI = ["scontrino", "annullo", "chiusura"];
@@ -42,6 +53,7 @@ const dallErrore = (e, { puoEssereIncerto, scontrino = false }) =>
   e.codice === "rifiutato"
     ? esito("fallito", { codice: "rifiutato", testo: e.message, statoApparecchio: "errore" })
     : esito(e.inviato && puoEssereIncerto ? "incerto" : "fallito", {
+    nonPartito: !e.inviato,
     codice: e.codice ?? "sconosciuto",
     testo: e.inviato && puoEssereIncerto
       ? scontrino
@@ -60,14 +72,15 @@ async function inEscpos(lavoro, d, rete) {
     stato = escpos.leggiStato(risposta);
   } catch (e) {
     // ⚠️ Qui non è ancora partito nessun foglio: è fallito, mai incerto.
-    return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "risposta_a_meta", testo: e.message, statoApparecchio: "non_risponde" });
+    return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "risposta_a_meta", testo: e.message, statoApparecchio: "non_risponde", nonPartito: true });
   }
   const dettaglio = { lingua: "escpos", byte_di_stato: stato.byte };
   if (lavoro.tipo === "stato") {
     return esito("stampato", { statoApparecchio: stato.stato, testo: stato.testo, dettaglio });
   }
   if (stato.stato !== "pronto") {
-    return esito("fallito", { codice: stato.stato === "errore" ? "sconosciuto" : stato.stato, testo: stato.testo, statoApparecchio: stato.stato, dettaglio });
+    // Nemmeno qui è partito il foglio: la stampante ha detto di non essere pronta.
+    return esito("fallito", { codice: stato.stato === "errore" ? "sconosciuto" : stato.stato, testo: stato.testo, statoApparecchio: stato.stato, dettaglio, nonPartito: true });
   }
   try {
     const foglio = lavoro.tipo === "prova" ? escpos.foglioDiProva(lavoro.contenuto) : escpos.foglioComanda(lavoro.contenuto);
@@ -178,8 +191,12 @@ export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambi
   if (["comanda", "chiamata"].includes(lavoro.tipo) && lingua === "fpmate") {
     return esito("fallito", { codice: "rifiutato", testo: "Una comanda non si stampa sul registratore: scegli una stampante delle comande." });
   }
-  if (lingua === "escpos") return inEscpos(lavoro, d, rete);
-  if (lingua === "fpmate") return inXml(lavoro, d, rete, fpmate, "fpmate");
-  if (lingua === "epos") return inXml(lavoro, d, rete, epos, "epos");
-  return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa parlare «${d.protocollo}».` });
+  let r;
+  if (lingua === "escpos") r = await inEscpos(lavoro, d, rete);
+  else if (lingua === "fpmate") r = await inXml(lavoro, d, rete, fpmate, "fpmate");
+  else if (lingua === "epos") r = await inXml(lavoro, d, rete, epos, "epos");
+  else return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa parlare «${d.protocollo}».` });
+  // Solo una comanda o un biglietto che l'apparecchio non ha ricevuto.
+  const { nonPartito, ...resto } = r;
+  return r.stato === "fallito" && nonPartito && SI_RIPROVANO.includes(lavoro.tipo) ? { ...resto, riprova: true } : resto;
 }
