@@ -24,7 +24,7 @@ export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, 
     porta: Number(porta),
     reparto: tipo === "stampante_comande" ? reparto : null,
     // La matricola ce l'ha solo il registratore (04/11): maiuscola, senza spazi.
-    matricola: tipo === "registratore_fiscale" && matricola?.trim() ? matricola.trim().toUpperCase() : null,
+    matricola: tipo === "registratore_fiscale" && matricola?.trim() ? matricola.replace(/\s+/g, "").toUpperCase() : null,
     attivo,
   };
   const q = id

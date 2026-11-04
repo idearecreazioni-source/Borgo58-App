@@ -11,7 +11,8 @@
 //    · la LETTURA DELLO STATO (`queryPrinterStatus`);
 //    · dal 04/11 lo SCONTRINO FISCALE di un conto (`printerFiscalReceipt`),
 //      provato sul registratore vero al collaudo: prezzi con la virgola,
-//      reparto 1 per tutto. Niente chiusura giornaliera, annullo o reso.
+//      reparto 1 per tutto; e il suo ANNULLO e la CHIUSURA GIORNALIERA (Z),
+//      più sotto. Niente reso con le righe.
 //
 // ⚠️ NOMI DEI COMANDI E CODICI DI ERRORE DA CONFERMARE sul manuale «Fiscal
 //    ePOS-Print / FPMate» che il fornitore deve consegnare: qui sono quelli

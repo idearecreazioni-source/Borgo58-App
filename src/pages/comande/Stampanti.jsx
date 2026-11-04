@@ -147,7 +147,13 @@ export default function Stampanti() {
     return () => clearInterval(t);
   }, [aperti, rileggi]);
 
+  // ⚠️ Un gesto alla volta, sigillato da un ref (revisione del codice,
+  //    04/11): due conferme diverse aperte insieme — chiusura e annullo —
+  //    non devono partire tutte e due.
+  const occupato = useRef(false);
   const gesto = async (azione) => {
+    if (occupato.current) return false;
+    occupato.current = true;
     setErrore("");
     setInCorso(true);
     try {
@@ -158,6 +164,7 @@ export default function Stampanti() {
       setErrore(e.message);
       return false;
     } finally {
+      occupato.current = false;
       setInCorso(false);
     }
   };

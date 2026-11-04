@@ -289,3 +289,36 @@ describe("annullo e chiusura contro il registratore finto", () => {
     expect((await esegui({ ...scontrino("stampante_comande"), tipo: "chiusura" })).errore_codice).toBe("rifiutato");
   });
 });
+
+describe("annullo e chiusura: il «no» sicuro e i tempi", () => {
+  const conRisposta = (tipo, corpo, contenuto) =>
+    eseguiLavoro(fiscale(tipo, contenuto), { simulatore: true, rete: { scambioTcp, postHttp: async () => corpo } });
+
+  it("🔴 un codice sconosciuto è INCERTO, un no intero per la carta è fallito", async () => {
+    for (const [tipo, contenuto] of [["annullo", ANNULLO], ["chiusura", {}]]) {
+      expect((await conRisposta(tipo, '<response success="false" code="EPTR_BUSY" status="2"></response>', contenuto)).stato, tipo).toBe("incerto");
+      expect((await conRisposta(tipo, '<response success="false" code="EPTR_REC_EMPTY" status="2"></response>', contenuto)).stato, tipo).toBe("fallito");
+    }
+  });
+
+  it("la chiusura usa il suo indirizzo e la sua attesa, e il tetto del ponte è più lungo", async () => {
+    const { ATTESA_CHIUSURA_MS, PERCORSO_CHIUSURA } = await import("../../ponte/protocolli/fpmate.mjs");
+    const { LIMITE_DELLA_CHIUSURA_MS } = await import("../../ponte/ponte.mjs");
+    let opzioni = null;
+    await eseguiLavoro(fiscale("chiusura"), {
+      simulatore: true,
+      rete: {
+        scambioTcp,
+        postHttp: async (o) => {
+          opzioni = o;
+          return '<response success="true" code="" status="2"></response>';
+        },
+      },
+    });
+    expect(opzioni.percorso).toBe(PERCORSO_CHIUSURA);
+    expect(opzioni.attesaRisposta).toBe(ATTESA_CHIUSURA_MS);
+    expect(PERCORSO_CHIUSURA).toMatch(/timeout=40000/);
+    expect(ATTESA_CHIUSURA_MS).toBeGreaterThan(40000);
+    expect(LIMITE_DELLA_CHIUSURA_MS).toBeGreaterThan(ATTESA_CHIUSURA_MS + 3000);
+  });
+});
