@@ -156,7 +156,21 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
   // Lo scontrino emesso lascia numero, data, ora e chiusura nell'esito:
   // è quello che il conto mostra.
   if (r.riuscito && lavoro.tipo === "scontrino") dettaglio.scontrino = modulo.datiScontrino(testo);
-  if (r.riuscito && lavoro.tipo === "annullo") dettaglio.annullo = modulo.datiScontrino(testo);
+  if (r.riuscito && lavoro.tipo === "annullo") {
+    dettaglio.annullo = modulo.datiScontrino(testo);
+    // 🔴 Un «sì» senza il numero del documento di annullo non dice che lo
+    //    scontrino è annullato: se il registratore non l'ha trovato nel suo
+    //    giornale (§5.6.2) il documento di annullo può restare APERTO.
+    //    Incerto, e si guarda il display (revisione del codice, 04/11).
+    if (!dettaglio.annullo.numero || !dettaglio.annullo.data) {
+      return esito("incerto", {
+        codice: "risposta_a_meta",
+        testo: "Il registratore ha accettato l'annullo ma non ha dato il numero del documento: guarda il display, potrebbe avere un documento di annullo aperto.",
+        statoApparecchio: "errore",
+        dettaglio,
+      });
+    }
+  }
   if (r.riuscito && chiusura) dettaglio.chiusura = modulo.datiChiusura(testo);
   if (r.riuscito) return esito("stampato", { statoApparecchio: "pronto", dettaglio });
   // ⚠️ Una risposta che non è una risposta di stampa (una pagina qualunque,

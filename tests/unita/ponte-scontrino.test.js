@@ -311,6 +311,17 @@ describe("annullo e chiusura contro il registratore finto", () => {
     });
   });
 
+  it("🔴 un «sì» all'annullo senza numero del documento è INCERTO, non annullato", async () => {
+    const RT = '<response success="true"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>';
+    const e = await eseguiLavoro(fiscale("annullo", ANNULLO), {
+      simulatore: true,
+      annulloSospeso: false,
+      rete: { scambioTcp, postHttp: async (o) => (/statusType="1"/.test(o.corpo) ? RT : '<response success="true" code="" status="2"></response>') },
+    });
+    expect(e.stato).toBe("incerto");
+    expect(e.errore_testo).toMatch(/display/);
+  });
+
   it("sospeso (com'è adesso): l'annullo non chiama nemmeno il registratore", async () => {
     let chiamato = false;
     const e = await eseguiLavoro(fiscale("annullo", ANNULLO), { simulatore: true, rete: { scambioTcp, postHttp: async () => ((chiamato = true), "") } });
