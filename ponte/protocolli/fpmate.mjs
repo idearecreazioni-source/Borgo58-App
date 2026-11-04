@@ -90,24 +90,33 @@ export function scontrinoFiscale(contenuto) {
 }
 
 // 🔴 L'ANNULLO (DOCUMENTO DI ANNULLO), dal manuale Epson «ePOS Fiscal Print
-//    Solution Development Guide» Rev. U, §5.6.2 e esempio §11.30: un
-//    `printRecMessage` di tipo 4 con «VOID zzzz nnnn ggmmaaaa matricola»
-//    (chiusura e numero a quattro cifre, la matricola di undici caratteri).
-//    Se il registratore trova lo scontrino nel suo giornale lo annulla da
-//    solo e IGNORA il resto; se non lo trova, il resto sono le righe e i
-//    pagamenti dello scontrino originale, così il documento si chiude
-//    comunque e non resta aperto sul registratore.
-// ⚠️ Con SET 14/59 = SI il manuale vuole `printRecRefund` al posto di
-//    `printRecItem` nell'annullo a mano: si usa il caso di fabbrica (NO).
+//    Solution Development Guide» Rev. U, §5.6.2 (pag. 45) e SOLO l'esempio
+//    §11.29 «Automatic Voiding» (pag. 96): un `printRecMessage` di tipo 4
+//    con «VOID zzzz nnnn ggmmaaaa matricola», e NIENT'ALTRO.
+// 🔴 MAI LE RIGHE DOPO IL VOID (collaudo del 04/11): le mandavamo come
+//    rete di sicurezza (§11.30, annullo «a mano»), e su un registratore in
+//    modalità MF — dove il VOID non esiste (§5.6: «Epson RT fiscal
+//    printers…») — il VOID è diventato una riga di testo e le righe una
+//    VENDITA NUOVA. Per questo il ponte, prima, chiede lo stato RT
+//    (`DOMANDA_STATO_RT`) e non manda l'annullo a un registratore che non
+//    risponde come un RT.
 export const RIFERIMENTO_ANNULLO = /^VOID \d{4} \d{4} \d{8} [0-9A-Z]{11}$/;
 
-/** L'annullo di uno scontrino, da `contenuto` come lo scrive `accoda_annullo`. */
+/** L'annullo di uno scontrino, da `contenuto` come lo scrive `accoda_annullo`: solo il VOID. */
 export function annulloFiscale(contenuto) {
   const riferimento = String(contenuto?.riferimento ?? "");
   if (!RIFERIMENTO_ANNULLO.test(riferimento)) throw new Error(`Riferimento dell'annullo non valido: «${riferimento}».`);
-  const originale = scontrinoFiscale(contenuto);
-  const corpo = originale.slice(originale.indexOf("<beginFiscalReceipt"), originale.indexOf("</printerFiscalReceipt>"));
-  return busta(`<printerFiscalReceipt>\n<printRecMessage operator="1" messageType="4" message="${riferimento}" />\n${corpo}</printerFiscalReceipt>`);
+  return busta(`<printerFiscalReceipt>\n<printRecMessage operator="1" messageType="4" message="${riferimento}" />\n</printerFiscalReceipt>`);
+}
+
+// Lo stato RT (§5.9.16, pag. 61-62): un registratore in modalità RT
+// risponde con `rtType` e `rtMainStatus`. Solo una domanda, niente carta.
+export const DOMANDA_STATO_RT = busta(`<printerCommand>\n<queryPrinterStatus operator="1" statusType="1" />\n</printerCommand>`);
+
+/** Se la risposta allo stato RT dice che il registratore è un RT. */
+export function eUnRt(xml) {
+  const testo = String(xml ?? "");
+  return /<response\b[^>]*\bsuccess="true"/i.test(testo) && Boolean(elemento(testo, "rtType")) && Boolean(elemento(testo, "rtMainStatus"));
 }
 
 // 🔴 LA CHIUSURA GIORNALIERA (Z), dal manuale §5.8 e esempio §11.9: un

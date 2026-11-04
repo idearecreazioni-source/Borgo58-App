@@ -47,6 +47,7 @@ export const SI_RIPROVANO = ["comanda", "chiamata"];
 
 // I lavori fiscali: lo scontrino, il suo annullo, la chiusura giornaliera.
 export const FISCALI = ["scontrino", "annullo", "chiusura"];
+export const ANNULLO_SOSPESO = true;
 
 const dallErrore = (e, { puoEssereIncerto, scontrino = false }) =>
   // Un «no» esplicito dell'apparecchio (HTTP 4xx) è un rifiuto, non un dubbio.
@@ -114,6 +115,26 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
     // ⚠️ Il documento non si è potuto comporre: non è partito niente.
     return esito("fallito", { codice: "rifiutato", testo: `Il ponte non ha potuto comporre il documento: ${e.message}`, statoApparecchio: "sconosciuto" });
   }
+  // 🔴 L'ANNULLO SOLO A UN REGISTRATORE IN MODALITÀ RT (collaudo del 04/11):
+  //    prima una domanda di stato RT, che non stampa niente. Se non risponde
+  //    come un RT, non parte niente di fiscale.
+  if (lavoro.tipo === "annullo") {
+    const percorsoRt = { protocollo: [443, 8043].includes(Number(d.porta)) ? "https:" : "http:", indirizzo: d.indirizzo, porta: d.porta, percorso: modulo.PERCORSO };
+    let rt;
+    try {
+      rt = await rete.postHttp({ ...percorsoRt, corpo: modulo.DOMANDA_STATO_RT });
+    } catch (e) {
+      return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "rifiutato", testo: `Prima dell'annullo non ho potuto chiedere al registratore se è in modalità RT: ${e.message}`, statoApparecchio: e.codice === "non_risponde" ? "non_risponde" : "errore" });
+    }
+    if (!modulo.eUnRt(rt)) {
+      return esito("fallito", {
+        codice: "rifiutato",
+        testo: "Il registratore non risponde come un RT: l'annullo automatico c'è solo in modalità RT. Fallo a mano dal registratore.",
+        statoApparecchio: "pronto",
+        dettaglio: { lingua, stato_rt: String(rt ?? "").slice(0, 1500) },
+      });
+    }
+  }
   let testo;
   try {
     testo = await rete.postHttp({
@@ -173,12 +194,20 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
  * @param {object} lavoro — come lo restituisce `ponte_prendi_lavori`
  * @param {{simulatore?: boolean, rete?: {scambioTcp: Function, postHttp: Function}}} opzioni
  */
-export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambioTcp, postHttp } } = {}) {
+export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambioTcp, postHttp }, annulloSospeso = ANNULLO_SOSPESO } = {}) {
   const d = lavoro?.dispositivo ?? {};
   const no = perchéNonSiChiama(d, { simulatore });
   if (no) return esito("fallito", { codice: "rifiutato", testo: no });
   if (!["prova", "stato", "comanda", "chiamata", ...FISCALI].includes(lavoro.tipo)) {
     return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa fare lavori «${lavoro.tipo}».` });
+  }
+  // 🔴 L'ANNULLO È SOSPESO (04/11/2026, collaudo): sul registratore vero il
+  //    «VOID …» è stato stampato come una riga di messaggio e le righe dopo
+  //    sono diventate una VENDITA NUOVA. Finché la correzione non è provata
+  //    il ponte non manda niente: il lavoro è fallito, e l'annullo si fa a
+  //    mano dal registratore.
+  if (lavoro.tipo === "annullo" && annulloSospeso) {
+    return esito("fallito", { codice: "rifiutato", testo: "L'annullo dal gestionale è sospeso: fallo a mano dal registratore." });
   }
   const lingua = linguaDi(d);
   // 🔴 Scontrino, annullo e chiusura vanno solo al registratore.

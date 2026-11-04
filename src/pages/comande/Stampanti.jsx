@@ -55,6 +55,8 @@ const NOMI_DEI_LAVORI = {
   chiusura: "chiusura giornaliera",
 };
 const FISCALI = ["scontrino", "annullo", "chiusura"];
+// 🔴 Vedi la sezione «4 · Gli scontrini»: l'annullo è sospeso dal 04/11.
+const ANNULLO_SOSPESO = true;
 
 const TIPI = [
   { value: "registratore_fiscale", label: "Registratore telematico" },
@@ -426,7 +428,15 @@ export default function Stampanti() {
                         : STATI_LAVORO[s.stato] ?? s.stato}
                   </b>
                 </span>
-                {s.stato === "stampato" && (!s.annullo || s.annullo.stato === "annullato") &&
+                {/* 🔴 ANNULLO SOSPESO (04/11/2026, collaudo): sul registratore vero
+                    il VOID è uscito come una vendita nuova. Il tasto torna
+                    solo quando la correzione è provata. */}
+                {ANNULLO_SOSPESO && s.stato === "stampato" && (!s.annullo || s.annullo.stato === "annullato") && (
+                  <span className="text-b58-charcoal-soft">
+                    Annullo dal gestionale sospeso: per ora si fa a mano dal registratore.
+                  </span>
+                )}
+                {!ANNULLO_SOSPESO && s.stato === "stampato" && (!s.annullo || s.annullo.stato === "annullato") &&
                   (s.riferimento ? (
                     <ConfermaDistruttiva
                       etichetta="Annulla scontrino"

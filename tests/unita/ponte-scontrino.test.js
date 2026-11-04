@@ -130,7 +130,8 @@ const scontrino = (tipoApparecchio = "registratore_fiscale", contenuto = CONTENU
   contenuto,
   dispositivo: { nome: "finto", tipo: tipoApparecchio, protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_R },
 });
-const esegui = (l) => eseguiLavoro(l, { simulatore: true, rete: reteVeloce });
+// L'annullo è sospeso dal 04/11 (esegui.mjs): qui si prova com'è fatto.
+const esegui = (l) => eseguiLavoro(l, { simulatore: true, rete: reteVeloce, annulloSospeso: false });
 
 async function conModo(modo, prova) {
   const cartella = mkdtempSync(path.join(os.tmpdir(), "b58-scontrino-"));
@@ -227,16 +228,21 @@ describe("lo scontrino contro il registratore finto", () => {
 const ANNULLO = { ...CONTENUTO, riferimento: "VOID 1627 0014 04112026 99IEC123456" };
 
 describe("l'annullo e la chiusura in FPMate", () => {
-  it("l'annullo comincia con il VOID di tipo 4 e porta le righe originali, come l'esempio §11.30", () => {
+  it("🔴 l'annullo è SOLO il VOID di tipo 4, come l'esempio §11.29: mai righe di vendita", () => {
     const xml = annulloFiscale(ANNULLO);
-    expect(xml.indexOf('<printRecMessage operator="1" messageType="4" message="VOID 1627 0014 04112026 99IEC123456" />')).toBeGreaterThan(
-      xml.indexOf("<printerFiscalReceipt>"),
+    expect(xml).toContain(
+      '<printerFiscalReceipt>\n<printRecMessage operator="1" messageType="4" message="VOID 1627 0014 04112026 99IEC123456" />\n</printerFiscalReceipt>',
     );
-    expect(xml.indexOf("<printRecMessage")).toBeLessThan(xml.indexOf("<beginFiscalReceipt"));
-    expect(xml.match(/<printRecItem /g)).toHaveLength(2);
-    expect(xml).toContain('<endFiscalReceipt operator="1" />');
-    expect(xml.match(/<printerFiscalReceipt>/g)).toHaveLength(1);
+    expect(xml).not.toMatch(/printRecItem|printRecTotal|beginFiscalReceipt|endFiscalReceipt/);
     expect(xml.trim().endsWith("</s:Envelope>")).toBe(true);
+  });
+
+  it("lo stato RT si riconosce dalla risposta (§5.9.16)", async () => {
+    const { DOMANDA_STATO_RT, eUnRt } = await import("../../ponte/protocolli/fpmate.mjs");
+    expect(DOMANDA_STATO_RT).toContain('<queryPrinterStatus operator="1" statusType="1" />');
+    expect(eUnRt('<response success="true"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>')).toBe(true);
+    expect(eUnRt('<response success="true"><addInfo><lastCommand>74</lastCommand></addInfo></response>')).toBe(false);
+    expect(eUnRt('<response success="false"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>')).toBe(false);
   });
 
   it("un riferimento sbagliato non parte", () => {
@@ -272,15 +278,44 @@ describe("annullo e chiusura contro il registratore finto", () => {
     });
   });
 
-  it("🔴 muto e a metà: annullo e chiusura sono INCERTI, mai riprovati", async () => {
-    await conModo("muto", async () => {
-      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("incerto");
+  it("🔴 muto e a metà: la chiusura è INCERTA; l'annullo non parte nemmeno (si ferma alla domanda RT)", async () => {
+    await conModo("muto", async (s) => {
+      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("fallito");
       expect((await esegui(fiscale("chiusura"))).stato).toBe("incerto");
+      expect(s.fogli).toHaveLength(0);
     });
     await conModo("a_meta", async () => {
-      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("incerto");
+      expect((await esegui(fiscale("annullo", ANNULLO))).stato).toBe("fallito");
       expect((await esegui(fiscale("chiusura"))).stato).toBe("incerto");
     });
+  });
+
+  it("🔴 il registratore del collaudo (modalità MF): l'annullo non parte, e non esce niente", async () => {
+    await conModo("mf", async (s) => {
+      const e = await esegui(fiscale("annullo", ANNULLO));
+      expect([e.stato, e.errore_codice]).toEqual(["fallito", "rifiutato"]);
+      expect(e.errore_testo).toMatch(/non risponde come un RT/);
+      await new Promise((ok) => setTimeout(ok, 100));
+      expect(s.fogli).toHaveLength(0);
+    });
+  });
+
+  it("🔴 il finto rifiuta un annullo con righe di vendita, la forma che il 04/11 ha fatto una vendita", async () => {
+    await conModo("normale", async (s) => {
+      const corpo =
+        '<printerFiscalReceipt><printRecMessage operator="1" messageType="4" message="VOID 1628 0001 04112026 99MEX063404" /><beginFiscalReceipt operator="1" />' +
+        '<printRecItem operator="1" description="Ravioli" quantity="1" unitPrice="16,00" department="1" justification="1" /><endFiscalReceipt operator="1" /></printerFiscalReceipt>';
+      const r = await reteVeloce.postHttp({ indirizzo: "127.0.0.1", porta: PORTA_R, percorso: "/cgi-bin/fpmate.cgi", corpo });
+      expect(r).toContain('success="false"');
+      expect(s.fogli).toHaveLength(0);
+    });
+  });
+
+  it("sospeso (com'è adesso): l'annullo non chiama nemmeno il registratore", async () => {
+    let chiamato = false;
+    const e = await eseguiLavoro(fiscale("annullo", ANNULLO), { simulatore: true, rete: { scambioTcp, postHttp: async () => ((chiamato = true), "") } });
+    expect([e.stato, e.errore_codice]).toEqual(["fallito", "rifiutato"]);
+    expect(chiamato).toBe(false);
   });
 
   it("un annullo senza riferimento valido fallisce prima di partire; niente fiscale sulle stampanti", async () => {
@@ -291,8 +326,13 @@ describe("annullo e chiusura contro il registratore finto", () => {
 });
 
 describe("annullo e chiusura: il «no» sicuro e i tempi", () => {
+  const RT = '<response success="true"><addInfo><rtType>I</rtType><rtMainStatus>02</rtMainStatus></addInfo></response>';
   const conRisposta = (tipo, corpo, contenuto) =>
-    eseguiLavoro(fiscale(tipo, contenuto), { simulatore: true, rete: { scambioTcp, postHttp: async () => corpo } });
+    eseguiLavoro(fiscale(tipo, contenuto), {
+      simulatore: true,
+      annulloSospeso: false,
+      rete: { scambioTcp, postHttp: async (o) => (/statusType="1"/.test(o.corpo) ? RT : corpo) },
+    });
 
   it("🔴 un codice sconosciuto è INCERTO, un no intero per la carta è fallito", async () => {
     for (const [tipo, contenuto] of [["annullo", ANNULLO], ["chiusura", {}]]) {

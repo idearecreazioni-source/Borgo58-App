@@ -26,7 +26,7 @@ import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const MODI = ["normale", "muto", "a_meta", "carta_finita", "coperchio_aperto", "rifiuta", "pagina_bianca"];
+export const MODI = ["normale", "muto", "a_meta", "carta_finita", "coperchio_aperto", "rifiuta", "pagina_bianca", "mf"];
 export const PORTA_STAMPANTE = 19100;
 export const PORTA_REGISTRATORE = 18080;
 
@@ -137,6 +137,24 @@ export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, p
       }
       const codici = { carta_finita: "EPTR_REC_EMPTY", coperchio_aperto: "EPTR_COVER_OPEN", rifiuta: "EPTR_PRINTER_OFFLINE" };
       let xml = codici[modo] ? rispostaFpmate(false, codici[modo]) : rispostaFpmate(true);
+      // Lo stato RT (manuale §5.9.16): il registratore finto è un RT, salvo
+      // nel modo «mf», che fa il misuratore fiscale del collaudo del 04/11.
+      if (/statusType="1"/.test(corpo) && !codici[modo]) {
+        xml = modo === "mf"
+          ? rispostaFpmate(true, "", "<elementList>lastCommand</elementList><lastCommand>74</lastCommand>")
+          : rispostaFpmate(true, "", "<elementList>lastCommand,rtType,rtMainStatus,rtSubStatus</elementList><lastCommand>138</lastCommand><rtType>I</rtType><rtMainStatus>02</rtMainStatus><rtSubStatus>08</rtSubStatus>");
+        risposta.writeHead(200, { "Content-Type": "text/xml; charset=utf-8" });
+        risposta.end(xml);
+        return;
+      }
+      // 🔴 Un annullo con righe di vendita dopo il VOID è la forma che il
+      //    04/11 ha fatto una VENDITA sul registratore vero: il finto la
+      //    rifiuta, così una prova se ne accorge.
+      if (/message="VOID /.test(corpo) && /<printRec(Item|Total)\b/.test(corpo)) {
+        risposta.writeHead(200, { "Content-Type": "text/xml; charset=utf-8" });
+        risposta.end(rispostaFpmate(false, "EPTR_ANNULLO_CON_RIGHE"));
+        return;
+      }
       if (/printerFiscalReceipt/.test(corpo) && !codici[modo]) {
         // Lo scontrino finto: le righe e i pagamenti come li ha ricevuti,
         // e una risposta con la forma di quella vera.
