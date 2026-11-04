@@ -129,6 +129,7 @@ end $function$;
 
 revoke all on function public.scadi_lavori_abbandonati() from public, anon, authenticated;
 
+-- rete-guardie: annulla_lavoro_stampa — il rifiuto «potrebbe stare ancora emettendo questo scontrino» diventa «… lavorando su questo documento fiscale»: la stessa regola dei 30 minuti, ora per scontrino, annullo e chiusura
 create or replace function public.annulla_lavoro_stampa(p_id uuid)
 returns void
 language plpgsql
@@ -206,6 +207,7 @@ end $function$;
 revoke all on function public.ponte_battito(text, text, text) from public, anon, authenticated;
 grant execute on function public.ponte_battito(text, text, text) to anon, authenticated;
 
+-- rete-guardie: registratore_con_scontrini_non_si_cancella — il rifiuto «ha emesso scontrini» diventa «ha emesso documenti fiscali»: lo stesso divieto, ora anche per annulli e chiusure
 -- ⚠️ `security definer`: legge la coda qualunque sia chi cancella, anche
 --    chi per la RLS non la vedrebbe (revisione del database, 04/11).
 create or replace function public.registratore_con_scontrini_non_si_cancella()
