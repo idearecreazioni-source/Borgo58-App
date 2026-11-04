@@ -150,6 +150,18 @@ export async function chiediChiusura(dispositivoId) {
 /** Le comande dei conti aperti che non sono uscite (04/11/2026): per la Sala, frasi fisse. */
 export async function avvisiStampa() {
   const { data, error } = await supabase.rpc("avvisi_stampa");
+  // Un database che non ha ancora la funzione (il sito uscito prima della
+  // migrazione) non ha niente da dire: nessun avviso, non un errore fisso.
+  if (error?.code === "PGRST202") return [];
   if (error) throw error;
   return data ?? [];
+}
+
+/** Gli apparecchi in allarme e il ponte spento (04/11/2026): la striscia in cima al gestionale. */
+export async function allarmiApparecchi() {
+  const { data, error } = await supabase.rpc("allarmi_apparecchi");
+  // Un database che non ha ancora la funzione non ha allarmi da dire.
+  if (error?.code === "PGRST202") return { allarmi: [] };
+  if (error) throw error;
+  return data ?? { allarmi: [] };
 }

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { eseguiLavoro } from "../../ponte/esegui.mjs";
-import { unGiro } from "../../ponte/ponte.mjs";
+import { controlloApparecchi, unGiro } from "../../ponte/ponte.mjs";
 import { postHttp, scambioTcp } from "../../ponte/rete.mjs";
 import { avviaSimulatore } from "../../ponte/simulatore.mjs";
 
@@ -54,7 +54,7 @@ async function aspettaFogli(s, quanti) {
 }
 
 describe("la comanda che la stampante non ha ricevuto", () => {
-  it("🔴 spenta → «riprova»; riaccesa → esce una volta sola", async () => {
+  it("🔴 spenta → «riprova»; riaccesa → esce, e un foglio solo", async () => {
     const scritti = [];
     const coda = [lavoro("comanda", "stampante_comande", PORTA_S)];
     const g = {
@@ -127,5 +127,44 @@ describe("la comanda che la stampante non ha ricevuto", () => {
     const e = await eseguiLavoro(lavoro("comanda", "stampante_comande", PORTA_S), { simulatore: true, rete });
     expect(e.stato).toBe("incerto");
     expect(e.riprova).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------
+// Il controllo regolare degli apparecchi (04/11/2026): solo domande di
+// stato, mai un foglio; carta finita e spenta fanno l'allarme, riaccesa no.
+// ---------------------------------------------------------------------
+describe("il controllo regolare degli apparecchi", () => {
+  const apparecchi = [
+    { id: "s", nome: "cucina", tipo: "stampante_comande", protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_S },
+    { id: "r", nome: "registratore", tipo: "registratore_fiscale", protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_R },
+  ];
+  const controlla = async () => {
+    const scritti = [];
+    const inAllarme = await controlloApparecchi({ statoApparecchi: async (s) => scritti.push(...s) }, apparecchi, { simulatore: true, esegui });
+    return { inAllarme, stati: Object.fromEntries(scritti.map((s) => [s.id, s.stato])) };
+  };
+
+  it("carta finita → allarme; spenta → allarme; riaccesa → a posto. E nessun foglio stampato", async () => {
+    await conModo("carta_finita", async (s) => {
+      const c = await controlla();
+      expect(c.inAllarme).toBe(true);
+      expect(c.stati.s).toBe("carta_finita");
+      expect(s.fogli).toHaveLength(0);
+    });
+    const spenti = await controlla();
+    expect(spenti).toEqual({ inAllarme: true, stati: { s: "non_risponde", r: "non_risponde" } });
+    await conModo("normale", async (s) => {
+      const c = await controlla();
+      expect(c).toEqual({ inAllarme: false, stati: { s: "pronto", r: "pronto" } });
+      await new Promise((ok) => setTimeout(ok, 200));
+      expect(s.fogli).toHaveLength(0);
+    });
+  });
+
+  it("senza apparecchi accesi non chiama il gestionale", async () => {
+    let chiamato = false;
+    expect(await controlloApparecchi({ statoApparecchi: async () => (chiamato = true) }, [], { simulatore: true, esegui })).toBe(false);
+    expect(chiamato).toBe(false);
   });
 });

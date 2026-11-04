@@ -29,9 +29,31 @@ alter table lavori_stampa add constraint lavoro_riprova_solo_comande_in_coda
 comment on constraint lavoro_riprova_solo_comande_in_coda on lavori_stampa is
   'Si riprova da solo solo una comanda o un biglietto del turno ancora in coda: mai un documento fiscale, mai un incerto.';
 
+-- 🔴 Appena un lavoro esce da «in coda» — preso dal ponte, sostituito da
+--    una ristampa, annullato, chiuso col conto — l'attesa si toglie da
+--    sola, qualunque funzione lo scriva (revisione del database, 04/11).
+create or replace function public.lavoro_fuori_coda_senza_attesa()
+returns trigger
+language plpgsql
+set search_path to 'public'
+as $function$
+begin
+  new.riprova_dopo := null;
+  return new;
+end $function$;
+
+revoke all on function public.lavoro_fuori_coda_senza_attesa() from public, anon, authenticated;
+
+drop trigger if exists lavoro_fuori_coda_senza_attesa on lavori_stampa;
+create trigger lavoro_fuori_coda_senza_attesa
+  before update on lavori_stampa
+  for each row when (new.stato <> 'in_coda' and new.riprova_dopo is not null)
+  execute function lavoro_fuori_coda_senza_attesa();
+
 -- ---------------------------------------------------------------------
 -- 2. La coda: scadenze, presa, esito
 -- ---------------------------------------------------------------------
+-- (scadi_lavori_abbandonati e ponte_prendi_lavori: aggiunte, niente tolto.)
 create or replace function public.scadi_lavori_abbandonati()
 returns void
 language plpgsql
@@ -49,7 +71,9 @@ begin
      set stato = 'fallito', finito_il = now(), riprova_dopo = null,
          errore_testo = 'La stampante non ha risposto per mezz''ora: non la riprovo più da solo.'
    where stato = 'in_coda' and tipo in ('comanda', 'chiamata') and errore_codice is not null
-     and creato_il < now() - interval '30 minutes';
+     and creato_il < now() - interval '30 minutes'
+     -- Un conto già chiuso la annulla la regola qui sotto, non la fa fallire.
+     and not exists (select 1 from orders o where o.id = lavori_stampa.order_id and o.status <> 'aperto');
 
   update lavori_stampa l
      set stato = 'annullato', finito_il = now(),
@@ -359,15 +383,27 @@ begin
     perform set_config('request.jwt.claims', null, true);
     perform ponte_prendi_lavori(v_k->>'chiave', 5);
     perform ponte_esito_lavoro(v_k->>'chiave', v_lavoro, 'riprova', 'non_risponde', 'spenta', 'non_risponde', null);
+    -- (4a) «Ristampa» su una comanda che riprova: la vecchia si annulla
+    --      senza attesa, la nuova prende il suo posto.
+    perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
+    v_s := v_lavoro;
+    v_lavoro := manda_alla_stampante(array[v_riga], null, false);
+    perform set_config('request.jwt.claims', null, true);
+    if (select stato from lavori_stampa where id = v_s) <> 'annullato'
+       or (select riprova_dopo from lavori_stampa where id = v_s) is not null then
+      raise exception 'VERIFICA (4a): la ristampa non ha tolto la comanda che riprovava.';
+    end if;
+    perform ponte_prendi_lavori(v_k->>'chiave', 5);
+    perform ponte_esito_lavoro(v_k->>'chiave', v_lavoro, 'riprova', 'non_risponde', 'spenta', 'non_risponde', null);
     update lavori_stampa set creato_il = now() - interval '31 minutes' where id = v_lavoro;
     perform scadi_lavori_abbandonati();
     if (select stato from lavori_stampa where id = v_lavoro) <> 'fallito' then
-      raise exception 'VERIFICA (4a): la comanda che riprovava da mezz''ora non è fallita.';
+      raise exception 'VERIFICA (4b): la comanda che riprovava da mezz''ora non è fallita.';
     end if;
     perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
     if not exists (select 1 from jsonb_array_elements(avvisi_stampa()) a
                     where (a->>'id')::uuid = v_lavoro and a->>'frase' like '%Premi «Ristampa».') then
-      raise exception 'VERIFICA (4b): la comanda fallita non ha l''avviso con «Ristampa».';
+      raise exception 'VERIFICA (4c): la comanda fallita non ha l''avviso con «Ristampa».';
     end if;
     perform set_config('request.jwt.claims', null, true);
 

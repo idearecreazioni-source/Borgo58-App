@@ -59,6 +59,8 @@ export function gestionale({ indirizzo, chiavePubblica, chiavePonte }) {
   return {
     battito: (versione, host) => chiama("ponte_battito", { p_versione: versione, p_host: host }),
     prendiLavori: (limite = 5) => chiama("ponte_prendi_lavori", { p_limite: limite }),
+    // Il controllo regolare (04/11/2026): come stanno gli apparecchi.
+    statoApparecchi: (stati) => chiama("ponte_stato_apparecchi", { p_stati: stati }),
     esito: (id, e) =>
       chiama("ponte_esito_lavoro", {
         p_id: id,

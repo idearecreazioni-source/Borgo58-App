@@ -26,9 +26,10 @@ export default function AvvisiStampaSala() {
       .then((a) => {
         if (questa !== ultima.current) return;
         setAvvisi(a ?? []);
+        setErrore("");
       })
       .catch((e) => {
-        if (questa === ultima.current) setErrore(`Non riesco a sapere se le comande sono uscite: ${e.message}`);
+        if (questa === ultima.current) setErrore(`Non riesco a sapere se le comande sono uscite (${e.code ?? "rete"}).`);
       });
   };
 
@@ -80,6 +81,7 @@ export default function AvvisiStampaSala() {
               type="button"
               disabled={mandando.has(a.id)}
               onClick={() => ristampa(a)}
+              aria-label={`Ristampa: ${a.frase}`}
               className="tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark px-4 text-b58-sul-colore testo-sala font-semibold disabled:opacity-50"
             >
               Ristampa

@@ -150,6 +150,24 @@ export const LIMITE_DELLA_CHIUSURA_MS = 70000;
 // Un nome con un a capo dentro non deve spezzare una riga del registro.
 const perIlRegistro = (t) => senzaControlli(t);
 
+// 🔴 IL CONTROLLO REGOLARE DEGLI APPARECCHI (04/11/2026, chiesto da
+//    Alessio): ogni due minuti, e ogni trenta secondi se uno è in allarme,
+//    il ponte chiede a ognuno COME STA. Solo la domanda di stato, la stessa
+//    del tasto «Leggi lo stato»: niente carta e niente fiscale. Gira fra un
+//    giro della coda e l'altro, mai mentre un lavoro è in corso.
+export const OGNI_QUANTO_IL_CONTROLLO = { normale: 120000, inAllarme: 30000 };
+
+/** Chiede lo stato a ogni apparecchio e lo scrive. Restituisce se qualcuno è in allarme. */
+export async function controlloApparecchi(g, dispositivi, { simulatore, esegui = eseguiLavoro } = {}) {
+  const stati = [];
+  for (const d of dispositivi ?? []) {
+    const e = await esegui({ id: null, tipo: "stato", contenuto: {}, dispositivo: d }, { simulatore });
+    stati.push({ id: d.id, stato: e.stato === "stampato" ? e.stato_dispositivo : e.stato_dispositivo === "sconosciuto" ? "errore" : e.stato_dispositivo, testo: e.errore_testo ?? null });
+  }
+  if (stati.length) await g.statoApparecchi(stati);
+  return stati.some((s) => s.stato !== "pronto");
+}
+
 export async function avvia(config = leggiConfigurazione()) {
   const scrivi = registro(config.registro);
   const g = gestionale(config);
@@ -157,6 +175,8 @@ export async function avvia(config = leggiConfigurazione()) {
   let fermo = false;
   let ultimoBattito = 0;
   let ultimoErrore = "";
+  let dispositivi = [];
+  let prossimoControllo = 0;
 
   scrivi(`ponte ${VERSIONE} acceso su ${host}${config.simulatore ? " (apparecchi finti ammessi)" : ""}`);
   const ferma = () => {
@@ -180,10 +200,15 @@ export async function avvia(config = leggiConfigurazione()) {
       if (Date.now() - ultimoBattito >= OGNI_QUANTO.battito) {
         const b = await g.battito(VERSIONE, host);
         ultimoBattito = Date.now();
+        dispositivi = b?.dispositivi ?? [];
         if (ultimoErrore) scrivi(`il gestionale risponde di nuovo; apparecchi attivi: ${b?.dispositivi?.length ?? 0}`);
         ultimoErrore = "";
       }
       await unGiro(g, { simulatore: config.simulatore, scrivi });
+      if (Date.now() >= prossimoControllo) {
+        const inAllarme = await controlloApparecchi(g, dispositivi, { simulatore: config.simulatore });
+        prossimoControllo = Date.now() + (inAllarme ? OGNI_QUANTO_IL_CONTROLLO.inAllarme : OGNI_QUANTO_IL_CONTROLLO.normale);
+      }
     } catch (e) {
       // Lo stesso errore si scrive una volta sola, non ogni due secondi.
       if (e.message !== ultimoErrore) scrivi(`errore: ${e.message}`);
