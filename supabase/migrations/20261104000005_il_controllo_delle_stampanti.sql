@@ -24,7 +24,7 @@
 alter table dispositivi add column if not exists ultimo_controllo_il timestamptz;
 alter table dispositivi add column if not exists guasto_dal timestamptz;
 comment on column dispositivi.ultimo_controllo_il is
-  'L''ultima volta che il ponte ha chiesto all''apparecchio come sta (controllo regolare o lavoro).';
+  'L''ultima volta che il controllo regolare del ponte ha chiesto all''apparecchio come sta.';
 comment on column dispositivi.guasto_dal is
   'Da quando l''apparecchio non è pronto (non risponde, carta, coperchio, errore). Vuoto quando è a posto.';
 
@@ -40,7 +40,7 @@ begin
       new.guasto_dal := coalesce(case when old.ultimo_stato in ('non_risponde', 'carta_finita', 'coperchio_aperto', 'errore')
                                       then old.guasto_dal end, now());
     end if;
-  elsif new.ultimo_stato = 'pronto' then
+  elsif new.ultimo_stato in ('pronto', 'sconosciuto') then
     new.guasto_dal := null;
   end if;
   return new;
@@ -82,7 +82,8 @@ begin
            ultimo_stato_testo = case when v_stato = 'pronto' then null else left(v_s->>'testo', 500) end,
            ultimo_controllo_il = now(),
            ultimo_contatto_il = case when v_stato = 'non_risponde' then ultimo_contatto_il else now() end
-     where id = (v_s->>'id')::uuid and attivo;
+     -- Confronto come testo: un id sbagliato non ferma gli altri.
+     where id::text = v_s->>'id' and attivo;
   end loop;
 end $function$;
 
@@ -170,8 +171,11 @@ begin
   if v_titolare is null or v_staff is null then
     raise exception 'VERIFICA: servono un titolare e uno staff in user_roles.';
   end if;
-  if has_function_privilege('anon', 'allarmi_apparecchi()', 'execute') then
-    raise exception 'VERIFICA: anon può leggere gli allarmi degli apparecchi.';
+  if has_function_privilege('anon', 'allarmi_apparecchi()', 'execute')
+     or not has_function_privilege('anon', 'ponte_stato_apparecchi(text, jsonb)', 'execute')
+     or has_column_privilege('authenticated', 'dispositivi', 'guasto_dal', 'update')
+     or has_column_privilege('authenticated', 'dispositivi', 'ultimo_controllo_il', 'update') then
+    raise exception 'VERIFICA: i permessi del controllo degli apparecchi non sono quelli dichiarati.';
   end if;
 
   begin
@@ -205,6 +209,9 @@ begin
     perform set_config('request.jwt.claims', null, true);
 
     -- (2) Poi spenta: resta in allarme, e l'ora resta quella del primo guasto.
+    --     L'ora si porta indietro prima, altrimenti now() — fermo dentro la
+    --     transazione — renderebbe la prova incapace di fallire.
+    update dispositivi set guasto_dal = now() - interval '1 hour' where id = v_disp;
     v_r := to_jsonb((select guasto_dal from dispositivi where id = v_disp));
     perform ponte_stato_apparecchi(v_k->>'chiave', jsonb_build_array(jsonb_build_object('id', v_disp, 'stato', 'non_risponde')));
     if to_jsonb((select guasto_dal from dispositivi where id = v_disp)) <> v_r then
@@ -212,7 +219,12 @@ begin
     end if;
 
     -- (3) Riaccesa: l'allarme sparisce da solo.
-    perform ponte_stato_apparecchi(v_k->>'chiave', jsonb_build_array(jsonb_build_object('id', v_disp, 'stato', 'pronto')));
+    perform ponte_stato_apparecchi(v_k->>'chiave', jsonb_build_array(
+      jsonb_build_object('id', 'non-un-uuid', 'stato', 'pronto'),
+      jsonb_build_object('id', v_disp, 'stato', 'pronto')));
+    if (select guasto_dal from dispositivi where id = v_disp) is not null then
+      raise exception 'VERIFICA (3a): a posto, ma l''ora del guasto è rimasta.';
+    end if;
     perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
     if jsonb_array_length(allarmi_apparecchi()->'allarmi') <> 0 then
       raise exception 'VERIFICA (3): l''allarme non è sparito con la stampante a posto.';
@@ -222,7 +234,7 @@ begin
     -- (4) Nessun controllo da sette minuti: allarme «non si controlla».
     update dispositivi set ultimo_controllo_il = now() - interval '7 minutes' where id = v_disp;
     perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
-    if allarmi_apparecchi()->'allarmi'->0->>'frase' not like '%non si controlla dalle%' then
+    if coalesce(allarmi_apparecchi()->'allarmi'->0->>'frase', '') not like '%non si controlla dalle%' then
       raise exception 'VERIFICA (4): un apparecchio mai controllato da sette minuti non è in allarme.';
     end if;
 
