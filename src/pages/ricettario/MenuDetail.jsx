@@ -656,7 +656,7 @@ export default function MenuDetail() {
               onClick={() => setSimMode(m.value)}
               className={`testo-sala rounded-full px-3 py-1.5 border transition-colors ${
                 simMode === m.value
-                  ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
+                  ? "bg-b58-azione text-b58-sul-colore border-b58-azione"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
