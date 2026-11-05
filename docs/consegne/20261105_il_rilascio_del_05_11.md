@@ -33,8 +33,9 @@ Il ponte che gira sul PC del locale si aggiorna a parte, quando Borgo58 avrà le
 ## Ordine
 1. Questo riepilogo su slave, poi slave → master.
 2. Copia di sicurezza della produzione (`npm run backup`).
-3. `npm run migra`, prima in sola lettura e poi con `--conferma`.
-4. Approvazione del lavoro «Manda in produzione» per il sito.
+3. Prima delle migrazioni, in sola lettura: in produzione ci sono almeno un `titolare` e uno `staff` in `user_roles`, e almeno una riga in `entities`. Le verifiche delle migrazioni li usano; se mancano, il file si ferma e si annulla da solo, senza danni.
+4. `npm run migra`, prima in sola lettura e poi con `--conferma`. Ogni migrazione è una transazione sola, e le verifiche lasciano il database come l'hanno trovato (controllo `ecc:database-reviewer` del 05/11: pronte, nessun dato del collaudo).
+5. Approvazione del lavoro «Manda in produzione» per il sito.
 
 Le migrazioni vanno prima del sito, perché il sito nuovo chiama le funzioni del database che creano (`stato_scontrino`, `avvisi_stampa`, `allarmi_apparecchi`).
 
