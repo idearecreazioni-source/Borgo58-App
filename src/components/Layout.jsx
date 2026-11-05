@@ -11,6 +11,7 @@ import Logo from "./Logo";
 import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 import RipresaBozza from "./RipresaBozza";
 import AvvisoAggiornamento from "./AvvisoAggiornamento";
+import StrisciaApparecchi from "./StrisciaApparecchi";
 import ApriMemo from "./ApriMemo";
 import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
 import { useSegnala } from "./useSegnala";
@@ -309,6 +310,7 @@ export default function Layout() {
           )}
           <AvvisoLettureTagliate />
           <AvvisoAggiornamento />
+          <StrisciaApparecchi />
           <RipresaBozza />
           {/* La cornice resta ferma mentre arriva il pezzo della schermata
               (27/10/2026): sparirebbe tutta, menu compreso, a ogni cambio. */}

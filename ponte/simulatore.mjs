@@ -26,7 +26,7 @@ import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const MODI = ["normale", "muto", "a_meta", "carta_finita", "coperchio_aperto", "rifiuta", "pagina_bianca"];
+export const MODI = ["normale", "muto", "a_meta", "carta_finita", "coperchio_aperto", "rifiuta", "pagina_bianca", "mf"];
 export const PORTA_STAMPANTE = 19100;
 export const PORTA_REGISTRATORE = 18080;
 
@@ -71,10 +71,19 @@ function byteDiStato(modo) {
   return Buffer.from([ferma, carta]);
 }
 
-const rispostaFpmate = (successo, codice = "") =>
+const rispostaFpmate = (successo, codice = "", info = "<elementList>simulatore</elementList>") =>
   `<?xml version="1.0" encoding="utf-8"?>\n<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body>` +
-  `<response success="${successo}" code="${codice}" status="2"><addInfo><elementList>simulatore</elementList></addInfo></response>` +
+  `<response success="${successo}" code="${codice}" status="2"><addInfo>${info}</addInfo></response>` +
   `</soapenv:Body></soapenv:Envelope>`;
+
+// Come risponde il registratore vero a uno scontrino emesso (collaudo del
+// 04/11): numero, importo, data, ora e numero della chiusura giornaliera.
+const infoScontrino = ({ numero, importo, chiusura = 1, adesso = new Date() }) =>
+  "<elementList>lastCommand,printerStatus,fiscalReceiptNumber,fiscalReceiptAmount,fiscalReceiptDate,fiscalReceiptTime,zRepNumber</elementList>" +
+  `<lastCommand>74</lastCommand><printerStatus>00110</printerStatus><fiscalReceiptNumber>${numero}</fiscalReceiptNumber>` +
+  `<fiscalReceiptAmount>${importo}</fiscalReceiptAmount>` +
+  `<fiscalReceiptDate>${adesso.getDate()}/${adesso.getMonth() + 1}/${adesso.getFullYear()}</fiscalReceiptDate>` +
+  `<fiscalReceiptTime>${adesso.getHours()}:${String(adesso.getMinutes()).padStart(2, "0")}</fiscalReceiptTime><zRepNumber>${chiusura}</zRepNumber>`;
 
 /**
  * Accende i due apparecchi finti. Restituisce `chiudi()` e l'elenco dei
@@ -83,7 +92,9 @@ const rispostaFpmate = (successo, codice = "") =>
 export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, portaStampante = PORTA_STAMPANTE, portaRegistratore = PORTA_REGISTRATORE, silenzioso = false } = {}) {
   if (!MODI.includes(modo)) throw new Error(`Modo sconosciuto «${modo}»: i modi sono ${MODI.join(", ")}.`);
   const fogli = [];
-  const di = (...a) => silenzioso || console.log("[simulatore]", ...a);
+  let numeroScontrino = 0;
+  let numeroChiusura = 1;
+  const di =(...a) => silenzioso || console.log("[simulatore]", ...a);
 
   const stampante = net.createServer((presa) => {
     const ricevuti = [];
@@ -125,7 +136,59 @@ export async function avviaSimulatore({ modo = "normale", cartella = CARTELLA, p
         return;
       }
       const codici = { carta_finita: "EPTR_REC_EMPTY", coperchio_aperto: "EPTR_COVER_OPEN", rifiuta: "EPTR_PRINTER_OFFLINE" };
-      const xml = codici[modo] ? rispostaFpmate(false, codici[modo]) : rispostaFpmate(true);
+      let xml = codici[modo] ? rispostaFpmate(false, codici[modo]) : rispostaFpmate(true);
+      // Lo stato RT (manuale §5.9.16): il registratore finto è un RT, salvo
+      // nel modo «mf», che fa il misuratore fiscale del collaudo del 04/11.
+      if (/statusType="1"/.test(corpo) && !codici[modo]) {
+        xml = modo === "mf"
+          ? rispostaFpmate(true, "", "<elementList>lastCommand</elementList><lastCommand>74</lastCommand>")
+          : rispostaFpmate(true, "", "<elementList>lastCommand,rtType,rtMainStatus,rtSubStatus</elementList><lastCommand>138</lastCommand><rtType>I</rtType><rtMainStatus>02</rtMainStatus><rtSubStatus>08</rtSubStatus>");
+        risposta.writeHead(200, { "Content-Type": "text/xml; charset=utf-8" });
+        risposta.end(xml);
+        return;
+      }
+      // 🔴 Un annullo con righe di vendita dopo il VOID è la forma che il
+      //    04/11 ha fatto una VENDITA sul registratore vero: il finto la
+      //    rifiuta, così una prova se ne accorge.
+      if (/message="VOID /.test(corpo) && /<printRec(Item|Total)\b/.test(corpo)) {
+        risposta.writeHead(200, { "Content-Type": "text/xml; charset=utf-8" });
+        risposta.end(rispostaFpmate(false, "EPTR_ANNULLO_CON_RIGHE"));
+        return;
+      }
+      if (/printerFiscalReceipt/.test(corpo) && !codici[modo]) {
+        // Lo scontrino finto: le righe e i pagamenti come li ha ricevuti,
+        // e una risposta con la forma di quella vera.
+        numeroScontrino += 1;
+        const voci = [...corpo.matchAll(/<printRecItem[^>]*description="([^"]*)"[^>]*quantity="([^"]*)"[^>]*unitPrice="([^"]*)"/g)]
+          .map((m) => `${m[2]} x ${m[1]}  ${m[3]}`);
+        const pagati = [...corpo.matchAll(/<printRecTotal[^>]*description="([^"]*)"[^>]*payment="([^"]*)"/g)];
+        const importo = pagati
+          .reduce((s, m) => s + Number(m[2].replace(",", ".")), 0)
+          .toFixed(2)
+          .replace(".", ",");
+        // Un annullo comincia con «VOID …» (manuale Epson §5.6.2).
+        const annullo = /<printRecMessage[^>]*message="(VOID [^"]*)"/.exec(corpo)?.[1];
+        const testo = `${annullo ? `${annullo}\n` : ""}${voci.join("\n")}\n${pagati.map((m) => `${m[1]}  ${m[2]}`).join("\n")}\n----- ${annullo ? "documento di annullo" : "scontrino fiscale"} finto n. ${numeroScontrino} -----\n`;
+        const file = scrivi(cartella, annullo ? "annullo" : "scontrino", testo);
+        fogli.push({ apparecchio: "registratore", file, testo });
+        di(annullo ? "annullo finto in" : "scontrino finto in", file);
+        xml = rispostaFpmate(true, "", infoScontrino({ numero: numeroScontrino, importo, chiusura: numeroChiusura }));
+      }
+      if (/printerFiscalReport/.test(corpo) && /printZReport/.test(corpo) && !codici[modo]) {
+        // La chiusura giornaliera finta (manuale Epson §5.8.1): il numero
+        // della chiusura sale, e lo scontrino del giorno dopo riparte da 1.
+        numeroChiusura += 1;
+        numeroScontrino = 0;
+        const testo = `----- chiusura giornaliera finta n. ${numeroChiusura} -----\n`;
+        const file = scrivi(cartella, "chiusura", testo);
+        fogli.push({ apparecchio: "registratore", file, testo });
+        di("chiusura finta in", file);
+        xml = rispostaFpmate(
+          true,
+          "",
+          `<elementList>lastCommand,printerStatus,zRepNumber,dailyAmount,serialNumber</elementList><lastCommand>74</lastCommand><printerStatus>20110</printerStatus><zRepNumber>${numeroChiusura}</zRepNumber><dailyAmount>0,00</dailyAmount><serialNumber>99IEC000000</serialNumber>`,
+        );
+      }
       if (/printerNonFiscal/.test(corpo) && !codici[modo]) {
         const righe = [...corpo.matchAll(/data="([^"]*)"/g)].map((m) => m[1]);
         const testo = modo === "pagina_bianca" ? "(pagina bianca)\n" : `${righe.join("\n")}\n----- documento non fiscale -----\n`;

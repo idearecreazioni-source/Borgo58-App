@@ -23,6 +23,7 @@ vi.mock("../../src/lib/api/stampanti", () => ({
   salvaDispositivo: vi.fn(),
   togliDispositivo: (...a) => api.togli(...a),
   ultimiLavori: (...a) => api.lavori(...a),
+  scontriniRecenti: async () => [],
 }));
 
 import Stampanti from "../../src/pages/comande/Stampanti";

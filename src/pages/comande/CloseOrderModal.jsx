@@ -18,6 +18,8 @@ import {
 import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 import { fiscalizzaConto } from "../../lib/fiscalizzazione";
 import { setDocumentoFiscale } from "../../lib/api/orders";
+import { statoScontrino } from "../../lib/api/stampanti";
+import ScontrinoDelConto from "./ScontrinoDelConto";
 import { serataCorrente } from "../../lib/giornataOperativa";
 import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
@@ -36,7 +38,9 @@ const nomeSulConto = (item) => {
 // Modale "chiudi conto" (§3.2), ripreso dal prototipo UX di Cowork: riepilogo
 // raggruppato per piatto, poi pagato/sconto/omaggio/annullato.
 export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }) {
-  useChiudiConEsc(true, onClose);
+  // Conto chiuso con un registratore acceso: si passa allo scontrino (04/11).
+  const [chiuso, setChiuso] = useState(false);
+  useChiudiConEsc(!chiuso, onClose);
   const [mode, setMode] = useState(null); // null | "sconto" | "omaggio" | "annulla" | "romana" | "misto"
   const [quotaCarta, setQuotaCarta] = useState("");
   // Divisione alla romana con arrotondamento (§3.2.2, deciso da Alessio il
@@ -185,6 +189,16 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
         }).catch(() => {});
       } else {
         await fiscalizzaConto(order, { serata });
+        // 🔴 LO SCONTRINO FISCALE DAL REGISTRATORE (04/11/2026, collaudo):
+        //    solo se nel gestionale c'è un registratore acceso. Senza, o se
+        //    la domanda non arriva, la chiusura resta quella di sempre e la
+        //    sala non si ferma.
+        const s = await statoScontrino(order.id).catch(() => null);
+        if (s?.registratore) {
+          setBusy(false);
+          setChiuso(true);
+          return;
+        }
       }
     }
     onDone();
@@ -297,6 +311,8 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
       })
     );
   };
+
+  if (chiuso) return <ScontrinoDelConto order={order} onFatto={onDone} />;
 
   return (
     <div
