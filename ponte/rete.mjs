@@ -161,7 +161,11 @@ export function postHttp({ protocollo = "http:", indirizzo, porta, percorso, cor
           risposta.on("data", (p) => pezzi.push(p));
           risposta.on("end", () => {
             const testo = Buffer.concat(pezzi).toString("utf8");
-            if (risposta.statusCode >= 400) {
+            if (risposta.statusCode >= 500) {
+              // ⚠️ Un guasto dell'apparecchio a documento ricevuto non dice
+              //    che non ha stampato (revisione del codice, 04/11).
+              chiudi(null, aMeta(`L'apparecchio ha risposto ${risposta.statusCode}: forse ha stampato, forse no.`));
+            } else if (risposta.statusCode >= 400) {
               // Un «no» esplicito dell'apparecchio: non ha stampato.
               chiudi(null, new ErroreDiRete(`L'apparecchio ha risposto ${risposta.statusCode}.`, { inviato: true, codice: "rifiutato" }));
             } else if (risposta.statusCode >= 300) {

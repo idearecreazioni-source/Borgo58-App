@@ -6,7 +6,7 @@ import { supabase } from "../supabase";
 // ARCHITETTURA §4.2). Qui solo il titolare: lo staff non vede gli indirizzi.
 
 const COLONNE =
-  "id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, ultimo_contatto_il, ultimo_stato, ultimo_stato_testo";
+  "id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, matricola, ultimo_contatto_il, ultimo_stato, ultimo_stato_testo";
 
 export async function elencoDispositivi() {
   const { data, error } = await supabase.from("dispositivi").select(COLONNE).order("nome");
@@ -15,7 +15,7 @@ export async function elencoDispositivi() {
 }
 
 /** Scrive un apparecchio nuovo, o corregge quello con `id`. */
-export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo }) {
+export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, porta, reparto, attivo, matricola }) {
   const riga = {
     nome: nome.trim(),
     tipo,
@@ -23,6 +23,8 @@ export async function salvaDispositivo({ id, nome, tipo, protocollo, indirizzo, 
     indirizzo: indirizzo.trim(),
     porta: Number(porta),
     reparto: tipo === "stampante_comande" ? reparto : null,
+    // La matricola ce l'ha solo il registratore (04/11): maiuscola, senza spazi.
+    matricola: tipo === "registratore_fiscale" && matricola?.trim() ? matricola.replace(/\s+/g, "").toUpperCase() : null,
     attivo,
   };
   const q = id
@@ -55,7 +57,7 @@ export async function annullaLavoro(id) {
 export async function ultimiLavori(limite = 20) {
   const { data, error } = await supabase
     .from("lavori_stampa")
-    .select("id, dispositivo_id, tipo, stato, tentativi, creato_il, finito_il, errore_codice, errore_testo")
+    .select("id, dispositivo_id, tipo, stato, tentativi, creato_il, finito_il, errore_codice, errore_testo, esito")
     .order("creato_il", { ascending: false })
     .limit(limite);
   if (error) throw error;
@@ -101,4 +103,65 @@ export async function mandaAllaStampante({ righe = null, chiamata = null, aggiun
   });
   if (error) throw error;
   return data;
+}
+
+// LO SCONTRINO FISCALE DI UN CONTO CHIUSO (04/11/2026, migrazione
+// 20261104000001). Righe e pagamenti li scrive il database, non il browser;
+// al massimo uno per conto, anche con un doppio clic.
+
+/** Se c'è un registratore acceso e com'è andato lo scontrino di questo conto (solo frasi fisse). */
+export async function statoScontrino(orderId) {
+  const { data, error } = await supabase.rpc("stato_scontrino", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+/** Chiede lo scontrino del conto al registratore. */
+export async function chiediScontrino(orderId) {
+  const { data, error } = await supabase.rpc("accoda_scontrino", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+// L'ANNULLO DI UNO SCONTRINO E LA CHIUSURA GIORNALIERA (04/11/2026,
+// migrazione 20261104000002). Solo il titolare; uno alla volta.
+
+/** Gli ultimi scontrini, con il loro annullo se c'è. */
+export async function scontriniRecenti(limite = 20) {
+  const { data, error } = await supabase.rpc("scontrini_recenti", { p_limite: limite });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Chiede l'annullo dello scontrino uscito di un conto. */
+export async function annullaScontrino(orderId) {
+  const { data, error } = await supabase.rpc("accoda_annullo", { p_order: orderId });
+  if (error) throw error;
+  return data;
+}
+
+/** Chiede la chiusura fiscale giornaliera (Z) al registratore. */
+export async function chiediChiusura(dispositivoId) {
+  const { data, error } = await supabase.rpc("chiedi_chiusura", { p_dispositivo: dispositivoId });
+  if (error) throw error;
+  return data;
+}
+
+/** Le comande dei conti aperti che non sono uscite (04/11/2026): per la Sala, frasi fisse. */
+export async function avvisiStampa() {
+  const { data, error } = await supabase.rpc("avvisi_stampa");
+  // Un database che non ha ancora la funzione (il sito uscito prima della
+  // migrazione) non ha niente da dire: nessun avviso, non un errore fisso.
+  if (error?.code === "PGRST202") return [];
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Gli apparecchi in allarme e il ponte spento (04/11/2026): la striscia in cima al gestionale. */
+export async function allarmiApparecchi() {
+  const { data, error } = await supabase.rpc("allarmi_apparecchi");
+  // Un database che non ha ancora la funzione non ha allarmi da dire.
+  if (error?.code === "PGRST202") return { allarmi: [] };
+  if (error) throw error;
+  return data ?? { allarmi: [] };
 }

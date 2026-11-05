@@ -62,15 +62,22 @@ export function AvvisiDellaStampante({ stampante, pontePronto, codaNonLetta, err
  */
 export function InCoda({ come, pontePronto, occupato, onManda, onUscito, onStampaQui }) {
   const seNonCe = onStampaQui ? "«Ristampa» o «Stampa da qui»" : "«Ristampa»";
+  // 🔴 In coda CON un errore (04/11): la stampante non l'ha ricevuto e il
+  //    ponte lo riprova da solo. Non serve nessun tasto.
+  const riprova = come.stato === "in_coda" && Boolean(come.errore);
   const frase = {
-    in_coda: pontePronto ? "In coda: esce fra poco dalla stampante." : "In coda: aspetta il ponte, che è spento.",
+    in_coda: riprova
+      ? `Non è uscito: ${come.errore} Riprovo da solo.`
+      : pontePronto
+        ? "In coda: esce fra poco dalla stampante."
+        : "In coda: aspetta il ponte, che è spento.",
     in_corso: "Sta uscendo dalla stampante…",
     stampato: "Uscito dalla stampante.",
     fallito: `Non è uscito${come.errore ? `: ${come.errore}` : "."}`,
     incerto: "Forse è uscito, forse no.",
     fuori: "Non è nella coda della stampante.",
   }[come.stato];
-  const allarme = ["fallito", "incerto", "fuori"].includes(come.stato);
+  const allarme = ["fallito", "incerto", "fuori"].includes(come.stato) || riprova;
   return (
     <div className="mt-1.5 space-y-1.5 print:hidden">
       {/* L'annuncio forte solo quando il foglio non è uscito o non si sa:

@@ -1,0 +1,183 @@
+import { mkdtempSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { eseguiLavoro } from "../../ponte/esegui.mjs";
+import { controlloApparecchi, unGiro } from "../../ponte/ponte.mjs";
+import { postHttp, scambioTcp } from "../../ponte/rete.mjs";
+import { avviaSimulatore } from "../../ponte/simulatore.mjs";
+
+// LA COMANDA CHE LA STAMPANTE NON HA RICEVUTO ESCE ALLA RIACCENSIONE
+// (04/11/2026): stampante spenta → «riprova»; riaccesa → esce, una volta.
+// Un incerto e il fiscale non si riprovano mai.
+
+const PORTA_S = 19700 + (process.pid % 140) * 2;
+const PORTA_R = PORTA_S + 1;
+const reteVeloce = {
+  scambioTcp: (i, p, d, o) => scambioTcp(i, p, d, { ...o, attesaConnessione: 800, attesaRisposta: 600 }),
+  postHttp: (o) => postHttp({ ...o, attesaConnessione: 800, attesaRisposta: 600 }),
+};
+const esegui = (l, o) => eseguiLavoro(l, { ...o, simulatore: true, rete: reteVeloce });
+
+const COMANDA = {
+  reparto: "cucina",
+  tavolo: "T3",
+  ora: "12:27",
+  aggiunta: false,
+  nota_tavolo: null,
+  turni: [{ turno: 1, righe: [{ quantita: 1, nome: "Tagliatelle", senza: [], frasi: [], nota: null }] }],
+};
+const lavoro = (tipo, dispositivoTipo, porta, contenuto = COMANDA) => ({
+  id: `${tipo}-1`,
+  tipo,
+  contenuto,
+  dispositivo: { nome: "finta", tipo: dispositivoTipo, protocollo: "simulatore", indirizzo: "127.0.0.1", porta },
+});
+
+async function conModo(modo, prova) {
+  const s = await avviaSimulatore({
+    modo,
+    cartella: mkdtempSync(path.join(os.tmpdir(), "b58-riprova-")),
+    portaStampante: PORTA_S,
+    portaRegistratore: PORTA_R,
+    silenzioso: true,
+  });
+  try {
+    return await prova(s);
+  } finally {
+    await s.chiudi();
+  }
+}
+
+async function aspettaFogli(s, quanti) {
+  for (let i = 0; i < 40 && s.fogli.length < quanti; i++) await new Promise((ok) => setTimeout(ok, 50));
+}
+
+describe("la comanda che la stampante non ha ricevuto", () => {
+  it("🔴 spenta → «riprova»; riaccesa → esce, e un foglio solo", async () => {
+    const scritti = [];
+    const coda = [lavoro("comanda", "stampante_comande", PORTA_S)];
+    const g = {
+      // Il gestionale finto rimette in coda quello che torna «riprova».
+      prendiLavori: async () => coda.splice(0),
+      esito: async (id, e) => {
+        scritti.push(e.stato);
+        if (e.stato === "riprova") coda.push(lavoro("comanda", "stampante_comande", PORTA_S));
+      },
+    };
+    // Stampante spenta: niente risponde sulla porta.
+    await unGiro(g, { simulatore: true, esegui });
+    expect(scritti).toEqual(["riprova"]);
+    // La riaccendono: al giro dopo esce.
+    await conModo("normale", async (s) => {
+      await unGiro(g, { simulatore: true, esegui });
+      await aspettaFogli(s, 1);
+      await unGiro(g, { simulatore: true, esegui });
+      expect(scritti).toEqual(["riprova", "stampato"]);
+      expect(s.fogli).toHaveLength(1);
+    });
+  });
+
+  it("carta finita o coperchio aperto: la stampante ha detto «non sono pronta», si riprova", async () => {
+    await conModo("carta_finita", async () => {
+      expect((await esegui(lavoro("comanda", "stampante_comande", PORTA_S))).riprova).toBe(true);
+    });
+  });
+
+  it("se il gestionale non conosce «riprova», l'esito è quello di sempre: fallito", async () => {
+    const scritti = [];
+    const g = {
+      prendiLavori: async () => (scritti.length ? [] : [lavoro("comanda", "stampante_comande", PORTA_S)]),
+      esito: async (id, e) => {
+        scritti.push(e.stato);
+        if (e.stato === "riprova") throw new Error("L'esito di un lavoro è stampato, fallito o incerto.");
+      },
+    };
+    await unGiro(g, { simulatore: true, esegui });
+    expect(scritti).toEqual(["riprova", "fallito"]);
+  });
+
+  it("🔴 una prova di stampa, uno scontrino, un annullo, una chiusura: mai «riprova»", async () => {
+    for (const l of [
+      lavoro("prova", "stampante_comande", PORTA_S, { titolo: "PROVA", righe: ["x"] }),
+      lavoro("scontrino", "registratore_fiscale", PORTA_R, {
+        righe: [{ descrizione: "a", quantita: 1, prezzo: 1 }],
+        pagamenti: [{ mezzo: "contante", importo: 1 }],
+      }),
+      lavoro("chiusura", "registratore_fiscale", PORTA_R, {}),
+    ]) {
+      const e = await esegui(l);
+      expect(e.stato, l.tipo).toBe("fallito");
+      expect(e.riprova, l.tipo).toBeUndefined();
+    }
+  });
+
+  it("🔴 il foglio è partito e la risposta no: INCERTO, mai «riprova»", async () => {
+    const { ErroreDiRete } = await import("../../ponte/rete.mjs");
+    let chiamata = 0;
+    const rete = {
+      postHttp,
+      // La prima chiamata è la domanda di stato (pronta), la seconda il foglio.
+      scambioTcp: async () => {
+        chiamata += 1;
+        if (chiamata === 1) return Buffer.from([0x12, 0x12]);
+        throw new ErroreDiRete("Mandato, ma la stampante non ha preso tutto in tempo.", { inviato: true, codice: "risposta_a_meta" });
+      },
+    };
+    const e = await eseguiLavoro(lavoro("comanda", "stampante_comande", PORTA_S), { simulatore: true, rete });
+    expect(e.stato).toBe("incerto");
+    expect(e.riprova).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------
+// Il controllo regolare degli apparecchi (04/11/2026): solo domande di
+// stato, mai un foglio; carta finita e spenta fanno l'allarme, riaccesa no.
+// ---------------------------------------------------------------------
+describe("il controllo regolare degli apparecchi", () => {
+  const apparecchi = [
+    { id: "s", nome: "cucina", tipo: "stampante_comande", protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_S },
+    { id: "r", nome: "registratore", tipo: "registratore_fiscale", protocollo: "simulatore", indirizzo: "127.0.0.1", porta: PORTA_R },
+  ];
+  const controlla = async () => {
+    const scritti = [];
+    const inAllarme = await controlloApparecchi({ statoApparecchi: async (s) => scritti.push(...s) }, apparecchi, { simulatore: true, esegui });
+    return { inAllarme, stati: Object.fromEntries(scritti.map((s) => [s.id, s.stato])) };
+  };
+
+  it("carta finita → allarme; spenta → allarme; riaccesa → a posto. E nessun foglio stampato", async () => {
+    await conModo("carta_finita", async (s) => {
+      const c = await controlla();
+      expect(c.inAllarme).toBe(true);
+      expect(c.stati.s).toBe("carta_finita");
+      expect(s.fogli).toHaveLength(0);
+    });
+    const spenti = await controlla();
+    expect(spenti).toEqual({ inAllarme: true, stati: { s: "non_risponde", r: "non_risponde" } });
+    await conModo("normale", async (s) => {
+      const c = await controlla();
+      expect(c).toEqual({ inAllarme: false, stati: { s: "pronto", r: "pronto" } });
+      await new Promise((ok) => setTimeout(ok, 200));
+      expect(s.fogli).toHaveLength(0);
+    });
+  });
+
+  it("un apparecchio che fa inceppare il ponte o non finisce in tempo è in allarme, e gli altri si scrivono lo stesso", async () => {
+    const scritti = [];
+    const esegueStrano = async (l) => {
+      if (l.dispositivo.id === "s") throw new Error("guasto del ponte");
+      if (l.dispositivo.id === "r") return new Promise(() => {});
+      return { stato: "stampato", stato_dispositivo: "pronto", errore_testo: null };
+    };
+    const tre = [...apparecchi, { ...apparecchi[0], id: "b" }];
+    const inAllarme = await controlloApparecchi({ statoApparecchi: async (x) => scritti.push(...x) }, tre, { simulatore: true, esegui: esegueStrano, tettoMs: 200 });
+    expect(inAllarme).toBe(true);
+    expect(Object.fromEntries(scritti.map((x) => [x.id, x.stato]))).toEqual({ s: "non_risponde", r: "non_risponde", b: "pronto" });
+  });
+
+  it("senza apparecchi accesi non chiama il gestionale", async () => {
+    let chiamato = false;
+    expect(await controlloApparecchi({ statoApparecchi: async () => (chiamato = true) }, [], { simulatore: true, esegui })).toBe(false);
+    expect(chiamato).toBe(false);
+  });
+});
