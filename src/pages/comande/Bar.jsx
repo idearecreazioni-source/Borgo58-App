@@ -14,6 +14,7 @@ import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
 import Didascalia from "../../components/Didascalia";
 import Scorciatoia from "../../components/Scorciatoia";
+import { ogniTantoSeVisibile } from "../../lib/ogniTanto";
 import { mandaAllaStampante, statoStampa } from "../../lib/api/stampanti";
 import { lavoroDelFoglio } from "../../lib/calcoli/fogliInCoda";
 import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
@@ -101,8 +102,8 @@ export default function Bar() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
-    return () => clearInterval(interval);
+    // ⚠️ Solo mentre la pagina si vede, e subito al ritorno (27/10/2026).
+    return ogniTantoSeVisibile(load, conStampante ? POLL_CON_STAMPANTE_MS : POLL_MS);
   }, [conStampante]);
 
   // «Riprova», «Ristampa», «Mandalo alla stampante»: il ticket di nuovo in

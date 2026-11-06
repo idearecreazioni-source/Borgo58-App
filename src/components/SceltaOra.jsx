@@ -241,7 +241,7 @@ export default function SceltaOra({
                 //    riquadro a meta' senza guardare la parola.
                 className={`tocco-bottone testo-sala flex-auto whitespace-nowrap rounded-lg border px-2 ${
                   fascia === f.id
-                    ? "border-b58-terracotta bg-b58-azione text-white"
+                    ? "border-b58-azione bg-b58-azione text-white"
                     : "border-b58-sand bg-b58-campo text-b58-charcoal-soft"
                 }`}
               >

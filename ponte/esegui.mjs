@@ -26,21 +26,41 @@ export function linguaDi(d) {
   return null;
 }
 
-const esito = (stato, { codice = null, testo = null, statoApparecchio = "sconosciuto", dettaglio = null } = {}) => ({
+// `nonPartito`: l'apparecchio non ha ricevuto niente (non ha aperto la
+// connessione, o ha detto di non essere pronto prima che partisse il
+// foglio). È l'unico caso in cui una comanda si può riprovare da sola.
+const esito = (stato, { codice = null, testo = null, statoApparecchio = "sconosciuto", dettaglio = null, nonPartito = false } = {}) => ({
   stato,
   errore_codice: stato === "stampato" ? null : codice ?? "sconosciuto",
   errore_testo: testo,
   stato_dispositivo: statoApparecchio,
   esito: dettaglio,
+  ...(nonPartito ? { nonPartito: true } : {}),
 });
 
-const dallErrore = (e, { puoEssereIncerto }) =>
+// 🔴 COMANDE E BIGLIETTI CHE RIPROVANO DA SOLI (04/11/2026, chiesto da
+//    Alessio dopo una comanda persa con la stampante spenta): solo se NON
+//    È PARTITO NIENTE, il ponte dice «riprova» e il gestionale la rimette
+//    in coda; esce alla riaccensione, una volta sola. Un incerto non si
+//    riprova mai, e il fiscale nemmeno con «non è partito niente».
+export const SI_RIPROVANO = ["comanda", "chiamata"];
+
+// I lavori fiscali: lo scontrino, il suo annullo, la chiusura giornaliera.
+export const FISCALI = ["scontrino", "annullo", "chiusura"];
+export const ANNULLO_SOSPESO = true;
+
+const dallErrore = (e, { puoEssereIncerto, scontrino = false }) =>
   // Un «no» esplicito dell'apparecchio (HTTP 4xx) è un rifiuto, non un dubbio.
   e.codice === "rifiutato"
     ? esito("fallito", { codice: "rifiutato", testo: e.message, statoApparecchio: "errore" })
     : esito(e.inviato && puoEssereIncerto ? "incerto" : "fallito", {
+    nonPartito: !e.inviato,
     codice: e.codice ?? "sconosciuto",
-    testo: e.inviato && puoEssereIncerto ? `${e.message} Forse il foglio è uscito, forse no: guarda la stampante.` : e.message,
+    testo: e.inviato && puoEssereIncerto
+      ? scontrino
+        ? `${e.message} Forse il registratore l'ha fatto, forse no: guardalo prima di rifarlo.`
+        : `${e.message} Forse il foglio è uscito, forse no: guarda la stampante.`
+      : e.message,
     statoApparecchio: e.inviato && puoEssereIncerto ? "errore" : "non_risponde",
   });
 
@@ -53,14 +73,15 @@ async function inEscpos(lavoro, d, rete) {
     stato = escpos.leggiStato(risposta);
   } catch (e) {
     // ⚠️ Qui non è ancora partito nessun foglio: è fallito, mai incerto.
-    return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "risposta_a_meta", testo: e.message, statoApparecchio: "non_risponde" });
+    return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "risposta_a_meta", testo: e.message, statoApparecchio: "non_risponde", nonPartito: true });
   }
   const dettaglio = { lingua: "escpos", byte_di_stato: stato.byte };
   if (lavoro.tipo === "stato") {
     return esito("stampato", { statoApparecchio: stato.stato, testo: stato.testo, dettaglio });
   }
   if (stato.stato !== "pronto") {
-    return esito("fallito", { codice: stato.stato === "errore" ? "sconosciuto" : stato.stato, testo: stato.testo, statoApparecchio: stato.stato, dettaglio });
+    // Nemmeno qui è partito il foglio: la stampante ha detto di non essere pronta.
+    return esito("fallito", { codice: stato.stato === "errore" ? "sconosciuto" : stato.stato, testo: stato.testo, statoApparecchio: stato.stato, dettaglio, nonPartito: true });
   }
   try {
     const foglio = lavoro.tipo === "prova" ? escpos.foglioDiProva(lavoro.contenuto) : escpos.foglioComanda(lavoro.contenuto);
@@ -73,32 +94,101 @@ async function inEscpos(lavoro, d, rete) {
 
 async function inXml(lavoro, d, rete, modulo, lingua) {
   const stampa = lavoro.tipo !== "stato";
-  const corpo = !stampa
-    ? modulo.DOMANDA_STATO
-    : lavoro.tipo === "prova"
-      ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
-      : modulo.foglioComanda(lavoro.contenuto);
+  // `scontrino` qui vuol dire «documento fiscale»: scontrino, annullo o
+  // chiusura giornaliera seguono tutti le regole più strette.
+  const scontrino = FISCALI.includes(lavoro.tipo);
+  const chiusura = lavoro.tipo === "chiusura";
+  let corpo;
+  try {
+    corpo = !stampa
+      ? modulo.DOMANDA_STATO
+      : lavoro.tipo === "scontrino"
+        ? modulo.scontrinoFiscale(lavoro.contenuto)
+        : lavoro.tipo === "annullo"
+          ? modulo.annulloFiscale(lavoro.contenuto)
+          : chiusura
+            ? modulo.CHIUSURA_GIORNALIERA
+            : lavoro.tipo === "prova"
+              ? (lingua === "fpmate" ? modulo.documentoNonFiscale(lavoro.contenuto) : modulo.foglioDiProva(lavoro.contenuto))
+              : modulo.foglioComanda(lavoro.contenuto);
+  } catch (e) {
+    // ⚠️ Il documento non si è potuto comporre: non è partito niente.
+    return esito("fallito", { codice: "rifiutato", testo: `Il ponte non ha potuto comporre il documento: ${e.message}`, statoApparecchio: "sconosciuto" });
+  }
+  // 🔴 L'ANNULLO SOLO A UN REGISTRATORE IN MODALITÀ RT (collaudo del 04/11):
+  //    prima una domanda di stato RT, che non stampa niente. Se non risponde
+  //    come un RT, non parte niente di fiscale.
+  if (lavoro.tipo === "annullo") {
+    const percorsoRt = { protocollo: [443, 8043].includes(Number(d.porta)) ? "https:" : "http:", indirizzo: d.indirizzo, porta: d.porta, percorso: modulo.PERCORSO };
+    let rt;
+    try {
+      rt = await rete.postHttp({ ...percorsoRt, corpo: modulo.DOMANDA_STATO_RT });
+    } catch (e) {
+      return esito("fallito", { codice: e.codice === "non_risponde" ? "non_risponde" : "rifiutato", testo: `Prima dell'annullo non ho potuto chiedere al registratore se è in modalità RT: ${e.message}`, statoApparecchio: e.codice === "non_risponde" ? "non_risponde" : "errore" });
+    }
+    if (!modulo.eUnRt(rt)) {
+      return esito("fallito", {
+        codice: "rifiutato",
+        testo: "Il registratore non risponde come un RT: l'annullo automatico c'è solo in modalità RT. Fallo a mano dal registratore.",
+        statoApparecchio: "pronto",
+        dettaglio: { lingua, stato_rt: String(rt ?? "").slice(0, 1500) },
+      });
+    }
+  }
   let testo;
   try {
     testo = await rete.postHttp({
       protocollo: [443, 8043].includes(Number(d.porta)) ? "https:" : "http:",
       indirizzo: d.indirizzo,
       porta: d.porta,
-      percorso: modulo.PERCORSO,
+      // ⚠️ La chiusura giornaliera trasmette all'Agenzia e ci mette di più:
+      //    indirizzo e attesa più lunghi, perché un «fatto» in ritardo non
+      //    diventi un dubbio.
+      percorso: chiusura ? modulo.PERCORSO_CHIUSURA : modulo.PERCORSO,
+      ...(chiusura ? { attesaRisposta: modulo.ATTESA_CHIUSURA_MS } : {}),
       corpo,
     });
   } catch (e) {
-    return dallErrore(e, { puoEssereIncerto: stampa });
+    return dallErrore(e, { puoEssereIncerto: stampa, scontrino });
   }
   const r = modulo.leggiRisposta(testo);
   const dettaglio = { lingua, risposta: r.grezzo };
+  // Lo scontrino emesso lascia numero, data, ora e chiusura nell'esito:
+  // è quello che il conto mostra.
+  if (r.riuscito && lavoro.tipo === "scontrino") dettaglio.scontrino = modulo.datiScontrino(testo);
+  if (r.riuscito && lavoro.tipo === "annullo") {
+    dettaglio.annullo = modulo.datiScontrino(testo);
+    // 🔴 Un «sì» senza il numero del documento di annullo non dice che lo
+    //    scontrino è annullato: se il registratore non l'ha trovato nel suo
+    //    giornale (§5.6.2) il documento di annullo può restare APERTO.
+    //    Incerto, e si guarda il display (revisione del codice, 04/11).
+    if (!dettaglio.annullo.numero || !dettaglio.annullo.data) {
+      return esito("incerto", {
+        codice: "risposta_a_meta",
+        testo: "Il registratore ha accettato l'annullo ma non ha dato il numero del documento: guarda il display, potrebbe avere un documento di annullo aperto.",
+        statoApparecchio: "errore",
+        dettaglio,
+      });
+    }
+  }
+  if (r.riuscito && chiusura) dettaglio.chiusura = modulo.datiChiusura(testo);
   if (r.riuscito) return esito("stampato", { statoApparecchio: "pronto", dettaglio });
   // ⚠️ Una risposta che non è una risposta di stampa (una pagina qualunque,
   //    un apparecchio sbagliato), o un «tempo scaduto» dell'apparecchio,
   //    non dicono che il foglio non è uscito: per una prova restano un
   //    dubbio. Il registratore, se si è fermato a metà di un documento non
   //    fiscale, può restare con il documento aperto: si guarda il display.
-  const nonCapita = !/<response\b/i.test(testo ?? "") || /TIMEOUT/i.test(r.grezzo.match(/code="([^"]*)"/)?.[1] ?? "");
+  const codiceGrezzo = r.grezzo.match(/<response\b[^>]*\bcode="([^"]*)"/i)?.[1] ?? "";
+  // 🔴 PER UNO SCONTRINO, «NON È USCITO» SOLO CON UNA RISPOSTA INTERA CHE
+  //    DICE NO PER UN MOTIVO CHE FERMA LA STAMPA (carta, coperchio, spento)
+  //    — revisione del codice, 04/11. Una risposta tagliata (`<response
+  //    suc` senza la fine) o un codice che non conosciamo restano un dubbio:
+  //    confonderli con un «no» vorrebbe dire uno scontrino rifatto due volte.
+  const noSicuro =
+    /<\/response>/i.test(testo ?? "") &&
+    /<response\b[^>]*\bsuccess="false"/i.test(testo ?? "") &&
+    /PAPER|REC_EMPTY|RECEIPT_END|COVER|OFFLINE/i.test(codiceGrezzo);
+  const nonCapita = !/<response\b/i.test(testo ?? "") || /TIMEOUT/i.test(codiceGrezzo) || (scontrino && !noSicuro);
   if (nonCapita && stampa) {
     return esito("incerto", {
       codice: "risposta_a_meta",
@@ -107,29 +197,49 @@ async function inXml(lavoro, d, rete, modulo, lingua) {
       dettaglio,
     });
   }
-  return esito("fallito", { codice: r.codice, testo: r.testo, statoApparecchio: r.stato, dettaglio });
+  // ⚠️ Un «no» esplicito del registratore su uno scontrino: non riprova
+  //    nessuno, e prima di rifarlo si guarda il display (un documento
+  //    fiscale fermato a metà può restare aperto).
+  const testoNo = scontrino ? `${r.testo} Prima di rifarlo guarda il display del registratore.` : r.testo;
+  return esito("fallito", { codice: r.codice, testo: testoNo, statoApparecchio: r.stato, dettaglio });
 }
 
 /**
  * @param {object} lavoro — come lo restituisce `ponte_prendi_lavori`
  * @param {{simulatore?: boolean, rete?: {scambioTcp: Function, postHttp: Function}}} opzioni
  */
-export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambioTcp, postHttp } } = {}) {
+export async function eseguiLavoro(lavoro, { simulatore = false, rete = { scambioTcp, postHttp }, annulloSospeso = ANNULLO_SOSPESO } = {}) {
   const d = lavoro?.dispositivo ?? {};
   const no = perchéNonSiChiama(d, { simulatore });
   if (no) return esito("fallito", { codice: "rifiutato", testo: no });
-  if (!["prova", "stato", "comanda", "chiamata"].includes(lavoro.tipo)) {
+  if (!["prova", "stato", "comanda", "chiamata", ...FISCALI].includes(lavoro.tipo)) {
     return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa fare lavori «${lavoro.tipo}».` });
   }
+  // 🔴 L'ANNULLO È SOSPESO (04/11/2026, collaudo): sul registratore vero il
+  //    «VOID …» è stato stampato come una riga di messaggio e le righe dopo
+  //    sono diventate una VENDITA NUOVA. Finché la correzione non è provata
+  //    il ponte non manda niente: il lavoro è fallito, e l'annullo si fa a
+  //    mano dal registratore.
+  if (lavoro.tipo === "annullo" && annulloSospeso) {
+    return esito("fallito", { codice: "rifiutato", testo: "L'annullo dal gestionale è sospeso: fallo a mano dal registratore." });
+  }
   const lingua = linguaDi(d);
+  // 🔴 Scontrino, annullo e chiusura vanno solo al registratore.
+  if (FISCALI.includes(lavoro.tipo) && lingua !== "fpmate") {
+    return esito("fallito", { codice: "rifiutato", testo: "Un documento fiscale si fa solo sul registratore." });
+  }
   // 🔴 Una comanda va solo a una stampante delle comande: il registratore
   //    non stampa comande (e sul registratore un foglio in più è carta
   //    fiscale sprecata, o peggio).
   if (["comanda", "chiamata"].includes(lavoro.tipo) && lingua === "fpmate") {
     return esito("fallito", { codice: "rifiutato", testo: "Una comanda non si stampa sul registratore: scegli una stampante delle comande." });
   }
-  if (lingua === "escpos") return inEscpos(lavoro, d, rete);
-  if (lingua === "fpmate") return inXml(lavoro, d, rete, fpmate, "fpmate");
-  if (lingua === "epos") return inXml(lavoro, d, rete, epos, "epos");
-  return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa parlare «${d.protocollo}».` });
+  let r;
+  if (lingua === "escpos") r = await inEscpos(lavoro, d, rete);
+  else if (lingua === "fpmate") r = await inXml(lavoro, d, rete, fpmate, "fpmate");
+  else if (lingua === "epos") r = await inXml(lavoro, d, rete, epos, "epos");
+  else return esito("fallito", { codice: "rifiutato", testo: `Questo ponte non sa parlare «${d.protocollo}».` });
+  // Solo una comanda o un biglietto che l'apparecchio non ha ricevuto.
+  const { nonPartito, ...resto } = r;
+  return r.stato === "fallito" && nonPartito && SI_RIPROVANO.includes(lavoro.tipo) ? { ...resto, riprova: true } : resto;
 }

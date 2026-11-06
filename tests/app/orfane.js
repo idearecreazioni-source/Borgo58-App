@@ -176,6 +176,11 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261028000005",
     perche: "chiamata dal ponte del mini-PC: prende i lavori di stampa in coda",
   },
+  // La quarta porta (04/11/2026): il controllo regolare degli apparecchi.
+  ponte_stato_apparecchi: {
+    versione: "20261104000005",
+    perche: "chiamata dal ponte del mini-PC: scrive com'è andato il controllo regolare delle stampanti",
+  },
 };
 
 /**

@@ -524,6 +524,9 @@ export default function AgendaList() {
           file di pulsanti uno sotto l'altro si confondono. «Mese» è la vista
           che fino a oggi si chiamava «Calendario», identica. È una scelta
           dichiarata nel riepilogo, e cambiarla è questa riga. */}
+      {/* ⚠️ La vista scelta ha il bordo del suo colore (05/11/2026, segnalazione
+          di Alessio: «attorno a "lista" è rimasto un bordo rosso»): era
+          il terracotta di prima del restyling, rimasto sul pulsante verde. */}
       <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Come vedere l'Agenda">
         {[
           { value: "lista", label: "Lista" },
@@ -537,7 +540,7 @@ export default function AgendaList() {
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
-                ? "bg-b58-azione text-b58-sul-colore border-b58-terracotta"
+                ? "bg-b58-azione text-b58-sul-colore border-b58-azione"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >

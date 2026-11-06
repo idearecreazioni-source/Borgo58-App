@@ -179,7 +179,8 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // portiere e' la chiave del luogo (impronta, revoca in un tocco), il freno
   // e' dentro `luogo_promemoria` (30 letture all'ora per chiave), e la
   // funzione LEGGE soltanto i titoli degli impegni aperti di quel luogo.
-  it("solo 17 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SALITO DA 17 A 18 il 04/11/2026: la quarta porta del ponte, qui sotto.
+  it("solo 18 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
@@ -196,6 +197,10 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       "ponte_battito",
       "ponte_esito_lavoro",
       "ponte_prendi_lavori",
+      // ⚠️ LA QUARTA (04/11/2026, 20261104000005): il controllo regolare
+      //    delle stampanti. Stesso portiere (la chiave del ponte e il suo
+      //    freno), scrive solo lo stato degli apparecchi attivi.
+      "ponte_stato_apparecchi",
       "public_reservation_options",
       "registra_dettatura_da_chiave",
       "set_aggiornato_il",

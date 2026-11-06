@@ -84,11 +84,13 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
     //    prossimo invece di lasciarli tutti in corso.
     let orologio;
     let e;
+    // La chiusura giornaliera aspetta l'Agenzia: il suo tetto è più alto.
+    const tetto = lavoro.tipo === "chiusura" ? Math.max(limiteMs, LIMITE_DELLA_CHIUSURA_MS) : limiteMs;
     try {
       e = await Promise.race([
         esegui(lavoro, { simulatore }),
         new Promise((_, ko) => {
-          orologio = setTimeout(() => ko(new Error(`il lavoro non è finito in ${limiteMs / 1000} secondi`)), limiteMs);
+          orologio = setTimeout(() => ko(new Error(`il lavoro non è finito in ${tetto / 1000} secondi`)), tetto);
         }),
       ]);
     } catch (guasto) {
@@ -107,6 +109,21 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
     // `lavori_stampa.esito`: al collaudo si legge sul portatile, subito, ed
     // è quella che serve per correggere `protocolli/` (29/10/2026).
     if (e.esito) scrivi(`  risposta dell'apparecchio: ${perIlRegistro(JSON.stringify(e.esito)).slice(0, 2000)}`);
+    // 🔴 «Riprova» (04/11): la stampante non ha ricevuto niente, quindi il
+    //    gestionale rimette in coda la comanda. Se il gestionale non conosce
+    //    ancora «riprova» (database più vecchio del ponte) o non risponde,
+    //    si scrive l'esito di sempre, «fallito»: mai un lavoro appeso.
+    if (e.riprova) {
+      const { riprova: _riprova, ...diSempre } = e;
+      try {
+        await g.esito(lavoro.id, { ...diSempre, stato: "riprova" });
+        scrivi(`  la stampante non l'ha ricevuto: lo riprovo fra poco`);
+        continue;
+      } catch (errore) {
+        scrivi(`  «riprova» non accettato (${errore.message}): lo segno non riuscito`);
+        e = diSempre;
+      }
+    }
     try {
       await g.esito(lavoro.id, e);
     } catch (errore) {
@@ -126,9 +143,50 @@ export async function unGiro(g, { simulatore, scrivi = () => {}, esegui = esegui
 // stampa, chiusura), più corto dei cinque minuti dopo cui il gestionale
 // dichiara incerto un lavoro abbandonato.
 export const LIMITE_DI_UN_LAVORO_MS = 45000;
+// La chiusura giornaliera: più dei 50 secondi di attesa della risposta
+// (protocolli/fpmate.mjs), sempre sotto i cinque minuti.
+export const LIMITE_DELLA_CHIUSURA_MS = 70000;
 
 // Un nome con un a capo dentro non deve spezzare una riga del registro.
 const perIlRegistro = (t) => senzaControlli(t);
+
+// 🔴 IL CONTROLLO REGOLARE DEGLI APPARECCHI (04/11/2026, chiesto da
+//    Alessio): ogni due minuti, e ogni trenta secondi se uno è in allarme,
+//    il ponte chiede a ognuno COME STA. Solo la domanda di stato, la stessa
+//    del tasto «Leggi lo stato»: niente carta e niente fiscale. Gira fra un
+//    giro della coda e l'altro, mai mentre un lavoro è in corso.
+export const OGNI_QUANTO_IL_CONTROLLO = { normale: 120000, inAllarme: 30000 };
+
+/** Chiede lo stato a ogni apparecchio e lo scrive. Restituisce se qualcuno è in allarme. */
+// ⚠️ Tutti insieme e con un tetto (revisione del codice, 04/11): ogni
+//    apparecchio ha il suo indirizzo, quindi uno spento non fa aspettare
+//    gli altri, e il controllo non tiene ferma la coda più di dieci secondi.
+//    Un apparecchio che non finisce in tempo, o che fa inceppare il ponte,
+//    risulta in errore: gli altri si scrivono lo stesso.
+export const TETTO_DEL_CONTROLLO_MS = 10000;
+
+export async function controlloApparecchi(g, dispositivi, { simulatore, esegui = eseguiLavoro, tettoMs = TETTO_DEL_CONTROLLO_MS } = {}) {
+  const uno = async (d) => {
+    let orologio;
+    try {
+      const e = await Promise.race([
+        esegui({ id: null, tipo: "stato", contenuto: {}, dispositivo: d }, { simulatore }),
+        new Promise((_, ko) => {
+          orologio = setTimeout(() => ko(new Error(`non ha risposto in ${tettoMs / 1000} secondi`)), tettoMs);
+        }),
+      ]);
+      const stato = e.stato === "stampato" || e.stato_dispositivo !== "sconosciuto" ? e.stato_dispositivo : "errore";
+      return { id: d.id, stato, testo: e.errore_testo ?? null };
+    } catch (guasto) {
+      return { id: d.id, stato: "non_risponde", testo: `Controllo non riuscito: ${guasto.message}` };
+    } finally {
+      clearTimeout(orologio);
+    }
+  };
+  const stati = await Promise.all((dispositivi ?? []).map(uno));
+  if (stati.length) await g.statoApparecchi(stati);
+  return stati.some((s) => s.stato !== "pronto");
+}
 
 export async function avvia(config = leggiConfigurazione()) {
   const scrivi = registro(config.registro);
@@ -137,6 +195,9 @@ export async function avvia(config = leggiConfigurazione()) {
   let fermo = false;
   let ultimoBattito = 0;
   let ultimoErrore = "";
+  let dispositivi = [];
+  let prossimoControllo = 0;
+  let ultimoErroreControllo = "";
 
   scrivi(`ponte ${VERSIONE} acceso su ${host}${config.simulatore ? " (apparecchi finti ammessi)" : ""}`);
   const ferma = () => {
@@ -160,10 +221,26 @@ export async function avvia(config = leggiConfigurazione()) {
       if (Date.now() - ultimoBattito >= OGNI_QUANTO.battito) {
         const b = await g.battito(VERSIONE, host);
         ultimoBattito = Date.now();
+        dispositivi = b?.dispositivi ?? [];
         if (ultimoErrore) scrivi(`il gestionale risponde di nuovo; apparecchi attivi: ${b?.dispositivi?.length ?? 0}`);
         ultimoErrore = "";
       }
       await unGiro(g, { simulatore: config.simulatore, scrivi });
+      // ⚠️ Il controllo ha il suo try: se non riesce (un gestionale più
+      //    vecchio del ponte, che non ha la porta del controllo) la coda
+      //    continua al suo ritmo, e l'errore si scrive una volta sola.
+      if (Date.now() >= prossimoControllo) {
+        prossimoControllo = Date.now() + OGNI_QUANTO_IL_CONTROLLO.normale;
+        try {
+          if (await controlloApparecchi(g, dispositivi, { simulatore: config.simulatore })) {
+            prossimoControllo = Date.now() + OGNI_QUANTO_IL_CONTROLLO.inAllarme;
+          }
+          ultimoErroreControllo = "";
+        } catch (e) {
+          if (e.message !== ultimoErroreControllo) scrivi(`controllo degli apparecchi non riuscito: ${e.message}`);
+          ultimoErroreControllo = e.message;
+        }
+      }
     } catch (e) {
       // Lo stesso errore si scrive una volta sola, non ogni due secondi.
       if (e.message !== ultimoErrore) scrivi(`errore: ${e.message}`);
