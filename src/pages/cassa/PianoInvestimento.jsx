@@ -209,7 +209,7 @@ function MeseApertura({ salvato, bloccato, onCambia }) {
           id="mese-apertura"
           type="month"
           placeholder="2027-04"
-          className={inputClass}
+          className={`${inputClass} campo-mese`}
           value={valore}
           disabled={bloccato}
           onChange={(e) => setValore(e.target.value)}
