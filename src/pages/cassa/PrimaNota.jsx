@@ -778,7 +778,7 @@ export default function PrimaNota() {
                     non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
                     <br />
                     Si mette e si toglie quando vuoi, anche dopo, da questa stessa pagina.
-                    Dopo l'apertura di marzo 2027 basta smettere di usarla.
+                    Serve anche dopo l'apertura, per le rate del piano dell'investimento.
                   </Didascalia>
                 </label>
               )}

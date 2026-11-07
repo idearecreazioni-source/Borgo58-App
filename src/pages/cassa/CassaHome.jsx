@@ -522,9 +522,9 @@ export default function CassaHome() {
                 ⚠️ Sta QUI, dentro «Cassa, Banca e Prima Nota», e non fra i
                 moduli principali: legge la Prima nota e basta, e un modulo a
                 sé farebbe credere che ci sia un secondo archivio delle
-                spese. ⚠️ E serve fino a marzo 2027: una voce nel menu
-                principale sarebbe una cosa permanente per una domanda che
-                scade. */}
+                spese. ⚠️ E resta una scorciatoia anche col piano
+                dell'investimento (07/11), che ci sta dentro e serve fino a
+                ottobre 2027. */}
             <Scorciatoia to="/cassa/costo-progetto">
               Quanto e' costato il progetto
             </Scorciatoia>

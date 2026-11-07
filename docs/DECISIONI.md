@@ -970,6 +970,28 @@ quali soldi.
 * 🔴 31/08 — **SERVE FINO A MARZO 2027 E POI DECADE**: non si costruisce
 niente di permanente attorno — nessun lavoro pianificato, nessuna scadenza,
 nessuna tabella nuova. Dopo l'apertura basta smettere di usarla.
+  ⚠️ **SUPERATA IN PARTE IL 07/11/2026** (vedi la voce del 07/11 qui sotto):
+  lo SPESO resta questa etichetta e non si copia da nessuna parte, ma il
+  PREVISTO ha ora le sue tabelle (`piano_*`), e serve anche dopo l'apertura,
+  fino a ottobre 2027.
+* 🔴 07/11/2026 — **IL PIANO DELL'INVESTIMENTO: il previsto voce per voce,
+  accanto allo speso.** Richiesta di Alessio, con 7 scelte approvate il 07/11:
+  1. l'acconto è quello che si paga prima di aprire;
+  2. il mese 1 è il mese dell'apertura (aprile 2027), e le rate si contano da
+     lì, così se l'apertura slitta si cambia una data sola;
+  3. l'IVA si sceglie voce per voce (affitto, bolli, assicurazione: 0);
+  4. l'affitto è nel gruppo E «avvio», non negli arredi;
+  5. il foglio del 21/05 entra come punto di partenza su work, dopo che
+     Alessio ha visto l'elenco corretto;
+  6. le spese vere si collegano **a mano** alla voce, mai indovinate da
+     parole, date o importi;
+  7. una voce con le rate che non tornano (✗) si salva lo stesso, perché è
+     una simulazione.
+  🔴 **Nessuna seconda verità sullo speso**: il piano legge le spese segnate
+  «investimento» tramite `piano_collegamenti`, e una spesa collegata non può
+  perdere l'etichetta di nascosto (trigger, migrazione `20261107000001`).
+  ⚠️ **Le rate del piano non vanno in `scadenze_previste`**: le conterebbe due
+  volte nella previsione di cassa.
 
 * ✅ **COSTRUITA il 21-22/09/2026 — migrazione `20260921000003`, richiesta C11, proposta #121 unita in `slave`.** ⚠️ **Applicata al solo progetto di prova**: sul gestionale vero non c'è ancora niente di tutto questo, e dove sia arrivata quella migrazione lo dice `npm run migra`, non questa riga. ⚠️ **E nessuna mano l'ha provata**: quello che è verificato lo è dalla verifica della migrazione e dalle prove automatiche — nessun movimento, nessuna nota e nessuna fattura sono stati creati per guardare.
   `cash_movements.e_investimento`, booleano che nasce spento su ogni riga.
