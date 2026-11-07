@@ -38,6 +38,7 @@ import {
 } from "../../lib/calcoli/tasca";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 import Didascalia from "../../components/Didascalia";
+import { ScegliVoce, SpuntaConVoce } from "../../components/SceltaVoce";
 import { totaliDelPeriodo } from "../../lib/calcoli/totaliPrimaNota";
 import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investimento";
 
@@ -274,11 +275,19 @@ export default function PrimaNota() {
   //    produrrebbe un rifiuto per una scelta fatta PRIMA di cambiare verso —
   //    cioe' un rifiuto che non c'entra col gesto. Stessa cura gia' in piedi
   //    per il verso e il mezzo quando si passa alla tasca.
-  const setDirection = (direction) =>
+  // La voce del piano per un movimento nuovo segnato «investimento» (parte 6, 07/11).
+  const [voceNuova, setVoceNuova] = useState({ voceId: "", rataId: "" });
+  const setDirection = (direction) => {
     setForm((f) => ({ ...f, direction, causale_id: "", is_owner_injection: false, e_investimento: false }));
+    setVoceNuova({ voceId: "", rataId: "" });
+  };
 
   const handleAdd = async () => {
     if (!form.amount || Number(form.amount) <= 0) return;
+    if (offreInvestimento && form.e_investimento && !voceNuova.voceId) {
+      setError("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -308,12 +317,25 @@ export default function PrimaNota() {
       //    (20261026000002), non con una seconda chiamata dopo: un errore
       //    fra le due lasciava il movimento scritto e la cosa ancora da
       //    fare, e la volta dopo lo stesso movimento entrava due volte.
-      await createCashMovement(movimento, { azioneDettataId: chiudendo });
+      await createCashMovement(movimento, { azioneDettataId: chiudendo, ...(movimento.e_investimento ? { voce: voceNuova } : {}) });
       if (chiudendo) venuto.segnaChiusa();
       setForm({ ...emptyFormOggi(), movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
+      setVoceNuova({ voceId: "", rataId: "" });
       await reload();
     } catch (e) {
+      // Il movimento è scritto ma senza la spunta: il modulo si svuota (se no
+      // lo si registrerebbe due volte) e l'errore dice di rimetterla dalla riga.
       setError(e.message);
+      if (e.movimentoScritto) {
+        if (venuto.idDaChiudere) venuto.segnaChiusa();
+        setForm({ ...emptyFormOggi(), movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
+        setVoceNuova({ voceId: "", rataId: "" });
+        try {
+          await reload();
+        } catch {
+          // l'errore vero è già a schermo
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -339,14 +361,14 @@ export default function PrimaNota() {
   //    ricarica completa butterebbe via quello che si sta scrivendo nel
   //    modulo sopra — la trappola del 12/08, pagata una volta.
   const [marcando, setMarcando] = useState(null);
-  const handleInvestimento = async (mov, valore) => {
+  // ⚠️ Dal 07/11 (parte 6 del piano) l'errore lo mostra la spunta stessa,
+  //    accanto alla riga: per questo qui si rilancia.
+  const handleInvestimento = async (mov, valore, voce = null) => {
     setMarcando(mov.id);
     setError("");
     try {
-      const aggiornata = await segnaInvestimento(mov.id, valore);
-      setMovements((righe) => righe.map((r) => (r.id === mov.id ? aggiornata : r)));
-    } catch (e) {
-      setError(e.message);
+      const aggiornata = await segnaInvestimento(mov.id, valore, voce);
+      setMovements((righe) => righe.map((r) => (r.id === mov.id ? { ...r, ...aggiornata } : r)));
     } finally {
       setMarcando(null);
     }
@@ -768,7 +790,10 @@ export default function PrimaNota() {
                   <input
                     type="checkbox"
                     checked={form.e_investimento}
-                    onChange={(e) => setForm((f) => ({ ...f, e_investimento: e.target.checked }))}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, e_investimento: e.target.checked }));
+                      if (!e.target.checked) setVoceNuova({ voceId: "", rataId: "" });
+                    }}
                   />
                   <span>Investimento per il progetto</span>
                   <Didascalia etichetta="Cosa vuol dire «investimento per il progetto»">
@@ -781,6 +806,11 @@ export default function PrimaNota() {
                     Serve anche dopo l'apertura, per le rate del piano dell'investimento.
                   </Didascalia>
                 </label>
+              )}
+              {offreInvestimento && form.e_investimento && (
+                <div data-prova="investimento-voce-creazione" className="w-full">
+                  <ScegliVoce valore={voceNuova} onCambia={setVoceNuova} disabilitata={saving} />
+                </div>
               )}
               <input
                 aria-label="Nota"
@@ -971,26 +1001,23 @@ export default function PrimaNota() {
                       si legge come un guasto. Dal 27/09 la ragione intera
                       sta dietro il «?», e a vista resta una frase corta. */}
                   {idoneoAInvestimento(m) ? (
-                    <label
-                      data-prova="investimento-riga"
-                      className="tocco-campo flex flex-1 items-center gap-2 testo-sala text-b58-charcoal-soft"
+                    <div data-prova="investimento-riga" className="flex flex-1 min-w-0">
+                    <SpuntaConVoce
+                      etichetta="Investimento per il progetto"
+                      segnata={Boolean(m.e_investimento)}
+                      occupata={marcando === m.id}
+                      onSegna={(voce) => handleInvestimento(m, true, voce)}
+                      onTogli={() => handleInvestimento(m, false)}
                     >
-                      <input
-                        type="checkbox"
-                        aria-label="Investimento per il progetto"
-                        checked={Boolean(m.e_investimento)}
-                        disabled={marcando === m.id}
-                        onChange={(e) => handleInvestimento(m, e.target.checked)}
-                      />
                       {/* Sul telefono la parola sola: per intero, accanto a
                           «Rimuovi» a 360 punti non ci stava e lo spingeva
                           sotto. Il nome della casella resta intero. */}
                       <span>
                         <span className="sm:hidden">Investimento</span>
                         <span className="hidden sm:inline">Investimento per il progetto</span>
-                        {marcando === m.id ? " — salvo…" : ""}
                       </span>
-                    </label>
+                    </SpuntaConVoce>
+                    </div>
                   ) : (
                     // `flex-1` SENZA `min-w-0`: la frase va a capo nel suo spazio
                     // invece di spingere «Rimuovi» sotto, e quando «Rimuovi»

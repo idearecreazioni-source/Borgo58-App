@@ -1,6 +1,17 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { SELECT_FATTURA } from "../calcoli/selectFatture";
+import { segnaConVoce, togliSpunta } from "./spuntaInvestimento";
+
+/**
+ * La spunta «investimento» su una fattura da pagare (parte 6 del piano,
+ * 07/11/2026): con la sua voce, e conta come impegnata. Quando si paga,
+ * spunta e voce passano da sole al pagamento.
+ */
+export async function segnaInvestimentoFattura(id, valore, voce = null) {
+  if (valore) await segnaConVoce("fattura", id, voce);
+  else await togliSpunta("fattura", id);
+}
 
 // L'entità viaggia insieme alla fattura, e non è un di più: il «da pagare»
 // sommava S.r.l.s. e azienda agricola in un numero solo, che non è il

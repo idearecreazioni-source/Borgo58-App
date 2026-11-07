@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { archiviaVoce, cambiaApertura, leggiPiano, salvaVoce } from "../../lib/api/pianoInvestimento";
+import { archiviaVoce, cambiaApertura, collegaSpesa, leggiPiano, leggiSpeso, salvaVoce, scollegaSpesa } from "../../lib/api/pianoInvestimento";
 import { formatEUR } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -10,13 +10,16 @@ import {
   GRUPPI,
   STATI,
   ULTIMO_MESE,
+  esitoVoce,
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
   leggiRata,
   meseDellaRata,
   nettoDi,
+  nomeDellaSpesa,
   quadra,
+  spesoDelPiano,
   totaliDelPiano,
 } from "../../lib/calcoli/pianoInvestimento";
 
@@ -28,10 +31,13 @@ import {
 //    e una voce con le rate che non tornano si salva lo stesso — il ✗ resta
 //    in vista finché non la sistemi.
 //
-// ⚠️ LO SPESO NON C'È ANCORA: arriva con la parte 3, collegando le spese
-//    segnate «investimento». Qui si vede solo il previsto, e la pagina lo
-//    dice, invece di mostrare uno speso a zero che si leggerebbe «non ho
-//    speso niente».
+// 🔴 LO SPESO (parte 5, 07/11): le spese segnate «investimento» si
+//    collegano a mano alla voce, dentro la voce aperta. Quelle non ancora
+//    collegate stanno nella riga «da assegnare». Se lo speso non si legge,
+//    o non torna col «Costo del progetto», la pagina lo dice: niente speso
+//    a zero che si leggerebbe «non ho speso niente».
+// ⚠️ IL «RISPARMIO» NON C'È ANCORA: serve sapere che le rate sono chiuse,
+//    e arriva con le rate nello scadenziario (parte 7).
 //
 // ⚠️ GLI IMPORTI SI SCRIVONO ALL'ITALIANA («16.000», «1.500,50») e li legge
 //    `leggiImporto`: un importo che non si capisce FERMA il salvataggio,
@@ -73,14 +79,16 @@ function Quadra({ conto, dataProva }) {
 }
 
 /** Il pannello per scrivere o cambiare una voce, con l'acconto e le rate. */
-function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla, onArchivia }) {
+function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla, onArchivia, blocco }) {
   const [voce, setVoce] = useState(() => ({ ...iniziale, importo_ivato: importoNelCampo(iniziale.importo_ivato) }));
   const [rate, setRate] = useState(() =>
     Object.fromEntries((rateIniziali ?? []).map((r) => [r.mese_rel, importoNelCampo(r.importo)]))
   );
   const [errore, setErrore] = useState("");
   const [salvo, setSalvo] = useState(false);
-  const occupato = useRef(false);
+  const proprio = useRef(false);
+  // Lo stesso blocco dei collegamenti della voce, quando c'è.
+  const occupato = blocco ?? proprio;
 
   const importo = leggiImporto(voce.importo_ivato);
   // Una rata è un importo o una percentuale del previsto (07/11): la
@@ -211,6 +219,197 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
   );
 }
 
+/** Lo speso di una voce e come sta rispetto al previsto, in parole. */
+function SpesoDellaVoce({ voce, conto }) {
+  // Una fattura pagata il cui pagamento non è collegato non conta: si dice.
+  const avviso = conto?.scollegate > 0 && (
+    <span data-prova="fattura-scollegata" className="block testo-sala text-b58-terracotta-dark-testo">
+      {conto.scollegate === 1 ? "Una fattura collegata è già pagata" : `${conto.scollegate} fatture collegate sono già pagate`}: collega anche il pagamento, se no non conta.
+    </span>
+  );
+  if (!conto || (conto.speso === 0 && conto.impegnato === 0)) {
+    return (
+      <>
+        <span data-prova="speso-voce" className="testo-sala text-b58-charcoal-soft">niente speso</span>
+        {avviso}
+      </>
+    );
+  }
+  const e = esitoVoce({ previsto: voce.importo_ivato, speso: conto.speso, impegnato: conto.impegnato });
+  const parole = {
+    sforato: `sforato di ${formatEUR(e.differenza)}`,
+    a_rischio: `con le fatture da pagare supera di ${formatEUR(e.differenza)}`,
+    in_linea: `restano ${formatEUR(e.differenza)}`,
+    risparmio: `risparmio di ${formatEUR(e.differenza)}`,
+  }[e.esito];
+  const colore = e.esito === "sforato" || e.esito === "a_rischio" ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal-soft";
+  return (
+    <>
+      <span data-prova="speso-voce" data-esito={e.esito} className={`testo-sala ${colore}`}>
+        spesi {formatEUR(conto.speso)}
+        {conto.impegnato > 0 && ` + ${formatEUR(conto.impegnato)} da pagare`} · {parole}
+      </span>
+      {avviso}
+    </>
+  );
+}
+
+/**
+ * Le spese vere collegate a una voce, e il modo di collegarne un'altra.
+ * 🔴 SEMPRE A MANO (scelta di Alessio del 07/11): si sceglie una spesa fra
+ *    quelle segnate «investimento» con qualcosa ancora da assegnare, e
+ *    quanta parte va su questa voce. I controlli veri li fa il database.
+ */
+function CollegamentiVoce({ voce, rate, collegamenti, spese, daAssegnare, meseApertura, onCambiato, blocco }) {
+  const [sceltaScritta, setScelta] = useState("");
+  const [importo, setImporto] = useState("");
+  const [rata, setRata] = useState("");
+  const [errore, setErrore] = useState("");
+  const [lavoro, setLavoro] = useState(false);
+  // 🔴 UN GESTO ALLA VOLTA IN TUTTA LA VOCE (revisione ecc:react-reviewer
+  //    del 07/11): il blocco è lo stesso di «Salva la voce», così un
+  //    collegamento non parte mentre la voce si salva e si chiude.
+  const occupato = blocco;
+
+  const perId = useMemo(() => new Map((spese ?? []).map((s) => [`${s.fonte}:${s.id}`, s])), [spese]);
+  const disponibili = daAssegnare ?? [];
+  const spesaScelta = disponibili.find((s) => `${s.fonte}:${s.id}` === sceltaScritta);
+  // Se la spesa scelta non c'è più (riletta, assegnata altrove), la scelta si azzera.
+  const scelta = spesaScelta ? sceltaScritta : "";
+
+  function nomeDelCollegamento(c) {
+    if (c.cash_movement_id) return nomeDellaSpesa(perId.get(`prima_nota:${c.cash_movement_id}`) ?? { fonte: "prima_nota" });
+    if (c.anticipazione_id) return nomeDellaSpesa(perId.get(`anticipazione:${c.anticipazione_id}`) ?? { fonte: "anticipazione" });
+    return "Fattura da pagare";
+  }
+
+  async function gesto(fn) {
+    if (occupato.current) return;
+    occupato.current = true;
+    setLavoro(true);
+    setErrore("");
+    try {
+      await fn();
+      // Si aspetta la rilettura: fino ad allora i pulsanti restano fermi, e
+      // nessuno tocca una riga già tolta o un resto vecchio.
+      await onCambiato();
+      return true;
+    } catch (e) {
+      setErrore(e.message);
+      return false;
+    } finally {
+      occupato.current = false;
+      setLavoro(false);
+    }
+  }
+
+  async function collega(e) {
+    e.preventDefault();
+    if (!spesaScelta) return setErrore("Scegli la spesa da collegare.");
+    const quanto = leggiImporto(importo);
+    if (quanto === null || quanto <= 0) return setErrore("Scrivi quanta parte della spesa va su questa voce (per esempio 1.500,50).");
+    if (quanto > spesaScelta.resto) {
+      return setErrore(`Di questa spesa restano da assegnare ${formatEUR(spesaScelta.resto)}: non puoi metterne ${formatEUR(quanto)}.`);
+    }
+    const fatto = await gesto(() => collegaSpesa({ voceId: voce.id, rataId: rata, spesa: spesaScelta, importo: quanto }));
+    if (fatto) {
+      setScelta("");
+      setImporto("");
+      setRata("");
+    }
+  }
+
+  const etichettaRata = (id) => {
+    const r = (rate ?? []).find((x) => x.id === id);
+    return r ? meseDellaRata(meseApertura, r.mese_rel).etichetta : null;
+  };
+
+  return (
+    <section data-prova="collegamenti" aria-label={`Spese collegate a ${voce.descrizione}`} className="mt-3 rounded-xl ring-1 ring-b58-charcoal/15 p-4 space-y-3">
+      <h3 className="font-display text-b58-charcoal">Spese collegate</h3>
+      {collegamenti.length === 0 ? (
+        <p className="testo-sala text-b58-charcoal-soft">Nessuna spesa collegata a questa voce.</p>
+      ) : (
+        <ul className="divide-y divide-b58-charcoal/10">
+          {collegamenti.map((c) => (
+            <li key={c.id} data-prova="collegamento" className="py-2 flex items-center justify-between gap-3 flex-wrap">
+              <span className="min-w-0 text-b58-charcoal">
+                {nomeDelCollegamento(c)}
+                {c.rata_id && etichettaRata(c.rata_id) && <span className="text-b58-charcoal-soft"> · rata di {etichettaRata(c.rata_id)}</span>}
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="text-b58-charcoal">{formatEUR(c.importo_attribuito)}</span>
+                {/* Togliere si disfa ricollegando: niente conferma (ConfermaDistruttiva, punto 2). */}
+                <button type="button" className={bottone} disabled={lavoro} onClick={() => gesto(() => scollegaSpesa(c.id))}>
+                  Togli<span className="sr-only"> {nomeDelCollegamento(c)}</span>
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {disponibili.length === 0 ? (
+        <p className="testo-sala text-b58-charcoal-soft">
+          Non ci sono spese segnate «investimento» ancora da assegnare. Una spesa si segna in Prima nota o negli Anticipi.
+        </p>
+      ) : (
+        <form onSubmit={collega} data-prova="collega" className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className={labelClass} htmlFor={`spesa-${voce.id}`}>Spesa da collegare</label>
+            <select
+              id={`spesa-${voce.id}`}
+              className={inputClass}
+              value={scelta}
+              aria-describedby={errore ? `errore-coll-${voce.id}` : undefined}
+              onChange={(e) => {
+                setErrore("");
+                setScelta(e.target.value);
+                const s = disponibili.find((x) => `${x.fonte}:${x.id}` === e.target.value);
+                setImporto(s ? importoNelCampo(s.resto) : "");
+              }}
+            >
+              <option value="">Scegli…</option>
+              {disponibili.map((s) => (
+                <option key={`${s.fonte}:${s.id}`} value={`${s.fonte}:${s.id}`}>
+                  {nomeDellaSpesa(s)} · da assegnare {formatEUR(s.resto)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor={`parte-${voce.id}`}>Parte su questa voce (€)</label>
+            <input
+              id={`parte-${voce.id}`}
+              inputMode="decimal"
+              className={inputClass}
+              value={importo}
+              aria-describedby={errore ? `errore-coll-${voce.id}` : undefined}
+              onChange={(e) => {
+                setErrore("");
+                setImporto(e.target.value);
+              }}
+            />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor={`rata-coll-${voce.id}`}>Quale rata paga</label>
+            <select id={`rata-coll-${voce.id}`} className={inputClass} value={rata} onChange={(e) => setRata(e.target.value)}>
+              <option value="">Nessuna in particolare</option>
+              {(rate ?? []).filter((r) => r.id).map((r) => (
+                <option key={r.id} value={r.id}>{meseDellaRata(meseApertura, r.mese_rel).etichetta} · {formatEUR(r.importo)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <button type="submit" className={bottonePrimario} disabled={lavoro}>{lavoro ? "Collego…" : "Collega la spesa"}</button>
+          </div>
+        </form>
+      )}
+      {errore && <p role="alert" id={`errore-coll-${voce.id}`} className="testo-sala text-b58-terracotta-dark-testo">{errore}</p>}
+    </section>
+  );
+}
+
 /** La data dell'apertura: si cambia con il suo pulsante, non uscendo dal campo. */
 function MeseApertura({ salvato, bloccato, onCambia }) {
   const [valore, setValore] = useState(String(salvato).slice(0, 7));
@@ -267,6 +466,52 @@ export default function PianoInvestimento() {
     };
   }, [giro]);
 
+  // Lo speso si legge a parte: se non arriva, il previsto resta in vista e
+  // la pagina dice che lo speso non è stato letto (non che è zero).
+  const [letturaSpeso, setLetturaSpeso] = useState(null);
+  const [erroreSpeso, setErroreSpeso] = useState("");
+  const [giroSpeso, setGiroSpeso] = useState(0);
+  // Chi ha chiesto una rilettura (un collegamento appena fatto) aspetta qui
+  // che finisca: vedi CollegamentiVoce.
+  const inAttesa = useRef([]);
+  // Il blocco unico della voce aperta: salvare la voce, collegare, togliere.
+  const bloccoVoce = useRef(false);
+  useEffect(() => {
+    let vivo = true;
+    setErroreSpeso("");
+    const sveglia = () => {
+      for (const r of inAttesa.current.splice(0)) r();
+    };
+    leggiSpeso()
+      .then((s) => vivo && setLetturaSpeso(s))
+      .catch((e) => {
+        if (!vivo) return;
+        setLetturaSpeso(null);
+        setErroreSpeso(e.message);
+      })
+      .finally(() => vivo && sveglia());
+    return () => {
+      vivo = false;
+    };
+  }, [giro, giroSpeso]);
+  const rileggiSpeso = () =>
+    new Promise((risolvi) => {
+      inAttesa.current.push(risolvi);
+      setGiroSpeso((g) => g + 1);
+    });
+  const conti = useMemo(() => (letturaSpeso ? spesoDelPiano(letturaSpeso) : null), [letturaSpeso]);
+  const apertePerMese = useMemo(() => {
+    if (!letturaSpeso?.rateAperte) return null;
+    const m = new Map();
+    for (const r of letturaSpeso.rateAperte) m.set(r.mese_rel, Math.round(((m.get(r.mese_rel) ?? 0) + Number(r.aperto || 0)) * 100) / 100);
+    return m;
+  }, [letturaSpeso]);
+  const collegamentiPerVoce = useMemo(() => {
+    const m = new Map();
+    for (const c of letturaSpeso?.collegamenti ?? []) m.set(c.voce_id, [...(m.get(c.voce_id) ?? []), c]);
+    return m;
+  }, [letturaSpeso]);
+
   const ratePerVoce = useMemo(() => {
     const m = new Map();
     for (const r of piano?.rate ?? []) m.set(r.voce_id, [...(m.get(r.voce_id) ?? []), r]);
@@ -274,7 +519,10 @@ export default function PianoInvestimento() {
   }, [piano]);
   const vive = useMemo(() => (piano?.voci ?? []).filter((v) => !v.archiviata_il), [piano]);
   const archiviate = useMemo(() => (piano?.voci ?? []).filter((v) => v.archiviata_il), [piano]);
-  const totali = useMemo(() => totaliDelPiano(vive), [vive]);
+  const totali = useMemo(
+    () => totaliDelPiano(vive.map((v) => ({ ...v, speso: conti?.perVoce.get(v.id)?.speso ?? 0, impegnato: conti?.perVoce.get(v.id)?.impegnato ?? 0 }))),
+    [vive, conti]
+  );
   const nonQuadrano = useMemo(() => vive.filter((v) => !quadra(v, ratePerVoce.get(v.id)).quadra), [vive, ratePerVoce]);
   const mesi = useMemo(() => (piano ? fabbisognoPerMese(piano.meseApertura, vive, piano.rate) : []), [piano, vive]);
 
@@ -320,8 +568,12 @@ export default function PianoInvestimento() {
           <br />
           <br />
           Il <strong>✓</strong> dice che l'acconto e le rate fanno il totale della voce; il
-          <strong> ✗</strong> che manca qualcosa o c'è di troppo. Lo speso vero, collegato alle spese
-          segnate «investimento», arriva in un secondo momento.
+          <strong> ✗</strong> che manca qualcosa o c'è di troppo.
+          <br />
+          <br />
+          Lo <strong>speso</strong> sono le spese segnate «investimento» che hai collegato alla voce:
+          apri la voce con «Modifica» e scegli la spesa. Quelle non ancora collegate stanno in
+          «Spese da assegnare».
         </Didascalia>
       </h1>
 
@@ -359,9 +611,50 @@ export default function PianoInvestimento() {
             />
           </div>
 
-          <p className="testo-sala text-b58-charcoal-soft">
-            Lo speso vero, voce per voce, non è ancora collegato: per ora qui c'è solo il previsto.
-          </p>
+          {erroreSpeso ? (
+            <DatoNonLetto
+              cosa="lo speso del piano"
+              nonVuolDire="Non vuol dire che non hai speso niente: vuol dire che non l'ho letto."
+              onRiprova={() => setGiroSpeso((g) => g + 1)}
+            />
+          ) : !conti ? (
+            <p role="status" className="testo-sala text-b58-charcoal-soft">Leggo lo speso…</p>
+          ) : (
+            <div data-prova="riquadro-speso" className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-b58-charcoal-soft">Speso sulle voci</p>
+                {/* Lo speso di tutte le voci, anche archiviate: la spesa c'è stata (revisione del 07/11). */}
+                <p data-prova="speso-totale" className="font-display text-2xl text-b58-charcoal">{formatEUR(conti.spesoTotale)}</p>
+                {conti.spesoTotale !== totali.totale.speso && (
+                  <p data-prova="speso-archiviate" className="testo-sala text-b58-charcoal-soft">
+                    di cui {formatEUR(Math.round((conti.spesoTotale - totali.totale.speso) * 100) / 100)} su voci archiviate
+                  </p>
+                )}
+                {totali.totale.impegnato > 0 && (
+                  <p className="testo-sala text-b58-charcoal-soft">più {formatEUR(totali.totale.impegnato)} di fatture da pagare</p>
+                )}
+              </div>
+              <div>
+                {/* Due numeri, non uno: un risparmio su una voce non nasconde lo sforamento di un'altra. */}
+                <p className="text-b58-charcoal-soft">Voci sopra il budget</p>
+                <p data-prova="sforamenti" className={`font-display text-2xl ${totali.totale.sforamenti > 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-dark-testo"}`}>
+                  {totali.totale.sforamenti > 0 ? `+ ${formatEUR(totali.totale.sforamenti)}` : "✓ nessuna"}
+                </p>
+              </div>
+              <div>
+                <p className="text-b58-charcoal-soft">Spese da assegnare</p>
+                <p data-prova="da-assegnare-totale" className={`font-display text-2xl ${conti.daAssegnare.totale > 0 ? "text-b58-terracotta-dark-testo" : "text-b58-olive-dark-testo"}`}>
+                  {conti.daAssegnare.totale > 0 ? formatEUR(conti.daAssegnare.totale) : "✓ nessuna"}
+                </p>
+              </div>
+              {!conti.controllo.torna && (
+                <p role="alert" data-prova="controllo-non-torna" className="sm:col-span-3 testo-sala text-b58-terracotta-dark-testo">
+                  Attenzione: il «Costo del progetto» dice {formatEUR(conti.controllo.costo)}, mentre speso sulle voci più spese da
+                  assegnare fa {formatEUR(conti.controllo.piano)}. Lo speso qui sotto potrebbe non essere giusto: dimmelo.
+                </p>
+              )}
+            </div>
+          )}
 
           {GRUPPI.map((g) => {
             const qui = vive.filter((v) => v.gruppo === g.codice);
@@ -390,7 +683,25 @@ export default function PianoInvestimento() {
                               await archiviaVoce(id, true);
                               setAperta(null);
                             })}
+                            blocco={bloccoVoce}
                           />
+                          {!conti && (
+                            <p role="status" className="mt-3 testo-sala text-b58-charcoal-soft">
+                              {erroreSpeso ? "Lo speso non si è letto: i collegamenti tornano quando lo rileggo (vedi sopra)." : "Leggo le spese collegate…"}
+                            </p>
+                          )}
+                          {conti && (
+                            <CollegamentiVoce
+                              voce={v}
+                              rate={rateVoce}
+                              collegamenti={collegamentiPerVoce.get(v.id) ?? []}
+                              spese={letturaSpeso.spese}
+                              daAssegnare={conti.daAssegnare.righe}
+                              meseApertura={piano.meseApertura}
+                              onCambiato={rileggiSpeso}
+                              blocco={bloccoVoce}
+                            />
+                          )}
                         </li>
                       );
                     }
@@ -401,6 +712,7 @@ export default function PianoInvestimento() {
                           <p className="testo-sala text-b58-charcoal-soft">
                             {STATO_PAROLE[v.stato]} · dilazione {DILAZIONE_PAROLE[v.dilazione].toLowerCase()} · {Number(v.aliquota_iva) === 0 ? "senza IVA" : `IVA ${Number(v.aliquota_iva)}%`} · netto {formatEUR(v.netto)}
                           </p>
+                          {conti && <SpesoDellaVoce voce={v} conto={conti.perVoce.get(v.id)} />}
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-b58-charcoal">{formatEUR(v.importo_ivato)}</span>
@@ -426,22 +738,58 @@ export default function PianoInvestimento() {
             );
           })}
 
+          {conti && conti.daAssegnare.righe.length > 0 && (
+            <section data-prova="da-assegnare" className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 sm:p-6">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+                <h2 className="font-display testo-sala-grande text-b58-charcoal">Spese da assegnare</h2>
+                <span className="testo-sala text-b58-charcoal-soft">{formatEUR(conti.daAssegnare.totale)}</span>
+              </div>
+              <p className="testo-sala text-b58-charcoal-soft mb-3">
+                Sono segnate «investimento» ma non ancora collegate a una voce, o solo in parte. Apri la voce giusta con «Modifica» e collegale lì.
+              </p>
+              <ul className="divide-y divide-b58-charcoal/10">
+                {conti.daAssegnare.righe.map((s) => (
+                  <li key={`${s.fonte}:${s.id}`} data-prova="spesa-da-assegnare" className="py-2 flex items-baseline justify-between gap-3 flex-wrap">
+                    <span className="min-w-0 text-b58-charcoal">{nomeDellaSpesa(s)}</span>
+                    <span className="text-b58-charcoal">
+                      {formatEUR(s.resto)}
+                      {Number(s.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(s.importo)}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section data-prova="scadenziario" className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 sm:p-6">
             <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Quanto paghi ogni mese</h2>
             {mesi.every((m) => m.importo === 0) ? (
               <p className="testo-sala text-b58-charcoal-soft">Nessuna rata scritta: aggiungile nelle voci.</p>
             ) : (
               <ul className="divide-y divide-b58-charcoal/10">
-                {mesi.map((m) => (
-                  <li key={m.mese_rel} data-prova="mese" className="py-2 flex items-baseline justify-between gap-3">
-                    <span className="text-b58-charcoal-soft">{m.etichetta}</span>
-                    <span className="text-b58-charcoal">{formatEUR(m.importo)}</span>
-                  </li>
-                ))}
+                {mesi.map((m) => {
+                  // Quanto resta da pagare di quel mese (parte 7): la parte che
+                  // pagamenti e fatture collegate non coprono già.
+                  const resta = apertePerMese?.get(m.mese_rel) ?? 0;
+                  return (
+                    <li key={m.mese_rel} data-prova="mese" className="py-2 flex items-baseline justify-between gap-3 flex-wrap">
+                      <span className="text-b58-charcoal-soft">{m.etichetta}</span>
+                      <span className="text-b58-charcoal text-right">
+                        {formatEUR(m.importo)}
+                        {apertePerMese && resta !== m.importo && (
+                          <span data-prova="mese-resta" className="block testo-sala text-b58-charcoal-soft">
+                            {resta > 0 ? `ancora da pagare ${formatEUR(resta)}` : "✓ tutto pagato o fatturato"}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <p className="testo-sala text-b58-charcoal-soft mt-3">
-              Sono solo le rate del piano: le fatture da pagare e le altre scadenze restano nella previsione di cassa.
+              Quello che resta da pagare entra anche nella previsione di cassa di Borgo 58, una volta sola: la parte già fatturata
+              compare lì come fattura, quella già pagata non compare più.
             </p>
           </section>
 

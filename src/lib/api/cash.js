@@ -2,6 +2,7 @@ import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
 import { leggiAPagine } from "../calcoli/investimento";
+import { segnaConVoce, togliSpunta } from "./spuntaInvestimento";
 
 // --- Causali (editabili dal titolare, §3.4) ---
 //
@@ -102,7 +103,26 @@ export async function listCashMovements({ entityId, from, to, direction } = {}) 
  * una transazione (20261026000002), e una seconda volta lo rifiuta invece
  * di scriverlo due volte. Senza, l'insert diretto di sempre.
  */
-export async function createCashMovement(payload, { azioneDettataId = null } = {}) {
+export async function createCashMovement(payload, { azioneDettataId = null, voce = null } = {}) {
+  // 🔴 UN INVESTIMENTO NASCE CON LA SUA VOCE (parte 6 del piano, 07/11):
+  //    il movimento si scrive senza spunta, poi segna_investimento mette
+  //    spunta e voce insieme. Se il secondo passo si ferma, il movimento
+  //    resta scritto senza spunta, e l'errore lo dice (`movimentoScritto`).
+  const investimento = payload?.e_investimento === true;
+  if (investimento && !voce?.voceId) throw new Error("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
+  const daScrivere = investimento ? { ...payload, e_investimento: false } : payload;
+  const scritto = await scriviMovimento(daScrivere, azioneDettataId);
+  if (!investimento) return scritto;
+  try {
+    await segnaConVoce("prima_nota", scritto.id, voce);
+  } catch (e) {
+    throw Object.assign(new Error(`Il movimento è salvato, ma senza la spunta «investimento»: ${e.message} Rimettila dalla riga.`), { movimentoScritto: scritto });
+  }
+  const { data, error } = await supabase.from("cash_movements").select(MOVEMENT_SELECT).eq("id", scritto.id).single();
+  return error ? { ...scritto, e_investimento: true } : data;
+}
+
+async function scriviMovimento(payload, azioneDettataId) {
   if (azioneDettataId) {
     const id = await eseguiOperazione("registra_movimento_cassa", {
       p_movimento: payload,
@@ -623,14 +643,16 @@ export async function setContoPredefinito(id) {
  *    frattempo — ed è la famiglia del 12/08, la schermata che ricarica e
  *    butta via quello che l'utente stava scrivendo.
  */
-export async function segnaInvestimento(id, valore) {
-  const { data, error } = await supabase
-    .from("cash_movements")
-    .update({ e_investimento: valore })
-    .eq("id", id)
-    .select(MOVEMENT_SELECT)
-    .single();
-  if (error) throw error;
+// 🔴 DAL 07/11 (parte 6 del piano) SEGNARE VUOL DIRE ANCHE SCEGLIERE LA
+//    VOCE, e togliere toglie anche i collegamenti al piano: passa da
+//    segna_investimento / togli_investimento, sempre su un campo solo.
+export async function segnaInvestimento(id, valore, voce = null) {
+  if (valore) await segnaConVoce("prima_nota", id, voce);
+  else await togliSpunta("prima_nota", id);
+  const { data, error } = await supabase.from("cash_movements").select(MOVEMENT_SELECT).eq("id", id).single();
+  // ⚠️ Il gesto è già fatto: se fallisce solo la rilettura non è un errore
+  //    di salvataggio (revisione del 07/11), si torna la riga col nuovo valore.
+  if (error) return { id, e_investimento: valore };
   return data;
 }
 

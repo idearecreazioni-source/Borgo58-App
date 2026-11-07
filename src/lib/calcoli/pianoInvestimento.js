@@ -216,3 +216,69 @@ export function fabbisognoPerMese(meseApertura, voci, rate) {
   }
   return mesi;
 }
+
+// =====================================================================
+// PARTE 5 (07/11/2026): LO SPESO VOCE PER VOCE
+// =====================================================================
+
+/** Come si chiama una spesa nell'elenco: data, cosa, chi, importo. */
+export function nomeDellaSpesa(s) {
+  const [a, m, g] = String(s?.data ?? "").split("-");
+  const quando = g ? `${g}/${m}/${a}` : "senza data";
+  const cosa = [s?.descrizione, s?.causale, s?.nota].map((t) => String(t ?? "").trim()).find((t) => t) ?? "senza descrizione";
+  const dove = s?.fonte === "anticipazione" ? "anticipo" : "prima nota";
+  return `${quando} · ${cosa} · ${dove}${s?.soggetto ? ` · ${s.soggetto}` : ""}`;
+}
+
+/**
+ * Lo speso del piano, con la riga «da assegnare» e il controllo.
+ * @param speso  [{voce_id, speso, impegnato, collegate}] da piano_speso_per_voce()
+ * @param spese  [{fonte, id, importo, assegnato, …}] da piano_spese_del_progetto()
+ * @param costo  [{tipo, totale}] da costo_del_progetto()
+ * @returns {{perVoce: Map, daAssegnare: {righe, totale}, controllo: {torna, costo, piano}}}
+ *
+ * 🔴 IL CONTROLLO: le spese del progetto (Borgo 58 e tasca) lette per
+ *    righe devono fare il totale di costo_del_progetto(). Sono due strade
+ *    verso lo stesso numero; se non tornano, la pagina lo dice invece di
+ *    mostrare uno speso che potrebbe essere sbagliato.
+ * ⚠️ Lo speso delle voci archiviate resta nel conto: la spesa c'è stata.
+ */
+export function spesoDelPiano({ speso, spese, costo }) {
+  const perVoce = new Map(
+    (speso ?? []).map((r) => [
+      r.voce_id,
+      {
+        speso: Number(r.speso || 0),
+        impegnato: Number(r.impegnato || 0),
+        collegate: Number(r.collegate || 0),
+        // Fatture collegate già pagate, col pagamento non collegato: non contano finché non lo colleghi.
+        scollegate: Number(r.fatture_pagate_scollegate || 0),
+      },
+    ])
+  );
+  const righe = (spese ?? [])
+    .map((s) => ({ ...s, resto: euro(centesimi(s.importo) - centesimi(s.assegnato)) }))
+    .filter((s) => s.resto > 0);
+  const totaleResto = righe.reduce((t, s) => t + centesimi(s.resto), 0);
+  const deiSoggetti = (costo ?? []).filter((r) => r?.tipo === "srls" || r?.tipo === "tasca");
+  const costoTotale = deiSoggetti.reduce((t, r) => t + centesimi(r.totale), 0);
+  const righeTotale = (spese ?? []).reduce((t, s) => t + centesimi(s.importo), 0);
+  const assegnatoTotale = (spese ?? []).reduce((t, s) => t + centesimi(s.assegnato), 0);
+  const spesoPagato = [...perVoce.values()].reduce((t, v) => t + centesimi(v.speso), 0);
+  // Una spesa assegnata oltre il suo importo non deve sparire in silenzio
+  // dalle «da assegnare»: il database lo impedisce, ma se succedesse si dice.
+  const oltre = (spese ?? []).some((s) => centesimi(s.assegnato) > centesimi(s.importo));
+  return {
+    perVoce,
+    daAssegnare: { righe, totale: euro(totaleResto) },
+    // Lo speso di TUTTE le voci, archiviate comprese: la spesa c'è stata.
+    spesoTotale: euro(spesoPagato),
+    controllo: {
+      // Le righe fanno il costo, lo speso delle voci è quello assegnato, e
+      // speso più da assegnare fa il costo del progetto.
+      torna: righeTotale === costoTotale && spesoPagato === assegnatoTotale && spesoPagato + totaleResto === costoTotale && !oltre,
+      costo: euro(costoTotale),
+      piano: euro(spesoPagato + totaleResto),
+    },
+  };
+}

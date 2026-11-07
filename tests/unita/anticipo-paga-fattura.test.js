@@ -33,6 +33,14 @@ vi.mock("../../src/lib/supabase", () => ({
   },
 }));
 
+// La spunta con la sua voce (parte 6 del piano, 07/11/2026).
+vi.mock("../../src/lib/api/spuntaInvestimento", () => ({
+  segnaConVoce: vi.fn(async (fonte, id, voce) => {
+    spie.segnate = [...(spie.segnate ?? []), [fonte, id, voce]];
+  }),
+  togliSpunta: vi.fn(async () => {}),
+}));
+
 import {
   createAnticipazione,
   parametriRegistraAnticipazione,
@@ -60,21 +68,36 @@ const base = {
 beforeEach(() => {
   spie.operazione = null;
   spie.inserimenti = [];
+  spie.segnate = [];
 });
+
+const VOCE = { voceId: "v1", rataId: "" };
 
 describe("createAnticipazione", () => {
   it("con una fattura collegata passa dal corridoio, non da un inserimento", async () => {
-    const r = await createAnticipazione(base);
+    const r = await createAnticipazione({ ...base, voce: VOCE });
     expect(spie.operazione[0]).toBe("registra_anticipazione");
     expect(spie.inserimenti).toHaveLength(0);
     expect(r.id).toBe("nuovo-id");
   });
 
   it("senza fattura resta l'inserimento diretto (una tabella sola)", async () => {
-    await createAnticipazione({ ...base, supplierInvoiceId: "" });
+    await createAnticipazione({ ...base, supplierInvoiceId: "", voce: VOCE });
     expect(spie.operazione).toBeNull();
     expect(spie.inserimenti).toHaveLength(1);
     expect(spie.inserimenti[0].supplier_invoice_id).toBeNull();
+  });
+
+  it("🔴 segnata «investimento»: la nota nasce senza spunta, poi spunta e voce insieme (07/11)", async () => {
+    await createAnticipazione({ ...base, voce: VOCE });
+    expect(spie.operazione[1].p_e_investimento).toBe(false);
+    expect(spie.segnate).toEqual([["anticipazione", "nuovo-id", VOCE]]);
+  });
+
+  it("🔴 segnata senza voce non parte nemmeno", async () => {
+    await expect(createAnticipazione(base)).rejects.toThrow(/scegli anche la voce/);
+    expect(spie.operazione).toBeNull();
+    expect(spie.inserimenti).toHaveLength(0);
   });
 
   it("🔴 ogni campo della nota arriva alla funzione, col suo nome", () => {
