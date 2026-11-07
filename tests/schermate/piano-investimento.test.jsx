@@ -15,6 +15,11 @@ const finto = vi.hoisted(() => ({
   aperture: [],
   salvaRisponde: null,
   aperturaRifiuta: false,
+  speso: null,
+  rompiSpeso: false,
+  collegate: [],
+  scollegate: [],
+  collegaRifiuta: null,
 }));
 
 vi.mock("../../src/lib/api/pianoInvestimento", () => ({
@@ -29,6 +34,17 @@ vi.mock("../../src/lib/api/pianoInvestimento", () => ({
   }),
   archiviaVoce: vi.fn(async (id, archiviata) => {
     finto.archiviate.push([id, archiviata]);
+  }),
+  leggiSpeso: vi.fn(async () => {
+    if (finto.rompiSpeso) throw new Error("rete giù");
+    return structuredClone(finto.speso);
+  }),
+  collegaSpesa: vi.fn(async (c) => {
+    finto.collegate.push(c);
+    if (finto.collegaRifiuta) throw new Error(finto.collegaRifiuta);
+  }),
+  scollegaSpesa: vi.fn(async (id) => {
+    finto.scollegate.push(id);
   }),
   cambiaApertura: vi.fn(async (m) => {
     finto.aperture.push(m);
@@ -73,6 +89,42 @@ function pianoDiProva() {
   };
 }
 
+// Lo speso finto, che torna col costo del progetto (14.500 € fra Borgo 58
+// e tasca; l'orto non conta):
+//   · cappa: 10.000 pagati + 7.000 di fattura da pagare → a rischio di 1.000;
+//   · pedana: 2.500 pagati su 2.000 previsti → sforata di 500;
+//   · affitto: 300 pagati su 1.500 → restano 1.200;
+//   · da assegnare: il trasporto (1.200) e 500 delle piastrelle (800).
+function spesoDiProva() {
+  const spesa = (fonte, id, data, descrizione, importo, assegnato) => ({
+    fonte, id, data, tipo: "srls", soggetto: "Borgo 58", causale: "Attrezzature", descrizione, nota: null, fattura: null, importo, assegnato,
+  });
+  return {
+    speso: [
+      { voce_id: "cappa", speso: 10000, impegnato: 7000, collegate: 2 },
+      { voce_id: "pedana", speso: 2500, impegnato: 0, collegate: 1 },
+      { voce_id: "affitto", speso: 300, impegnato: 0, collegate: 1 },
+    ],
+    spese: [
+      spesa("prima_nota", "m1", "2026-10-02", "Acconto cappa", 10000, 10000),
+      spesa("anticipazione", "a1", "2026-10-05", null, 2500, 2500),
+      spesa("prima_nota", "m2", "2026-10-20", "Trasporto attrezzature", 1200, 0),
+      spesa("prima_nota", "m3", "2026-10-21", "Piastrelle", 800, 300),
+    ],
+    costo: [
+      { tipo: "srls", totale: 12000 },
+      { tipo: "tasca", totale: 2500 },
+      { tipo: "azienda_agricola", totale: 999 },
+    ],
+    collegamenti: [
+      { id: "c1", voce_id: "cappa", rata_id: "r1", cash_movement_id: "m1", anticipazione_id: null, supplier_invoice_id: null, importo_attribuito: 10000 },
+      { id: "c2", voce_id: "cappa", rata_id: null, cash_movement_id: null, anticipazione_id: null, supplier_invoice_id: "f1", importo_attribuito: 7000 },
+      { id: "c3", voce_id: "pedana", rata_id: null, cash_movement_id: null, anticipazione_id: "a1", supplier_invoice_id: null, importo_attribuito: 2500 },
+      { id: "c4", voce_id: "affitto", rata_id: null, cash_movement_id: "m3", anticipazione_id: null, supplier_invoice_id: null, importo_attribuito: 300 },
+    ],
+  };
+}
+
 const monta = () =>
   render(
     <MemoryRouter>
@@ -100,6 +152,11 @@ beforeEach(() => {
   finto.aperture = [];
   finto.salvaRisponde = null;
   finto.aperturaRifiuta = false;
+  finto.speso = spesoDiProva();
+  finto.rompiSpeso = false;
+  finto.collegate = [];
+  finto.scollegate = [];
+  finto.collegaRifiuta = null;
 });
 
 describe("il piano dell'investimento: cosa si vede", () => {
@@ -333,5 +390,129 @@ describe("il piano dell'investimento: la data dell'apertura", () => {
     fireEvent.click(screen.getByRole("button", { name: "Salva la data" }));
     expect((await screen.findByRole("alert")).textContent).toMatch(/non si è salvata/);
     expect(screen.getByLabelText("Mese dell'apertura").value).toBe("2027-04");
+  });
+});
+
+describe("il piano dell'investimento: lo speso (parte 5)", () => {
+  it("ogni voce dice quanto ha speso e come sta col previsto", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="speso-voce"]').length).toBe(3));
+    const esito = (g) => gruppo(container, g).querySelector('[data-prova="speso-voce"]');
+    expect(esito("B").dataset.esito).toBe("a_rischio");
+    expect(esito("B").textContent).toMatch(/spesi 10\.000,00.*7\.000,00.*da pagare.*supera di 1\.000,00/);
+    expect(esito("A").dataset.esito).toBe("sforato");
+    expect(esito("A").textContent).toMatch(/sforato di 500,00/);
+    expect(esito("E").textContent).toMatch(/restano 1\.200,00/);
+  });
+
+  it("in alto: speso, sforamenti delle sole voci sopra budget, e da assegnare", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelector('[data-prova="speso-totale"]')).not.toBeNull());
+    expect(container.querySelector('[data-prova="speso-totale"]').textContent).toMatch(/12\.800,00/);
+    expect(container.querySelector('[data-prova="sforamenti"]').textContent).toMatch(/500,00/);
+    expect(container.querySelector('[data-prova="da-assegnare-totale"]').textContent).toMatch(/1\.700,00/);
+    expect(container.querySelector('[data-prova="controllo-non-torna"]')).toBeNull();
+  });
+
+  it("le spese da assegnare si elencano, anche quelle assegnate solo in parte", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    const righe = [...container.querySelectorAll('[data-prova="spesa-da-assegnare"]')].map((r) => r.textContent);
+    expect(righe[0]).toMatch(/20\/10\/2026 · Trasporto attrezzature.*1\.200,00/);
+    expect(righe[1]).toMatch(/Piastrelle.*500,00.*di 800,00/);
+  });
+
+  it("lo speso delle voci archiviate resta nel totale, e si dice quanto è", async () => {
+    finto.speso.speso.push({ voce_id: "vecchia", speso: 100, impegnato: 0, collegate: 1 });
+    finto.speso.spese.push({ fonte: "prima_nota", id: "m4", data: "2026-09-01", tipo: "srls", importo: 100, assegnato: 100 });
+    finto.speso.costo[0].totale = 12100;
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelector('[data-prova="speso-totale"]')).not.toBeNull());
+    expect(container.querySelector('[data-prova="speso-totale"]').textContent).toMatch(/12\.900,00/);
+    expect(container.querySelector('[data-prova="speso-archiviate"]').textContent).toMatch(/100,00.*archiviate/);
+    expect(container.querySelector('[data-prova="controllo-non-torna"]')).toBeNull();
+  });
+
+  it("una fattura collegata già pagata, senza il suo pagamento, si dice sulla voce", async () => {
+    finto.speso.speso[2].fatture_pagate_scollegate = 1;
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelector('[data-prova="fattura-scollegata"]')).not.toBeNull());
+    expect(gruppo(container, "E").querySelector('[data-prova="fattura-scollegata"]').textContent).toMatch(/collega anche il pagamento/);
+  });
+
+  it("se lo speso non torna col costo del progetto, lo dice", async () => {
+    finto.speso.costo = [{ tipo: "srls", totale: 13000 }, { tipo: "tasca", totale: 2500 }];
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelector('[data-prova="controllo-non-torna"]')).not.toBeNull());
+    expect(container.querySelector('[data-prova="controllo-non-torna"]').textContent).toMatch(/15\.500,00.*14\.500,00/);
+  });
+
+  it("se lo speso non si legge, il previsto resta e lo speso non diventa zero", async () => {
+    finto.rompiSpeso = true;
+    const { container } = monta();
+    await screen.findByText(/non vuol dire che non hai speso niente/i);
+    expect(container.querySelector('[data-prova="previsto-totale"]')).not.toBeNull();
+    expect(container.querySelector('[data-prova="speso-totale"]')).toBeNull();
+    expect(container.querySelector('[data-prova="speso-voce"]')).toBeNull();
+  });
+
+  it("nella voce aperta si vedono le spese collegate, con la rata", async () => {
+    const { container } = monta();
+    await apriVoce(container, "B");
+    const pannello = await waitFor(() => {
+      const p = container.querySelector('[data-prova="collegamenti"]');
+      expect(p).not.toBeNull();
+      return p;
+    });
+    const righe = [...pannello.querySelectorAll('[data-prova="collegamento"]')].map((r) => r.textContent);
+    expect(righe[0]).toMatch(/02\/10\/2026 · Acconto cappa.*rata di Acconto.*10\.000,00/);
+    expect(righe[1]).toMatch(/Fattura da pagare.*7\.000,00/);
+  });
+
+  async function pannelloDellaCappa(container) {
+    await apriVoce(container, "B");
+    return waitFor(() => {
+      const p = container.querySelector('[data-prova="collegamenti"]');
+      expect(p).not.toBeNull();
+      return p;
+    });
+  }
+
+  it("si collega una spesa da assegnare: l'importo proposto è quello che resta", async () => {
+    const { container } = monta();
+    const pannello = await pannelloDellaCappa(container);
+    fireEvent.change(within(pannello).getByLabelText("Spesa da collegare"), { target: { value: "prima_nota:m3" } });
+    expect(within(pannello).getByLabelText(/Parte su questa voce/).value).toBe("500");
+    fireEvent.change(within(pannello).getByLabelText("Quale rata paga"), { target: { value: "r2" } });
+    fireEvent.click(within(pannello).getByRole("button", { name: "Collega la spesa" }));
+    await waitFor(() => expect(finto.collegate).toHaveLength(1));
+    expect(finto.collegate[0]).toMatchObject({ voceId: "cappa", rataId: "r2", importo: 500, spesa: { fonte: "prima_nota", id: "m3" } });
+  });
+
+  it("non si assegna più di quello che resta della spesa", async () => {
+    const { container } = monta();
+    const pannello = await pannelloDellaCappa(container);
+    fireEvent.change(within(pannello).getByLabelText("Spesa da collegare"), { target: { value: "prima_nota:m3" } });
+    fireEvent.change(within(pannello).getByLabelText(/Parte su questa voce/), { target: { value: "600" } });
+    fireEvent.click(within(pannello).getByRole("button", { name: "Collega la spesa" }));
+    expect((await within(pannello).findByRole("alert")).textContent).toMatch(/restano da assegnare 500,00/);
+    expect(finto.collegate).toHaveLength(0);
+  });
+
+  it("il rifiuto del database si legge, e la scelta resta", async () => {
+    finto.collegaRifiuta = "Questa spesa è dell'orto: il piano dell'investimento conta solo Borgo 58 e la tua tasca.";
+    const { container } = monta();
+    const pannello = await pannelloDellaCappa(container);
+    fireEvent.change(within(pannello).getByLabelText("Spesa da collegare"), { target: { value: "prima_nota:m2" } });
+    fireEvent.click(within(pannello).getByRole("button", { name: "Collega la spesa" }));
+    expect((await within(pannello).findByRole("alert")).textContent).toMatch(/dell'orto/);
+    expect(within(pannello).getByLabelText("Spesa da collegare").value).toBe("prima_nota:m2");
+  });
+
+  it("«Togli» toglie il collegamento giusto", async () => {
+    const { container } = monta();
+    const pannello = await pannelloDellaCappa(container);
+    fireEvent.click(within(pannello).getByRole("button", { name: /Togli.*Fattura da pagare/ }));
+    await waitFor(() => expect(finto.scollegate).toEqual(["c2"]));
   });
 });
