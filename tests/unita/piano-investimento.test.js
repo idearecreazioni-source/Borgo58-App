@@ -5,6 +5,7 @@ import {
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
+  leggiRata,
   meseDellaRata,
   nettoDi,
   nomeGruppo,
@@ -45,6 +46,40 @@ describe("gli importi scritti all'italiana", () => {
     expect(importoNelCampo(1500.5)).toBe("1500,50");
     expect(importoNelCampo(2000)).toBe("2000");
     expect(importoNelCampo(null)).toBe("");
+  });
+});
+
+describe("le rate in percentuale del previsto (07/11)", () => {
+  it("50% di 16.470 € sono 8.235 €", () => {
+    expect(leggiRata("50%", 16470)).toEqual({ importo: 8235, percentuale: 50 });
+    expect(leggiRata("15 %", 16470)).toEqual({ importo: 2470.5, percentuale: 15 });
+    expect(leggiRata("12,5%", 1000)).toEqual({ importo: 125, percentuale: 12.5 });
+  });
+  it("arrotonda al centesimo", () => {
+    expect(leggiRata("33%", 100.01).importo).toBe(33);
+    expect(leggiRata("15%", 16470.03).importo).toBe(2470.5);
+  });
+  it("un importo resta un importo", () => {
+    expect(leggiRata("2.000", 16470)).toEqual({ importo: 2000, percentuale: null });
+  });
+  it("i bordi: 0%, 100%, 50,5%, lo spazio", () => {
+    expect(leggiRata("0%", 1000)).toEqual({ importo: 0, percentuale: 0 });
+    expect(leggiRata("100%", 16470)).toEqual({ importo: 16470, percentuale: 100 });
+    expect(leggiRata("50,5%", 1000)).toEqual({ importo: 505, percentuale: 50.5 });
+    expect(leggiRata("50 %", 1000).importo).toBe(500);
+    expect(leggiRata("2,05%", 1000).importo).toBe(20.5);
+  });
+  it("senza previsto, o sopra il 100%, una percentuale non vale", () => {
+    expect(leggiRata("50%", null)).toBeNull();
+    expect(leggiRata("50%", 0)).toBeNull();
+    expect(leggiRata("50%", undefined)).toBeNull();
+    expect(leggiRata("50%", NaN)).toBeNull();
+    expect(leggiRata("100,5%", 1000)).toBeNull();
+    expect(leggiRata("1.000%", 1000)).toBeNull();
+    expect(leggiRata("€50%", 1000)).toBeNull();
+    expect(leggiRata("120%", 1000)).toBeNull();
+    expect(leggiRata("%", 1000)).toBeNull();
+    expect(leggiRata("cinquanta%", 1000)).toBeNull();
   });
 });
 
