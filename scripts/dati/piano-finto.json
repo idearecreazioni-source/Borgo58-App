@@ -1,0 +1,13 @@
+{
+  "finto": true,
+  "descrizione": "Piano dell'investimento FINTO, solo per Prova: nomi e importi inventati. Il piano vero sta fuori dal repository.",
+  "mese_apertura": "2027-04-01",
+  "voci": [
+    { "gruppo": "A", "ordine": 1, "descrizione": "Finto - forno combinato", "importo_ivato": 1220, "aliquota_iva": 22, "stato": "preventivato", "dilazione": "stimata", "rate": { "0": 610, "1": 610 } },
+    { "gruppo": "B", "ordine": 1, "descrizione": "Finto - allaccio dell'acqua", "importo_ivato": 100, "aliquota_iva": 22, "stato": "stimato", "dilazione": "stimata", "rate": { "0": 25, "1": 25, "2": 25, "3": 25 } },
+    { "gruppo": "C", "ordine": 1, "descrizione": "Finto - tinteggiatura", "importo_ivato": 300, "aliquota_iva": 22, "stato": "stimato", "dilazione": "nessuna", "rate": { "0": 300 } },
+    { "gruppo": "D", "ordine": 1, "descrizione": "Finto - sgabelli", "importo_ivato": 450.5, "aliquota_iva": 22, "stato": "confermato", "dilazione": "nessuna", "rate": { "0": 450.5 } },
+    { "gruppo": "E", "ordine": 1, "descrizione": "Finto - affitto", "importo_ivato": 800, "aliquota_iva": 0, "stato": "confermato", "dilazione": "confermata", "nota": "Senza IVA, come l'affitto vero.", "rate": { "0": 800 } },
+    { "gruppo": "E", "ordine": 2, "descrizione": "Finto - gestionale", "importo_ivato": 500, "aliquota_iva": 22, "stato": "stimato", "dilazione": "stimata", "rate": { "6": 500 } }
+  ]
+}
