@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { leggiAPagine } from "../calcoli/investimento";
 
 // IL PIANO DELL'INVESTIMENTO — lettura e scrittura (07/11/2026).
 // Le tabelle sono del solo titolare (RLS, migrazione 20261107000001): uno
@@ -90,5 +91,60 @@ export async function archiviaVoce(id, archiviata) {
     .from("piano_voci")
     .update({ archiviata_il: archiviata ? new Date().toISOString() : null })
     .eq("id", id);
+  if (error) throw error;
+}
+
+// =====================================================================
+// PARTE 5 (07/11/2026): LO SPESO E I COLLEGAMENTI
+// =====================================================================
+// 🔴 LO SPESO SI LEGGE INSIEME AL CONTROLLO. Tre letture:
+//    · piano_speso_per_voce(): speso e impegnato di ogni voce;
+//    · piano_spese_del_progetto(): le spese segnate «investimento» (Borgo 58
+//      e tasca) con quanto è già assegnato;
+//    · costo_del_progetto(): il totale per soggetto, la stessa cifra per
+//      un'altra strada. La pagina li confronta e, se non tornano, lo dice.
+// ⚠️ Le spese si leggono a pagine: è una chiamata a funzione (POST), e il
+//    segnale delle letture tagliate a mille righe lì non arriva.
+
+/** Speso, impegnato, spese del progetto, collegamenti e il totale di controllo. */
+export async function leggiSpeso() {
+  const [speso, spese, costo, collegamenti] = await Promise.all([
+    supabase.rpc("piano_speso_per_voce"),
+    leggiAPagine(async (da, a) => {
+      const { data, error } = await supabase.rpc("piano_spese_del_progetto").range(da, a);
+      if (error) throw error;
+      return data ?? [];
+    }),
+    supabase.rpc("costo_del_progetto", { p_dal: null, p_al: null }),
+    supabase
+      .from("piano_collegamenti")
+      .select("id, voce_id, rata_id, cash_movement_id, anticipazione_id, supplier_invoice_id, importo_attribuito")
+      .order("created_at")
+      .order("id"),
+  ]);
+  for (const r of [speso, costo, collegamenti]) if (r.error) throw r.error;
+  return { speso: speso.data ?? [], spese, costo: costo.data ?? [], collegamenti: collegamenti.data ?? [] };
+}
+
+/**
+ * Collega una spesa a una voce, per una parte del suo importo.
+ * @param spesa {fonte: "prima_nota"|"anticipazione", id}
+ * ⚠️ I controlli veri sono nel database (trigger piano_collegamento_controlla):
+ *    spesa segnata investimento, non dell'orto, non oltre il suo importo.
+ */
+export async function collegaSpesa({ voceId, rataId, spesa, importo }) {
+  const origine = spesa.fonte === "anticipazione" ? { anticipazione_id: spesa.id } : { cash_movement_id: spesa.id };
+  const { error } = await supabase.from("piano_collegamenti").insert({
+    voce_id: voceId,
+    rata_id: rataId || null,
+    ...origine,
+    importo_attribuito: Math.round(Number(importo) * 100) / 100,
+  });
+  if (error) throw error;
+}
+
+/** Toglie un collegamento: la spesa torna fra quelle da assegnare. */
+export async function scollegaSpesa(id) {
+  const { error } = await supabase.from("piano_collegamenti").delete().eq("id", id);
   if (error) throw error;
 }

@@ -8,10 +8,78 @@ import {
   leggiRata,
   meseDellaRata,
   nettoDi,
+  nomeDellaSpesa,
   nomeGruppo,
   quadra,
+  spesoDelPiano,
   totaliDelPiano,
 } from "../../src/lib/calcoli/pianoInvestimento";
+
+describe("lo speso del piano (parte 5)", () => {
+  const spesa = (fonte, id, importo, assegnato) => ({ fonte, id, data: "2026-10-02", tipo: "srls", importo, assegnato });
+  const base = () => ({
+    speso: [
+      { voce_id: "a", speso: "60.10", impegnato: "300", collegate: 2 },
+      { voce_id: "b", speso: "0.20", impegnato: "0", collegate: 1 },
+    ],
+    spese: [spesa("prima_nota", "m1", "60.30", "60.30"), spesa("anticipazione", "a1", "100", "0"), spesa("prima_nota", "m2", "50", "50")],
+    costo: [
+      { tipo: "srls", totale: "160.30" },
+      { tipo: "tasca", totale: "50" },
+      { tipo: "azienda_agricola", totale: "999" },
+    ],
+  });
+
+  it("le spese da assegnare sono quelle con un resto, al centesimo", () => {
+    const d = base();
+    d.spese[2].assegnato = "49.99";
+    d.speso[0].speso = "110.09";
+    const r = spesoDelPiano(d);
+    expect(r.daAssegnare.righe.map((s) => [s.id, s.resto])).toEqual([["a1", 100], ["m2", 0.01]]);
+    expect(r.daAssegnare.totale).toBe(100.01);
+  });
+
+  it("il controllo torna quando righe, costo e speso combaciano (l'orto non conta)", () => {
+    const d = base();
+    d.speso[0].speso = "110.10";
+    const r = spesoDelPiano(d);
+    expect(r.controllo).toEqual({ torna: true, costo: 210.3, piano: 210.3 });
+    expect(r.perVoce.get("a")).toEqual({ speso: 110.1, impegnato: 300, collegate: 2, scollegate: 0 });
+  });
+
+  it("se il costo del progetto dice un'altra cifra, il controllo non torna", () => {
+    const d = base();
+    d.speso[0].speso = "110.10";
+    d.costo[0].totale = "170.30";
+    expect(spesoDelPiano(d).controllo.torna).toBe(false);
+  });
+
+  it("se lo speso delle voci non è quello assegnato, il controllo non torna", () => {
+    expect(spesoDelPiano(base()).controllo.torna).toBe(false);
+  });
+
+  it("una spesa assegnata oltre il suo importo non sparisce in silenzio", () => {
+    const d = base();
+    d.speso[0].speso = "110.10";
+    d.spese[2].assegnato = "60";
+    d.speso[1].speso = "10.20";
+    expect(spesoDelPiano(d).controllo.torna).toBe(false);
+  });
+
+  it("niente spese: tutto a zero, e torna", () => {
+    expect(spesoDelPiano({ speso: [], spese: [], costo: [] }).controllo).toEqual({ torna: true, costo: 0, piano: 0 });
+  });
+
+  it("il nome di una spesa: data, cosa, da dove, chi", () => {
+    expect(nomeDellaSpesa({ fonte: "prima_nota", data: "2026-10-02", descrizione: "Acconto cappa", soggetto: "Borgo 58" })).toBe(
+      "02/10/2026 · Acconto cappa · prima nota · Borgo 58"
+    );
+    expect(nomeDellaSpesa({ fonte: "anticipazione", data: "2026-10-05", descrizione: " ", causale: "Attrezzature" })).toBe(
+      "05/10/2026 · Attrezzature · anticipo"
+    );
+    expect(nomeDellaSpesa({ fonte: "prima_nota" })).toBe("senza data · senza descrizione · prima nota");
+  });
+});
 
 // Il piano dell'investimento (07/11/2026): le regole pure. I divieti
 // (IVA, stati, collegamenti, solo il titolare) vivono nel database e li
