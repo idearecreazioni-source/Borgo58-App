@@ -51,6 +51,33 @@ export function leggiImporto(testo) {
   return Math.round(n * 100) / 100;
 }
 
+/**
+ * Una rata scritta da Alessio: un importo («2.000», «1.500,50») oppure una
+ * percentuale del previsto («50%», «12,5 %») — richiesta del 07/11, quando
+ * le ha scritte così sull'anteprima e il modulo le rifiutava.
+ * @returns {{importo: number, percentuale: number|null}|null}
+ *   null se non si capisce, oppure se è una percentuale e il previsto non
+ *   c'è ancora (senza il totale una percentuale non vale niente).
+ * ⚠️ La percentuale si trasforma in euro: nel database va l'importo. Se poi
+ *    il previsto cambia, la rata resta in euro e il ✗ lo fa vedere.
+ */
+export function leggiRata(testo, previsto) {
+  const t = String(testo ?? "").replace(/\s+/g, "");
+  const p = /^(\d{1,3}([.,]\d{1,2})?)%$/.exec(t);
+  if (p) {
+    const percentuale = Number(p[1].replace(",", "."));
+    const base = previsto === null || previsto === undefined || previsto === "" ? NaN : Number(previsto);
+    // Senza un previsto vero (vuoto o zero) la percentuale non vale niente:
+    // null, non una rata da 0 € che passerebbe in silenzio.
+    if (percentuale > 100 || !Number.isFinite(base) || base <= 0) return null;
+    // Tutto in interi: centesimi × centesimi di punto, un arrotondamento solo.
+    const centPunti = Math.round(percentuale * 100);
+    return { importo: Math.round((centesimi(base) * centPunti) / 10000) / 100, percentuale };
+  }
+  const importo = leggiImporto(t);
+  return importo === null ? null : { importo, percentuale: null };
+}
+
 /** Un importo da mostrare in un campo, con la virgola: 1500.5 → «1500,50». */
 export function importoNelCampo(n) {
   if (n === null || n === undefined || n === "") return "";

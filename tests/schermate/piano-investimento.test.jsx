@@ -175,6 +175,50 @@ describe("il piano dell'investimento: scrivere una voce", () => {
     expect(finto.salvate[0].rate.find((r) => r.mese_rel === 0).importo).toBe(15999.5);
   });
 
+  it("le rate in percentuale del previsto si vedono e si salvano in euro (07/11)", async () => {
+    const { container } = monta();
+    await apriNuova(container, "B");
+    fireEvent.change(screen.getByLabelText("Voce"), { target: { value: "Cappa e aspirazione" } });
+    fireEvent.change(screen.getByLabelText(/Previsto, IVA inclusa/), { target: { value: "16.470,00 €" } });
+    fireEvent.change(screen.getByLabelText(/Acconto/), { target: { value: "50%" } });
+    fireEvent.change(screen.getByLabelText("Aprile 2027"), { target: { value: "15%" } });
+    fireEvent.change(screen.getByLabelText("Maggio 2027"), { target: { value: "15%" } });
+    fireEvent.change(screen.getByLabelText("Giugno 2027"), { target: { value: "15%" } });
+    const inEuro = [...container.querySelectorAll('[data-prova="rata-in-euro"]')].map((p) => p.textContent);
+    expect(inEuro[0]).toMatch(/8\.235,00/);
+    expect(inEuro[1]).toMatch(/2\.470,50/);
+    // 95%: manca il 5%, cioè 823,50 €.
+    expect(container.querySelector('[data-prova="quadra-modulo"]').textContent).toMatch(/Da distribuire ancora 823,50/);
+    fireEvent.click(screen.getByRole("button", { name: "Salva la voce" }));
+    await waitFor(() => expect(finto.salvate.length).toBe(1));
+    const rate = finto.salvate[0].rate;
+    expect(rate.find((r) => r.mese_rel === 0).importo).toBe(8235);
+    expect(rate.find((r) => r.mese_rel === 3).importo).toBe(2470.5);
+  });
+
+  it("una percentuale con il previsto a zero non si salva come 0 €", async () => {
+    const { container } = monta();
+    await apriNuova(container, "B");
+    fireEvent.change(screen.getByLabelText("Voce"), { target: { value: "Cappa" } });
+    fireEvent.change(screen.getByLabelText(/Previsto, IVA inclusa/), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText(/Acconto/), { target: { value: "50%" } });
+    expect(container.querySelector('[data-prova="rata-in-euro"]')).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Salva la voce" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/percentuale del previsto/);
+    expect(finto.salvate).toEqual([]);
+  });
+
+  it("una percentuale oltre il 100% non si salva", async () => {
+    const { container } = monta();
+    await apriNuova(container, "B");
+    fireEvent.change(screen.getByLabelText("Voce"), { target: { value: "Cappa" } });
+    fireEvent.change(screen.getByLabelText(/Previsto, IVA inclusa/), { target: { value: "1000" } });
+    fireEvent.change(screen.getByLabelText(/Acconto/), { target: { value: "120%" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salva la voce" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/percentuale del previsto/);
+    expect(finto.salvate).toEqual([]);
+  });
+
   it("una rata che non si capisce ferma il salvataggio, non diventa zero", async () => {
     const { container } = monta();
     await apriNuova(container, "C");

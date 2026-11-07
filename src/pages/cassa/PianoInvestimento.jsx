@@ -13,6 +13,7 @@ import {
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
+  leggiRata,
   meseDellaRata,
   nettoDi,
   quadra,
@@ -82,7 +83,13 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
   const occupato = useRef(false);
 
   const importo = leggiImporto(voce.importo_ivato);
-  const letture = MESI_DEL_MODULO.map((m) => ({ mese_rel: m, testo: rate[m] ?? "", importo: leggiImporto(rate[m]) }));
+  // Una rata è un importo o una percentuale del previsto (07/11): la
+  // percentuale si mostra in euro accanto, e al salvataggio va l'importo.
+  const letture = MESI_DEL_MODULO.map((m) => {
+    const testo = rate[m] ?? "";
+    const letta = leggiRata(testo, importo);
+    return { mese_rel: m, testo, importo: letta?.importo ?? null, percentuale: letta?.percentuale ?? null };
+  });
   const rateSbagliate = letture.filter((r) => r.testo.trim() !== "" && r.importo === null);
   const elencoRate = letture.map((r) => ({ mese_rel: r.mese_rel, importo: r.importo ?? 0 }));
   const conto = quadra({ importo_ivato: importo ?? 0 }, elencoRate);
@@ -94,7 +101,9 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
     if (importo === null) return setErrore("Scrivi quanto prevedi di spendere, IVA inclusa (per esempio 16.000 oppure 1.500,50).");
     if (rateSbagliate.length > 0) {
       const nomi = rateSbagliate.map((r) => meseDellaRata(meseApertura, r.mese_rel).etichetta).join(", ");
-      return setErrore(`Non capisco l'importo di: ${nomi}. Scrivilo come 2.000 oppure 1.500,50.`);
+      return setErrore(
+        `Non capisco la rata di: ${nomi}. Scrivi un importo (2.000 oppure 1.500,50) o una percentuale del previsto (50%), fino al 100%.`
+      );
     }
     occupato.current = true;
     setSalvo(true);
@@ -156,17 +165,22 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
 
       <fieldset>
         <legend className={labelClass}>Come la paghi</legend>
+        <p className="testo-sala text-b58-charcoal-soft mb-2">In euro (2.000) oppure in percentuale del previsto (50%).</p>
         <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
-          {MESI_DEL_MODULO.map((m) => (
-            <div key={m}>
-              <label className="block testo-sala text-b58-charcoal-soft mb-1" htmlFor={`rata-${m}`}>{meseDellaRata(meseApertura, m).etichetta}</label>
+          {letture.map((r) => (
+            <div key={r.mese_rel}>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1" htmlFor={`rata-${r.mese_rel}`}>{meseDellaRata(meseApertura, r.mese_rel).etichetta}</label>
+              {/* inputMode «text» e non «decimal»: sul telefono la tastiera dei numeri non ha il «%». */}
               <input
-                id={`rata-${m}`}
-                inputMode="decimal"
+                id={`rata-${r.mese_rel}`}
+                inputMode="text"
                 className={inputClass}
-                value={rate[m] ?? ""}
-                onChange={(e) => setRate({ ...rate, [m]: e.target.value })}
+                value={rate[r.mese_rel] ?? ""}
+                onChange={(e) => setRate({ ...rate, [r.mese_rel]: e.target.value })}
               />
+              {r.percentuale !== null && (
+                <p data-prova="rata-in-euro" className="testo-sala text-b58-charcoal-soft mt-1">= {formatEUR(r.importo)}</p>
+              )}
             </div>
           ))}
         </div>
