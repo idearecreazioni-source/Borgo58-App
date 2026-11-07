@@ -3,6 +3,8 @@ import {
   GRUPPI,
   esitoVoce,
   fabbisognoPerMese,
+  importoNelCampo,
+  leggiImporto,
   meseDellaRata,
   nettoDi,
   nomeGruppo,
@@ -21,6 +23,28 @@ describe("i gruppi", () => {
   });
   it("una lettera sconosciuta si dice, non sparisce", () => {
     expect(nomeGruppo("Z")).toBe("Gruppo Z");
+  });
+});
+
+describe("gli importi scritti all'italiana", () => {
+  it("«16.000» sono sedicimila, non sedici", () => {
+    expect(leggiImporto("16.000")).toBe(16000);
+    expect(leggiImporto("1.500,50")).toBe(1500.5);
+    expect(leggiImporto("1.234.567,8")).toBe(1234567.8);
+  });
+  it("virgola o punto per i centesimi, € e spazi tollerati", () => {
+    expect(leggiImporto("1500,5")).toBe(1500.5);
+    expect(leggiImporto("1500.50")).toBe(1500.5);
+    expect(leggiImporto(" € 2.000 ")).toBe(2000);
+    expect(leggiImporto("0")).toBe(0);
+  });
+  it("quello che non si capisce è null, mai zero", () => {
+    for (const t of ["", "abc", "1,2,3", "15.00.0", "-5", "1,234"]) expect(leggiImporto(t)).toBeNull();
+  });
+  it("nel campo si rimostra con la virgola", () => {
+    expect(importoNelCampo(1500.5)).toBe("1500,50");
+    expect(importoNelCampo(2000)).toBe("2000");
+    expect(importoNelCampo(null)).toBe("");
   });
 });
 

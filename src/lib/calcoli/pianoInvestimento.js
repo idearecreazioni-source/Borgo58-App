@@ -32,6 +32,33 @@ const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "lug
 const centesimi = (n) => Math.round(Number(n || 0) * 100);
 const euro = (c) => c / 100;
 
+/**
+ * Un importo scritto da Alessio, all'italiana: «16.000», «1.500,50»,
+ * «1500,5», «1500.50», «€ 2.000». Restituisce il numero arrotondato ai
+ * centesimi, oppure null se non si capisce — MAI zero al posto di un
+ * importo sbagliato: «16.000» letto come 16 € sarebbe l'errore peggiore,
+ * quello che non si vede.
+ * ⚠️ Il punto con tre cifre dopo è delle migliaia («16.000» = sedicimila);
+ *    con una o due cifre dopo è la virgola («1500.50»).
+ */
+export function leggiImporto(testo) {
+  const t = String(testo ?? "").replace(/€/g, "").replace(/\s+/g, "");
+  if (t === "") return null;
+  let n;
+  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(t)) n = Number(t.replace(/\./g, "").replace(",", "."));
+  else if (/^\d+([.,]\d{1,2})?$/.test(t)) n = Number(t.replace(",", "."));
+  else return null;
+  return Math.round(n * 100) / 100;
+}
+
+/** Un importo da mostrare in un campo, con la virgola: 1500.5 → «1500,50». */
+export function importoNelCampo(n) {
+  if (n === null || n === undefined || n === "") return "";
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "";
+  return Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ",");
+}
+
 /** Il nome del gruppo dalla lettera; una lettera sconosciuta si dice, non si nasconde. */
 export function nomeGruppo(codice) {
   return GRUPPI.find((g) => g.codice === codice)?.nome ?? `Gruppo ${codice}`;
