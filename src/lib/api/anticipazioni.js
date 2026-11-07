@@ -12,6 +12,7 @@
 
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { segnaConVoce, togliSpunta } from "./spuntaInvestimento";
 
 // --- Il vocabolario dei tag (chiuso, lo governa lui) -----------------
 
@@ -117,6 +118,25 @@ export function parametriRegistraAnticipazione(payload) {
 //    Senza fattura resta l'inserimento diretto (una tabella, nessuna
 //    conseguenza altrove).
 export async function createAnticipazione(payload) {
+  // 🔴 UN INVESTIMENTO NASCE CON LA SUA VOCE (parte 6 del piano, 07/11):
+  //    la nota si scrive senza spunta, poi segna_investimento mette spunta
+  //    e voce insieme. Se il secondo passo si ferma, la nota resta scritta
+  //    senza spunta, e l'errore lo dice (`notaScritta`).
+  // ⚠️ Se la fattura pagata è già segnata, la spunta e la voce passano da
+  //    sole alla nota (20261107000003): il secondo passo allora non aggiunge niente.
+  const investimento = payload?.eInvestimento === true;
+  if (investimento && !payload?.voce?.voceId) throw new Error("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
+  const scritta = await scriviAnticipazione(investimento ? { ...payload, eInvestimento: false } : payload);
+  if (!investimento) return scritta;
+  try {
+    await segnaConVoce("anticipazione", scritta.id, payload.voce);
+  } catch (e) {
+    throw Object.assign(new Error(`La nota è salvata, ma senza la spunta «investimento»: ${e.message} Rimettila dalla riga.`), { notaScritta: scritta });
+  }
+  return scritta;
+}
+
+async function scriviAnticipazione(payload) {
   if (payloadAnticipazione(payload).supplier_invoice_id) {
     const id = await eseguiOperazione("registra_anticipazione", parametriRegistraAnticipazione(payload));
     return { id };
@@ -169,14 +189,18 @@ export async function pareggiaAnticipazione(id, data) {
 //    quello che fosse cambiato nel frattempo, ed e' la famiglia del 12/08.
 //    Marcare NON tocca importo, data, motivo, fondi, fattura, documento,
 //    nota ne' lo stato del rimborso.
-export async function segnaInvestimentoAnticipazione(id, valore) {
+// 🔴 Dal 07/11 (parte 6 del piano) segnare vuol dire anche scegliere la
+//    voce, e togliere toglie anche i collegamenti al piano.
+export async function segnaInvestimentoAnticipazione(id, valore, voce = null) {
+  if (valore) await segnaConVoce("anticipazione", id, voce);
+  else await togliSpunta("anticipazione", id);
+  // ⚠️ Il gesto è già fatto: se fallisce solo la rilettura, si torna il nuovo valore.
   const { data, error } = await supabase
     .from("anticipazioni_socio")
-    .update({ e_investimento: valore })
-    .eq("id", id)
     .select("*, tag:tag_anticipazioni(etichetta)")
+    .eq("id", id)
     .single();
-  if (error) throw error;
+  if (error) return { id, e_investimento: valore };
   return data;
 }
 

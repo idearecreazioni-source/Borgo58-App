@@ -23,6 +23,7 @@ import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { doveEntraLaSpesa } from "../../lib/calcoli/investimento";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import { ScegliVoce, SpuntaConVoce } from "../../components/SceltaVoce";
 
 // La sezione personale del titolare (Blocco 7).
 //
@@ -69,6 +70,8 @@ export default function SezionePersonale() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(formaVuotaOggi);
+  // La voce del piano per una nota nuova segnata «investimento» (parte 6, 07/11).
+  const [voceNuova, setVoceNuova] = useState({ voceId: "", rataId: "" });
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
   // L'avviso sul riferimento compare solo DOPO aver premuto Registra senza
@@ -144,6 +147,10 @@ export default function SezionePersonale() {
 
   const registra = async (senzaAvviso = false) => {
     if (!form.importo || !form.tagId) return;
+    if (form.eInvestimento && !voceNuova.voceId) {
+      setError("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
+      return;
+    }
     if (!senzaAvviso && !form.documento.trim() && !form.supplierInvoiceId) {
       setAvvisoRif(true);
       return;
@@ -152,11 +159,23 @@ export default function SezionePersonale() {
     setSaving(true);
     setError("");
     try {
-      await createAnticipazione({ ...form, entityId });
+      await createAnticipazione({ ...form, entityId, voce: form.eInvestimento ? voceNuova : null });
       setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
+      setVoceNuova({ voceId: "", rataId: "" });
       await ricarica();
     } catch (e) {
+      // La nota è scritta ma senza la spunta: il modulo si svuota (se no la
+      // si registrerebbe due volte) e l'errore dice di rimetterla dalla riga.
       setError(e.message);
+      if (e.notaScritta) {
+        setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
+        setVoceNuova({ voceId: "", rataId: "" });
+        try {
+          await ricarica();
+        } catch {
+          // l'errore vero è già a schermo
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -167,17 +186,22 @@ export default function SezionePersonale() {
   // ⚠️ Il rifiuto del database e' un'INFORMAZIONE e va letto dove si e'
   //    premuto: dice quale delle due cose e' gia' contata — questa nota o
   //    l'uscita che paga la stessa fattura — e come cambiare idea.
-  const segnaInvestimento = async (n, valore) => {
+  // ⚠️ Dal 07/11 (parte 6 del piano) segnare chiede la voce: la sceglie
+  //    SpuntaConVoce, e l'errore resta qui sotto la riga come prima.
+  const segnaInvestimento = async (n, valore, voce = null) => {
     setMarcando(n.id);
     setErroreRiga((e) => ({ ...e, [n.id]: "" }));
     try {
-      const aggiornata = await segnaInvestimentoAnticipazione(n.id, valore);
+      const aggiornata = await segnaInvestimentoAnticipazione(n.id, valore, voce);
       // ⚠️ Si aggiorna SOLO la riga toccata: una ricarica completa
       //    butterebbe via quello che si sta scrivendo nel modulo sopra
       //    (trappola del 12/08).
       setNote((righe) => righe.map((r) => (r.id === n.id ? { ...r, ...aggiornata } : r)));
     } catch (e) {
       setErroreRiga((err) => ({ ...err, [n.id]: e.message }));
+      // La scelta della voce resta aperta (SpuntaConVoce): l'errore si
+      // legge qui sotto la riga, una volta sola.
+      throw e;
     } finally {
       setMarcando(null);
     }
@@ -523,7 +547,10 @@ export default function SezionePersonale() {
                   <input
                     type="checkbox"
                     checked={form.eInvestimento}
-                    onChange={(e) => setForm((f) => ({ ...f, eInvestimento: e.target.checked }))}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, eInvestimento: e.target.checked }));
+                      if (!e.target.checked) setVoceNuova({ voceId: "", rataId: "" });
+                    }}
                   />
                   <span>Investimento per il progetto</span>
                   {/* 🔴 LA SPIEGAZIONE SEGUE LA SOCIETÀ SCELTA — 21/09/2026.
@@ -579,6 +606,11 @@ export default function SezionePersonale() {
                     </span>
                   </Didascalia>
                 </label>
+                {form.eInvestimento && (
+                  <div data-prova="investimento-voce-nota-nuova" className="mb-3">
+                    <ScegliVoce valore={voceNuova} onCambia={setVoceNuova} disabilitata={saving} />
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <input
@@ -650,21 +682,18 @@ export default function SezionePersonale() {
                         {!n.documento_riferimento && " · senza documento"}
                         {n.nota && ` · ${n.nota}`}
                       </div>
-                      <label
-                        data-prova="investimento-nota"
-                        className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={Boolean(n.e_investimento)}
-                          disabled={marcando === n.id}
-                          onChange={(e) => segnaInvestimento(n, e.target.checked)}
-                        />
-                        <span>
-                          Investimento per il progetto
-                          {marcando === n.id ? " — salvo…" : ""}
-                        </span>
-                      </label>
+                      <div data-prova="investimento-nota">
+                        <SpuntaConVoce
+                          etichetta="Investimento per il progetto"
+                          segnata={Boolean(n.e_investimento)}
+                          occupata={marcando === n.id}
+                          onSegna={(voce) => segnaInvestimento(n, true, voce)}
+                          onTogli={() => segnaInvestimento(n, false)}
+                          mostraErrore={false}
+                        >
+                          <span>Investimento per il progetto</span>
+                        </SpuntaConVoce>
+                      </div>
                       {erroreRiga[n.id] && (
                         <p
                           data-prova="investimento-nota-errore"
@@ -740,21 +769,18 @@ export default function SezionePersonale() {
                           decisione di Alessio del 21/09: il costo del
                           progetto è lo stesso prima e dopo il rimborso. Il
                           rimborso chiude un debito, non annulla una spesa. */}
-                      <label
-                        data-prova="investimento-nota-chiusa"
-                        className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={Boolean(n.e_investimento)}
-                          disabled={marcando === n.id}
-                          onChange={(e) => segnaInvestimento(n, e.target.checked)}
-                        />
-                        <span>
-                          Investimento per il progetto
-                          {marcando === n.id ? " — salvo…" : ""}
-                        </span>
-                      </label>
+                      <div data-prova="investimento-nota-chiusa">
+                        <SpuntaConVoce
+                          etichetta="Investimento per il progetto"
+                          segnata={Boolean(n.e_investimento)}
+                          occupata={marcando === n.id}
+                          onSegna={(voce) => segnaInvestimento(n, true, voce)}
+                          onTogli={() => segnaInvestimento(n, false)}
+                          mostraErrore={false}
+                        >
+                          <span>Investimento per il progetto</span>
+                        </SpuntaConVoce>
+                      </div>
                       {erroreRiga[n.id] && (
                         <p className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
                           {erroreRiga[n.id]}

@@ -317,11 +317,15 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
     // ⚠️ La quarta e' lo speso del piano (07/11/2026): NON e' fiscale, legge
     //    l'etichetta per contare come speso solo i pagamenti ancora segnati,
     //    e la scrive solo dentro la propria verifica annullata.
+    // ⚠️ La quinta sono le fatture del piano (07/11/2026): NON e' fiscale,
+    //    passa la spunta dalla fattura al pagamento e pretende la voce per
+    //    ogni spunta nuova.
     expect(colpevoli).toEqual([
       "20260921000003_l_etichetta_investimento.sql",
       "20261101000001_l_anticipo_paga_la_fattura.sql",
       "20261107000001_il_piano_dell_investimento.sql",
       "20261107000002_il_piano_speso_e_collegamenti.sql",
+      "20261107000003_le_fatture_dell_investimento.sql",
     ]);
   });
 

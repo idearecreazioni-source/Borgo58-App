@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,8 +56,8 @@ vi.mock("../../src/lib/api/cash", () => ({
     return { id: "nuovo", ...p };
   }),
   deleteCashMovement: vi.fn(async () => ({})),
-  segnaInvestimento: vi.fn(async (id, valore) => {
-    spie.segna = [id, valore];
+  segnaInvestimento: vi.fn(async (id, valore, voce) => {
+    spie.segna = voce ? [id, valore, voce] : [id, valore];
     const riga = finto.movimenti.find((m) => m.id === id);
     return { ...riga, e_investimento: valore };
   }),
@@ -70,6 +70,28 @@ vi.mock("../../src/lib/api/cash", () => ({
     return finto.righe;
   }),
 }));
+
+// La voce del piano che si sceglie spuntando «investimento» (parte 6, 07/11).
+vi.mock("../../src/lib/api/spuntaInvestimento", () => ({
+  vociPerLaSpunta: vi.fn(async () => ({
+    meseApertura: "2027-04-01",
+    voci: [{ id: "v1", gruppo: "A", ordine: 1, descrizione: "Forno" }],
+    rate: [],
+  })),
+  segnaConVoce: vi.fn(async () => {}),
+  togliSpunta: vi.fn(async () => {}),
+}));
+
+// Sceglie la voce nel pezzo aperto dalla spunta, e se c'è preme «Segna».
+async function scegliLaVoce(dove, segna = true) {
+  const scelta = await waitFor(() => {
+    const s = dove.querySelector('[data-prova="scegli-voce"] select');
+    expect(s).toBeTruthy();
+    return s;
+  });
+  fireEvent.change(scelta, { target: { value: "v1" } });
+  if (segna) fireEvent.click(within(dove).getByRole("button", { name: "Segna investimento" }));
+}
 
 vi.mock("../../src/lib/supabase", () => ({
   supabase: {
@@ -170,9 +192,22 @@ describe("2-3 · la scelta nasce spenta e si conserva", () => {
     const { container } = await apriPrimaNota();
     fireEvent.change(container.querySelector('input[type="number"]'), { target: { value: "6000" } });
     fireEvent.click(container.querySelector('[data-prova="investimento-creazione"] input'));
+    await scegliLaVoce(container, false);
     fireEvent.click(screen.getByRole("button", { name: /Registra movimento/ }));
     await waitFor(() => expect(spie.crea).toBeTruthy());
     expect(spie.crea.e_investimento).toBe(true);
+    // 🔴 E con la sua voce (parte 6 del piano, 07/11).
+    const api = await import("../../src/lib/api/cash");
+    expect(api.createCashMovement.mock.calls[0][1].voce).toEqual({ voceId: "v1", rataId: "" });
+  });
+
+  it("🔴 spuntata senza voce, non si registra e si dice perché", async () => {
+    const { container } = await apriPrimaNota();
+    fireEvent.change(container.querySelector('input[type="number"]'), { target: { value: "6000" } });
+    fireEvent.click(container.querySelector('[data-prova="investimento-creazione"] input'));
+    fireEvent.click(screen.getByRole("button", { name: /Registra movimento/ }));
+    expect(await screen.findByText(/scegli anche la voce del piano/)).toBeTruthy();
+    expect(spie.crea).toBeNull();
   });
 
   it("🔴 cambiando verso dopo averla spuntata, non arriva un «sì» su un'entrata", async () => {
@@ -198,11 +233,14 @@ describe("4 · un'uscita gia' scritta si marca e si smarca", () => {
       expect(tutti(container, '[data-prova="investimento-riga"] input').length).toBeGreaterThan(0)
     );
     fireEvent.click(tutti(container, '[data-prova="investimento-riga"] input')[0]);
+    // 🔴 Spuntando non si salva ancora: si sceglie la voce (parte 6, 07/11).
+    expect(spie.segna).toBeNull();
+    await scegliLaVoce(tutti(container, '[data-prova="investimento-riga"]')[0]);
     await waitFor(() => expect(spie.segna).toBeTruthy());
-    // 🔴 Due argomenti e basta: l'identificativo e il valore. Rileggere la
-    //    riga e rimandarla intera sovrascriverebbe con dati vecchi quello che
-    //    fosse cambiato nel frattempo (trappola del 12/08).
-    expect(spie.segna).toEqual(["m1", true]);
+    // 🔴 L'identificativo, il valore e la voce: mai la riga intera riletta e
+    //    rimandata, che sovrascriverebbe con dati vecchi quello che fosse
+    //    cambiato nel frattempo (trappola del 12/08).
+    expect(spie.segna).toEqual(["m1", true, { voceId: "v1", rataId: "" }]);
   });
 
   it("e si smarca, senza cancellare e rifare la riga", async () => {
@@ -228,6 +266,7 @@ describe("4 · un'uscita gia' scritta si marca e si smarca", () => {
     );
     const letturePrima = api.listCashMovements.mock.calls.length;
     fireEvent.click(tutti(container, '[data-prova="investimento-riga"] input')[0]);
+    await scegliLaVoce(tutti(container, '[data-prova="investimento-riga"]')[0]);
     await waitFor(() => expect(spie.segna).toBeTruthy());
     expect(api.listCashMovements.mock.calls.length).toBe(letturePrima);
   });
@@ -450,8 +489,8 @@ vi.mock("../../src/lib/api/anticipazioni", () => ({
   listDaComunicare: vi.fn(async () => []),
   listTagAnticipazioni: vi.fn(async () => [TAG]),
   pareggiaAnticipazione: vi.fn(async () => ({})),
-  segnaInvestimentoAnticipazione: vi.fn(async (id, valore) => {
-    spie.segnaNota = [id, valore];
+  segnaInvestimentoAnticipazione: vi.fn(async (id, valore, voce) => {
+    spie.segnaNota = voce ? [id, valore, voce] : [id, valore];
     if (finto.rifiutoNota) throw new Error(finto.rifiutoNota);
     const n = finto.note.find((x) => x.id === id);
     return { ...n, e_investimento: valore };
@@ -489,10 +528,12 @@ describe("13-bis · l'etichetta c'e' dove la spesa vive", () => {
     const { container } = await apriAnticipazioni();
     fireEvent.change(container.querySelector('input[type="number"]'), { target: { value: "300" } });
     fireEvent.click(container.querySelector('[data-prova="investimento-nota-nuova"] input'));
+    await scegliLaVoce(container, false);
     fireEvent.change(screen.getByPlaceholderText(/numero dello scontrino/), { target: { value: "ZZ-1" } });
     fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
     await waitFor(() => expect(spie.creaNota).toBeTruthy());
     expect(spie.creaNota.eInvestimento).toBe(true);
+    expect(spie.creaNota.voce).toEqual({ voceId: "v1", rataId: "" });
   });
 });
 
@@ -503,7 +544,8 @@ describe("7 · una nota gia' scritta si marca e si smarca", () => {
     const caselle = tutti(container, '[data-prova="investimento-nota"] input');
     expect(caselle.length).toBeGreaterThan(0);
     fireEvent.click(caselle[0]);
-    await waitFor(() => expect(spie.segnaNota).toEqual(["n1", true]));
+    await scegliLaVoce(tutti(container, '[data-prova="investimento-nota"]')[0]);
+    await waitFor(() => expect(spie.segnaNota).toEqual(["n1", true, { voceId: "v1", rataId: "" }]));
   });
 
   it("🔴 e l'elenco si aggiorna SOLO sulla riga toccata", async () => {
@@ -517,6 +559,7 @@ describe("7 · una nota gia' scritta si marca e si smarca", () => {
     const { container } = await apriAnticipazioni();
     const letturePrima = api.listAnticipazioni.mock.calls.length;
     fireEvent.click(tutti(container, '[data-prova="investimento-nota"] input')[0]);
+    await scegliLaVoce(tutti(container, '[data-prova="investimento-nota"]')[0]);
     await waitFor(() => expect(spie.segnaNota).toBeTruthy());
     expect(api.listAnticipazioni.mock.calls.length).toBe(letturePrima);
   });
@@ -540,6 +583,7 @@ describe("7 · una nota gia' scritta si marca e si smarca", () => {
     finto.rifiutoNota = "La fattura ZZ-1 e' gia' contata nel costo del progetto.";
     const { container } = await apriAnticipazioni();
     fireEvent.click(tutti(container, '[data-prova="investimento-nota"] input')[0]);
+    await scegliLaVoce(tutti(container, '[data-prova="investimento-nota"]')[0]);
     await waitFor(() =>
       expect(container.querySelector('[data-prova="investimento-nota-errore"]')).toBeTruthy()
     );

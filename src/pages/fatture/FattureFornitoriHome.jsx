@@ -12,6 +12,7 @@ import {
   listSupplierInvoices,
   markInvoicePaid,
   registraNotaCredito,
+  segnaInvestimentoFattura,
   ultimeFatturePagate,
   updateSupplierInvoice,
 } from "../../lib/api/supplierInvoices";
@@ -24,6 +25,7 @@ import { eFatturaPagataConAnticipo, etichettaPagamento } from "../../lib/calcoli
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import FormNotaCredito from "../../components/FormNotaCredito";
+import { SpuntaConVoce } from "../../components/SceltaVoce";
 
 const emptyForm = {
   entity_id: "",
@@ -1041,6 +1043,36 @@ export default function FattureFornitoriHome() {
                     </p>
                   )}
 
+                  {/* 🔴 LA SPUNTA «INVESTIMENTO» SULLA FATTURA DA PAGARE (parte 6 del
+                      piano, 07/11): con la sua voce, conta come impegnata; quando la
+                      paghi, spunta e voce passano da sole al pagamento. Solo per
+                      Borgo 58: l'orto non è nel piano. */}
+                  {inv.entity_id === entities?.srls?.id && (
+                    <div data-prova="investimento-fattura" className="mt-2 flex items-start gap-1">
+                      <SpuntaConVoce
+                        etichetta="Investimento per il progetto"
+                        segnata={Boolean(inv.e_investimento)}
+                        onSegna={async (voce) => {
+                          await segnaInvestimentoFattura(inv.id, true, voce);
+                          setDaPagare((righe) => righe.map((r) => (r.id === inv.id ? { ...r, e_investimento: true } : r)));
+                        }}
+                        onTogli={async () => {
+                          await segnaInvestimentoFattura(inv.id, false);
+                          setDaPagare((righe) => righe.map((r) => (r.id === inv.id ? { ...r, e_investimento: false } : r)));
+                        }}
+                      >
+                        <span>Investimento per il progetto</span>
+                      </SpuntaConVoce>
+                      {/* La spiegazione fuori dall'etichetta: un pulsante dentro un'etichetta non va (revisione del 07/11). */}
+                          <Didascalia etichetta="Cosa vuol dire «investimento» su una fattura">
+                            Spunta quando la fattura è una spesa per <strong>mettere in piedi il locale</strong>,
+                            e scegli la voce del piano: finché non la paghi conta come «da pagare» su quella voce.
+                            Quando la paghi, la spunta e la voce passano da sole al pagamento.
+                            <br />
+                            Togliendo la spunta, la fattura esce anche dal piano.
+                          </Didascalia>
+                    </div>
+                  )}
                   <RigaNote inv={inv} />
                   <RigaCredito inv={inv} />
                   {(docPerId === inv.id || (inv.documenti ?? []).length > 0) && (
