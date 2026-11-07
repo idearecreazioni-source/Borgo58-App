@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // LA SPUNTA «INVESTIMENTO» CON LA SUA VOCE (parte 6 del piano, 07/11/2026).
 //
@@ -27,17 +28,17 @@ export async function vociPerLaSpunta() {
  */
 export async function segnaConVoce(fonte, id, voce) {
   if (!voce?.voceId) throw new Error("Scegli la voce del piano a cui va questa spesa.");
-  const { error } = await supabase.rpc("segna_investimento", {
+  // 🔴 DAL CORRIDOIO, come ogni scrittura su più tabelle (Contratto B4): la
+  //    spunta e il collegamento insieme, o niente.
+  await eseguiOperazione("segna_investimento", {
     p_fonte: fonte,
     p_id: id,
     p_voce_id: voce.voceId,
     p_rata_id: voce.rataId || null,
   });
-  if (error) throw error;
 }
 
 /** Toglie la spunta e i collegamenti al piano. */
 export async function togliSpunta(fonte, id) {
-  const { error } = await supabase.rpc("togli_investimento", { p_fonte: fonte, p_id: id });
-  if (error) throw error;
+  await eseguiOperazione("togli_investimento", { p_fonte: fonte, p_id: id });
 }

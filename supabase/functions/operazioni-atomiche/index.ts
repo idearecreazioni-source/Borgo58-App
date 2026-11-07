@@ -168,6 +168,11 @@ const OPERAZIONI = new Set([
   // collegata diventa «pagata (anticipo)», senza nessun movimento di cassa.
   // A meta' resterebbe una fattura ancora da pagare con la nota gia' scritta.
   "registra_anticipazione",
+  // La spunta «investimento» con la sua voce (07/11/2026, parte 6 del piano):
+  // la spunta sulla spesa E il collegamento alla voce, insieme. A meta'
+  // resterebbe una spesa segnata senza voce, che il database rifiuta.
+  "segna_investimento",
+  "togli_investimento",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",
