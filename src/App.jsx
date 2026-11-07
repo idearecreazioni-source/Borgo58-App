@@ -85,6 +85,7 @@ const ContiCorrenti = lazy(() => import("./pages/cassa/ContiCorrenti"));
 const MovimentiBanca = lazy(() => import("./pages/cassa/MovimentiBanca"));
 const ImportaFatturaElettronica = lazy(() => import("./pages/fatture/ImportaFatturaElettronica"));
 const CostoProgetto = lazy(() => import("./pages/cassa/CostoProgetto"));
+const PianoInvestimento = lazy(() => import("./pages/cassa/PianoInvestimento"));
 const Bar = lazy(() => import("./pages/comande/Bar"));
 const Cucina = lazy(() => import("./pages/comande/Cucina"));
 const Scontrini = lazy(() => import("./pages/comande/Scontrini"));
@@ -332,6 +333,7 @@ function AppRoutes() {
         <Route path="/cassa/banca" element={<RequireTitolare><Suspense fallback={<Caricamento />}><MovimentiBanca /></Suspense></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
+        <Route path="/cassa/costo-progetto/piano" element={<RequireTitolare><PianoInvestimento /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
             gliene deve ancora è un fatto suo e di quelle persone. */}

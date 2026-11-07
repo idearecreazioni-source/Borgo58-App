@@ -38,9 +38,10 @@ import {
 //    i totali arrivano da un'aggregazione del database, che non si puo'
 //    tagliare a mille righe.
 //
-// ⚠️ SERVE FINO A MARZO 2027 E POI DECADE: niente qui dentro e' permanente
-//    — nessun lavoro pianificato, nessuna scadenza, nessuna tabella. Dopo
-//    l'apertura basta smettere di usare l'etichetta.
+// ⚠️ LO SPESO RESTA UN'ETICHETTA (31/08), ma dal 07/11 ha accanto il
+//    PIANO DELL'INVESTIMENTO (/cassa/costo-progetto/piano, tabelle piano_*):
+//    il previsto voce per voce, che serve anche dopo l'apertura, fino a
+//    ottobre 2027. Vedi docs/DECISIONI.md, «Quanto è costato il progetto».
 
 export default function CostoProgetto() {
   const [dal, setDal] = useState("");
@@ -97,6 +98,13 @@ export default function CostoProgetto() {
         >
           ← Cassa
         </Link>
+        <Link
+          to="/cassa/costo-progetto/piano"
+          data-prova="vai-al-piano"
+          className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 px-3 testo-sala text-b58-charcoal hover:bg-b58-cream-dark"
+        >
+          Piano dell'investimento →
+        </Link>
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1 inline-flex items-start gap-2 flex-wrap">
@@ -114,8 +122,8 @@ export default function CostoProgetto() {
           <br />
           <br />
           Non e' un numero fiscale: non cambia deducibilita', IVA ne' imposte, e non
-          crea nessun debito verso di te. Serve fino all'apertura; dopo, basta smettere
-          di usare l'etichetta.
+          crea nessun debito verso di te. Quanto avevi previsto, voce per voce, lo trovi
+          nel piano dell'investimento.
         </Didascalia>
       </h1>
 
