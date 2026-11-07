@@ -311,9 +311,13 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
     //    porta solo il valore della casella dal modulo alla stessa riga di
     //    `anticipazioni_socio` che prima scriveva il browser. Nessun conteggio
     //    del costo o delle imposte la legge: lo guardano le prove qui sopra.
+    // ⚠️ La terza e' il piano dell'investimento (07/11/2026): NON e' fiscale,
+    //    legge l'etichetta solo per rifiutare il collegamento di una spesa non
+    //    segnata, e per non lasciarla togliere a una spesa gia' collegata.
     expect(colpevoli).toEqual([
       "20260921000003_l_etichetta_investimento.sql",
       "20261101000001_l_anticipo_paga_la_fattura.sql",
+      "20261107000001_il_piano_dell_investimento.sql",
     ]);
   });
 
