@@ -500,6 +500,12 @@ export default function PianoInvestimento() {
       setGiroSpeso((g) => g + 1);
     });
   const conti = useMemo(() => (letturaSpeso ? spesoDelPiano(letturaSpeso) : null), [letturaSpeso]);
+  const apertePerMese = useMemo(() => {
+    if (!letturaSpeso?.rateAperte) return null;
+    const m = new Map();
+    for (const r of letturaSpeso.rateAperte) m.set(r.mese_rel, Math.round(((m.get(r.mese_rel) ?? 0) + Number(r.aperto || 0)) * 100) / 100);
+    return m;
+  }, [letturaSpeso]);
   const collegamentiPerVoce = useMemo(() => {
     const m = new Map();
     for (const c of letturaSpeso?.collegamenti ?? []) m.set(c.voce_id, [...(m.get(c.voce_id) ?? []), c]);
@@ -761,16 +767,29 @@ export default function PianoInvestimento() {
               <p className="testo-sala text-b58-charcoal-soft">Nessuna rata scritta: aggiungile nelle voci.</p>
             ) : (
               <ul className="divide-y divide-b58-charcoal/10">
-                {mesi.map((m) => (
-                  <li key={m.mese_rel} data-prova="mese" className="py-2 flex items-baseline justify-between gap-3">
-                    <span className="text-b58-charcoal-soft">{m.etichetta}</span>
-                    <span className="text-b58-charcoal">{formatEUR(m.importo)}</span>
-                  </li>
-                ))}
+                {mesi.map((m) => {
+                  // Quanto resta da pagare di quel mese (parte 7): la parte che
+                  // pagamenti e fatture collegate non coprono già.
+                  const resta = apertePerMese?.get(m.mese_rel) ?? 0;
+                  return (
+                    <li key={m.mese_rel} data-prova="mese" className="py-2 flex items-baseline justify-between gap-3 flex-wrap">
+                      <span className="text-b58-charcoal-soft">{m.etichetta}</span>
+                      <span className="text-b58-charcoal text-right">
+                        {formatEUR(m.importo)}
+                        {apertePerMese && resta !== m.importo && (
+                          <span data-prova="mese-resta" className="block testo-sala text-b58-charcoal-soft">
+                            {resta > 0 ? `ancora da pagare ${formatEUR(resta)}` : "✓ tutto pagato o fatturato"}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <p className="testo-sala text-b58-charcoal-soft mt-3">
-              Sono solo le rate del piano: le fatture da pagare e le altre scadenze restano nella previsione di cassa.
+              Quello che resta da pagare entra anche nella previsione di cassa di Borgo 58, una volta sola: la parte già fatturata
+              compare lì come fattura, quella già pagata non compare più.
             </p>
           </section>
 

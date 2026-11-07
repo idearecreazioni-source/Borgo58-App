@@ -326,6 +326,9 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       "20261107000001_il_piano_dell_investimento.sql",
       "20261107000002_il_piano_speso_e_collegamenti.sql",
       "20261107000003_le_fatture_dell_investimento.sql",
+      // Le rate del piano nella previsione (07/11/2026): NON e' fiscale,
+      // legge l'etichetta per contare come pagati solo i pagamenti segnati.
+      "20261107000004_le_rate_del_piano_nella_previsione.sql",
     ]);
   });
 

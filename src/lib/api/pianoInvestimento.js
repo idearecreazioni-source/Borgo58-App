@@ -108,7 +108,7 @@ export async function archiviaVoce(id, archiviata) {
 
 /** Speso, impegnato, spese del progetto, collegamenti e il totale di controllo. */
 export async function leggiSpeso() {
-  const [speso, spese, costo, collegamenti] = await Promise.all([
+  const [speso, spese, costo, collegamenti, rateAperte] = await Promise.all([
     supabase.rpc("piano_speso_per_voce"),
     leggiAPagine(async (da, a) => {
       const { data, error } = await supabase.rpc("piano_spese_del_progetto").range(da, a);
@@ -121,9 +121,12 @@ export async function leggiSpeso() {
       .select("id, voce_id, rata_id, cash_movement_id, anticipazione_id, supplier_invoice_id, importo_attribuito")
       .order("created_at")
       .order("id"),
+    // Le rate ancora da pagare (parte 7): la parte che pagamenti e fatture
+    // collegate non coprono già.
+    supabase.rpc("piano_rate_aperte"),
   ]);
-  for (const r of [speso, costo, collegamenti]) if (r.error) throw r.error;
-  return { speso: speso.data ?? [], spese, costo: costo.data ?? [], collegamenti: collegamenti.data ?? [] };
+  for (const r of [speso, costo, collegamenti, rateAperte]) if (r.error) throw r.error;
+  return { speso: speso.data ?? [], spese, costo: costo.data ?? [], collegamenti: collegamenti.data ?? [], rateAperte: rateAperte.data ?? [] };
 }
 
 /**

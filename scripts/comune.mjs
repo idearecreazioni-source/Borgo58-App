@@ -462,6 +462,12 @@ export function esegui(programma, argomenti, opzioni = {}) {
   const r = spawnSync(programma, argomenti, {
     stdio: opzioni.silenzioso ? ["ignore", "pipe", "pipe"] : "inherit",
     encoding: "utf8",
+    // 🔴 64 MB E NON IL MEGA PREDEFINITO (07/11/2026): la rete contro la
+    //    funzione riscritta a memoria legge il corpo di TUTTE le funzioni
+    //    del progetto, e quel giorno ha passato il mega (1.049.304 byte).
+    //    Oltre il limite spawnSync tronca e fallisce (ENOBUFS), e lo script
+    //    diceva «il database non ha risposto» stampando metà delle funzioni.
+    maxBuffer: 64 * 1024 * 1024,
     shell: opzioni.shell === true,
     env: { ...process.env, PGCLIENTENCODING: "UTF8", ...(opzioni.env || {}) },
   });

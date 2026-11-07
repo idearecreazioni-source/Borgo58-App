@@ -307,7 +307,7 @@ export default function Previsione() {
                       <span className="testo-sala-grande font-medium text-b58-charcoal whitespace-nowrap">{formatEUR(a.importo)}</span>
                     </div>
                     <div className="testo-sala text-b58-charcoal-soft mt-0.5">
-                      {formatDate(a.quando)} · {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : "scritta da te"} · {a.mezzo}
+                      {formatDate(a.quando)} · {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : a.origine === "rata_piano" ? "rata del piano dell’investimento" : "scritta da te"} · {a.mezzo}
                     </div>
                   </li>
                 ))}
@@ -328,7 +328,7 @@ export default function Previsione() {
                         <td className="py-2 text-b58-charcoal-soft whitespace-nowrap">{formatDate(a.quando)}</td>
                         <td className="py-2 text-b58-charcoal">{a.descrizione}</td>
                         <td className="py-2 testo-sala text-b58-charcoal-soft">
-                          {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : "scritta da te"}
+                          {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : a.origine === "rata_piano" ? "rata del piano dell’investimento" : "scritta da te"}
                           {" · "}
                           {a.mezzo}
                         </td>

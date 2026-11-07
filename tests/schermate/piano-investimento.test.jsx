@@ -100,6 +100,17 @@ function spesoDiProva() {
     fonte, id, data, tipo: "srls", soggetto: "Borgo 58", causale: "Attrezzature", descrizione, nota: null, fattura: null, importo, assegnato,
   });
   return {
+    // Le rate ancora da pagare (parte 7): l'acconto della cappa pagato
+    // (10.000 su 8.000 → chiuso), aprile della cappa aperto; la pedana chiusa;
+    // l'affitto aperto per 1.200 su 1.500.
+    rateAperte: [
+      { rata_id: "r1", voce_id: "cappa", mese_rel: 0, aperto: 0 },
+      { rata_id: "r2", voce_id: "cappa", mese_rel: 1, aperto: 0 },
+      { rata_id: "r3", voce_id: "cappa", mese_rel: 2, aperto: 3000 },
+      { rata_id: "r4", voce_id: "cappa", mese_rel: 3, aperto: 3000 },
+      { rata_id: "r5", voce_id: "pedana", mese_rel: 0, aperto: 0 },
+      { rata_id: "r6", voce_id: "affitto", mese_rel: 0, aperto: 1200 },
+    ],
     speso: [
       { voce_id: "cappa", speso: 10000, impegnato: 7000, collegate: 2 },
       { voce_id: "pedana", speso: 2500, impegnato: 0, collegate: 1 },
@@ -507,6 +518,18 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
     fireEvent.click(within(pannello).getByRole("button", { name: "Collega la spesa" }));
     expect((await within(pannello).findByRole("alert")).textContent).toMatch(/dell'orto/);
     expect(within(pannello).getByLabelText("Spesa da collegare").value).toBe("prima_nota:m2");
+  });
+
+  it("lo scadenziario dice quanto resta da pagare di ogni mese (parte 7)", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="mese-resta"]').length).toBeGreaterThan(0));
+    const mesi = [...container.querySelectorAll('[data-prova="mese"]')].map((m) => m.textContent);
+    // Acconto: 10.500 previsti, restano 1.200 dell'affitto.
+    expect(mesi[0]).toMatch(/10\.500,00.*ancora da pagare 1\.200,00/);
+    // Aprile: 2.000 previsti, tutto pagato o fatturato.
+    expect(mesi[1]).toMatch(/2\.000,00.*tutto pagato o fatturato/);
+    // Maggio: tutto ancora da pagare, quindi nessuna riga in più.
+    expect(container.querySelectorAll('[data-prova="mese"]')[2].querySelector('[data-prova="mese-resta"]')).toBeNull();
   });
 
   it("«Togli» toglie il collegamento giusto", async () => {
