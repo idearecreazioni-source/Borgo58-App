@@ -81,6 +81,69 @@ export function classificaAllegato(nome, byte) {
   }
 }
 
+/**
+ * Un allegato che si salta SENZA dirlo e senza aprirlo: i file della busta
+ * PEC (daticert, smime), con i nomi fissati dalle regole della PEC. Ogni
+ * volta facevano scattare l'avviso «formato che non so aprire» (07/11).
+ *
+ * ⚠️ Solo questi. Il file `_MT_` dello SdI NON è qui: si apre, perché il
+ *    nome lo sceglie chi manda e una fattura chiamata «…_MT_001.xml»
+ *    sparirebbe; si tace solo dopo aver visto che non è una fattura (vedi
+ *    `xmlPerIlModello`). Qualunque altra cosa che non si legge continua ad
+ *    avvisare: uno scarto silenzioso è indistinguibile da una cosa mai
+ *    arrivata (20260812000005).
+ *
+ * @param {string} nome
+ * @returns {boolean}
+ */
+export function allegatoDaTacere(nome) {
+  return classificaAllegato(nome) === "tecnico";
+}
+
+/** Quanto XML si passa al modello: una fattura vera sta in poche decine di migliaia di caratteri. */
+export const MAX_CARATTERI_XML = 200000;
+
+/**
+ * Il testo da far leggere al modello per un allegato XML o `.p7m`: l'XML
+ * in chiaro, anche tirato fuori dalla busta firmata. Così una fattura
+ * elettronica o una distinta SEPA si leggono come testo invece di finire
+ * fra i «formati che non so aprire» (e di far improvvisare al modello il
+ * consiglio di un programma per aprire il .p7m).
+ *
+ * Il file `_MT_` dello SdI si apre come gli altri: se dentro c'è davvero
+ * una fattura si legge, altrimenti (i metadati veri) torna `silenzio`.
+ *
+ * @param {string} nome
+ * @param {Uint8Array} byte
+ * @returns {{testo: string, fattura: boolean, tagliato: boolean}|{silenzio: true}|null}
+ *   null se non è un XML leggibile
+ */
+export function xmlPerIlModello(nome, byte) {
+  const tipo = classificaAllegato(nome);
+  if (tipo !== "da_aprire" && tipo !== "metadati_sdi") return null;
+  let xml;
+  try {
+    xml = xmlDaFile(byte);
+    leggiXml(xml);
+  } catch {
+    return tipo === "metadati_sdi" ? { silenzio: true } : null;
+  }
+  const fattura = eFatturaPA(byte);
+  if (tipo === "metadati_sdi" && !fattura) return { silenzio: true };
+  const tagliato = xml.length > MAX_CARATTERI_XML;
+  return {
+    testo: tagliato ? `${xml.slice(0, MAX_CARATTERI_XML)}\n[… tagliato: il file è più lungo]` : xml,
+    fattura,
+    tagliato,
+  };
+}
+
+/** Si apre in `posta-leggi` come XML (anche i metadati SdI, per controllarli). */
+export function daAprireComeXml(nome) {
+  const tipo = classificaAllegato(nome);
+  return tipo === "da_aprire" || tipo === "metadati_sdi";
+}
+
 // --- la busta: mittente e oggetto -------------------------------------------
 
 /**

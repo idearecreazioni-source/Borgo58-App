@@ -38,7 +38,14 @@
 import Anthropic from "npm:@anthropic-ai/sdk@0.65.0";
 import { unzipSync } from "npm:fflate@0.8.2";
 import { firmaCorretta } from "../_shared/uguali.ts";
-import { etichettaCasella, testaDellaMail } from "../_shared/pec.js";
+import {
+  allegatoDaTacere,
+  daAprireComeXml,
+  eRicevutaPec,
+  etichettaCasella,
+  testaDellaMail,
+  xmlPerIlModello,
+} from "../_shared/pec.js";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -379,6 +386,28 @@ async function allegatoPerIlModello(a: {
   const byte = new Uint8Array(await r.arrayBuffer());
   if (byte.byteLength > MAX_BYTE_PER_ALLEGATO) return null;
 
+  // Un XML (anche dentro un .p7m firmato) si passa come testo: una fattura
+  // elettronica o una distinta SEPA si leggono così, invece di finire fra
+  // i formati che non so aprire (08/11/2026). Se il file si chiama .xml o
+  // .p7m ma dentro non c'è un XML, non si prova a spacciarlo per immagine.
+  // Il file `_MT_` dello SdI si apre anche lui: se è davvero una fattura
+  // si legge, se sono i metadati si tace (`silenzio`).
+  if (daAprireComeXml(a.file_name)) {
+    const xml = xmlPerIlModello(a.file_name, byte);
+    if (!xml) return null;
+    if ("silenzio" in xml) return { silenzio: true };
+    return {
+      blocco: {
+        type: "text",
+        text: `--- Contenuto di ${a.file_name} (${xml.fattura ? "fattura elettronica" : "XML"}) ---\n${xml.testo}`,
+      },
+      // Il testo esatto si conserva solo se è intero: un pezzo di fattura
+      // archiviato come se fosse tutta sarebbe peggio di niente.
+      grezzo: xml.tagliato ? null : xml.testo,
+      tagliato: xml.tagliato,
+    };
+  }
+
   const dentro = DA_SPACCHETTARE[a.mime];
   if (dentro) {
     const testo = testoDaPacchetto(byte, dentro);
@@ -654,7 +683,32 @@ async function leggiLaPosta() {
 
   for (const m of messaggi) {
     try {
+      // Le ricevute della PEC (accettazione, consegna) si chiudono senza
+      // modello e senza avviso: Alessio, 08/11, «spariscono del tutto».
+      // Restano registrate come scartate, con il motivo, finché la pulizia
+      // della posta non le toglie. Mancata consegna e simili NON sono qui:
+      // quelle vanno lette.
+      //
+      // ⚠️ Solo se gli allegati sono tutti file della busta: una ricevuta
+      //    che porta con sé un documento vero (un originale restituito)
+      //    passa per la lettura normale. E la chiusura si controlla: se non
+      //    riesce si va nel ramo degli errori, che lo scrive e lo conta,
+      //    invece di riprenderla ogni quarto d'ora senza dirlo.
       const tutti = m.posta_allegati ?? [];
+      if (
+        eRicevutaPec(m.oggetto, m.mittente) &&
+        tutti.every((a: { file_name?: string }) => allegatoDaTacere(a.file_name ?? ""))
+      ) {
+        const chiusa = await db(`posta_ricevuta?id=eq.${m.id}&stato=eq.da_leggere`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            stato: "scartata",
+            lettura_note: "Ricevuta della PEC: chiusa senza leggerla e senza avviso (scelta di Alessio, 08/11/2026).",
+          }),
+        });
+        if (!chiusa.ok) throw new Error(`ricevuta PEC non chiusa (${chiusa.status})`);
+        continue;
+      }
 
       // I documenti veri vanno letti, non nominati: su una fattura il
       // nome del file non dice l'importo né la scadenza.
@@ -669,10 +723,16 @@ async function leggiLaPosta() {
         mime?: string;
         file_name?: string;
       }) => {
+        // I file della busta PEC: niente da leggere, e niente da dire
+        // (08/11/2026). Tutto il resto che non si legge continua ad avvisare.
+        if (allegatoDaTacere(a.file_name ?? "")) return false;
         if (!a.storage_path) {
           scartati.push(`${a.file_name}: non è stato salvato nell'archivio`);
           return false;
         }
+        // .xml e .p7m si aprono qui (vedi `allegatoPerIlModello`), qualunque
+        // tipo dichiari chi li manda (application/xml, text/xml, pkcs7-mime…).
+        if (daAprireComeXml(a.file_name ?? "")) return true;
         if (!NATIVI.has(a.mime ?? "") && !DA_SPACCHETTARE[a.mime ?? ""]) {
           scartati.push(`${a.file_name}: formato che non so aprire (${a.mime ?? "?"})`);
           return false;
@@ -696,6 +756,8 @@ async function leggiLaPosta() {
           scartati.push(`${a.file_name}: troppo grande o illeggibile`);
           continue;
         }
+        if (letto.silenzio) continue;
+        if (letto.tagliato) scartati.push(`${a.file_name}: letto solo in parte, il file è troppo lungo`);
         const blocco = letto.blocco;
         const dim = blocco.type === "text"
           ? blocco.text.length
