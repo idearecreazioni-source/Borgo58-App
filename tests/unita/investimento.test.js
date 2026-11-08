@@ -329,6 +329,10 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // Le rate del piano nella previsione (07/11/2026): NON e' fiscale,
       // legge l'etichetta per contare come pagati solo i pagamenti segnati.
       "20261107000004_le_rate_del_piano_nella_previsione.sql",
+      // MEMO gestisce il piano (08/11/2026): NON e' fiscale, scrive
+      // l'etichetta solo dentro la propria verifica annullata; il
+      // collegamento vero passa da `segna_investimento`.
+      "20261108000003_memo_gestisce_il_piano.sql",
     ]);
   });
 
