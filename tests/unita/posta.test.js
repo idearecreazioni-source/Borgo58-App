@@ -234,7 +234,7 @@ describe("un documento non si archivia senza identita", () => {
     const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { titolo: "Rapportino" });
     expect(m).toMatch(/sezione/i);
     expect(m).toMatch(/data/i);
-    expect(m).toMatch(/Correggi i dati/);
+    expect(m).toMatch(/«Correggi»/);
   });
 
   it("manca solo il tipo: lo dice, e non parla della data", () => {

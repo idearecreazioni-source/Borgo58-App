@@ -36,6 +36,43 @@ export async function listPostaInAttesa() {
   return data;
 }
 
+/** Quante mail sistemate mostra la scheda «Sistemate»: le più recenti. */
+export const SISTEMATE_MAX = 50;
+
+/**
+ * Le mail già sistemate (diventate documenti), per la scheda «Sistemate»
+ * (08/11/2026). Queste sì con un tetto: crescono ogni giorno, e la scheda
+ * serve a ritrovare le ultime, non a fare l'archivio — l'archivio vero è
+ * in Documenti. La schermata dice quante ne mostra.
+ */
+export async function listPostaSistemata() {
+  const { data, error } = await supabase
+    .from("posta_ricevuta")
+    .select(
+      "*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path, errore)," +
+        " azioni:posta_azioni(id, tipo, titolo, descrizione, perche, parametri, stato)"
+    )
+    .eq("stato", "archiviata")
+    .order("ricevuta_il", { ascending: false })
+    .limit(SISTEMATE_MAX);
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Rimette una mail tolta per sbaglio (l'«Annulla» dopo «Togli la mail»).
+ * Torna nello stato che aveva: `da_leggere` o `proposta`. Una riga sola,
+ * con la RLS come barriera, come lo scarto.
+ */
+export async function rimettiPosta(postaId, stato) {
+  const { error } = await supabase
+    .from("posta_ricevuta")
+    .update({ stato: stato === "da_leggere" ? "da_leggere" : "proposta" })
+    .eq("id", postaId)
+    .eq("stato", "scartata");
+  if (error) throw error;
+}
+
 export async function contaPostaInAttesa() {
   const { count, error } = await supabase
     .from("posta_ricevuta")
