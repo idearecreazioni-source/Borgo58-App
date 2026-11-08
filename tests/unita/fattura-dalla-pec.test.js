@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
 import { proposteDaFattura } from "../../supabase/functions/_shared/pec.js";
 import { CAMPI_AZIONE, etichettaConferma, etichettaRifiuto } from "../../src/lib/calcoli/posta";
 
@@ -91,5 +92,32 @@ describe("la Posta sa dire la proposta nuova", () => {
 
   it("i dati della fattura non si correggono a mano", () => {
     expect(CAMPI_AZIONE.registra_fattura).toEqual([]);
+  });
+});
+
+// 🔴 08/11/2026, prima PEC vera dopo il rilascio: posta-leggi leggeva
+// `supplier_invoices` con la chiave di servizio e riceveva 403, perché quel
+// ruolo non può leggere le tabelle dei soldi (20260812000003). Nessuna prova
+// parla al database come la chiave di servizio: questa guarda il codice.
+describe("posta-leggi non legge le fatture con la chiave di servizio", () => {
+  const codice = readFileSync("supabase/functions/posta-leggi/index.ts", "utf8").replace(
+    /\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    "",
+  );
+  const migrazioni = readdirSync("supabase/migrations")
+    .filter((f) => f.endsWith(".sql"))
+    .map((f) => readFileSync(`supabase/migrations/${f}`, "utf8").replace(/--[^\n]*/g, ""))
+    .join("\n");
+
+  it("non chiede supplier_invoices alla REST", () => {
+    expect(codice).not.toMatch(/db\(\s*[`"']supplier_invoices/);
+  });
+
+  it("chiede alla funzione fatta per lei, e la funzione è aperta solo al servizio", () => {
+    expect(codice).toContain('db("rpc/fattura_gia_registrata_per_la_posta"');
+    expect(migrazioni).toMatch(
+      /grant execute on function fattura_gia_registrata_per_la_posta\(text\[\]\) to service_role;/,
+    );
+    expect(migrazioni).not.toMatch(/grant [^;]*select[^;]* on (table )?supplier_invoices to service_role/i);
   });
 });
