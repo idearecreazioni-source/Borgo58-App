@@ -1,3 +1,5 @@
+import { classificaAllegato } from "./pec.js";
+
 // ---------------------------------------------------------------------
 // Le regole della Posta in arrivo — 28/08/2026
 // ---------------------------------------------------------------------
@@ -29,7 +31,7 @@ export const TENTATIVI_DI_RIPIEGO = 3;
 // =====================================================================
 // QUALI CAMPI SI CORREGGONO, PER CIASCUN TIPO DI AZIONE
 // =====================================================================
-// Si vedono solo premendo «Correggi i dati»: i campi servono a correggere,
+// Si vedono solo premendo «Correggi»: i campi servono a correggere,
 // non a capire — quello che si legge e' la descrizione (critica di Alessio
 // del 28/08).
 //
@@ -333,13 +335,13 @@ export function motivoAzioneBloccata(azione, parametri) {
     const senzaTipo = !String(p.tipo ?? "").trim();
     const senzaData = !String(p.data ?? "").trim();
     if (senzaTipo && senzaData) {
-      return "Prima di archiviarlo servono la sezione e la data: premi «Correggi i dati», scegli la sezione e scrivi la data. Senza, il documento non compare in nessuna sezione dell'archivio e si ritrova solo ricordandone il titolo esatto.";
+      return "Prima di archiviarlo servono la sezione e la data: premi «Correggi», scegli la sezione e scrivi la data.";
     }
     if (senzaTipo) {
-      return "Manca la sezione dell'archivio: premi «Correggi i dati» e scegline una, altrimenti il documento non compare in nessuna sezione. Se l'assistente non l'ha proposta è perché non ha saputo dire quale sia: sceglierla è più sicuro che indovinarla.";
+      return "Manca la sezione dell'archivio: premi «Correggi» e scegline una. MEMO non l'ha saputa dire da solo.";
     }
     if (senzaData) {
-      return "Manca la data del documento: premi «Correggi i dati» e scrivila, altrimenti finisce in fondo all'elenco senza un posto nel tempo.";
+      return "Manca la data del documento: premi «Correggi» e scrivila.";
     }
     return null;
   }
@@ -366,4 +368,145 @@ export function motivoCaricoBloccato(azione, parametri) {
     return "Scegli il fornitore qui sotto: senza, il gestionale non riconoscerebbe gli stessi prodotti la prossima volta e smetterebbe di avvisarti sui rincari.";
   }
   return null;
+}
+
+// =====================================================================
+// LA POSTA A RIGHE — 08/11/2026
+// =====================================================================
+// Alessio, guardando la Posta con le prime PEC vere: ogni mail era un
+// blocco lungo e tutto aperto, quelle da decidere mescolate con quelle già
+// sistemate, i file tecnici della PEC in vista, note rosse che parlavano
+// di «application/xml», riquadri «Niente — Senza titolo» e pulsanti lunghi
+// una riga. Da qui: una riga per mail con un bollino, tre schede, solo gli
+// allegati veri, gli avvisi solo quando tocca a lui. Modello approvato
+// l'08/11.
+
+/** I file che non sono il contenuto di una mail ma la sua busta: la PEC
+ *  (daticert, smime, postacert.eml, le ricevute) e lo SdI (metadati
+ *  `_MT_`, notifiche `_RC_`, `_NS_`, `_MC_`, …). */
+const RICEVUTE_SDI = /_(RC|NS|MC|NE|DT|AT|EC|SE)_\d+\.xml$/i;
+const BUSTA_PEC = /^(postacert\.eml|submissionacceptance[^/]*\.xml|deliveryreceipt[^/]*\.xml)$/i;
+
+/** Un allegato che fa parte della busta e non del contenuto. */
+export function allegatoTecnico(nome) {
+  const n = String(nome ?? "").trim();
+  const c = classificaAllegato(n);
+  return c === "tecnico" || c === "metadati_sdi" || RICEVUTE_SDI.test(n) || BUSTA_PEC.test(n);
+}
+
+/** Gli allegati divisi fra quelli da mostrare e quelli tecnici, nascosti. */
+export function allegatiDaMostrare(allegati) {
+  const visibili = [];
+  const tecnici = [];
+  for (const a of allegati ?? []) (allegatoTecnico(a?.file_name) ? tecnici : visibili).push(a);
+  return { visibili, tecnici };
+}
+
+/**
+ * La nota di lettura detta in italiano semplice, senza i file tecnici.
+ *
+ * La nota la scrive `posta-leggi` come «nome: motivo; nome: motivo». Le
+ * mail arrivate prima della lettura delle PEC portano ancora righe come
+ * «daticert.xml: formato che non so aprire (application/xml)»: i file
+ * della busta si tacciono, gli altri si dicono senza il tipo tecnico.
+ * Se non resta niente, nessuna nota.
+ *
+ * @param {string|null|undefined} nota
+ * @returns {string|null}
+ */
+export function notaInChiaro(nota) {
+  const pezzi = String(nota ?? "")
+    .split(/;\s*/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const detti = [];
+  for (const p of pezzi) {
+    const m = p.match(/^(.+?):\s*(.+)$/);
+    if (!m) {
+      detti.push(p);
+      continue;
+    }
+    const [, nome, motivo] = m;
+    if (allegatoTecnico(nome)) continue;
+    if (/formato che non so aprire/i.test(motivo)) detti.push(`non sono riuscito ad aprire «${nome}»`);
+    else detti.push(`«${nome}»: ${motivo.replace(/\s*\([^)]*\/[^)]*\)\s*$/, "")}`);
+  }
+  if (!detti.length) return null;
+  const frase = detti.join("; ");
+  return frase.charAt(0).toUpperCase() + frase.slice(1) + ".";
+}
+
+/**
+ * Lo stato di una mail, per il bollino e per la scheda.
+ *
+ * - `guarda`: tocca a lui (MEMO si è fermato, o non sta leggendo);
+ * - `in_lettura`: MEMO la leggerà da solo;
+ * - `decidere`: c'è almeno una proposta da confermare o rifiutare;
+ * - `fatto`: è sistemata, con almeno una cosa fatta;
+ * - `niente`: letta, e non c'è niente da fare (solo «nessuna», o tutto rifiutato).
+ *
+ * @param {{stato?: string, azioni?: Array<{tipo?: string, stato?: string}>}} mail
+ * @param {{chiave?: string}} [lettura] il risultato di `statoLettura`
+ */
+export function statoDellaMail(mail, lettura) {
+  if (mail?.stato === "archiviata") return "fatto";
+  if (mail?.stato === "da_leggere") {
+    return ["arresa", "lettore_fermo", "non_so"].includes(lettura?.chiave) ? "guarda" : "in_lettura";
+  }
+  const azioni = mail?.azioni ?? [];
+  if (azioni.some((a) => a.stato === "proposta" && a.tipo !== "nessuna")) return "decidere";
+  if (azioni.some((a) => a.stato === "fatta")) return "fatto";
+  return "niente";
+}
+
+/** Il bollino di ogni stato: testo, non solo colore. */
+export const BOLLINO_POSTA = {
+  guarda: "Da guardare",
+  in_lettura: "In lettura",
+  decidere: "Da decidere",
+  fatto: "Fatto",
+  niente: "Niente da fare",
+};
+
+/** In quale scheda sta una mail: «Da decidere» raccoglie tutto ciò che non è chiuso. */
+export function inScheda(stato, scheda) {
+  if (scheda === "tutte") return true;
+  const aperta = stato === "decidere" || stato === "guarda" || stato === "in_lettura";
+  return scheda === "decidere" ? aperta : !aperta;
+}
+
+/**
+ * Il verbo corto del pulsante che conferma. Il nome completo
+ * (`etichettaConferma`) resta per i lettori di schermo e come titolo
+ * della proposta: il pulsante non deve andare a capo su un telefono.
+ */
+export function verboConferma(azione) {
+  switch (azione?.tipo) {
+    case "carico_magazzino":
+      return "Carica";
+    case "archivia_documento":
+    case "archivia_testo":
+      return "Archivia";
+    case "promemoria":
+    case "promemoria_multipli":
+      return "Metti in agenda";
+    case "da_fare_a_mano":
+      return "Segnatelo";
+    case "registra_fattura":
+      return "Registra";
+    default:
+      return "Conferma";
+  }
+}
+
+/**
+ * Il nome per il lettore di schermo di un pulsante corto: comincia sempre
+ * con le parole che si vedono, così chi comanda a voce («clic Carica»)
+ * trova il pulsante (WCAG 2.5.3, revisione ECC dell'08/11).
+ */
+export function conVerboDavanti(verbo, nomeIntero) {
+  const v = String(verbo ?? "").trim();
+  const n = String(nomeIntero ?? "").trim();
+  if (!n || n === v) return v;
+  return n.toLowerCase().startsWith(v.toLowerCase()) ? n : `${v}: ${n}`;
 }
