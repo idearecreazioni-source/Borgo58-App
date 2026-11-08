@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  MAX_CARATTERI_XML,
+  allegatoDaTacere,
   classificaAllegato,
+  daAprireComeXml,
+  xmlPerIlModello,
   eBustaPec,
   eFatturaPA,
   eGestorePec,
@@ -119,6 +123,51 @@ describe("gli allegati di una PEC", () => {
     expect(eFatturaPA(enc(FATTURA))).toBe(true);
     expect(eFatturaPA(enc("non xml"))).toBe(false);
     expect(eFatturaPA(new Uint8Array())).toBe(false);
+  });
+});
+
+describe("cosa si tace e cosa si fa leggere", () => {
+  it("senza aprirli si tacciono solo i file della busta", () => {
+    for (const n of ["daticert.xml", "daticert_1.xml", "smime.p7s", "smime_5.p7s"]) {
+      expect(allegatoDaTacere(n)).toBe(true);
+    }
+    for (const n of ["IT02046570426_gd9OJ_MT_001.xml", "SubmissionAcceptance.xml", "IT02046570426_gd9OJ.xml.p7m", "D030_SEPA_LIST.pdf", "foto.heic", "", undefined]) {
+      expect(allegatoDaTacere(n)).toBe(false);
+    }
+    expect(daAprireComeXml("IT02046570426_gd9OJ_MT_001.xml")).toBe(true);
+    expect(daAprireComeXml("IT02046570426_gd9OJ.xml.p7m")).toBe(true);
+    expect(daAprireComeXml("daticert.xml")).toBe(false);
+    expect(daAprireComeXml("D030_SEPA_LIST.pdf")).toBe(false);
+  });
+
+  it("il file _MT_ si tace solo dopo aver visto che non è una fattura", () => {
+    expect(xmlPerIlModello("IT02046570426_gd9OJ_MT_001.xml", enc(METADATI))).toEqual({ silenzio: true });
+    expect(xmlPerIlModello("IT02046570426_gd9OJ_MT_001.xml", enc("non xml"))).toEqual({ silenzio: true });
+    // Il nome lo sceglie chi manda: una fattura vera chiamata _MT_ si legge.
+    expect(xmlPerIlModello("IT123_MT_001.xml", enc(FATTURA))).toMatchObject({ fattura: true, testo: FATTURA });
+  });
+
+  it("la fattura firmata arriva al modello come XML", () => {
+    expect(xmlPerIlModello("IT00000000001_ab1Cd.xml.p7m", busta(FATTURA))).toEqual({ testo: FATTURA, fattura: true, tagliato: false });
+  });
+
+  it("una distinta SEPA arriva come XML, non come fattura", () => {
+    expect(xmlPerIlModello("SubmissionAcceptance.xml", enc(SEPA))).toEqual({ testo: SEPA, fattura: false, tagliato: false });
+  });
+
+  it("un XML lunghissimo si taglia e lo dice", () => {
+    const lungo = `<a>${"x".repeat(MAX_CARATTERI_XML + 10)}</a>`;
+    const x = xmlPerIlModello("lungo.xml", enc(lungo));
+    expect(x.tagliato).toBe(true);
+    expect(x.testo.length).toBeLessThan(lungo.length + 60);
+    expect(x.testo).toMatch(/tagliato/);
+  });
+
+  it("niente XML dentro, o file che non è XML: null", () => {
+    expect(xmlPerIlModello("rotto.xml.p7m", new Uint8Array([0x30, 0x82, 0xff]))).toBeNull();
+    expect(xmlPerIlModello("finto.xml", enc("<a><b></a>"))).toBeNull();
+    expect(xmlPerIlModello("D030_SEPA_LIST.pdf", enc("%PDF"))).toBeNull();
+    expect(xmlPerIlModello("daticert.xml", enc("<x/>"))).toBeNull();
   });
 });
 
