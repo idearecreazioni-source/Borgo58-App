@@ -186,3 +186,25 @@ describe("l'avviso che un appunto promette", () => {
     expect(avvisoDellElemento(el({ avviso_data: "sabato", avviso_ora: "15:00" }))).toBeNull();
   });
 });
+
+describe("le proposte del piano dell'investimento si leggono (08/11/2026)", () => {
+  it("dice voce e spesa per nome, senza gli identificativi", () => {
+    const t = datiInChiaro({
+      voce_id: "11111111-1111-1111-1111-111111111111",
+      voce_nome: "D · Arredi sala",
+      spesa_id: "22222222-2222-2222-2222-222222222222",
+      spesa_fonte: "prima_nota",
+      spesa_nome: "Falegname del 05/11/2026",
+      importo: 1200,
+    });
+    expect(t).toContain("voce del piano: D · Arredi sala");
+    expect(t).toContain("spesa: Falegname del 05/11/2026");
+    expect(t).not.toMatch(/1111|2222|prima_nota/);
+  });
+
+  it("l'aggiornamento dice com'era prima", () => {
+    const t = datiInChiaro({ voce_nome: "A · Forno", stato: "confermato", prima_stato: "stimato", prima_previsto: 9000 });
+    expect(t).toContain("adesso è: stimato");
+    expect(t).toContain("previsto adesso (euro): 9000");
+  });
+});
