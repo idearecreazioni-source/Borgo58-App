@@ -167,15 +167,17 @@ begin
   end if;
   v_piano := piano_per_memo();
 
-  -- La voce: col numero del catalogo, oppure con l'id già tradotto
-  -- (quando si ricontrolla al sì).
+  -- La voce: con l'id già tradotto (quando si ricontrolla al sì), oppure
+  -- col numero del catalogo. ⚠️ L'id vince: il numero vale solo per il
+  -- catalogo di quel momento, e fra la dettatura e il sì l'elenco può
+  -- essere cambiato (revisione ECC dell'08/11).
   if p_tipo in ('piano_collega', 'piano_voce_aggiorna') then
-    if coalesce(v_dati->>'voce', '') ~ '^\d+$' then
-      select e into v_voce from jsonb_array_elements(v_piano->'voci_piano') e
-       where (e->>'n')::integer = (v_dati->>'voce')::integer;
-    elsif nullif(v_dati->>'voce_id', '') is not null then
+    if nullif(v_dati->>'voce_id', '') is not null then
       select e into v_voce from jsonb_array_elements(v_piano->'voci_piano') e
        where e->>'id' = v_dati->>'voce_id';
+    elsif coalesce(v_dati->>'voce', '') ~ '^\d{1,6}$' then
+      select e into v_voce from jsonb_array_elements(v_piano->'voci_piano') e
+       where (e->>'n')::integer = (v_dati->>'voce')::integer;
     end if;
     if v_voce is null then
       v_manca := coalesce(v_manca,
@@ -192,19 +194,20 @@ begin
 
   -- -------------------------------------------------------------------------
   if p_tipo = 'piano_collega' then
-    if coalesce(v_dati->>'spesa', '') ~ '^\d+$' then
-      select e into v_spesa from jsonb_array_elements(v_piano->'spese_piano') e
-       where (e->>'n')::integer = (v_dati->>'spesa')::integer;
-    elsif nullif(v_dati->>'spesa_id', '') is not null then
+    if nullif(v_dati->>'spesa_id', '') is not null then
       -- Al sì la spesa si cerca per id fra TUTTE quelle del progetto: se
       -- intanto è stata assegnata tutta, qui non c'è più resto e si dice.
+      -- ⚠️ E solo fra quelle: un id estraneo non trova niente.
       select jsonb_build_object('fonte', s.fonte, 'id', s.id, 'data', s.data,
                'descrizione', coalesce(nullif(btrim(s.descrizione), ''), nullif(btrim(s.fattura), ''),
-                                       nullif(btrim(s.causale), ''), 'spesa'),
+                                       nullif(btrim(s.causale), ''), nullif(btrim(s.nota), ''), 'spesa'),
                'importo', s.importo, 'da_assegnare', s.importo - s.assegnato)
         into v_spesa
         from piano_spese_del_progetto() s
        where s.id::text = v_dati->>'spesa_id' and s.fonte = v_dati->>'spesa_fonte';
+    elsif coalesce(v_dati->>'spesa', '') ~ '^\d{1,6}$' then
+      select e into v_spesa from jsonb_array_elements(v_piano->'spese_piano') e
+       where (e->>'n')::integer = (v_dati->>'spesa')::integer;
     end if;
     if v_spesa is null then
       v_manca := coalesce(v_manca, 'Non ho capito quale spesa: deve essere fra quelle del progetto ancora da assegnare.');
@@ -239,7 +242,9 @@ begin
       exception when others then
         v_imp := null;
       end;
-      if v_imp is null or v_imp < 0 then
+      -- ⚠️ Zero, «NaN» e numeri oltre il campo (12 cifre) sono «non capito»,
+      --    non un errore tecnico al sì.
+      if v_imp is null or v_imp <= 0 or v_imp = 'NaN'::numeric or v_imp >= 1e10 then
         v_manca := coalesce(v_manca, 'Non ho capito il nuovo importo.');
       end if;
     end if;
@@ -248,7 +253,10 @@ begin
       v_manca := coalesce(v_manca, 'Non ho capito cosa cambia: lo stato, l''importo o la nota?');
     end if;
     if v_voce is not null then
-      v_dati := v_dati || jsonb_build_object('prima_stato', v_voce->>'stato', 'prima_previsto', (v_voce->>'previsto')::numeric);
+      v_dati := v_dati || jsonb_build_object(
+        'prima_stato', v_voce->>'stato',
+        'prima_previsto', (v_voce->>'previsto')::numeric,
+        'prima_nota', (select nota from piano_voci where id = (v_voce->>'id')::uuid));
     end if;
   end if;
 
@@ -268,12 +276,12 @@ begin
     exception when others then
       v_imp := null;
     end;
-    if v_imp is null or v_imp < 0 then
+    if v_imp is null or v_imp <= 0 or v_imp = 'NaN'::numeric or v_imp >= 1e10 then
       v_manca := coalesce(v_manca, 'Non ho capito quanto è previsto, IVA inclusa.');
     end if;
     if nullif(v_dati->>'aliquota_iva', '') is null then
       v_dati := v_dati || jsonb_build_object('aliquota_iva', 22);
-    elsif coalesce(v_dati->>'aliquota_iva', '') !~ '^\d+$'
+    elsif coalesce(v_dati->>'aliquota_iva', '') !~ '^\d{1,2}$'
           or (v_dati->>'aliquota_iva')::integer not in (0, 4, 5, 10, 22) then
       v_manca := coalesce(v_manca, 'Non ho capito l''aliquota IVA: 0, 4, 5, 10 o 22?');
     end if;
@@ -346,6 +354,10 @@ begin
     when 'piano_collega' then
       -- La stessa porta della spunta: segna «investimento» (già lo è) e
       -- collega il resto non assegnato, con tutti i controlli del piano.
+      -- ⚠️ `segna_investimento` è «security invoker», ma da qui gira coi
+      --    permessi di questa funzione, cioè senza la RLS: la barriera è il
+      --    controllo del titolare in cima, e l'id della spesa ritrovato fra
+      --    quelle del progetto. Non togliere né l'uno né l'altro.
       perform segna_investimento(v_d->>'spesa_fonte', (v_d->>'spesa_id')::uuid, (v_d->>'voce_id')::uuid, null);
       return jsonb_build_object('voce_id', v_d->>'voce_id', 'spesa_id', v_d->>'spesa_id');
 
@@ -353,7 +365,12 @@ begin
       update piano_voci
          set stato         = coalesce(nullif(v_d->>'stato', ''), stato),
              importo_ivato = coalesce(nullif(v_d->>'importo', '')::numeric, importo_ivato),
-             nota          = coalesce(nullif(btrim(coalesce(v_d->>'nota', '')), ''), nota)
+             -- Una nota nuova si aggiunge a quella che c'era, non la cancella.
+             nota          = case
+                               when nullif(btrim(coalesce(v_d->>'nota', '')), '') is null then nota
+                               when nullif(btrim(coalesce(nota, '')), '') is null then btrim(v_d->>'nota')
+                               else nota || ' · ' || btrim(v_d->>'nota')
+                             end
        where id = (v_d->>'voce_id')::uuid and archiviata_il is null
       returning id into v_id;
       if v_id is null then
@@ -542,6 +559,39 @@ begin
       raise exception 'VERIFICA: una voce senza gruppo passa (%).', v_r->>'manca';
     end if;
 
+    -- 4bis. L'id salvato vince sul numero, che nel frattempo può indicare
+    --       un'altra riga (revisione ECC dell'08/11).
+    v_r := voce_risolvi_dati('piano_voce_aggiorna', jsonb_build_object(
+      'voce_id', v_voce, 'voce', 999999, 'nota', 'ZZ nota'));
+    if v_r->>'manca' is not null or (v_r->'dati'->>'voce_id')::uuid is distinct from v_voce then
+      raise exception 'VERIFICA: l''id salvato non ha vinto sul numero (%).', v_r;
+    end if;
+    -- Zero e uno stato inventato non passano.
+    v_r := voce_risolvi_dati('piano_voce_aggiorna', jsonb_build_object('voce_id', v_voce, 'importo', 0));
+    if coalesce(v_r->>'manca', '') not like '%nuovo importo%' then
+      raise exception 'VERIFICA: un importo zero passa (%).', v_r->>'manca';
+    end if;
+    v_r := voce_risolvi_dati('piano_voce_aggiorna', jsonb_build_object('voce_id', v_voce, 'stato', 'firmato'));
+    if coalesce(v_r->>'manca', '') not like '%lo stato%' then
+      raise exception 'VERIFICA: uno stato inventato passa (%).', v_r->>'manca';
+    end if;
+    -- La nota si aggiunge, non cancella.
+    perform fai_azione_dettata('piano_voce_aggiorna', jsonb_build_object('voce_id', v_voce, 'nota', 'ZZ prima'));
+    perform fai_azione_dettata('piano_voce_aggiorna', jsonb_build_object('voce_id', v_voce, 'nota', 'ZZ seconda'));
+    if (select nota from piano_voci where id = v_voce) is distinct from 'ZZ prima · ZZ seconda' then
+      raise exception 'VERIFICA: la nota nuova ha cancellato la vecchia (%).', (select nota from piano_voci where id = v_voce);
+    end if;
+    -- Una spesa già in parte sulla stessa voce: si dice, non si raddoppia.
+    insert into cash_movements (entity_id, direction, amount, movement_date, business_purpose, e_investimento)
+    values (v_srls, 'uscita', 500, current_date, 'ZZ spesa divisa verifica MEMO', true)
+    returning id into v_mov;
+    insert into piano_collegamenti (voce_id, cash_movement_id, importo_attribuito) values (v_voce, v_mov, 200);
+    v_r := voce_risolvi_dati('piano_collega', jsonb_build_object(
+      'spesa_id', v_mov, 'spesa_fonte', 'prima_nota', 'voce_id', v_voce));
+    if coalesce(v_r->>'manca', '') not like '%già in parte su questa voce%' then
+      raise exception 'VERIFICA: una spesa già in parte sulla voce passa (%).', v_r->>'manca';
+    end if;
+
     -- 5. Il portiere: lo staff non tocca il piano.
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
@@ -552,6 +602,12 @@ begin
     exception when others then v_respinto := sqlerrm like '%titolare%';
     end;
     if not v_respinto then raise exception 'VERIFICA: lo staff ha aggiunto una voce al piano.'; end if;
+    -- E l'anteprima glielo dice, senza errori tecnici.
+    v_r := voce_risolvi_dati('piano_voce_nuova', jsonb_build_object(
+      'gruppo', 'E', 'descrizione', 'ZZ staff', 'importo', 5));
+    if coalesce(v_r->>'manca', '') not like '%titolare%' then
+      raise exception 'VERIFICA: l''anteprima dello staff non dice che è del titolare (%).', v_r->>'manca';
+    end if;
 
     raise exception 'ZZ_ANNULLA';  -- <<< qui la sotto-transazione rientra
   exception when others then

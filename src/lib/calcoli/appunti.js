@@ -120,6 +120,7 @@ const ETICHETTE = {
   aliquota_iva: "IVA (%)",
   prima_stato: "adesso è",
   prima_previsto: "previsto adesso (euro)",
+  prima_nota: "nota adesso",
 };
 
 // ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una
