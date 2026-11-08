@@ -51,6 +51,9 @@ export const CAMPI_AZIONE = {
   promemoria: ["titolo", "data", "note"],
   promemoria_multipli: [],
   da_fare_a_mano: ["titolo", "data"],
+  // La fattura dalla PEC non si corregge: i dati sono quelli del file SdI
+  // (08/11/2026). Chi vuole cambiarli la rifiuta e la registra a mano.
+  registra_fattura: [],
   nessuna: [],
 };
 
@@ -266,6 +269,10 @@ export function etichettaConferma(azione, parametri) {
       const t = corto(p.titolo || azione?.titolo);
       return t ? `Segnati «${t}»` : "Segnati questa cosa da fare";
     }
+    case "registra_fattura": {
+      const n = corto(p.fattura?.numero, 16);
+      return n ? `Registra la fattura n. ${n}` : "Registra la fattura";
+    }
     default: {
       const t = corto(azione?.titolo);
       return t ? `Conferma «${t}»` : "Conferma";
@@ -284,6 +291,8 @@ export function etichettaRifiuto(azione) {
     case "promemoria":
     case "promemoria_multipli":
       return "Non mettere in agenda";
+    case "registra_fattura":
+      return "Non registrarla";
     default:
       return "Non farlo";
   }

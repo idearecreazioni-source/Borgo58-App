@@ -20,7 +20,7 @@
  *    e i metadati dello SdI, che hanno nomi fissati dalle regole tecniche.
  */
 
-import { leggiXml, xmlDaFile } from "./fatturaPA.js";
+import { TIPI_REGISTRABILI, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "./fatturaPA.js";
 
 // --- gli allegati -----------------------------------------------------------
 
@@ -115,7 +115,7 @@ export const MAX_CARATTERI_XML = 200000;
  *
  * @param {string} nome
  * @param {Uint8Array} byte
- * @returns {{testo: string, fattura: boolean, tagliato: boolean}|{silenzio: true}|null}
+ * @returns {{testo: string, fattura: boolean, tagliato: boolean, intero: string}|{silenzio: true}|null}
  *   null se non è un XML leggibile
  */
 export function xmlPerIlModello(nome, byte) {
@@ -135,7 +135,101 @@ export function xmlPerIlModello(nome, byte) {
     testo: tagliato ? `${xml.slice(0, MAX_CARATTERI_XML)}\n[… tagliato: il file è più lungo]` : xml,
     fattura,
     tagliato,
+    // L'XML intero, per costruire la registrazione: il taglio vale solo per il modello.
+    intero: xml,
   };
+}
+
+// --- la fattura diventa una proposta ------------------------------------------
+
+const dataItaliana = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d ?? "")) ? d.split("-").reverse().join("/") : d ?? "?");
+/** Il giorno di un istante, a Roma: un orario fra mezzanotte e le 2 non deve cadere il giorno prima. */
+function giornoARoma(istante) {
+  const d = new Date(istante ?? "");
+  if (Number.isNaN(d.getTime())) return "?";
+  return d.toLocaleDateString("it-IT", { timeZone: "Europe/Rome", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+const euroItaliano = (c) =>
+  c == null ? "?" : `${(c / 100).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+/**
+ * Le proposte che nascono da una fattura elettronica arrivata per posta.
+ *
+ * Le costruisce il CODICE dall'XML, non il modello: numero, data, importi e
+ * partita IVA si leggono dai loro campi (08/11/2026). Quattro casi:
+ *
+ * - una fattura registrabile e non ancora registrata → `registra_fattura`,
+ *   con dentro i dati pronti per `registra_fattura_elettronica`;
+ * - già registrata (stesso file SdI) → `nessuna`, che dice quando, e la
+ *   conferma chiude soltanto (non c'è niente da rifare);
+ * - una fattura con un problema (nota di credito, numero mancante…) →
+ *   `da_fare_a_mano`, col problema scritto;
+ * - un file con più fatture dentro (un «lotto») → `da_fare_a_mano`: si
+ *   registrano da «Importa fattura elettronica», che le mostra una per una.
+ *
+ * Un XML che non si legge come fattura non produce niente: l'ha già visto
+ * il modello come testo.
+ *
+ * @param {string} nomeFile il nome del file SdI (diventa `file_sdi`)
+ * @param {string} xml l'XML intero
+ * @param {{invoice_number?: string, invoice_date?: string, created_at?: string}|null} [giaRegistrata]
+ *   la fattura già presente con lo stesso file SdI, se c'è
+ * @returns {Array<{tipo: string, titolo: string, descrizione: string, perche: string, parametri: object}>}
+ */
+export function proposteDaFattura(nomeFile, xml, giaRegistrata = null) {
+  const { fatture, errori } = leggiFatturaPA(xml);
+  if (errori.length || !fatture.length) return [];
+  const perche = "È una fattura elettronica arrivata dallo SdI: i dati si leggono dai campi del file, senza interpretarli.";
+
+  if (fatture.length > 1) {
+    const titolo = `Registra le ${fatture.length} fatture del file ${nomeFile}`;
+    return [{
+      tipo: "da_fare_a_mano",
+      titolo,
+      descrizione: `Il file ${nomeFile} contiene ${fatture.length} fatture: registrale da Fatture → Importa fattura elettronica, che le mostra una per una.`,
+      perche,
+      parametri: { titolo, passi: ["Scarica l'allegato dalla Posta", "Aprilo da Fatture → Importa fattura elettronica"] },
+    }];
+  }
+
+  const f = fatture[0];
+  const chi = f.fornitore?.denominazione ?? "fornitore senza nome";
+  const numero = f.numero ?? "senza numero";
+
+  if (f.errori.length) {
+    const titolo = `Controlla la fattura ${numero} di ${chi}`;
+    return [{
+      tipo: "da_fare_a_mano",
+      titolo,
+      descrizione: `Non si registra da sola: ${f.errori.join(" ")}`,
+      perche,
+      parametri: { titolo, passi: f.errori },
+    }];
+  }
+
+  if (giaRegistrata) {
+    return [{
+      tipo: "nessuna",
+      titolo: `La fattura n. ${numero} di ${chi} è già registrata`,
+      descrizione:
+        `Registrata il ${giornoARoma(giaRegistrata.created_at)}` +
+        ` (n. ${giaRegistrata.invoice_number ?? numero} del ${dataItaliana(giaRegistrata.invoice_date)}): non c'è niente da rifare.`,
+      perche,
+      parametri: { gia_registrata: giaRegistrata, file_sdi: nomeFile },
+    }];
+  }
+
+  const tipo = TIPI_REGISTRABILI[f.tipo] ?? "Fattura";
+  const scadenza = f.scadenza ? `, da pagare entro il ${dataItaliana(f.scadenza)}` : "";
+  return [{
+    tipo: "registra_fattura",
+    titolo: `Registra la fattura n. ${numero} di ${chi} (${euroItaliano(f.totaleCentesimi)})`,
+    descrizione:
+      `${tipo} del ${dataItaliana(f.data)}, totale ${euroItaliano(f.totaleCentesimi)}${scadenza}. Va su Borgo 58.` +
+      (f.avvisi.length ? ` Attenzione: ${f.avvisi.join(" ")}` : ""),
+    perche,
+    parametri: { fattura: payloadFattura(f, nomeFile), file_sdi: nomeFile, avvisi: f.avvisi },
+  }];
 }
 
 /** Si apre in `posta-leggi` come XML (anche i metadati SdI, per controllarli). */

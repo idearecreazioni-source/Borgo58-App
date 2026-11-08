@@ -148,11 +148,11 @@ describe("cosa si tace e cosa si fa leggere", () => {
   });
 
   it("la fattura firmata arriva al modello come XML", () => {
-    expect(xmlPerIlModello("IT00000000001_ab1Cd.xml.p7m", busta(FATTURA))).toEqual({ testo: FATTURA, fattura: true, tagliato: false });
+    expect(xmlPerIlModello("IT00000000001_ab1Cd.xml.p7m", busta(FATTURA))).toEqual({ testo: FATTURA, fattura: true, tagliato: false, intero: FATTURA });
   });
 
   it("una distinta SEPA arriva come XML, non come fattura", () => {
-    expect(xmlPerIlModello("SubmissionAcceptance.xml", enc(SEPA))).toEqual({ testo: SEPA, fattura: false, tagliato: false });
+    expect(xmlPerIlModello("SubmissionAcceptance.xml", enc(SEPA))).toEqual({ testo: SEPA, fattura: false, tagliato: false, intero: SEPA });
   });
 
   it("un XML lunghissimo si taglia e lo dice", () => {
