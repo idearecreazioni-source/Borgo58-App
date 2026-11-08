@@ -43,6 +43,7 @@ import {
   daAprireComeXml,
   eRicevutaPec,
   etichettaCasella,
+  proposteDaFattura,
   testaDellaMail,
   xmlPerIlModello,
 } from "../_shared/pec.js";
@@ -209,6 +210,16 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
   l'informazione non deve perdersi. NON usarlo più per il carico del magazzino
   e per i lotti HACCP: adesso il gestionale li sa fare, ed è "carico_magazzino".
 - "nessuna": non c'è niente da fare. Da sola, senza altre azioni.
+
+LE FATTURE ELETTRONICHE (un allegato segnato «fattura elettronica», di solito
+un .xml.p7m arrivato dallo SdI): la registrazione fra le Fatture fornitori la
+propone il gestionale da solo, con una riga sua letta dai campi del file. Tu
+NON proporre di registrarla, né con "da_fare_a_mano" né in altro modo: sarebbe
+un doppione. Puoi proporre "carico_magazzino" se elenca merce, come per
+qualunque fattura.
+NON consigliare MAI programmi esterni (lettori di firma digitale, CAdES,
+software per il .p7m): il gestionale apre da sé questi file, e un consiglio
+del genere manda Alessio a cercare una cosa che non gli serve.
 
 RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
 {"sintesi": "una riga: cosa è arrivato",
@@ -405,6 +416,9 @@ async function allegatoPerIlModello(a: {
       // archiviato come se fosse tutta sarebbe peggio di niente.
       grezzo: xml.tagliato ? null : xml.testo,
       tagliato: xml.tagliato,
+      // La fattura intera, per la proposta «Registra la fattura» che
+      // costruisce il codice (non il modello).
+      fattura: xml.fattura ? { nome: a.file_name, xml: xml.intero } : null,
     };
   }
 
@@ -748,6 +762,8 @@ async function leggiLaPosta() {
       // Il testo esatto degli allegati che si aprono da soli (.odt/.docx),
       // per nome di file. Vedi `contenuto` più sotto.
       const testiEsatti = new Map<string, string>();
+      // Le fatture elettroniche trovate fra gli allegati (vedi più sotto).
+      const fattureLette: { nome: string; xml: string }[] = [];
       let peso = 0;
       for (const a of daLeggere) {
         // deno-lint-ignore no-explicit-any
@@ -757,6 +773,7 @@ async function leggiLaPosta() {
           continue;
         }
         if (letto.silenzio) continue;
+        if (letto.fattura) fattureLette.push(letto.fattura);
         if (letto.tagliato) scartati.push(`${a.file_name}: letto solo in parte, il file è troppo lungo`);
         const blocco = letto.blocco;
         const dim = blocco.type === "text"
@@ -870,7 +887,7 @@ async function leggiLaPosta() {
       // Le azioni proposte. Solo i tipi che il gestionale sa eseguire: se
       // il modello ne inventasse uno, proporrebbe un bottone che non fa
       // niente — peggio che non proporlo, perché insegna a non fidarsi.
-      const azioni = (Array.isArray(p.azioni) ? p.azioni : [])
+      const azioni: Record<string, unknown>[] = (Array.isArray(p.azioni) ? p.azioni : [])
         .filter((a: Record<string, unknown>) => TIPI_AZIONE.has(String(a?.tipo)))
         // Un contratto con gli aumenti a scaglioni ne produce facilmente
         // dieci: il tetto serve a fermare una risposta impazzita, non a
@@ -1009,11 +1026,43 @@ async function leggiLaPosta() {
           };
         });
 
-      if (azioni.length) {
-        await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
+      // Le fatture elettroniche: la proposta la costruisce il codice
+      // dall'XML (08/11/2026). Il modello non può proporre
+      // `registra_fattura` (non è in TIPI_AZIONE): numero, importi e
+      // partita IVA non passano da un'interpretazione.
+      for (const fl of fattureLette) {
+        // Già registrata con lo stesso file SdI? Allora si dice quando,
+        // invece di proporre un bottone che verrebbe rifiutato.
+        // Si cerca anche col nome senza `.p7m`: la stessa fattura importata
+        // a mano come .xml porta quel nome. Se il controllo non risponde
+        // non si propone alla cieca: la mail si riprende al giro dopo.
+        const nomi = [...new Set([fl.nome, fl.nome.replace(/\.p7m$/i, "")])]
+          .map((n) => `"${n.replace(/["\\]/g, "")}"`)
+          .join(",");
+        const r = await db(
+          `supplier_invoices?file_sdi=in.(${encodeURIComponent(nomi)})` +
+            `&select=invoice_number,invoice_date,created_at&limit=1`,
+        );
+        if (!r.ok) throw new Error(`non riesco a controllare se la fattura ${fl.nome} è già registrata (${r.status})`);
+        const gia = (await r.json())[0] ?? null;
+        for (const pr of proposteDaFattura(fl.nome, fl.xml, gia)) {
+          azioni.push({ posta_id: m.id, ...pr });
+        }
       }
 
-      await db(`posta_ricevuta?id=eq.${m.id}`, {
+      // ⚠️ Una mail riletta dopo un guasto (le proposte scritte, ma la mail
+      //    rimasta «da leggere») non deve proporre tutto due volte: un
+      //    secondo «Registra la fattura» è peggio di un secondo «Archivia».
+      //    Se ha già delle proposte, non se ne scrivono altre.
+      const giaProposte = await db(`posta_azioni?posta_id=eq.${m.id}&select=id&limit=1`);
+      if (!giaProposte.ok) throw new Error(`non riesco a leggere le proposte già fatte (${giaProposte.status})`);
+      const ciSonoGia = ((await giaProposte.json()) as unknown[]).length > 0;
+      if (azioni.length && !ciSonoGia) {
+        const scritte = await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
+        if (!scritte.ok) throw new Error(`proposte non scritte (${scritte.status})`);
+      }
+
+      const lettura = await db(`posta_ricevuta?id=eq.${m.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           stato: "proposta",
@@ -1032,6 +1081,9 @@ async function leggiLaPosta() {
           lettura_note: scartati.length ? scartati.join("; ") : null,
         }),
       });
+      // Se la mail non passa a «proposta» si dice: resterebbe «da leggere»
+      // con le proposte già scritte (vedi `ciSonoGia` qui sopra).
+      if (!lettura.ok) throw new Error(`la mail non è passata fra le proposte (${lettura.status})`);
       letti++;
       if (scartati.length) {
         saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${scartati.join("; ")}`);

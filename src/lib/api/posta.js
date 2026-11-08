@@ -63,6 +63,17 @@ export async function confermaAzione(azioneId, parametri) {
 }
 
 /**
+ * Registra fra le Fatture fornitori la fattura elettronica arrivata dalla
+ * PEC (08/11/2026). Sempre su Borgo 58, con i dati che `posta-leggi` ha
+ * letto dall'XML: qui non si passa nessun dato della fattura, solo quale
+ * proposta si conferma. Dal corridoio: fornitore, fattura e proposta
+ * cambiano insieme.
+ */
+export async function registraFatturaDallaPosta(azioneId) {
+  return eseguiOperazione("registra_fattura_dalla_posta", { p_azione_id: azioneId });
+}
+
+/**
  * Rifiuto di una singola azione: una riga sola, nessuna conseguenza
  * altrove — scrittura diretta con la RLS come barriera (categoria A).
  */

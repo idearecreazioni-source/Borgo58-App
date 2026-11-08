@@ -367,6 +367,9 @@ const OPERAZIONI = new Set([
   // promemoria. Il bonifico che paga una fattura tocca fattura, prima nota
   // e movimento della banca; registrarne uno nuovo, prima nota e banca.
   "registra_fattura_elettronica",
+  // La stessa registrazione, confermata dalla Posta per una fattura
+  // arrivata via PEC (20261108000001): fornitore, fattura e proposta.
+  "registra_fattura_dalla_posta",
   "paga_fattura_da_movimento_banca",
   "registra_movimento_banca",
   // 🔴 La voce si chiude insieme al dato (20261026000002): una cosa detta a

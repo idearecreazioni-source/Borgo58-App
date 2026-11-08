@@ -7,6 +7,7 @@ import {
   getMaxTentativiLettura,
   lettorePostaFermo,
   listPostaInAttesa,
+  registraFatturaDallaPosta,
   rifiutaAzione,
   riprovaLettura,
   scartaPosta,
@@ -1277,7 +1278,16 @@ export default function PostaInArrivo() {
                           <button
                             type="button"
                             disabled={inCorso === a.id || !!bloccato}
-                            onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
+                            onClick={() =>
+                              agisci(a.id, () =>
+                                // La fattura dalla PEC ha la sua porta: i dati
+                                // li prende il database dalla proposta, non
+                                // da qui (08/11/2026).
+                                a.tipo === "registra_fattura"
+                                  ? registraFatturaDallaPosta(a.id)
+                                  : confermaAzione(a.id, valori[a.id])
+                              )
+                            }
                             className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-3 py-1.5 testo-sala-grande"
                           >
                             {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
