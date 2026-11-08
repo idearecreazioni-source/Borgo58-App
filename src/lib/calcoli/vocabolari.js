@@ -281,6 +281,12 @@ export const GUARDIE_ESENTI = [
       "il titolare dalla pagina Stampanti chiede solo una prova di stampa o una lettura di stato: «comanda» e «biglietto del turno» li accoda il database quando il tablet invia, legati alle loro righe, e chiederli a mano darebbe un foglio senza niente dentro. Sono due dei quattro tipi di lavoro_tipo_di_questo_passo, apposta (29/10/2026, 20261029000001)",
   },
   {
+    funzione: "voce_risolvi_piano",
+    parametro: "p_tipo",
+    perche:
+      "non è una guardia ma un ramo: nomina i due tipi di MEMO che parlano di una voce del piano che c'è già (piano_collega, piano_voce_aggiorna), un sottoinsieme apposta dei tipi di tipi_azione_vocale. Il terzo, piano_voce_nuova, la voce non ce l'ha ancora. La funzione la chiama solo voce_risolvi_dati, per quei tre tipi (08/11/2026, 20261108000003)",
+  },
+  {
     funzione: "azione_domanda",
     parametro: "p_stato",
     perche:

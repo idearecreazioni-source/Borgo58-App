@@ -55,6 +55,10 @@ const DI_SERVIZIO = new Set([
   // sigla di trentasei caratteri in una firma non dice niente a nessuno.
   "prenotazione_id",
   "supplier_id",
+  // Il piano dell'investimento (08/11/2026): accanto ci sono «voce» e «spesa».
+  "voce_id",
+  "spesa_id",
+  "spesa_fonte",
 ]);
 
 /**
@@ -110,6 +114,13 @@ const ETICHETTE = {
   telefono_non_capito: "telefono non capito (non lo scrivo)",
   // 28/10/2026: il promemoria per luogo, letto come lo si e' detto.
   luogo: "ricordamelo quando arrivo a",
+  // Il piano dell'investimento (08/11/2026).
+  voce_nome: "voce del piano",
+  spesa_nome: "spesa",
+  aliquota_iva: "IVA (%)",
+  prima_stato: "adesso è",
+  prima_previsto: "previsto adesso (euro)",
+  prima_nota: "nota adesso",
 };
 
 // ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una
