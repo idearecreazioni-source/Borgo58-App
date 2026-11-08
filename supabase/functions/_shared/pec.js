@@ -91,12 +91,32 @@ export function eBustaPec(testo) {
   return /--\s*(Messaggio di posta certificata|Certified mail message)\s*--/i.test(String(testo ?? ""));
 }
 
-/** Chi firma le buste e le ricevute di Aruba: solo da lì una busta si crede. */
-const GESTORE_PEC = /^\s*posta-certificata@/i;
+/**
+ * Chi firma le buste e le ricevute: la PEC del locale è di Aruba, quindi
+ * solo da questo indirizzo una busta si crede.
+ */
+const GESTORE_PEC = "posta-certificata@pec.aruba.it";
+
+/**
+ * Il mittente è il gestore della PEC? Il mittente può arrivare nudo
+ * («posta-certificata@pec.aruba.it») o col nome davanti («Posta
+ * Certificata <posta-certificata@pec.aruba.it>»).
+ *
+ * ⚠️ IL NOME DAVANTI LO SCRIVE CHI MANDA: si confronta solo l'indirizzo tra
+ *    `<…>` (o tutto, se non c'è), e per intero. Con una ricerca dentro la
+ *    stringa, «"posta-certificata@x" <truffa@esempio.it>» passava per
+ *    busta PEC e il mittente mostrato diventava quello scritto dal truffatore
+ *    (revisione ECC dell'08/11).
+ */
+export function eGestorePec(mittente) {
+  const s = String(mittente ?? "").trim();
+  const tra = s.match(/<([^<>]*)>\s*$/);
+  return (tra ? tra[1] : s).trim().toLowerCase() === GESTORE_PEC;
+}
 
 /** È il mittente tecnico che incarta le PEC (vuoto = non lo si sa, si guarda solo il testo). */
 function daGestorePec(mittenteBusta) {
-  return mittenteBusta == null || GESTORE_PEC.test(String(mittenteBusta));
+  return mittenteBusta == null || eGestorePec(mittenteBusta);
 }
 
 /** Un indirizzo email, senza parentesi, virgolette o punteggiatura attaccate. */
@@ -183,8 +203,30 @@ export function oggettoPulito(oggetto) {
  * @returns {boolean}
  */
 export function eRicevutaPec(oggetto, mittenteBusta) {
-  if (!GESTORE_PEC.test(String(mittenteBusta ?? ""))) return false;
+  if (!eGestorePec(mittenteBusta)) return false;
   return /^\s*(ACCETTAZIONE|AVVENUTA CONSEGNA|CONSEGNA|PRESA IN CARICO)\s*:/i.test(String(oggetto ?? ""));
+}
+
+/**
+ * Mittente e oggetto da registrare e da mostrare: quelli veri se la mail è
+ * una busta PEC del gestore, altrimenti quelli arrivati, invariati.
+ *
+ * Lo usano sia la funzione che riceve la posta (le righe nuove nascono già
+ * pulite) sia la pagina Posta (le righe vecchie si mostrano pulite senza
+ * riscriverle). Passarci due volte non cambia niente: dopo la prima il
+ * mittente non è più il gestore e la mail non viene più trattata come busta.
+ * Quello che arriva resta comunque leggibile nel testo della mail.
+ *
+ * @param {{mittente?: string|null, oggetto?: string|null, testo?: string|null}} mail
+ * @returns {{mittente: string|null, oggetto: string|null}}
+ */
+export function testaDellaMail({ mittente = null, oggetto = null, testo = null } = {}) {
+  const busta = eGestorePec(mittente) && eBustaPec(testo);
+  if (!busta) return { mittente, oggetto };
+  return {
+    mittente: mittenteReale(testo, mittente) ?? mittente,
+    oggetto: oggetto == null ? oggetto : oggettoPulito(oggetto),
+  };
 }
 
 // --- la casella --------------------------------------------------------------

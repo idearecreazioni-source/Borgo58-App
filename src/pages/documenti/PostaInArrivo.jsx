@@ -28,6 +28,7 @@ import { sezioniArchivio } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, qtaConUnita } from "../../lib/constants";
+import { etichettaCasella, testaDellaMail } from "../../lib/calcoli/pec";
 import Didascalia from "../../components/Didascalia";
 
 // La posta arrivata al locale, in attesa di una decisione.
@@ -947,17 +948,23 @@ export default function PostaInArrivo() {
       ) : (
         posta.map((m) => {
           const daDecidere = (m.azioni ?? []).filter((a) => a.stato === "proposta");
+          // Una PEC vecchia è registrata com'è arrivata (mittente
+          // «posta-certificata@…», oggetto «POSTA CERTIFICATA: Fwd: …»): si
+          // mostra pulita senza riscriverla (08/11/2026).
+          const testa = testaDellaMail(m);
+          const casella = etichettaCasella(m.casella);
           return (
             <div key={m.id} className={sezione}>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="text-b58-charcoal font-medium">
-                  {m.oggetto || "(senza oggetto)"}
+                  {testa.oggetto || "(senza oggetto)"}
                 </span>
                 {/* ⚠️ `break-all` MISURATO, non decorativo: un indirizzo di posta lungo
                     non ha spazi dove andare a capo, e alla densita di un mini
                     tablet faceva sbordare la schermata di 107 punti su 390.
                     Si vede solo li: da un monitor la riga ci sta. */}
-                <span className="testo-sala-grande text-b58-charcoal-soft break-all">da {m.mittente || "?"}</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft break-all">da {testa.mittente || "?"}</span>
+                {casella && <span className="testo-sala-grande text-b58-charcoal-soft break-all">a {casella}</span>}
                 <span className="testo-sala-grande text-b58-charcoal-soft">{formatDate(m.ricevuta_il)}</span>
               </div>
 
