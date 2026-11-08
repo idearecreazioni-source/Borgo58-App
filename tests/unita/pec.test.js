@@ -3,10 +3,12 @@ import {
   classificaAllegato,
   eBustaPec,
   eFatturaPA,
+  eGestorePec,
   eRicevutaPec,
   etichettaCasella,
   mittenteReale,
   oggettoPulito,
+  testaDellaMail,
 } from "../../supabase/functions/_shared/pec.js";
 import * as dallApp from "../../src/lib/calcoli/fatturaPA";
 import * as condiviso from "../../supabase/functions/_shared/fatturaPA.js";
@@ -212,6 +214,63 @@ describe("le ricevute della PEC", () => {
     expect(eRicevutaPec("POSTA CERTIFICATA: Invio File 18141078362", GESTORE)).toBe(false);
     expect(eRicevutaPec("Fwd: CONSEGNA: Fattura 12", GESTORE)).toBe(false);
     expect(eRicevutaPec(undefined, GESTORE)).toBe(false);
+  });
+});
+
+describe("mittente e oggetto da registrare e mostrare", () => {
+  const GESTORE = "Posta Certificata <posta-certificata@pec.aruba.it>";
+
+  it("una busta PEC del gestore si mostra pulita", () => {
+    const m = { mittente: GESTORE, oggetto: "POSTA CERTIFICATA: Fwd: POSTA CERTIFICATA: prova gestionale", testo: testoBusta() };
+    expect(testaDellaMail(m)).toEqual({ mittente: "borgo58@pec.it", oggetto: "prova gestionale" });
+  });
+
+  it("anche col mittente nudo", () => {
+    const m = { mittente: "posta-certificata@pec.aruba.it", oggetto: "POSTA CERTIFICATA: Fw:Invio File 18141078362", testo: testoBusta() };
+    expect(testaDellaMail(m)).toEqual({ mittente: "borgo58@pec.it", oggetto: "Invio File 18141078362" });
+  });
+
+  it("passarci due volte non cambia niente", () => {
+    const m = { mittente: GESTORE, oggetto: "POSTA CERTIFICATA: Fwd: prova", testo: testoBusta() };
+    const una = testaDellaMail(m);
+    expect(testaDellaMail({ ...m, ...una })).toEqual(una);
+  });
+
+  it("una mail normale resta com'è, anche con Fwd:", () => {
+    const m = { mittente: "Mario <mario@esempio.it>", oggetto: "Fwd: listino", testo: testoBusta() };
+    expect(testaDellaMail(m)).toEqual({ mittente: "Mario <mario@esempio.it>", oggetto: "Fwd: listino" });
+  });
+
+  it("una ricevuta del gestore (senza busta) resta com'è", () => {
+    const m = { mittente: GESTORE, oggetto: "ACCETTAZIONE: Fattura 12", testo: "Ricevuta di accettazione" };
+    expect(testaDellaMail(m)).toEqual({ mittente: GESTORE, oggetto: "ACCETTAZIONE: Fattura 12" });
+    expect(eRicevutaPec(m.oggetto, m.mittente)).toBe(true);
+  });
+
+  it("busta senza mittente leggibile: resta il gestore, oggetto pulito", () => {
+    const m = { mittente: GESTORE, oggetto: "POSTA CERTIFICATA: x", testo: "-- Messaggio di posta certificata --\nniente" };
+    expect(testaDellaMail(m)).toEqual({ mittente: GESTORE, oggetto: "x" });
+  });
+
+  it("il nome davanti non basta a fingersi il gestore", () => {
+    const testo = testoBusta({ mittente: '"ceo@fornitore.it"' });
+    for (const finto of [
+      '"posta-certificata@x" <truffa@esempio.it>',
+      "Aruba posta-certificata@pec.aruba.it <truffa@esempio.it>",
+      "Posta Certificata <posta-certificata@esempio.it>",
+      "xposta-certificata@pec.aruba.it",
+    ]) {
+      expect(eGestorePec(finto)).toBe(false);
+      expect(testaDellaMail({ mittente: finto, oggetto: "POSTA CERTIFICATA: x", testo })).toEqual({ mittente: finto, oggetto: "POSTA CERTIFICATA: x" });
+      expect(eRicevutaPec("CONSEGNA: x", finto)).toBe(false);
+    }
+    expect(eGestorePec(" POSTA-CERTIFICATA@pec.aruba.it ")).toBe(true);
+    expect(eGestorePec(GESTORE)).toBe(true);
+  });
+
+  it("valori mancanti non rompono", () => {
+    expect(testaDellaMail({})).toEqual({ mittente: null, oggetto: null });
+    expect(testaDellaMail()).toEqual({ mittente: null, oggetto: null });
   });
 });
 

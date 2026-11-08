@@ -38,6 +38,7 @@
 import Anthropic from "npm:@anthropic-ai/sdk@0.65.0";
 import { unzipSync } from "npm:fflate@0.8.2";
 import { firmaCorretta } from "../_shared/uguali.ts";
+import { etichettaCasella, testaDellaMail } from "../_shared/pec.js";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -747,6 +748,7 @@ async function leggiLaPosta() {
 
       // C'è un documento vero da leggere? Allora si legge sul serio.
       const modello = documenti.length ? MODELLO_ATTENTO : MODELLO_RAPIDO;
+      const testa = testaDellaMail(m);
 
       const esito = await anthropic.messages.create({
         model: modello,
@@ -773,8 +775,10 @@ async function leggiLaPosta() {
               {
                 type: "text",
                 text:
-                  `Casella: ${m.casella}\nDa: ${m.mittente ?? "?"}\n` +
-                  `Oggetto: ${m.oggetto ?? "(nessuno)"}\n` +
+                  // Mittente e oggetto veri anche per le PEC registrate
+                  // prima dell'08/11, ancora incartate da Aruba.
+                  `Casella: ${etichettaCasella(m.casella)}\nDa: ${testa.mittente ?? "?"}\n` +
+                  `Oggetto: ${testa.oggetto ?? "(nessuno)"}\n` +
                   `Allegati: ${
                     tutti.map((a: { file_name: string }) => a.file_name).join(", ") || "nessuno"
                   }\n` +
