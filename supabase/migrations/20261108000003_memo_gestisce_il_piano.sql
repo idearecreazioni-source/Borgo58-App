@@ -33,6 +33,8 @@
 --    ancore della 0042 (che restano una sola volta ciascuna).
 --
 -- rete-portieri: 20261108000003 chiama fai_piano_memo — il nome sta solo nel testo dei rami incollati nel corpo di fai_azione_dettata ed eseguito come definizione; le chiamate vere sono nella verifica, con i claims del titolare
+-- rete-portieri: 20261108000003 chiama piano_per_memo — il nome sta solo nel testo incollato nel corpo di voce_catalogo ed eseguito come definizione; le chiamate vere sono nella verifica, con i claims del titolare
+-- rete-portieri: 20261108000003 chiama voce_risolvi_piano — il nome sta solo nel testo incollato nel corpo di voce_risolvi_dati ed eseguito come definizione; le chiamate vere sono nella verifica, con i claims del titolare
 --
 -- Idempotente, con verifica finale annullata (zero residui).
 -- =====================================================================
