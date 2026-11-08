@@ -1036,13 +1036,15 @@ async function leggiLaPosta() {
         // Si cerca anche col nome senza `.p7m`: la stessa fattura importata
         // a mano come .xml porta quel nome. Se il controllo non risponde
         // non si propone alla cieca: la mail si riprende al giro dopo.
-        const nomi = [...new Set([fl.nome, fl.nome.replace(/\.p7m$/i, "")])]
-          .map((n) => `"${n.replace(/["\\]/g, "")}"`)
-          .join(",");
-        const r = await db(
-          `supplier_invoices?file_sdi=in.(${encodeURIComponent(nomi)})` +
-            `&select=invoice_number,invoice_date,created_at&limit=1`,
-        );
+        // ⚠️ Non si legge `supplier_invoices`: la chiave di servizio non ne
+        //    ha il permesso, apposta (20260812000003). Il 08/11 la prima PEC
+        //    vera si è fermata qui con un 403. Si chiede alla funzione che
+        //    risponde solo a questa domanda (20261108000002).
+        const nomi = [...new Set([fl.nome, fl.nome.replace(/\.p7m$/i, "")])];
+        const r = await db("rpc/fattura_gia_registrata_per_la_posta", {
+          method: "POST",
+          body: JSON.stringify({ p_file_sdi: nomi }),
+        });
         if (!r.ok) throw new Error(`non riesco a controllare se la fattura ${fl.nome} è già registrata (${r.status})`);
         const gia = (await r.json())[0] ?? null;
         for (const pr of proposteDaFattura(fl.nome, fl.xml, gia)) {
