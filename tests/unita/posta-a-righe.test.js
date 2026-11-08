@@ -3,6 +3,7 @@ import {
   BOLLINO_POSTA,
   allegatiDaMostrare,
   allegatoTecnico,
+  conVerboDavanti,
   inScheda,
   notaInChiaro,
   statoDellaMail,
@@ -167,5 +168,13 @@ describe("una fattura già registrata non si propone anche da archiviare", () =>
 
   it("senza fatture già registrate non tocca niente", () => {
     expect(senzaArchiviareLeGiaRegistrate(azioni, allegati, [])).toBe(azioni);
+  });
+});
+
+describe("il nome del pulsante comincia con quello che si vede", () => {
+  it("se il nome intero comincia già col verbo resta com'è, altrimenti il verbo va davanti", () => {
+    expect(conVerboDavanti("Archivia", "Archivia «Fattura 412/F»")).toBe("Archivia «Fattura 412/F»");
+    expect(conVerboDavanti("Carica", "Metti 3 righe in magazzino")).toBe("Carica: Metti 3 righe in magazzino");
+    expect(conVerboDavanti("Registra", "")).toBe("Registra");
   });
 });

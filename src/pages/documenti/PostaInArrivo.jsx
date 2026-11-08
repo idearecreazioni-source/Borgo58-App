@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   confermaAzione,
@@ -27,6 +27,7 @@ import {
   notaInChiaro,
   statoDellaMail,
   statoLettura,
+  conVerboDavanti,
   verboConferma,
 } from "../../lib/calcoli/posta";
 import { listIngredients } from "../../lib/api/ingredients";
@@ -814,18 +815,38 @@ export default function PostaInArrivo() {
   const [tecniciAperti, setTecniciAperti] = useState(() => new Set());
   const [tolta, setTolta] = useState(null);
 
-  const caricaSistemate = () => leggi(listPostaSistemata()).then(setSistemate);
+  // Se la lista in attesa si è potuta leggere: senza, «niente da decidere»
+  // sarebbe una bugia rassicurante (la regola del 19/08).
+  const [postaLetta, setPostaLetta] = useState(false);
+
+  // Le sistemate si chiedono la prima volta che servono, e si rileggono
+  // dopo ogni gesto da lì in poi (un ref: lo stato potrebbe essere ancora
+  // `null` mentre la prima lettura è in viaggio). Una rilettura fallita non
+  // cancella la lista che c'è già.
+  const sistemateRichieste = useRef(false);
+  const caricaSistemate = () => {
+    sistemateRichieste.current = true;
+    return leggi(listPostaSistemata()).then((r) =>
+      setSistemate((prima) => (nonLetto(r) && Array.isArray(prima) ? prima : r))
+    );
+  };
 
   // Dove va il cursore dopo un gesto che ridisegna l'elenco: l'elemento
   // chiesto se c'è ancora, altrimenti la prima riga, altrimenti la scheda.
-  const metti = (id) =>
-    requestAnimationFrame(() => {
-      const el =
-        (id && document.getElementById(id)) ||
-        document.querySelector("#elenco-posta button[aria-expanded]") ||
-        document.getElementById(`scheda-${scheda}`);
-      el?.focus();
-    });
+  // ⚠️ Si fa DOPO il nuovo disegno (useLayoutEffect), non a tempo: a tempo
+  //    trovava ancora la riga vecchia che stava per sparire, e il cursore
+  //    finiva nel vuoto (revisione ECC dell'08/11).
+  const [focusDopo, setFocusDopo] = useState(null);
+  const metti = (id) => setFocusDopo({ id });
+  useLayoutEffect(() => {
+    if (!focusDopo) return;
+    const el =
+      (focusDopo.id && document.getElementById(focusDopo.id)) ||
+      document.querySelector("#elenco-posta button[aria-expanded]") ||
+      document.getElementById(`scheda-${scheda}`);
+    el?.focus();
+    setFocusDopo(null);
+  }, [focusDopo, scheda]);
 
   // Dopo una decisione: la prossima proposta della stessa mail, o la sua riga.
   const dopoDecisione = (m, a) => {
@@ -838,6 +859,7 @@ export default function PostaInArrivo() {
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
       setPosta(righe);
+      setPostaLetta(true);
       // ⚠️ Le modifiche non ancora confermate SI CONSERVANO. Prima questa
       // riga ricostruiva tutto dal database, e confermare UNA proposta
       // azzerava il lavoro fatto sulle altre della stessa mail.
@@ -924,15 +946,17 @@ export default function PostaInArrivo() {
   const cambia = (azioneId, chiave, valore) =>
     setValori((v) => ({ ...v, [azioneId]: { ...v[azioneId], [chiave]: valore } }));
 
-  const agisci = async (azioneId, fn, poi = null) => {
+  const agisci = async (azioneId, fn, poi = null, tieniTolta = false) => {
     setErrore(null);
+    // L'«Annulla» vale per l'ultima mail tolta finché non si fa altro.
+    if (!tieniTolta) setTolta(null);
     setInCorso(azioneId);
     try {
       await fn();
       await ricarica();
       // Una mail chiusa passa fra le sistemate: se la scheda è già stata
-      // aperta, si rilegge anche quella.
-      if (sistemate !== null) await caricaSistemate();
+      // chiesta, si rilegge anche quella.
+      if (sistemateRichieste.current) await caricaSistemate();
       metti(poi);
       // ⚠️ Anche l'anagrafica, non solo la posta. Confermare un carico
       // CREA ingredienti: senza questa riga il menu «cos'è?» della riga
@@ -963,21 +987,26 @@ export default function PostaInArrivo() {
 
   // «Togli la mail»: la scarta, e lascia un «Annulla» finché non si fa altro.
   const togli = (m) =>
-    agisci(m.id, async () => {
-      await scartaPosta(m.id);
-      setTolta({ id: m.id, stato: m.stato, oggetto: testaDellaMail(m).oggetto || "senza oggetto" });
-    });
+    agisci(
+      m.id,
+      async () => {
+        await scartaPosta(m.id);
+        setTolta({ id: m.id, stato: m.stato, oggetto: testaDellaMail(m).oggetto || "senza oggetto" });
+      },
+      "annulla-togli"
+    );
 
   const annullaTogli = () => {
     const t = tolta;
-    if (!t) return;
+    if (!t || inCorso === t.id) return;
     agisci(
       t.id,
       async () => {
         await rimettiPosta(t.id, t.stato);
         setTolta(null);
       },
-      `riga-${t.id}`
+      `riga-${t.id}`,
+      true
     );
   };
 
@@ -997,13 +1026,16 @@ export default function PostaInArrivo() {
   const tutte = [
     ...posta,
     ...(Array.isArray(sistemate) ? sistemate.filter((m) => !inAttesaId.has(m.id)) : []),
-  ].map((m) => {
-    const lettura = statoLettura(m, tettoTentativi, lettore);
-    return { m, lettura, stato: statoDellaMail(m, lettura) };
-  });
+  ]
+    .sort((a, b) => String(b.ricevuta_il ?? "").localeCompare(String(a.ricevuta_il ?? "")))
+    .map((m) => {
+      const lettura = statoLettura(m, tettoTentativi, lettore);
+      return { m, lettura, stato: statoDellaMail(m, lettura) };
+    });
   const conta = (s) => tutte.filter((x) => inScheda(x.stato, s)).length;
   const visibili = tutte.filter((x) => inScheda(x.stato, scheda));
-  const nDecidere = conta("decidere");
+  // Quelle che aspettano LUI: non quelle che MEMO leggerà da solo.
+  const nDecidere = tutte.filter((x) => x.stato === "decidere" || x.stato === "guarda").length;
 
   const SCHEDE = [
     { id: "decidere", nome: "Da decidere" },
@@ -1012,7 +1044,7 @@ export default function PostaInArrivo() {
   ];
   const scegliScheda = (s) => {
     setScheda(s);
-    if (s !== "decidere" && sistemate === null) caricaSistemate();
+    if (s !== "decidere" && (sistemate === null || nonLetto(sistemate))) caricaSistemate();
   };
   const frecceSchede = (e, i) => {
     const n =
@@ -1045,29 +1077,36 @@ export default function PostaInArrivo() {
         ← Archivio Documenti
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1">Posta in arrivo</h1>
-      <p className="testo-sala-grande text-b58-charcoal-soft mt-1 mb-4">
-        {nDecidere === 0
-          ? "Non c'è niente da decidere."
-          : nDecidere === 1
-            ? "Una mail aspetta te."
-            : `${nDecidere} mail aspettano te.`}
-      </p>
+      {postaLetta && (
+        <p className="testo-sala-grande text-b58-charcoal-soft mt-1 mb-4">
+          {nDecidere === 0
+            ? "Non c'è niente da decidere."
+            : nDecidere === 1
+              ? "Una mail aspetta te."
+              : `${nDecidere} mail aspettano te.`}
+        </p>
+      )}
 
       {error && <p className={`${avviso} mb-4`}>{error}</p>}
 
       {/* L'«Annulla» di «Togli la mail»: resta finché non si fa altro. */}
       <div role="status" aria-live="polite">
         {tolta && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 testo-sala-grande text-b58-charcoal-soft mb-3">
-            <span>Mail tolta: «{tolta.oggetto}».</span>
-            <button
-              type="button"
-              onClick={annullaTogli}
-              className="tocco-bottone text-b58-terracotta-testo font-medium underline underline-offset-2"
-            >
-              Annulla
-            </button>
-          </p>
+          <div className="mb-3">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 testo-sala-grande text-b58-charcoal-soft">
+              <span>Mail tolta: «{tolta.oggetto}».</span>
+              <button
+                type="button"
+                id="annulla-togli"
+                disabled={inCorso === tolta.id}
+                onClick={annullaTogli}
+                className="tocco-bottone text-b58-terracotta-testo font-medium underline underline-offset-2 disabled:opacity-50"
+              >
+                {inCorso === tolta.id ? "…" : "Annulla"}
+              </button>
+            </p>
+            {errore?.dove === tolta.id && <p className={`${avviso} mt-2`}>{errore.messaggio}</p>}
+          </div>
         )}
       </div>
 
@@ -1106,15 +1145,24 @@ export default function PostaInArrivo() {
         })}
       </div>
 
-      <div id="elenco-posta" role="tabpanel" aria-labelledby={`scheda-${scheda}`}>
+      <div id="elenco-posta" role="tabpanel" tabIndex={0} aria-labelledby={`scheda-${scheda}`}>
         {scheda !== "decidere" && nonLetto(sistemate) && (
-          <p className={`${avviso} mb-3`}>Non riesco a leggere le mail già sistemate: riprova più tardi.</p>
+          <div className={`${avviso} mb-3`}>
+            <p>Non riesco a leggere le mail già sistemate.</p>
+            <button
+              type="button"
+              onClick={() => caricaSistemate()}
+              className="tocco-bottone mt-1 underline underline-offset-2 font-medium"
+            >
+              Riprova
+            </button>
+          </div>
         )}
         {scheda !== "decidere" && sistemate === null && (
           <p className="testo-sala-grande text-b58-charcoal-soft mb-3">Carico le mail sistemate…</p>
         )}
 
-        {visibili.length === 0 ? (
+        {!postaLetta && scheda === "decidere" ? null : visibili.length === 0 ? (
           <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-8 text-center">
             <p className="text-b58-charcoal-soft">
               {scheda === "decidere"
@@ -1283,7 +1331,7 @@ export default function PostaInArrivo() {
                       </button>
                     ) : (
                       <span key={a.id} className="testo-sala-grande text-b58-terracotta-dark-testo break-all">
-                        {a.file_name}: non salvato
+                        {a.file_name}: non salvato{a.errore ? ` (${a.errore})` : ""}
                       </span>
                     )
                   )}
@@ -1418,7 +1466,7 @@ export default function PostaInArrivo() {
                     <button
                       type="button"
                       id={`conferma-${a.id}`}
-                      aria-label={etichettaConferma(a, valori[a.id])}
+                      aria-label={conVerboDavanti(verboConferma(a), etichettaConferma(a, valori[a.id]))}
                       disabled={inCorso === a.id || !!bloccato}
                       onClick={() =>
                         agisci(
@@ -1449,7 +1497,7 @@ export default function PostaInArrivo() {
                     )}
                     <button
                       type="button"
-                      aria-label={`${etichettaRifiuto(a)}: ${a.titolo}`}
+                      aria-label={`No, ${etichettaRifiuto(a).toLowerCase()}: ${a.titolo}`}
                       disabled={inCorso === a.id}
                       onClick={() => agisci(a.id, () => rifiutaAzione(a.id), dopoDecisione(m, a))}
                       className={bottoneTenue}
@@ -1472,6 +1520,10 @@ export default function PostaInArrivo() {
               </li>
             ))}
           </ul>
+        )}
+
+        {m.stato === "proposta" && (m.azioni ?? []).length === 0 && (
+          <p className="testo-sala-grande text-b58-charcoal-soft">MEMO non ha proposto niente per questa mail.</p>
         )}
 
         {m.stato !== "archiviata" && (

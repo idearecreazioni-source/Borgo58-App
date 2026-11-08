@@ -498,3 +498,15 @@ export function verboConferma(azione) {
       return "Conferma";
   }
 }
+
+/**
+ * Il nome per il lettore di schermo di un pulsante corto: comincia sempre
+ * con le parole che si vedono, così chi comanda a voce («clic Carica»)
+ * trova il pulsante (WCAG 2.5.3, revisione ECC dell'08/11).
+ */
+export function conVerboDavanti(verbo, nomeIntero) {
+  const v = String(verbo ?? "").trim();
+  const n = String(nomeIntero ?? "").trim();
+  if (!n || n === v) return v;
+  return n.toLowerCase().startsWith(v.toLowerCase()) ? n : `${v}: ${n}`;
+}

@@ -127,7 +127,7 @@ describe("la Posta a righe", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Fornitore Esempio srl/ }));
     const archivia = screen.getByRole("button", { name: "Archivia «Fattura 412/F»" });
     expect(archivia.textContent).toMatch(/^Archivia$/);
-    expect(screen.getByRole("button", { name: /^Non archiviare/ }).textContent).toMatch(/^No$/);
+    expect(screen.getByRole("button", { name: /^No, non archiviare/ }).textContent).toMatch(/^No$/);
     expect(screen.getByRole("button", { name: /^Correggi/ }).textContent).toMatch(/^Correggi$/);
     fireEvent.click(archivia);
     await waitFor(() => expect(finte.confermaAzione).toHaveBeenCalledWith("a1", expect.objectContaining({ tipo: "fatture" })));
