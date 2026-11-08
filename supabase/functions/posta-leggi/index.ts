@@ -44,6 +44,7 @@ import {
   eRicevutaPec,
   etichettaCasella,
   proposteDaFattura,
+  senzaArchiviareLeGiaRegistrate,
   testaDellaMail,
   xmlPerIlModello,
 } from "../_shared/pec.js";
@@ -1030,6 +1031,7 @@ async function leggiLaPosta() {
       // dall'XML (08/11/2026). Il modello non può proporre
       // `registra_fattura` (non è in TIPI_AZIONE): numero, importi e
       // partita IVA non passano da un'interpretazione.
+      const giaRegistrate: string[] = [];
       for (const fl of fattureLette) {
         // Già registrata con lo stesso file SdI? Allora si dice quando,
         // invece di proporre un bottone che verrebbe rifiutato.
@@ -1047,10 +1049,14 @@ async function leggiLaPosta() {
         });
         if (!r.ok) throw new Error(`non riesco a controllare se la fattura ${fl.nome} è già registrata (${r.status})`);
         const gia = (await r.json())[0] ?? null;
+        if (gia) giaRegistrate.push(fl.nome);
         for (const pr of proposteDaFattura(fl.nome, fl.xml, gia)) {
           azioni.push({ posta_id: m.id, ...pr });
         }
       }
+      // Una fattura già registrata ha già il suo file salvato: non si
+      // propone anche di archiviarlo (08/11/2026, la 330/F).
+      azioni.splice(0, azioni.length, ...senzaArchiviareLeGiaRegistrate(azioni, tutti, giaRegistrate));
 
       // ⚠️ Una mail riletta dopo un guasto (le proposte scritte, ma la mail
       //    rimasta «da leggere») non deve proporre tutto due volte: un

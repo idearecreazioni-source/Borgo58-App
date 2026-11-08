@@ -36,6 +36,47 @@ export async function listPostaInAttesa() {
   return data;
 }
 
+/** Quante mail sistemate mostra la scheda «Sistemate»: le più recenti. */
+export const SISTEMATE_MAX = 50;
+
+/**
+ * Le mail già sistemate (diventate documenti), per la scheda «Sistemate»
+ * (08/11/2026). Queste sì con un tetto: crescono ogni giorno, e la scheda
+ * serve a ritrovare le ultime, non a fare l'archivio — l'archivio vero è
+ * in Documenti. La schermata dice quante ne mostra.
+ */
+export async function listPostaSistemata() {
+  const { data, error } = await supabase
+    .from("posta_ricevuta")
+    .select(
+      "*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path, errore)," +
+        " azioni:posta_azioni(id, tipo, titolo, descrizione, perche, parametri, stato)"
+    )
+    .eq("stato", "archiviata")
+    .order("ricevuta_il", { ascending: false })
+    .limit(SISTEMATE_MAX);
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Rimette una mail tolta per sbaglio (l'«Annulla» dopo «Togli la mail»).
+ * Torna nello stato che aveva: `da_leggere` o `proposta`. Una riga sola,
+ * con la RLS come barriera, come lo scarto.
+ */
+export async function rimettiPosta(postaId, stato) {
+  const { data, error } = await supabase
+    .from("posta_ricevuta")
+    .update({ stato: stato === "da_leggere" ? "da_leggere" : "proposta" })
+    .eq("id", postaId)
+    .eq("stato", "scartata")
+    .select("id");
+  if (error) throw error;
+  // Nessuna riga toccata: la mail non è più fra le tolte (cancellata dalla
+  // pulizia, o rimessa da un'altra parte). Si dice, invece di far finta.
+  if (!data?.length) throw new Error("Non riesco a rimetterla: questa mail non è più fra quelle tolte.");
+}
+
 export async function contaPostaInAttesa() {
   const { count, error } = await supabase
     .from("posta_ricevuta")
@@ -93,11 +134,16 @@ export async function rifiutaAzione(azioneId) {
  * può ancora rivedere.
  */
 export async function scartaPosta(postaId) {
-  const { error } = await supabase
+  // Solo una mail ancora aperta: una già sistemata (magari da un'altra
+  // finestra) non torna indietro a «tolta» (revisione ECC dell'08/11).
+  const { data, error } = await supabase
     .from("posta_ricevuta")
     .update({ stato: "scartata" })
-    .eq("id", postaId);
+    .eq("id", postaId)
+    .in("stato", ["da_leggere", "proposta"])
+    .select("id");
   if (error) throw error;
+  if (!data?.length) throw new Error("Questa mail è già stata sistemata: ricarica la pagina.");
 }
 
 /** Link temporaneo per aprire un allegato (il bucket è privato). */

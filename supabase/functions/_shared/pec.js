@@ -232,6 +232,54 @@ export function proposteDaFattura(nomeFile, xml, giaRegistrata = null) {
   }];
 }
 
+/**
+ * La radice SdI di un nome di file: `IT01234567890_ab12C.xml.p7m` →
+ * `it01234567890_ab12c`. Lo SdI chiama così tutti i file della stessa
+ * fattura (la fattura, i metadati `_MT_`, l'eventuale stampa).
+ *
+ * @param {string} nome
+ * @returns {string}
+ */
+function radiceSdi(nome) {
+  return String(nome ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/(\.(xml|p7m|pdf|html?))+$/i, "")
+    .replace(/_mt_\d+$/i, "");
+}
+
+/**
+ * Toglie le proposte di archiviare il file di una fattura già registrata
+ * (08/11/2026, prima PEC vera dopo il rilascio: la 330/F era già registrata,
+ * eppure accanto a «è già registrata» il modello proponeva anche «Archivia
+ * Fattura notaio 330/F». Era un doppione: registrandola, il suo file SdI era
+ * già stato salvato).
+ *
+ * ⚠️ Si toglie solo l'archiviazione dello STESSO file (o di un file con la
+ *    stessa radice SdI). Un altro allegato della stessa mail, per esempio un
+ *    contratto, resta proposto com'era.
+ *
+ * @param {Array<Record<string, unknown>>} azioni
+ * @param {Array<{id: string, file_name: string}>} allegati gli allegati della mail
+ * @param {string[]} giaRegistrate i nomi dei file delle fatture già registrate
+ * @returns {Array<Record<string, unknown>>}
+ */
+export function senzaArchiviareLeGiaRegistrate(azioni, allegati, giaRegistrate) {
+  if (!giaRegistrate?.length) return azioni;
+  const radici = new Set(giaRegistrate.map(radiceSdi));
+  const daTogliere = new Set(
+    (allegati ?? []).filter((x) => radici.has(radiceSdi(x.file_name))).map((x) => String(x.id)),
+  );
+  return azioni.filter((a) => {
+    const p = /** @type {{allegato_id?: unknown}} */ (a.parametri ?? {});
+    return !(
+      (a.tipo === "archivia_documento" || a.tipo === "archivia_testo") &&
+      p.allegato_id &&
+      daTogliere.has(String(p.allegato_id))
+    );
+  });
+}
+
 /** Si apre in `posta-leggi` come XML (anche i metadati SdI, per controllarli). */
 export function daAprireComeXml(nome) {
   const tipo = classificaAllegato(nome);

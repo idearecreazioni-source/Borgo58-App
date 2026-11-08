@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   confermaAzione,
@@ -7,19 +7,28 @@ import {
   getMaxTentativiLettura,
   lettorePostaFermo,
   listPostaInAttesa,
+  listPostaSistemata,
   registraFatturaDallaPosta,
   rifiutaAzione,
+  rimettiPosta,
   riprovaLettura,
   scartaPosta,
+  SISTEMATE_MAX,
 } from "../../lib/api/posta";
 import {
+  BOLLINO_POSTA,
   CAMPI_AZIONE,
+  allegatiDaMostrare,
   cosaCeDaLeggere,
   etichettaConferma,
   etichettaRifiuto,
+  inScheda,
   motivoAzioneBloccata,
-  notaDiLettura,
+  notaInChiaro,
+  statoDellaMail,
   statoLettura,
+  conVerboDavanti,
+  verboConferma,
 } from "../../lib/calcoli/posta";
 import { listIngredients } from "../../lib/api/ingredients";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
@@ -30,7 +39,6 @@ import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, qtaConUnita } from "../../lib/constants";
 import { etichettaCasella, testaDellaMail } from "../../lib/calcoli/pec";
-import Didascalia from "../../components/Didascalia";
 
 // La posta arrivata al locale, in attesa di una decisione.
 //
@@ -44,10 +52,18 @@ import Didascalia from "../../components/Didascalia";
 // correggere ogni tanto. Quello che parte è ciò che Alessio vede, non ciò
 // che l'assistente aveva scritto.
 
-const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-4";
 const campo =
   "tocco-campo w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-b58-campo px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const etichetta = "block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1";
+
+// I colori dei bollini: il testo dice lo stato, il colore aiuta a scorrere.
+const COLORE_BOLLINO = {
+  guarda: "bg-b58-terracotta/15 text-b58-terracotta-dark-testo",
+  in_lettura: "bg-b58-cream-dark text-b58-charcoal-soft",
+  decidere: "bg-b58-ambra/20 text-b58-ambra-dark-testo",
+  fatto: "bg-b58-azione/15 text-b58-azione-dark-testo",
+  niente: "bg-b58-cream-dark text-b58-charcoal-soft",
+};
 
 const NOME_TIPO = {
   archivia_documento: "Archivio",
@@ -790,10 +806,60 @@ export default function PostaInArrivo() {
   // Se MEMO sta leggendo la posta oppure no: senza saperlo la schermata
   // non puo dire il vero su una mail non ancora letta.
   const [lettore, setLettore] = useState(null);
+  // La Posta a righe (08/11/2026): la scheda scelta, le mail aperte, le
+  // sistemate (null finché non servono, NON_LETTO se la lettura fallisce),
+  // le mail con i file tecnici in vista, e l'ultima mail tolta per l'Annulla.
+  const [scheda, setScheda] = useState("decidere");
+  const [aperte, setAperte] = useState(() => new Set());
+  const [sistemate, setSistemate] = useState(null);
+  const [tecniciAperti, setTecniciAperti] = useState(() => new Set());
+  const [tolta, setTolta] = useState(null);
+
+  // Se la lista in attesa si è potuta leggere: senza, «niente da decidere»
+  // sarebbe una bugia rassicurante (la regola del 19/08).
+  const [postaLetta, setPostaLetta] = useState(false);
+
+  // Le sistemate si chiedono la prima volta che servono, e si rileggono
+  // dopo ogni gesto da lì in poi (un ref: lo stato potrebbe essere ancora
+  // `null` mentre la prima lettura è in viaggio). Una rilettura fallita non
+  // cancella la lista che c'è già.
+  const sistemateRichieste = useRef(false);
+  const caricaSistemate = () => {
+    sistemateRichieste.current = true;
+    return leggi(listPostaSistemata()).then((r) =>
+      setSistemate((prima) => (nonLetto(r) && Array.isArray(prima) ? prima : r))
+    );
+  };
+
+  // Dove va il cursore dopo un gesto che ridisegna l'elenco: l'elemento
+  // chiesto se c'è ancora, altrimenti la prima riga, altrimenti la scheda.
+  // ⚠️ Si fa DOPO il nuovo disegno (useLayoutEffect), non a tempo: a tempo
+  //    trovava ancora la riga vecchia che stava per sparire, e il cursore
+  //    finiva nel vuoto (revisione ECC dell'08/11).
+  const [focusDopo, setFocusDopo] = useState(null);
+  const metti = (id) => setFocusDopo({ id });
+  useLayoutEffect(() => {
+    if (!focusDopo) return;
+    const el =
+      (focusDopo.id && document.getElementById(focusDopo.id)) ||
+      document.querySelector("#elenco-posta button[aria-expanded]") ||
+      document.getElementById(`scheda-${scheda}`);
+    el?.focus();
+    setFocusDopo(null);
+  }, [focusDopo, scheda]);
+
+  // Dopo una decisione: la prossima proposta della stessa mail, o la sua riga.
+  const dopoDecisione = (m, a) => {
+    const prossima = (m.azioni ?? []).find(
+      (x) => x.id !== a.id && x.stato === "proposta" && x.tipo !== "nessuna"
+    );
+    return prossima ? `conferma-${prossima.id}` : `riga-${m.id}`;
+  };
 
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
       setPosta(righe);
+      setPostaLetta(true);
       // ⚠️ Le modifiche non ancora confermate SI CONSERVANO. Prima questa
       // riga ricostruiva tutto dal database, e confermare UNA proposta
       // azzerava il lavoro fatto sulle altre della stessa mail.
@@ -880,12 +946,18 @@ export default function PostaInArrivo() {
   const cambia = (azioneId, chiave, valore) =>
     setValori((v) => ({ ...v, [azioneId]: { ...v[azioneId], [chiave]: valore } }));
 
-  const agisci = async (azioneId, fn) => {
+  const agisci = async (azioneId, fn, poi = null, tieniTolta = false) => {
     setErrore(null);
+    // L'«Annulla» vale per l'ultima mail tolta finché non si fa altro.
+    if (!tieniTolta) setTolta(null);
     setInCorso(azioneId);
     try {
       await fn();
       await ricarica();
+      // Una mail chiusa passa fra le sistemate: se la scheda è già stata
+      // chiesta, si rilegge anche quella.
+      if (sistemateRichieste.current) await caricaSistemate();
+      metti(poi);
       // ⚠️ Anche l'anagrafica, non solo la posta. Confermare un carico
       // CREA ingredienti: senza questa riga il menu «cos'è?» della riga
       // successiva continua a mostrare la lista di quando la pagina è
@@ -913,6 +985,31 @@ export default function PostaInArrivo() {
     }
   };
 
+  // «Togli la mail»: la scarta, e lascia un «Annulla» finché non si fa altro.
+  const togli = (m) =>
+    agisci(
+      m.id,
+      async () => {
+        await scartaPosta(m.id);
+        setTolta({ id: m.id, stato: m.stato, oggetto: testaDellaMail(m).oggetto || "senza oggetto" });
+      },
+      "annulla-togli"
+    );
+
+  const annullaTogli = () => {
+    const t = tolta;
+    if (!t || inCorso === t.id) return;
+    agisci(
+      t.id,
+      async () => {
+        await rimettiPosta(t.id, t.stato);
+        setTolta(null);
+      },
+      `riga-${t.id}`,
+      true
+    );
+  };
+
   const apri = async (allegato) => {
     try {
       window.open(await getAllegatoUrl(allegato.storage_path), "_blank", "noopener");
@@ -923,428 +1020,525 @@ export default function PostaInArrivo() {
 
   if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>;
 
+  // Una mail sola elenco: quelle in attesa e, per «Sistemate» e «Tutte»,
+  // le ultime già sistemate. Una mail non può stare in tutte e due.
+  const inAttesaId = new Set(posta.map((m) => m.id));
+  const tutte = [
+    ...posta,
+    ...(Array.isArray(sistemate) ? sistemate.filter((m) => !inAttesaId.has(m.id)) : []),
+  ]
+    .sort((a, b) => String(b.ricevuta_il ?? "").localeCompare(String(a.ricevuta_il ?? "")))
+    .map((m) => {
+      const lettura = statoLettura(m, tettoTentativi, lettore);
+      return { m, lettura, stato: statoDellaMail(m, lettura) };
+    });
+  const conta = (s) => tutte.filter((x) => inScheda(x.stato, s)).length;
+  const visibili = tutte.filter((x) => inScheda(x.stato, scheda));
+  // Quelle che aspettano LUI: non quelle che MEMO leggerà da solo.
+  const nDecidere = tutte.filter((x) => x.stato === "decidere" || x.stato === "guarda").length;
+
+  const SCHEDE = [
+    { id: "decidere", nome: "Da decidere" },
+    { id: "sistemate", nome: "Sistemate" },
+    { id: "tutte", nome: "Tutte" },
+  ];
+  const scegliScheda = (s) => {
+    setScheda(s);
+    if (s !== "decidere" && (sistemate === null || nonLetto(sistemate))) caricaSistemate();
+  };
+  const frecceSchede = (e, i) => {
+    const n =
+      e.key === "ArrowRight" ? (i + 1) % SCHEDE.length
+      : e.key === "ArrowLeft" ? (i - 1 + SCHEDE.length) % SCHEDE.length
+      : e.key === "Home" ? 0
+      : e.key === "End" ? SCHEDE.length - 1
+      : null;
+    if (n === null) return;
+    e.preventDefault();
+    scegliScheda(SCHEDE[n].id);
+    document.getElementById(`scheda-${SCHEDE[n].id}`)?.focus();
+  };
+  const apriChiudi = (id) =>
+    setAperte((a) => {
+      const n = new Set(a);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  const bottoneTenue =
+    "tocco-campo rounded-lg border border-b58-charcoal/25 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5";
+  const avviso =
+    "testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2";
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo">
         ← Archivio Documenti
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        Posta in arrivo
-        <Didascalia>
-          Quello che arriva alle caselle del locale. MEMO legge e{" "}
-          <strong>propone cosa fare</strong>: decidi tu, una cosa alla volta.
-        </Didascalia>
-      </h1>
-
-      {error && (
-        <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
-          {error}
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1">Posta in arrivo</h1>
+      {postaLetta && (
+        <p className="testo-sala-grande text-b58-charcoal-soft mt-1 mb-4">
+          {nDecidere === 0
+            ? "Non c'è niente da decidere."
+            : nDecidere === 1
+              ? "Una mail aspetta te."
+              : `${nDecidere} mail aspettano te.`}
         </p>
       )}
 
-      {posta.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
-          <p className="text-b58-charcoal-soft">Nessuna posta in attesa.</p>
-        </div>
-      ) : (
-        posta.map((m) => {
-          const daDecidere = (m.azioni ?? []).filter((a) => a.stato === "proposta");
-          // Una PEC vecchia è registrata com'è arrivata (mittente
-          // «posta-certificata@…», oggetto «POSTA CERTIFICATA: Fwd: …»): si
-          // mostra pulita senza riscriverla (08/11/2026).
-          const testa = testaDellaMail(m);
-          const casella = etichettaCasella(m.casella);
+      {error && <p className={`${avviso} mb-4`}>{error}</p>}
+
+      {/* L'«Annulla» di «Togli la mail»: resta finché non si fa altro. */}
+      <div role="status" aria-live="polite">
+        {tolta && (
+          <div className="mb-3">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 testo-sala-grande text-b58-charcoal-soft">
+              <span>Mail tolta: «{tolta.oggetto}».</span>
+              <button
+                type="button"
+                id="annulla-togli"
+                disabled={inCorso === tolta.id}
+                onClick={annullaTogli}
+                className="tocco-bottone text-b58-terracotta-testo font-medium underline underline-offset-2 disabled:opacity-50"
+              >
+                {inCorso === tolta.id ? "…" : "Annulla"}
+              </button>
+            </p>
+            {errore?.dove === tolta.id && <p className={`${avviso} mt-2`}>{errore.messaggio}</p>}
+          </div>
+        )}
+      </div>
+
+      <div role="tablist" aria-label="Quali mail vedere" className="flex flex-wrap gap-1 border-b border-b58-charcoal/15 mb-3">
+        {SCHEDE.map((s, i) => {
+          const scelta = scheda === s.id;
+          const n = conta(s.id);
           return (
-            <div key={m.id} className={sezione}>
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-b58-charcoal font-medium">
-                  {testa.oggetto || "(senza oggetto)"}
+            <button
+              key={s.id}
+              id={`scheda-${s.id}`}
+              type="button"
+              role="tab"
+              aria-selected={scelta}
+              aria-controls="elenco-posta"
+              tabIndex={scelta ? 0 : -1}
+              onClick={() => scegliScheda(s.id)}
+              onKeyDown={(e) => frecceSchede(e, i)}
+              className={`tocco-bottone inline-flex items-center gap-2 px-3 -mb-px border-b-[3px] font-medium testo-sala-grande ${
+                scelta ? "border-b58-terracotta text-b58-charcoal" : "border-transparent text-b58-charcoal-soft hover:text-b58-charcoal"
+              }`}
+            >
+              {s.nome}
+              {(s.id === "decidere" || Array.isArray(sistemate)) && (
+                <span
+                  className={`rounded-full px-2 py-0.5 text-sm tabular-nums ${
+                    s.id === "decidere" && n > 0 ? "bg-b58-terracotta-dark text-b58-sul-colore" : "bg-b58-cream-dark text-b58-charcoal"
+                  }`}
+                >
+                  {n}
+                  <span className="sr-only"> mail</span>
                 </span>
-                {/* ⚠️ `break-all` MISURATO, non decorativo: un indirizzo di posta lungo
-                    non ha spazi dove andare a capo, e alla densita di un mini
-                    tablet faceva sbordare la schermata di 107 punti su 390.
-                    Si vede solo li: da un monitor la riga ci sta. */}
-                <span className="testo-sala-grande text-b58-charcoal-soft break-all">da {testa.mittente || "?"}</span>
-                {casella && <span className="testo-sala-grande text-b58-charcoal-soft break-all">a {casella}</span>}
-                <span className="testo-sala-grande text-b58-charcoal-soft">{formatDate(m.ricevuta_il)}</span>
-              </div>
-
-              {m.proposta_sintesi && (
-                <p className="testo-sala-grande text-b58-charcoal mt-1 mb-3">{m.proposta_sintesi}</p>
               )}
+            </button>
+          );
+        })}
+      </div>
 
-              {/* 🔴 LO STATO DI LETTURA, DETTO COME STA (28/08/2026).
-                  Prima questa riga compariva su OGNI mail `da_leggere` e
-                  diceva sempre la stessa cosa. Su una mail che il lettore
-                  aveva abbandonato dopo tre tentativi era falsa — visto
-                  con gli occhi, non dedotto — e sotto ce n'erano altre
-                  due: «l'ho letta solo in parte» (non l'aveva letta) e
-                  «apri l'allegato» (quella mail non ne aveva). */}
-              {statoLettura(m, tettoTentativi, lettore).frase && (
-                <div
-                  className={
-                    ["arresa", "lettore_fermo", "non_so"].includes(
-                      statoLettura(m, tettoTentativi, lettore).chiave
-                    )
-                      ? "testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
-                      : "testo-sala-grande text-b58-charcoal-soft mb-3"
-                  }
-                >
-                  <p>{statoLettura(m, tettoTentativi, lettore).frase}</p>
-                  {/* La via d'uscita. La funzione esisteva nel database dal
-                      12/08 e non la chiamava nessuno: l'unico gesto offerto
-                      su una mail bloccata era buttarla via. */}
-                  {statoLettura(m, tettoTentativi, lettore).puoRiprovare && (
+      <div id="elenco-posta" role="tabpanel" tabIndex={0} aria-labelledby={`scheda-${scheda}`}>
+        {scheda !== "decidere" && nonLetto(sistemate) && (
+          <div className={`${avviso} mb-3`}>
+            <p>Non riesco a leggere le mail già sistemate.</p>
+            <button
+              type="button"
+              onClick={() => caricaSistemate()}
+              className="tocco-bottone mt-1 underline underline-offset-2 font-medium"
+            >
+              Riprova
+            </button>
+          </div>
+        )}
+        {scheda !== "decidere" && sistemate === null && (
+          <p className="testo-sala-grande text-b58-charcoal-soft mb-3">Carico le mail sistemate…</p>
+        )}
+
+        {!postaLetta && scheda === "decidere" ? null : visibili.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-8 text-center">
+            <p className="text-b58-charcoal-soft">
+              {scheda === "decidere"
+                ? "Niente da decidere. Le mail già sistemate sono in «Sistemate»."
+                : "Nessuna mail qui."}
+            </p>
+          </div>
+        ) : (
+          <ul className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/10 overflow-hidden">
+            {visibili.map(({ m, lettura, stato }) => {
+              const testa = testaDellaMail(m);
+              const casella = etichettaCasella(m.casella);
+              const aperta = aperte.has(m.id);
+              return (
+                <li key={m.id} className={aperta ? "bg-b58-cream-dark/40" : ""}>
+                  <h2 className="m-0">
                     <button
                       type="button"
-                      disabled={inCorso === m.id}
-                      onClick={() => agisci(m.id, () => riprovaLettura(m.id))}
-                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
+                      id={`riga-${m.id}`}
+                      aria-expanded={aperta}
+                      aria-controls={aperta ? `mail-${m.id}` : undefined}
+                      onClick={() => apriChiudi(m.id)}
+                      className="w-full text-left grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 items-center px-4 py-3 min-h-16 hover:bg-b58-cream-dark/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-b58-terracotta"
                     >
-                      {inCorso === m.id ? "…" : "Fai riprovare a leggerla"}
+                      <span className="text-b58-charcoal font-medium min-w-0 break-words">
+                        {testa.mittente || "Mittente sconosciuto"}
+                      </span>
+                      <span className="testo-sala text-b58-charcoal-soft tabular-nums whitespace-nowrap">
+                        {formatDate(m.ricevuta_il)}
+                      </span>
+                      <span className="testo-sala-grande text-b58-charcoal-soft min-w-0 break-words">
+                        {testa.oggetto || "(senza oggetto)"}
+                      </span>
+                      <span className={`justify-self-end rounded-full px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${COLORE_BOLLINO[stato]}`}>
+                        {BOLLINO_POSTA[stato]}
+                      </span>
                     </button>
-                  )}
-                  {/* 🔴 IL GESTO CHE MANCAVA su una mail MAI presa in mano.
-                      Fino al 28/08 una mail non ancora letta non offriva
-                      niente: si poteva solo buttarla via o aspettare una
-                      lettura che, su quel gestionale, non sarebbe mai
-                      arrivata. Costa — ogni giro chiama il modello — e per
-                      questo è un pulsante e non un ritentativo automatico. */}
-                  {statoLettura(m, tettoTentativi, lettore).puoLeggereAdesso && (
-                    <button
-                      type="button"
-                      disabled={inCorso === m.id}
-                      onClick={() =>
-                        agisci(m.id, async () => {
-                          await chiediLetturaAdesso();
-                          setLettore(await lettorePostaFermo());
-                        })
-                      }
-                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
-                    >
-                      {inCorso === m.id ? "…" : "Leggila adesso"}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {(() => {
-                const ce = cosaCeDaLeggere(m);
-                const nota = notaDiLettura(
-                  m,
-                  statoLettura(m, tettoTentativi, lettore),
-                  ce
-                );
-                return nota ? (
-                  <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-                    {nota.frase}
-                  </p>
-                ) : null;
-              })()}
-
-              {/* 🔴 LEGGERE LA MAIL. Il testo arrivava già nel browser — la
-                  lettura lo chiede con `*` — e non c'era nessun gesto per
-                  vederlo: il soggetto non era cliccabile e l'unica cosa
-                  apribile erano gli allegati. Misurato il 28/08 sul
-                  progetto di prova: 18 mail su 18 avevano un testo e ZERO
-                  avevano allegati, cioè il gesto esisteva solo per la cosa
-                  che non c'era mai.
-                  ⚠️ E quando non c'è niente da leggere lo si DICE: «non si
-                  apre perché non c'è niente» e «non si apre perché il gesto
-                  manca» sono due difetti diversi, e un elenco che non dice
-                  quale dei due sta capitando è esso stesso il difetto. */}
-              {(() => {
-                const ce = cosaCeDaLeggere(m);
-                if (!ce.haTesto) {
-                  return ce.nulla ? (
-                    <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
-                      Questa mail non ha né testo né allegati da aprire: c&apos;è solo
-                      l&apos;oggetto qui sopra.
-                    </p>
-                  ) : null;
-                }
-                return (
-                  <div className="mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setTestoAperto(testoAperto === m.id ? null : m.id)}
-                      className="tocco-bottone testo-sala-grande text-b58-terracotta-testo hover:underline"
-                    >
-                      {testoAperto === m.id ? "Chiudi la mail" : "Leggi la mail"}
-                    </button>
-                    {testoAperto === m.id && (
-                      // `whitespace-pre-wrap` perché una mail va a capo dove
-                      // ha deciso chi l'ha scritta, e `break-words` perché un
-                      // link lungo non ha spazi: senza, sborda sul telefono.
-                      <p className="testo-sala-grande text-b58-charcoal bg-b58-campo/60 ring-1 ring-b58-charcoal/10 rounded-lg px-3 py-2 mt-2 whitespace-pre-wrap break-words">
-                        {m.testo}
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {m.allegati?.length > 0 && (
-                <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
-                  Allegati:{" "}
-                  {m.allegati.map((a, i) => (
-                    <span key={a.id}>
-                      {i > 0 && ", "}
-                      {a.storage_path ? (
-                        <button
-                          type="button"
-                          onClick={() => apri(a)}
-                          className="text-b58-terracotta-testo hover:underline"
-                        >
-                          {a.file_name}
-                        </button>
-                      ) : (
-                        <span
-                          className="text-b58-terracotta-dark-testo"
-                          title={a.errore || "Non è stato possibile salvarlo"}
-                        >
-                          {a.file_name} — non salvato
-                        </span>
-                      )}
-                    </span>
-                  ))}
-                </p>
-              )}
-
-              {daDecidere.map((a) => (
-                <div
-                  key={a.id}
-                  className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 mt-3"
-                >
-                  <div className="flex items-start gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-sul-colore testo-sala font-medium px-2.5 py-1 shrink-0 mt-0.5">
-                      {NOME_TIPO[a.tipo] ?? a.tipo}
-                    </span>
-                    <span className="text-b58-charcoal">
-                      {a.descrizione || a.titolo}
-                    </span>
-                  </div>
-
-                  {/* Le date di un documento, in chiaro: sono la cosa che
-                      va guardata prima di confermare. */}
-                  {valori[a.id]?.scadenze?.length > 0 && (
-                    <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
-                      {valori[a.id].scadenze.map((s, i) => (
-                        <li key={i}>
-                          · <strong className="text-b58-charcoal">{formatDate(s.data)}</strong>{" "}
-                          {s.titolo}
-                          {s.note ? ` — ${s.note}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {valori[a.id]?.passi?.length > 0 && (
-                    <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
-                      {valori[a.id].passi.map((s, i) => (
-                        <li key={i}>· {s}</li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {a.tipo === "carico_magazzino" && (
-                    <RigheCarico
-                      par={valori[a.id]}
-                      ingredienti={ingredienti}
-                      fornitori={fornitori}
-                      allegati={m.allegati}
-                      apriAllegato={apri}
-                      cambia={(chiave, valore) => cambia(a.id, chiave, valore)}
-                    />
-                  )}
-
-                  {aperta === a.id && CAMPI[a.tipo]?.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 my-3">
-                      {CAMPI[a.tipo].map((c) => (
-                        <div key={c} className="min-w-0">
-                          <label className={etichetta}>{ETICHETTE[c]}</label>
-                          {/* 🔴 IL «TIPO» DI UN DOCUMENTO E' UN MENU CHIUSO (30/08).
-                              Prima era testo libero, e il modello ne scriveva uno
-                              suo: «Fattura», «fattura» e «Fatture» diventavano tre
-                              sezioni diverse dell'archivio.
-                              ⚠️ E il valore proposto arriva GIA' FILTRATO dalla
-                                 funzione online: se il modello ha scritto una
-                                 sezione che non esiste, arriva VUOTO — perche' un
-                                 menu che riceve un valore fuori elenco mostra la
-                                 prima opzione, senza nessun errore (trappola del
-                                 27/08). Vuoto, il pulsante si spegne e dice cosa
-                                 manca; con la prima opzione, il documento
-                                 finirebbe nella sezione sbagliata in silenzio. */}
-                          {c === "tipo" ? (
-                            <select
-                              value={valori[a.id]?.[c] ?? ""}
-                              onChange={(e) => cambia(a.id, c, e.target.value)}
-                              className={campo}
-                            >
-                              <option value="">Sezione…</option>
-                              {(nonLetto(sezioni) ? [] : sezioni).map((s) => (
-                                <option key={s.codice} value={s.codice}>{s.etichetta}</option>
-                              ))}
-                            </select>
-                          ) : c === "societa" ? (
-                            /* 🔴 LA SOCIETÀ DI UN DOCUMENTO ARCHIVIATO DALLA
-                               POSTA (21/09). Le stesse due voci dell'Archivio a
-                               mano — la tasca non compare, perché è il soggetto
-                               delle spese senza documento e non intesta niente.
-                               ⚠️ Resta FACOLTATIVA: il modello non può sapere di
-                               chi sia una fattura, e un valore inventato qui
-                               finirebbe addosso al documento per sempre. Vuota,
-                               il documento nasce senza società esattamente come
-                               prima — e le Fatture dicono che c'è e perché non
-                               si può collegare. */
-                            <select
-                              data-campo-societa
-                              value={valori[a.id]?.[c] ?? ""}
-                              onChange={(e) => cambia(a.id, c, e.target.value)}
-                              className={campo}
-                            >
-                              <option value="">Non lo so</option>
-                              {entities?.srls && (
-                                <option value={entities.srls.id}>{entities.srls.name}</option>
-                              )}
-                              {entities?.agricola && (
-                                <option value={entities.agricola.id}>{entities.agricola.name}</option>
-                              )}
-                            </select>
-                          ) : (
-                          <input
-                            type={TIPO_CAMPO[c] ?? "text"}
-                            step={c === "importo" ? "0.01" : undefined}
-                            value={valori[a.id]?.[c] ?? ""}
-                            onChange={(e) => cambia(a.id, c, e.target.value)}
-                            className={campo}
-                          />
-                          )}
-                        </div>
-                      ))}
+                  </h2>
+                  {aperta && (
+                    <div id={`mail-${m.id}`} className="px-4 pb-4 pt-1 flex flex-col gap-3">
+                      {casella && <p className="testo-sala text-b58-charcoal-soft break-all">Arrivata a {casella}</p>}
+                      {m.proposta_sintesi && <p className="testo-sala-grande text-b58-charcoal">{m.proposta_sintesi}</p>}
+                      {dettaglioMail(m, lettura, stato)}
                     </div>
                   )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {scheda !== "decidere" && Array.isArray(sistemate) && sistemate.length >= SISTEMATE_MAX && (
+          <p className="testo-sala text-b58-charcoal-soft mt-2">
+            Qui ci sono le ultime {SISTEMATE_MAX} mail sistemate. Le altre le trovi in Archivio Documenti.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 
-                  {/* 🔴 IL PULSANTE DICE COSA SUCCEDE A COSA (28/08/2026).
-                      Misurato a schermo quel giorno: dei 10 pulsanti della
-                      Posta, 5 non nominavano l'oggetto — «Conferma» due
-                      volte, «No» due volte, «modifica». Sono quelli che
-                      decidono se un documento entra in archivio o se della
-                      merce entra in magazzino.
-                      ⚠️ E il carico si SPEGNE CON LA RAGIONE invece di
-                      restare premibile per essere rifiutato: il rifiuto
-                      vero vive nella funzione del database, questa è la
-                      stessa regola detta prima. */}
-                  {(() => {
-                    const bloccato = motivoAzioneBloccata(a, valori[a.id]);
-                    return (
-                      <>
-                        {bloccato && (
-                          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
-                            {bloccato}
-                          </p>
-                        )}
-                        {/* Il rifiuto del database, DOVE si è premuto. I
-                            messaggi in italiano ci sono già (gli 86 rifiuti
-                            muti sono stati chiusi il 27/08); quello che
-                            mancava era farli arrivare sotto gli occhi. */}
-                        {errore?.dove === a.id && (
-                          <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
-                            {errore.messaggio}
-                          </p>
-                        )}
-                        {/* 🔴 SU «NIENTE DA FARE» NON SI CONFERMA NIENTE
-                            (31/08/2026, visto aprendo la schermata). Su
-                            un'azione di tipo `nessuna` comparivano due
-                            pulsanti: **«Conferma "Senza titolo"»** e «Non
-                            farlo» — sotto una frase che diceva «Nessuna
-                            azione qui».
-                            ⚠️ «Senza titolo» non era un difetto di
-                            disegno: e' il titolo di ripiego che il
-                            gestionale scrive davvero su quelle azioni —
-                            misurato sul database, tutte e tre le `nessuna`
-                            in attesa lo portano. Il difetto era offrire di
-                            confermarlo.
-                            ⚠️ E' la famiglia del 27/08 — *un «si'» puo'
-                            essere la risposta a una domanda che nessuno ha
-                            fatto*: la' il pulsante ricompariva quando
-                            mancava un'informazione, qui quando non c'e'
-                            niente da fare.
-                            ⚠️ Il gesto vero c'era gia' ed e' uno solo:
-                            «togli la mail», in fondo alla mail. */}
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          {a.tipo !== "nessuna" && (
-                            <>
-                          <button
-                            type="button"
-                            disabled={inCorso === a.id || !!bloccato}
-                            onClick={() =>
-                              agisci(a.id, () =>
-                                // La fattura dalla PEC ha la sua porta: i dati
-                                // li prende il database dalla proposta, non
-                                // da qui (08/11/2026).
-                                a.tipo === "registra_fattura"
-                                  ? registraFatturaDallaPosta(a.id)
-                                  : confermaAzione(a.id, valori[a.id])
-                              )
-                            }
-                            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-3 py-1.5 testo-sala-grande"
-                          >
-                            {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={inCorso === a.id}
-                            onClick={() => agisci(a.id, () => rifiutaAzione(a.id))}
-                            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
-                          >
-                            {etichettaRifiuto(a)}
-                          </button>
-                            </>
-                          )}
-                          {/* Il carico non ha un «modifica»: le sue righe si
-                              aprono una alla volta da sole. */}
-                          {CAMPI[a.tipo]?.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setAperta(aperta === a.id ? null : a.id)}
-                              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo ml-1"
-                            >
-                              {aperta === a.id ? "Chiudi i campi" : "Correggi i dati"}
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              ))}
+  // Il contenuto di una mail aperta. È una funzione dentro il componente
+  // (non un componente a parte) per usare lo stato della pagina senza
+  // passarlo pezzo per pezzo. ⚠️ Si chiama come funzione, non come <Tag>:
+  // un componente nato dentro un altro rinasce a ogni disegno, e un campo
+  // in cui si sta scrivendo perderebbe il cursore a ogni lettera.
+  function dettaglioMail(m, lettura, stato) {
+    const daDecidere = (m.azioni ?? []).filter((a) => a.stato === "proposta" && a.tipo !== "nessuna");
+    const niente = (m.azioni ?? []).filter((a) => a.tipo === "nessuna");
+    const decise = (m.azioni ?? []).filter((a) => a.tipo !== "nessuna" && a.stato !== "proposta");
+    const nota = m.stato === "da_leggere" ? null : notaInChiaro(m.lettura_note);
+    const { visibili, tecnici } = allegatiDaMostrare(m.allegati);
+    const ce = cosaCeDaLeggere(m);
+    const vediTecnici = tecniciAperti.has(m.id);
+    const allegatiInVista = vediTecnici ? [...visibili, ...tecnici] : visibili;
 
-              {daDecidere.length === 0 && m.stato === "proposta" && (
-                <p className="testo-sala-grande text-b58-charcoal-soft mt-2">
-                  Nessuna azione proposta per questa mail.
-                </p>
-              )}
-
+    return (
+      <>
+        {/* TOCCA A TE: solo quando MEMO si è fermato o non sta leggendo.
+            Le frasi e i due gesti sono quelli del 28/08 (statoLettura). */}
+        {stato === "guarda" && (
+          <div className={avviso}>
+            <p>
+              <strong>Tocca a te. </strong>
+              {lettura.frase}
+            </p>
+            {lettura.puoRiprovare && (
               <button
                 type="button"
                 disabled={inCorso === m.id}
-                onClick={() => agisci(m.id, () => scartaPosta(m.id))}
-                className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-testo mt-3"
+                onClick={() => agisci(m.id, () => riprovaLettura(m.id), `riga-${m.id}`)}
+                className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
               >
-                Non serve niente di tutto questo — togli la mail
+                {inCorso === m.id ? "…" : "Fai riprovare a leggerla"}
               </button>
-              {/* Anche qui l'esito sta sulla riga toccata: sia lo scarto sia
-                  «fai riprovare a leggerla» passano da `agisci(m.id, …)`. */}
-              {errore?.dove === m.id && (
-                <p className="testo-sala-grande text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
-                  {errore.messaggio}
-                </p>
-              )}
-            </div>
-          );
-        })
-      )}
-    </div>
-  );
+            )}
+            {lettura.puoLeggereAdesso && (
+              <button
+                type="button"
+                disabled={inCorso === m.id}
+                onClick={() =>
+                  agisci(
+                    m.id,
+                    async () => {
+                      await chiediLetturaAdesso();
+                      setLettore(await lettorePostaFermo());
+                    },
+                    `riga-${m.id}`
+                  )
+                }
+                className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark-testo testo-sala-grande px-3 py-1.5"
+              >
+                {inCorso === m.id ? "…" : "Leggila adesso"}
+              </button>
+            )}
+          </div>
+        )}
+        {stato === "in_lettura" && (
+          <p className="testo-sala-grande text-b58-charcoal-soft">MEMO la legge da solo entro un quarto d&apos;ora.</p>
+        )}
+
+        {/* Una lettura a metà si dice, ma senza allarme e senza i file della busta. */}
+        {nota && <p className="testo-sala-grande text-b58-charcoal-soft">{nota} Controlla a mano prima di confermare.</p>}
+
+        {/* «Niente da fare» detto con le parole della proposta, senza riquadro né pulsanti. */}
+        {niente.map((a) =>
+          a.descrizione || (a.titolo && a.titolo !== "Senza titolo") ? (
+            <p key={a.id} className="testo-sala-grande text-b58-charcoal">
+              {a.titolo && a.titolo !== "Senza titolo" ? `${a.titolo}. ` : ""}
+              {a.descrizione && a.descrizione !== a.titolo ? a.descrizione : ""}
+            </p>
+          ) : null
+        )}
+
+        {ce.haTesto && (
+          <div>
+            <button
+              type="button"
+              aria-expanded={testoAperto === m.id}
+              onClick={() => setTestoAperto(testoAperto === m.id ? null : m.id)}
+              className="tocco-bottone testo-sala-grande text-b58-terracotta-testo hover:underline"
+            >
+              {testoAperto === m.id ? "Chiudi il testo" : "Leggi il testo della mail"}
+            </button>
+            {testoAperto === m.id && (
+              <p className="testo-sala-grande text-b58-charcoal bg-b58-campo/60 ring-1 ring-b58-charcoal/10 rounded-lg px-3 py-2 mt-2 whitespace-pre-wrap break-words">
+                {m.testo}
+              </p>
+            )}
+          </div>
+        )}
+
+        {(visibili.length > 0 || tecnici.length > 0) && (
+          <div>
+            {allegatiInVista.length > 0 && (
+              <>
+                <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Allegati</p>
+                <div className="flex flex-wrap gap-2">
+                  {allegatiInVista.map((a) =>
+                    a.storage_path ? (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => apri(a)}
+                        className="tocco-campo rounded-lg border border-b58-charcoal/25 bg-b58-campo hover:bg-b58-cream-dark px-3 py-1.5 testo-sala-grande text-b58-charcoal break-all text-left"
+                      >
+                        {a.file_name}
+                      </button>
+                    ) : (
+                      <span key={a.id} className="testo-sala-grande text-b58-terracotta-dark-testo break-all">
+                        {a.file_name}: non salvato{a.errore ? ` (${a.errore})` : ""}
+                      </span>
+                    )
+                  )}
+                </div>
+              </>
+            )}
+            {tecnici.length > 0 && (
+              <p className="testo-sala text-b58-charcoal-soft mt-1">
+                {tecnici.length === 1 ? "1 file tecnico della PEC nascosto" : `${tecnici.length} file tecnici della PEC nascosti`}
+                {" · "}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTecniciAperti((t) => {
+                      const n = new Set(t);
+                      if (n.has(m.id)) n.delete(m.id);
+                      else n.add(m.id);
+                      return n;
+                    })
+                  }
+                  className="tocco-bottone underline underline-offset-2 hover:text-b58-terracotta-testo"
+                >
+                  {vediTecnici ? "nascondili" : "mostrali"}
+                </button>
+              </p>
+            )}
+          </div>
+        )}
+
+        {daDecidere.length > 0 && (
+          <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft -mb-1">Cosa propone MEMO</p>
+        )}
+        {daDecidere.map((a) => (
+          <div key={a.id} className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3">
+            <p className="flex items-start gap-2 mb-1">
+              <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-sul-colore testo-sala font-medium px-2.5 py-1 shrink-0 mt-0.5">
+                {NOME_TIPO[a.tipo] ?? a.tipo}
+              </span>
+              <span className="text-b58-charcoal">{a.descrizione || a.titolo}</span>
+            </p>
+
+            {valori[a.id]?.scadenze?.length > 0 && (
+              <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
+                {valori[a.id].scadenze.map((s, i) => (
+                  <li key={i}>
+                    · <strong className="text-b58-charcoal">{formatDate(s.data)}</strong> {s.titolo}
+                    {s.note ? ` — ${s.note}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {valori[a.id]?.passi?.length > 0 && (
+              <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
+                {valori[a.id].passi.map((s, i) => (
+                  <li key={i}>· {s}</li>
+                ))}
+              </ul>
+            )}
+
+            {a.tipo === "carico_magazzino" && (
+              <RigheCarico
+                par={valori[a.id]}
+                ingredienti={ingredienti}
+                fornitori={fornitori}
+                allegati={m.allegati}
+                apriAllegato={apri}
+                cambia={(chiave, valore) => cambia(a.id, chiave, valore)}
+              />
+            )}
+
+            {aperta === a.id && CAMPI[a.tipo]?.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
+                {CAMPI[a.tipo].map((c) => (
+                  <div key={c} className="min-w-0">
+                    <label htmlFor={`campo-${a.id}-${c}`} className={etichetta}>
+                      {ETICHETTE[c]}
+                    </label>
+                    {/* Il «tipo» è un menu chiuso (30/08) e la società resta
+                        facoltativa (21/09): vedi le note in RigheCarico e in
+                        CAMPI_AZIONE. */}
+                    {c === "tipo" ? (
+                      <select
+                        id={`campo-${a.id}-${c}`}
+                        value={valori[a.id]?.[c] ?? ""}
+                        onChange={(e) => cambia(a.id, c, e.target.value)}
+                        className={campo}
+                      >
+                        <option value="">Sezione…</option>
+                        {(nonLetto(sezioni) ? [] : sezioni).map((s) => (
+                          <option key={s.codice} value={s.codice}>
+                            {s.etichetta}
+                          </option>
+                        ))}
+                      </select>
+                    ) : c === "societa" ? (
+                      <select
+                        id={`campo-${a.id}-${c}`}
+                        data-campo-societa
+                        value={valori[a.id]?.[c] ?? ""}
+                        onChange={(e) => cambia(a.id, c, e.target.value)}
+                        className={campo}
+                      >
+                        <option value="">Non lo so</option>
+                        {entities?.srls && <option value={entities.srls.id}>{entities.srls.name}</option>}
+                        {entities?.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
+                      </select>
+                    ) : (
+                      <input
+                        id={`campo-${a.id}-${c}`}
+                        type={TIPO_CAMPO[c] ?? "text"}
+                        step={c === "importo" ? "0.01" : undefined}
+                        value={valori[a.id]?.[c] ?? ""}
+                        onChange={(e) => cambia(a.id, c, e.target.value)}
+                        className={campo}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(() => {
+              const bloccato = motivoAzioneBloccata(a, valori[a.id]);
+              return (
+                <>
+                  {bloccato && <p className={`${avviso} mt-2`}>{bloccato}</p>}
+                  {errore?.dove === a.id && <p className={`${avviso} mt-2`}>{errore.messaggio}</p>}
+                  {/* Pulsanti corti (08/11): il verbo si vede, il nome intero
+                      lo legge il lettore di schermo. */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      id={`conferma-${a.id}`}
+                      aria-label={conVerboDavanti(verboConferma(a), etichettaConferma(a, valori[a.id]))}
+                      disabled={inCorso === a.id || !!bloccato}
+                      onClick={() =>
+                        agisci(
+                          a.id,
+                          () =>
+                            // La fattura dalla PEC ha la sua porta: i dati li
+                            // prende il database dalla proposta (08/11/2026).
+                            a.tipo === "registra_fattura"
+                              ? registraFatturaDallaPosta(a.id)
+                              : confermaAzione(a.id, valori[a.id]),
+                          dopoDecisione(m, a)
+                        )
+                      }
+                      className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-4 py-1.5 testo-sala-grande"
+                    >
+                      {inCorso === a.id ? "…" : verboConferma(a)}
+                    </button>
+                    {CAMPI[a.tipo]?.length > 0 && (
+                      <button
+                        type="button"
+                        aria-expanded={aperta === a.id}
+                        aria-label={`${aperta === a.id ? "Chiudi la correzione" : "Correggi"}: ${a.titolo}`}
+                        onClick={() => setAperta(aperta === a.id ? null : a.id)}
+                        className={bottoneTenue}
+                      >
+                        {aperta === a.id ? "Chiudi" : "Correggi"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`No, ${etichettaRifiuto(a).toLowerCase()}: ${a.titolo}`}
+                      disabled={inCorso === a.id}
+                      onClick={() => agisci(a.id, () => rifiutaAzione(a.id), dopoDecisione(m, a))}
+                      className={bottoneTenue}
+                    >
+                      No
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        ))}
+
+        {decise.length > 0 && (
+          <ul className="testo-sala-grande text-b58-charcoal-soft flex flex-col gap-1">
+            {decise.map((a) => (
+              <li key={a.id}>
+                {a.stato === "fatta" ? "✓ " : "No: "}
+                {a.titolo}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {m.stato === "proposta" && (m.azioni ?? []).length === 0 && (
+          <p className="testo-sala-grande text-b58-charcoal-soft">MEMO non ha proposto niente per questa mail.</p>
+        )}
+
+        {m.stato !== "archiviata" && (
+          <button
+            type="button"
+            aria-label={`Togli la mail: ${testaDellaMail(m).oggetto || "senza oggetto"}`}
+            disabled={inCorso === m.id}
+            onClick={() => togli(m)}
+            className="tocco-testo self-start testo-sala-grande text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo mt-2"
+          >
+            Togli la mail
+          </button>
+        )}
+        {errore?.dove === m.id && <p className={avviso}>{errore.messaggio}</p>}
+      </>
+    );
+  }
 }
