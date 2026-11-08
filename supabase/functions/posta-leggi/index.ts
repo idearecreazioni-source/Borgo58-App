@@ -38,6 +38,15 @@
 import Anthropic from "npm:@anthropic-ai/sdk@0.65.0";
 import { unzipSync } from "npm:fflate@0.8.2";
 import { firmaCorretta } from "../_shared/uguali.ts";
+import {
+  allegatoDaTacere,
+  daAprireComeXml,
+  eRicevutaPec,
+  etichettaCasella,
+  proposteDaFattura,
+  testaDellaMail,
+  xmlPerIlModello,
+} from "../_shared/pec.js";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -201,6 +210,16 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
   l'informazione non deve perdersi. NON usarlo più per il carico del magazzino
   e per i lotti HACCP: adesso il gestionale li sa fare, ed è "carico_magazzino".
 - "nessuna": non c'è niente da fare. Da sola, senza altre azioni.
+
+LE FATTURE ELETTRONICHE (un allegato segnato «fattura elettronica», di solito
+un .xml.p7m arrivato dallo SdI): la registrazione fra le Fatture fornitori la
+propone il gestionale da solo, con una riga sua letta dai campi del file. Tu
+NON proporre di registrarla, né con "da_fare_a_mano" né in altro modo: sarebbe
+un doppione. Puoi proporre "carico_magazzino" se elenca merce, come per
+qualunque fattura.
+NON consigliare MAI programmi esterni (lettori di firma digitale, CAdES,
+software per il .p7m): il gestionale apre da sé questi file, e un consiglio
+del genere manda Alessio a cercare una cosa che non gli serve.
 
 RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
 {"sintesi": "una riga: cosa è arrivato",
@@ -377,6 +396,31 @@ async function allegatoPerIlModello(a: {
 
   const byte = new Uint8Array(await r.arrayBuffer());
   if (byte.byteLength > MAX_BYTE_PER_ALLEGATO) return null;
+
+  // Un XML (anche dentro un .p7m firmato) si passa come testo: una fattura
+  // elettronica o una distinta SEPA si leggono così, invece di finire fra
+  // i formati che non so aprire (08/11/2026). Se il file si chiama .xml o
+  // .p7m ma dentro non c'è un XML, non si prova a spacciarlo per immagine.
+  // Il file `_MT_` dello SdI si apre anche lui: se è davvero una fattura
+  // si legge, se sono i metadati si tace (`silenzio`).
+  if (daAprireComeXml(a.file_name)) {
+    const xml = xmlPerIlModello(a.file_name, byte);
+    if (!xml) return null;
+    if ("silenzio" in xml) return { silenzio: true };
+    return {
+      blocco: {
+        type: "text",
+        text: `--- Contenuto di ${a.file_name} (${xml.fattura ? "fattura elettronica" : "XML"}) ---\n${xml.testo}`,
+      },
+      // Il testo esatto si conserva solo se è intero: un pezzo di fattura
+      // archiviato come se fosse tutta sarebbe peggio di niente.
+      grezzo: xml.tagliato ? null : xml.testo,
+      tagliato: xml.tagliato,
+      // La fattura intera, per la proposta «Registra la fattura» che
+      // costruisce il codice (non il modello).
+      fattura: xml.fattura ? { nome: a.file_name, xml: xml.intero } : null,
+    };
+  }
 
   const dentro = DA_SPACCHETTARE[a.mime];
   if (dentro) {
@@ -653,7 +697,32 @@ async function leggiLaPosta() {
 
   for (const m of messaggi) {
     try {
+      // Le ricevute della PEC (accettazione, consegna) si chiudono senza
+      // modello e senza avviso: Alessio, 08/11, «spariscono del tutto».
+      // Restano registrate come scartate, con il motivo, finché la pulizia
+      // della posta non le toglie. Mancata consegna e simili NON sono qui:
+      // quelle vanno lette.
+      //
+      // ⚠️ Solo se gli allegati sono tutti file della busta: una ricevuta
+      //    che porta con sé un documento vero (un originale restituito)
+      //    passa per la lettura normale. E la chiusura si controlla: se non
+      //    riesce si va nel ramo degli errori, che lo scrive e lo conta,
+      //    invece di riprenderla ogni quarto d'ora senza dirlo.
       const tutti = m.posta_allegati ?? [];
+      if (
+        eRicevutaPec(m.oggetto, m.mittente) &&
+        tutti.every((a: { file_name?: string }) => allegatoDaTacere(a.file_name ?? ""))
+      ) {
+        const chiusa = await db(`posta_ricevuta?id=eq.${m.id}&stato=eq.da_leggere`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            stato: "scartata",
+            lettura_note: "Ricevuta della PEC: chiusa senza leggerla e senza avviso (scelta di Alessio, 08/11/2026).",
+          }),
+        });
+        if (!chiusa.ok) throw new Error(`ricevuta PEC non chiusa (${chiusa.status})`);
+        continue;
+      }
 
       // I documenti veri vanno letti, non nominati: su una fattura il
       // nome del file non dice l'importo né la scadenza.
@@ -668,10 +737,16 @@ async function leggiLaPosta() {
         mime?: string;
         file_name?: string;
       }) => {
+        // I file della busta PEC: niente da leggere, e niente da dire
+        // (08/11/2026). Tutto il resto che non si legge continua ad avvisare.
+        if (allegatoDaTacere(a.file_name ?? "")) return false;
         if (!a.storage_path) {
           scartati.push(`${a.file_name}: non è stato salvato nell'archivio`);
           return false;
         }
+        // .xml e .p7m si aprono qui (vedi `allegatoPerIlModello`), qualunque
+        // tipo dichiari chi li manda (application/xml, text/xml, pkcs7-mime…).
+        if (daAprireComeXml(a.file_name ?? "")) return true;
         if (!NATIVI.has(a.mime ?? "") && !DA_SPACCHETTARE[a.mime ?? ""]) {
           scartati.push(`${a.file_name}: formato che non so aprire (${a.mime ?? "?"})`);
           return false;
@@ -687,6 +762,8 @@ async function leggiLaPosta() {
       // Il testo esatto degli allegati che si aprono da soli (.odt/.docx),
       // per nome di file. Vedi `contenuto` più sotto.
       const testiEsatti = new Map<string, string>();
+      // Le fatture elettroniche trovate fra gli allegati (vedi più sotto).
+      const fattureLette: { nome: string; xml: string }[] = [];
       let peso = 0;
       for (const a of daLeggere) {
         // deno-lint-ignore no-explicit-any
@@ -695,6 +772,9 @@ async function leggiLaPosta() {
           scartati.push(`${a.file_name}: troppo grande o illeggibile`);
           continue;
         }
+        if (letto.silenzio) continue;
+        if (letto.fattura) fattureLette.push(letto.fattura);
+        if (letto.tagliato) scartati.push(`${a.file_name}: letto solo in parte, il file è troppo lungo`);
         const blocco = letto.blocco;
         const dim = blocco.type === "text"
           ? blocco.text.length
@@ -747,6 +827,7 @@ async function leggiLaPosta() {
 
       // C'è un documento vero da leggere? Allora si legge sul serio.
       const modello = documenti.length ? MODELLO_ATTENTO : MODELLO_RAPIDO;
+      const testa = testaDellaMail(m);
 
       const esito = await anthropic.messages.create({
         model: modello,
@@ -773,8 +854,10 @@ async function leggiLaPosta() {
               {
                 type: "text",
                 text:
-                  `Casella: ${m.casella}\nDa: ${m.mittente ?? "?"}\n` +
-                  `Oggetto: ${m.oggetto ?? "(nessuno)"}\n` +
+                  // Mittente e oggetto veri anche per le PEC registrate
+                  // prima dell'08/11, ancora incartate da Aruba.
+                  `Casella: ${etichettaCasella(m.casella)}\nDa: ${testa.mittente ?? "?"}\n` +
+                  `Oggetto: ${testa.oggetto ?? "(nessuno)"}\n` +
                   `Allegati: ${
                     tutti.map((a: { file_name: string }) => a.file_name).join(", ") || "nessuno"
                   }\n` +
@@ -804,7 +887,7 @@ async function leggiLaPosta() {
       // Le azioni proposte. Solo i tipi che il gestionale sa eseguire: se
       // il modello ne inventasse uno, proporrebbe un bottone che non fa
       // niente — peggio che non proporlo, perché insegna a non fidarsi.
-      const azioni = (Array.isArray(p.azioni) ? p.azioni : [])
+      const azioni: Record<string, unknown>[] = (Array.isArray(p.azioni) ? p.azioni : [])
         .filter((a: Record<string, unknown>) => TIPI_AZIONE.has(String(a?.tipo)))
         // Un contratto con gli aumenti a scaglioni ne produce facilmente
         // dieci: il tetto serve a fermare una risposta impazzita, non a
@@ -943,11 +1026,43 @@ async function leggiLaPosta() {
           };
         });
 
-      if (azioni.length) {
-        await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
+      // Le fatture elettroniche: la proposta la costruisce il codice
+      // dall'XML (08/11/2026). Il modello non può proporre
+      // `registra_fattura` (non è in TIPI_AZIONE): numero, importi e
+      // partita IVA non passano da un'interpretazione.
+      for (const fl of fattureLette) {
+        // Già registrata con lo stesso file SdI? Allora si dice quando,
+        // invece di proporre un bottone che verrebbe rifiutato.
+        // Si cerca anche col nome senza `.p7m`: la stessa fattura importata
+        // a mano come .xml porta quel nome. Se il controllo non risponde
+        // non si propone alla cieca: la mail si riprende al giro dopo.
+        const nomi = [...new Set([fl.nome, fl.nome.replace(/\.p7m$/i, "")])]
+          .map((n) => `"${n.replace(/["\\]/g, "")}"`)
+          .join(",");
+        const r = await db(
+          `supplier_invoices?file_sdi=in.(${encodeURIComponent(nomi)})` +
+            `&select=invoice_number,invoice_date,created_at&limit=1`,
+        );
+        if (!r.ok) throw new Error(`non riesco a controllare se la fattura ${fl.nome} è già registrata (${r.status})`);
+        const gia = (await r.json())[0] ?? null;
+        for (const pr of proposteDaFattura(fl.nome, fl.xml, gia)) {
+          azioni.push({ posta_id: m.id, ...pr });
+        }
       }
 
-      await db(`posta_ricevuta?id=eq.${m.id}`, {
+      // ⚠️ Una mail riletta dopo un guasto (le proposte scritte, ma la mail
+      //    rimasta «da leggere») non deve proporre tutto due volte: un
+      //    secondo «Registra la fattura» è peggio di un secondo «Archivia».
+      //    Se ha già delle proposte, non se ne scrivono altre.
+      const giaProposte = await db(`posta_azioni?posta_id=eq.${m.id}&select=id&limit=1`);
+      if (!giaProposte.ok) throw new Error(`non riesco a leggere le proposte già fatte (${giaProposte.status})`);
+      const ciSonoGia = ((await giaProposte.json()) as unknown[]).length > 0;
+      if (azioni.length && !ciSonoGia) {
+        const scritte = await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
+        if (!scritte.ok) throw new Error(`proposte non scritte (${scritte.status})`);
+      }
+
+      const lettura = await db(`posta_ricevuta?id=eq.${m.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           stato: "proposta",
@@ -966,6 +1081,9 @@ async function leggiLaPosta() {
           lettura_note: scartati.length ? scartati.join("; ") : null,
         }),
       });
+      // Se la mail non passa a «proposta» si dice: resterebbe «da leggere»
+      // con le proposte già scritte (vedi `ciSonoGia` qui sopra).
+      if (!lettura.ok) throw new Error(`la mail non è passata fra le proposte (${lettura.status})`);
       letti++;
       if (scartati.length) {
         saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${scartati.join("; ")}`);

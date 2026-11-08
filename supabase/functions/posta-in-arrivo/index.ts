@@ -39,6 +39,7 @@
 // pianificato ogni quarto d'ora.
 
 import { uguali } from "../_shared/uguali.ts";
+import { testaDellaMail } from "../_shared/pec.js";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET");
@@ -168,6 +169,21 @@ Deno.serve(async (req) => {
     ...(d.to ?? []),
   ].filter(Boolean);
 
+  const testo = corpoMancante
+    ? "[Il testo di questa mail non è stato scaricato: la chiave del servizio " +
+      "di posta non ha il permesso di leggere la posta ricevuta. La mail è " +
+      "registrata lo stesso, con mittente, oggetto e allegati.]"
+    : (String(messaggio?.text ?? "")).slice(0, 20000) || null;
+
+  // Una PEC arriva incartata da Aruba: mittente «posta-certificata@…» e
+  // oggetto «POSTA CERTIFICATA: Fwd: …». Si registrano il mittente vero e
+  // l'oggetto pulito (08/11/2026); la busta originale resta nel testo.
+  const testa = testaDellaMail({
+    mittente: d.from ?? messaggio?.from ?? null,
+    oggetto: d.subject ?? messaggio?.subject ?? null,
+    testo,
+  });
+
   const inserimento = await db("posta_ricevuta?on_conflict=messaggio_id", {
     method: "POST",
     headers: {
@@ -176,16 +192,12 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       messaggio_id: emailId,
       casella: destinatari[0] ?? "sconosciuta",
-      mittente: d.from ?? messaggio?.from ?? null,
-      oggetto: d.subject ?? messaggio?.subject ?? null,
+      mittente: testa.mittente,
+      oggetto: testa.oggetto,
       // Solo il testo: l'HTML di una newsletter è enorme, non aggiunge
       // niente a chi deve capire di che documento si tratta, e costerebbe
       // in token a ogni lettura.
-      testo: corpoMancante
-        ? "[Il testo di questa mail non è stato scaricato: la chiave del servizio " +
-          "di posta non ha il permesso di leggere la posta ricevuta. La mail è " +
-          "registrata lo stesso, con mittente, oggetto e allegati.]"
-        : (String(messaggio?.text ?? "")).slice(0, 20000) || null,
+      testo,
       ricevuta_il: d.created_at ?? new Date().toISOString(),
     }),
   });
