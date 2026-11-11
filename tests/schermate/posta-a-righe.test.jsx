@@ -55,6 +55,7 @@ const finte = {
   rimettiPosta: vi.fn(() => Promise.resolve()),
   listPostaInAttesa: vi.fn(() => Promise.resolve(IN_ATTESA)),
   listPostaSistemata: vi.fn(() => Promise.resolve([])),
+  aggiungiFiltroPosta: vi.fn(() => Promise.resolve({})),
 };
 
 vi.mock("../../src/lib/api/posta", () => ({
@@ -64,6 +65,9 @@ vi.mock("../../src/lib/api/posta", () => ({
   confermaAzione: (...a) => finte.confermaAzione(...a),
   scartaPosta: (...a) => finte.scartaPosta(...a),
   rimettiPosta: (...a) => finte.rimettiPosta(...a),
+  aggiungiFiltroPosta: (...a) => finte.aggiungiFiltroPosta(...a),
+  listFiltriPosta: vi.fn(() => Promise.resolve([])),
+  togliFiltroPosta: vi.fn(() => Promise.resolve()),
   rifiutaAzione: vi.fn(() => Promise.resolve()),
   registraFatturaDallaPosta: vi.fn(() => Promise.resolve({})),
   riprovaLettura: vi.fn(() => Promise.resolve()),
@@ -150,5 +154,18 @@ describe("la Posta a righe", () => {
     await waitFor(() => expect(finte.scartaPosta).toHaveBeenCalledWith("m1"));
     fireEvent.click(await screen.findByRole("button", { name: "Annulla" }));
     await waitFor(() => expect(finte.rimettiPosta).toHaveBeenCalledWith("m1", "proposta"));
+  });
+
+  it("«Ignora le mail come questa»: di base solo questo tipo di mail, tutto il mittente solo se scelto", async () => {
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: /Fornitore Esempio srl/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ignora le mail come questa" }));
+    const solo = screen.getByRole("radio", { name: /Solo le mail come questa/ });
+    const tutto = screen.getByRole("radio", { name: /Tutte le mail da fatture@esempio\.it/ });
+    expect(solo.checked).toBe(true);
+    expect(tutto.checked).toBe(false);
+    expect(solo.closest("label").textContent).toMatch(/fatture@esempio\.it con «fattura #\/f»/);
+    fireEvent.click(screen.getByRole("button", { name: "Ignora" }));
+    await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", false));
   });
 });

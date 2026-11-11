@@ -11,6 +11,9 @@ import {
   registraFatturaDallaPosta,
   rifiutaAzione,
   rimettiPosta,
+  aggiungiFiltroPosta,
+  listFiltriPosta,
+  togliFiltroPosta,
   riprovaLettura,
   scartaPosta,
   SISTEMATE_MAX,
@@ -29,6 +32,10 @@ import {
   statoLettura,
   conVerboDavanti,
   verboConferma,
+  descriviRegola,
+  indirizzoMittente,
+  mittenteProtetto,
+  tipoOggetto,
 } from "../../lib/calcoli/posta";
 import { listIngredients } from "../../lib/api/ingredients";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
@@ -63,6 +70,7 @@ const COLORE_BOLLINO = {
   decidere: "bg-b58-ambra/20 text-b58-ambra-dark-testo",
   fatto: "bg-b58-azione/15 text-b58-azione-dark-testo",
   niente: "bg-b58-cream-dark text-b58-charcoal-soft",
+  filtrata: "bg-b58-cream-dark text-b58-charcoal-soft",
 };
 
 const NOME_TIPO = {
@@ -814,6 +822,10 @@ export default function PostaInArrivo() {
   const [sistemate, setSistemate] = useState(null);
   const [tecniciAperti, setTecniciAperti] = useState(() => new Set());
   const [tolta, setTolta] = useState(null);
+  // Il filtro prima di MEMO (11/11/2026): le regole (null finché non
+  // servono) e la mail su cui è aperto «Ignora le mail come questa».
+  const [filtri, setFiltri] = useState(null);
+  const [ignora, setIgnora] = useState(null);
 
   // Se la lista in attesa si è potuta leggere: senza, «niente da decidere»
   // sarebbe una bugia rassicurante (la regola del 19/08).
@@ -826,6 +838,7 @@ export default function PostaInArrivo() {
   const sistemateRichieste = useRef(false);
   const caricaSistemate = () => {
     sistemateRichieste.current = true;
+    leggi(listFiltriPosta()).then((r) => setFiltri((prima) => (nonLetto(r) && Array.isArray(prima) ? prima : r)));
     return leggi(listPostaSistemata()).then((r) =>
       setSistemate((prima) => (nonLetto(r) && Array.isArray(prima) ? prima : r))
     );
@@ -1218,6 +1231,41 @@ export default function PostaInArrivo() {
             Qui ci sono le ultime {SISTEMATE_MAX} mail sistemate. Le altre le trovi in Archivio Documenti.
           </p>
         )}
+
+        {/* LE REGOLE DEL FILTRO (11/11/2026): cosa la Posta mette da parte
+            prima di MEMO, senza spesa. Si tolgono da qui. */}
+        {scheda !== "decidere" && filtri !== null && (
+          <details className="mt-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-4 py-3">
+            <summary className="tocco-bottone cursor-pointer testo-sala-grande text-b58-charcoal font-medium">
+              Mail che metto da parte prima di MEMO{Array.isArray(filtri) ? ` (${filtri.length} regole)` : ""}
+            </summary>
+            {nonLetto(filtri) ? (
+              <p className={`${avviso} mt-2`}>Non riesco a leggere le regole del filtro.</p>
+            ) : filtri.length === 0 ? (
+              <p className="testo-sala-grande text-b58-charcoal-soft mt-2">
+                Nessuna regola. Su una mail inutile premi «Ignora le mail come questa».
+              </p>
+            ) : (
+              <ul className="mt-2 divide-y divide-b58-charcoal/10">
+                {filtri.map((r) => (
+                  <li key={r.id} className="py-2 flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="testo-sala-grande text-b58-charcoal min-w-0 break-words">{descriviRegola(r)}</span>
+                    <button
+                      type="button"
+                      disabled={inCorso === r.id}
+                      aria-label={`Togli la regola: ${descriviRegola(r)}`}
+                      onClick={() => agisci(r.id, () => togliFiltroPosta(r.id))}
+                      className="tocco-testo testo-sala text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo"
+                    >
+                      Togli
+                    </button>
+                    {errore?.dove === r.id && <p className={`${avviso} w-full`}>{errore.messaggio}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
       </div>
     </div>
   );
@@ -1231,7 +1279,7 @@ export default function PostaInArrivo() {
     const daDecidere = (m.azioni ?? []).filter((a) => a.stato === "proposta" && a.tipo !== "nessuna");
     const niente = (m.azioni ?? []).filter((a) => a.tipo === "nessuna");
     const decise = (m.azioni ?? []).filter((a) => a.tipo !== "nessuna" && a.stato !== "proposta");
-    const nota = m.stato === "da_leggere" ? null : notaInChiaro(m.lettura_note);
+    const nota = m.stato === "da_leggere" || stato === "filtrata" ? null : notaInChiaro(m.lettura_note);
     const { visibili, tecnici } = allegatiDaMostrare(m.allegati);
     const ce = cosaCeDaLeggere(m);
     const vediTecnici = tecniciAperti.has(m.id);
@@ -1526,7 +1574,118 @@ export default function PostaInArrivo() {
           <p className="testo-sala-grande text-b58-charcoal-soft">MEMO non ha proposto niente per questa mail.</p>
         )}
 
-        {m.stato !== "archiviata" && (
+        {/* LA MAIL FILTRATA (11/11/2026): perché, e come rimetterla. */}
+        {stato === "filtrata" && (
+          <div className="flex flex-col gap-2">
+            <p className="testo-sala-grande text-b58-charcoal-soft">{m.lettura_note}</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={inCorso === m.id}
+                onClick={() => agisci(m.id, () => rimettiPosta(m.id, "da_leggere"), `riga-${m.id}`)}
+                className={bottoneTenue}
+              >
+                {inCorso === m.id ? "…" : "Non era da filtrare: falla leggere"}
+              </button>
+              {m.filtrata_da && (
+                <button
+                  type="button"
+                  disabled={inCorso === m.filtrata_da}
+                  onClick={() => agisci(m.filtrata_da, () => togliFiltroPosta(m.filtrata_da), `riga-${m.id}`)}
+                  className={bottoneTenue}
+                >
+                  Togli la regola
+                </button>
+              )}
+            </div>
+            {errore?.dove === m.filtrata_da && <p className={avviso}>{errore.messaggio}</p>}
+          </div>
+        )}
+
+        {/* «IGNORA LE MAIL COME QUESTA» (11/11/2026): mittente + tipo di
+            oggetto di base; tutto il mittente solo se lo sceglie lui. Mai
+            sulla PEC dello SdI. */}
+        {(m.stato === "da_leggere" || m.stato === "proposta") &&
+          (() => {
+            const indirizzo = indirizzoMittente(m.mittente);
+            if (!indirizzo || !indirizzo.includes("@") || mittenteProtetto(indirizzo)) return null;
+            const tipo = tipoOggetto(testaDellaMail(m).oggetto ?? m.oggetto);
+            const aperto = ignora?.id === m.id;
+            const tutto = aperto ? ignora.tutto : !tipo;
+            if (!aperto) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => setIgnora({ id: m.id, tutto: !tipo })}
+                  className="tocco-testo self-start testo-sala-grande text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo mt-2"
+                >
+                  Ignora le mail come questa
+                </button>
+              );
+            }
+            return (
+              <fieldset className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 flex flex-col gap-2">
+                <legend className="testo-sala uppercase tracking-wide text-b58-charcoal-soft px-1">
+                  Da adesso, mettere da parte prima di MEMO
+                </legend>
+                {tipo && (
+                  <label className="flex items-start gap-2 testo-sala-grande text-b58-charcoal">
+                    <input
+                      type="radio"
+                      name={`ignora-${m.id}`}
+                      checked={!tutto}
+                      onChange={() => setIgnora({ id: m.id, tutto: false })}
+                      className="mt-1"
+                    />
+                    <span>
+                      Solo le mail come questa: {descriviRegola({ mittente: indirizzo, oggetto_tipo: tipo })}
+                    </span>
+                  </label>
+                )}
+                <label className="flex items-start gap-2 testo-sala-grande text-b58-charcoal">
+                  <input
+                    type="radio"
+                    name={`ignora-${m.id}`}
+                    checked={tutto}
+                    onChange={() => setIgnora({ id: m.id, tutto: true })}
+                    className="mt-1"
+                  />
+                  <span>
+                    Tutte le mail da {indirizzo}
+                    {tipo && (
+                      <span className="block testo-sala text-b58-terracotta-dark-testo">
+                        Attenzione: anche quelle utili di questo mittente.
+                      </span>
+                    )}
+                  </span>
+                </label>
+                <p className="testo-sala text-b58-charcoal-soft">
+                  Le mail messe da parte restano visibili in «Sistemate», e la regola si toglie quando vuoi.
+                </p>
+                {errore?.dove === m.id && <p className={avviso}>{errore.messaggio}</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={inCorso === m.id}
+                    onClick={() =>
+                      agisci(m.id, async () => {
+                        await aggiungiFiltroPosta(m.id, tutto);
+                        setIgnora(null);
+                      })
+                    }
+                    className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-4 py-1.5 testo-sala-grande"
+                  >
+                    {inCorso === m.id ? "…" : "Ignora"}
+                  </button>
+                  <button type="button" disabled={inCorso === m.id} onClick={() => setIgnora(null)} className={bottoneTenue}>
+                    Annulla
+                  </button>
+                </div>
+              </fieldset>
+            );
+          })()}
+
+        {(m.stato === "da_leggere" || m.stato === "proposta") && (
           <button
             type="button"
             aria-label={`Togli la mail: ${testaDellaMail(m).oggetto || "senza oggetto"}`}
@@ -1537,7 +1696,7 @@ export default function PostaInArrivo() {
             Togli la mail
           </button>
         )}
-        {errore?.dove === m.id && <p className={avviso}>{errore.messaggio}</p>}
+        {errore?.dove === m.id && ignora?.id !== m.id && <p className={avviso}>{errore.messaggio}</p>}
       </>
     );
   }
