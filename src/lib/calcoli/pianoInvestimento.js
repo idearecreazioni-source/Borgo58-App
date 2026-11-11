@@ -158,6 +158,70 @@ export function esitoVoce({ previsto, speso = 0, impegnato = 0, confermata = fal
   return { esito: "in_linea", differenza: euro(p - s) };
 }
 
+// =====================================================================
+// LA RIGA DELLA VOCE A RIQUADRI — 12/11/2026, modello approvato da
+// Alessio l'11/11 (https://claude.ai/artifact/ARhaRmdURjj5SnnPm3KiVD)
+// =====================================================================
+// Le informazioni che erano una riga grigia («Stimato · dilazione … ·
+// IVA … · netto …») diventano riquadri leggibili a colpo d'occhio, e in
+// fondo c'è SEMPRE il totale con scritto «stimato» o «confermato».
+// Il tono: «ok» verde (a posto), «attenzione» ambra (da tenere d'occhio),
+// «male» rosso (sforato), «neutro» senza colore.
+
+export const PAROLE_STATO = { stimato: "Stimato", preventivato: "Preventivato", confermato: "Confermato" };
+export const PAROLE_DILAZIONE = { nessuna: "Nessuna", stimata: "Stimata", confermata: "Confermata" };
+const TONO_STATO = { stimato: "neutro", preventivato: "attenzione", confermato: "ok" };
+
+/**
+ * I riquadri di una voce.
+ * @param voce  {stato, dilazione, aliquota_iva, netto, importo_ivato}
+ * @param conto {speso, impegnato} oppure null se lo speso non è letto:
+ *              allora i riquadri dello speso NON ci sono (niente non è zero).
+ * @returns [{chiave, etichetta, testo?, importo?, tono}]
+ */
+export function riquadriVoce(voce, conto) {
+  const iva = Number(voce?.aliquota_iva ?? 0);
+  const riquadri = [
+    { chiave: "stato", etichetta: "Stato", testo: PAROLE_STATO[voce?.stato] ?? voce?.stato ?? "—", tono: TONO_STATO[voce?.stato] ?? "neutro" },
+    { chiave: "dilazione", etichetta: "Dilazione", testo: PAROLE_DILAZIONE[voce?.dilazione] ?? voce?.dilazione ?? "—", tono: "neutro" },
+    { chiave: "iva", etichetta: "IVA", testo: iva === 0 ? "senza IVA" : `${iva}%`, tono: "neutro" },
+    { chiave: "netto", etichetta: "Netto", importo: euro(centesimi(voce?.netto)), tono: "neutro" },
+  ];
+  if (!conto) return riquadri;
+
+  const speso = euro(centesimi(conto.speso));
+  const impegnato = euro(centesimi(conto.impegnato));
+  riquadri.push(
+    speso > 0
+      ? { chiave: "spesi", etichetta: "Spesi", importo: speso, tono: "neutro" }
+      : { chiave: "spesi", etichetta: "Spesi", testo: "niente", tono: "neutro" },
+  );
+  if (impegnato > 0) riquadri.push({ chiave: "da_pagare", etichetta: "Da pagare", importo: impegnato, tono: "attenzione" });
+
+  const e = esitoVoce({ previsto: voce?.importo_ivato, speso, impegnato });
+  if (e.esito === "sforato") {
+    riquadri.push({ chiave: "esito", etichetta: "Sforato di", importo: e.differenza, tono: "male", esito: e.esito });
+  } else if (e.esito === "a_rischio") {
+    riquadri.push({ chiave: "esito", etichetta: "Supera di", importo: e.differenza, tono: "male", esito: e.esito });
+  } else {
+    // «Restano» toglie anche le fatture da pagare: quei soldi sono già impegnati.
+    const restano = euro(centesimi(voce?.importo_ivato) - centesimi(speso) - centesimi(impegnato));
+    riquadri.push({ chiave: "esito", etichetta: "Restano", importo: restano, tono: "ok", esito: e.esito });
+  }
+  return riquadri;
+}
+
+/**
+ * Il totale in fondo alla riga: sempre con la parola giusta.
+ * «Confermato» solo se la voce è confermata; tutto il resto è una stima.
+ */
+export function totaleVoce(voce) {
+  return {
+    parola: voce?.stato === "confermato" ? "confermato" : "stimato",
+    importo: euro(centesimi(voce?.importo_ivato)),
+  };
+}
+
 /**
  * I totali del piano, per gruppo e in tutto.
  * 🔴 Due numeri, non uno: la differenza netta (speso − previsto) e gli

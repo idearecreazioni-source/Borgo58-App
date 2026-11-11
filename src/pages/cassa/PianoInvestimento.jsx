@@ -12,7 +12,10 @@ import {
   GRUPPI,
   STATI,
   ULTIMO_MESE,
-  esitoVoce,
+  PAROLE_DILAZIONE,
+  PAROLE_STATO,
+  riquadriVoce,
+  totaleVoce,
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
@@ -49,8 +52,6 @@ import {
 //    chiude: aprire un'altra voce, cambiare la data o riprendere una voce
 //    archiviata butterebbe via, senza avviso, quello che si stava scrivendo.
 
-const STATO_PAROLE = { stimato: "Stimato", preventivato: "Preventivato", confermato: "Confermato" };
-const DILAZIONE_PAROLE = { nessuna: "Nessuna", stimata: "Stimata", confermata: "Confermata" };
 const MESI_DEL_MODULO = Array.from({ length: ULTIMO_MESE + 1 }, (_, i) => i);
 
 const inputClass =
@@ -310,13 +311,13 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
         <div>
           <label className={labelClass} htmlFor="voce-stato">Stato</label>
           <select id="voce-stato" className={inputClass} value={voce.stato} onChange={(e) => setVoce({ ...voce, stato: e.target.value })}>
-            {STATI.map((s) => <option key={s} value={s}>{STATO_PAROLE[s]}</option>)}
+            {STATI.map((s) => <option key={s} value={s}>{PAROLE_STATO[s]}</option>)}
           </select>
         </div>
         <div>
           <label className={labelClass} htmlFor="voce-dilazione">Dilazione</label>
           <select id="voce-dilazione" className={inputClass} value={voce.dilazione} onChange={(e) => setVoce({ ...voce, dilazione: e.target.value })}>
-            {DILAZIONI.map((d) => <option key={d} value={d}>{DILAZIONE_PAROLE[d]}</option>)}
+            {DILAZIONI.map((d) => <option key={d} value={d}>{PAROLE_DILAZIONE[d]}</option>)}
           </select>
         </div>
       </div>
@@ -369,38 +370,55 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
   );
 }
 
-/** Lo speso di una voce e come sta rispetto al previsto, in parole. */
-function SpesoDellaVoce({ voce, conto }) {
-  // Una fattura pagata il cui pagamento non è collegato non conta: si dice.
-  const avviso = conto?.scollegate > 0 && (
-    <span data-prova="fattura-scollegata" className="block testo-sala text-b58-terracotta-dark-testo">
-      {conto.scollegate === 1 ? "Una fattura collegata è già pagata" : `${conto.scollegate} fatture collegate sono già pagate`}: collega anche il pagamento, se no non conta.
-    </span>
-  );
-  if (!conto || (conto.speso === 0 && conto.impegnato === 0)) {
-    return (
-      <>
-        <span data-prova="speso-voce" className="testo-sala text-b58-charcoal-soft">niente speso</span>
-        {avviso}
-      </>
-    );
-  }
-  const e = esitoVoce({ previsto: voce.importo_ivato, speso: conto.speso, impegnato: conto.impegnato });
-  const parole = {
-    sforato: `sforato di ${formatEUR(e.differenza)}`,
-    a_rischio: `con le fatture da pagare supera di ${formatEUR(e.differenza)}`,
-    in_linea: `restano ${formatEUR(e.differenza)}`,
-    risparmio: `risparmio di ${formatEUR(e.differenza)}`,
-  }[e.esito];
-  const colore = e.esito === "sforato" || e.esito === "a_rischio" ? "text-b58-terracotta-dark-testo" : "text-b58-charcoal-soft";
+// I colori dei riquadri: verde a posto, ambra da tenere d'occhio, rosso
+// sforato. Fondo e testo vengono dai colori del gestionale, che hanno già
+// la loro versione al buio.
+const TONO_RIQUADRO = {
+  neutro: "bg-b58-cream-dark text-b58-charcoal",
+  ok: "bg-b58-olive/15 text-b58-olive-dark-testo",
+  attenzione: "bg-b58-ambra/15 text-b58-ambra-dark-testo",
+  male: "bg-b58-terracotta/15 text-b58-terracotta-dark-testo",
+};
+
+/**
+ * La riga della voce a riquadri, con il totale sempre in fondo (modello
+ * approvato da Alessio l'11/11). `conto` è null finché lo speso non si è
+ * letto: allora i riquadri dello speso non ci sono, non diventano zero.
+ */
+function RiquadriVoce({ voce, conto }) {
+  const riquadri = riquadriVoce(voce, conto);
+  const esito = riquadri.find((r) => r.chiave === "esito")?.esito;
+  const totale = totaleVoce(voce);
   return (
-    <>
-      <span data-prova="speso-voce" data-esito={e.esito} className={`testo-sala ${colore}`}>
-        spesi {formatEUR(conto.speso)}
-        {conto.impegnato > 0 && ` + ${formatEUR(conto.impegnato)} da pagare`} · {parole}
-      </span>
-      {avviso}
-    </>
+    <div className="space-y-2">
+      <ul
+        role="list"
+        className="flex flex-wrap gap-2"
+        aria-label={`Come sta ${voce.descrizione}`}
+        {...(conto ? { "data-prova": "speso-voce", "data-esito": esito } : {})}
+      >
+        {riquadri.map((r) => (
+          <li key={r.chiave} data-riquadro={r.chiave} className={`rounded-lg px-2.5 py-1.5 ${TONO_RIQUADRO[r.tono]}`}>
+            <span className="block testo-sala font-semibold uppercase tracking-wide">{r.etichetta}</span>
+            <span className="block testo-sala font-semibold tabular-nums">
+              {r.testo ?? (r.chiave === "esito" && r.esito === "sforato" ? `+ ${formatEUR(r.importo)}` : formatEUR(r.importo))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {/* Una fattura pagata il cui pagamento non è collegato non conta: si dice. */}
+      {conto?.scollegate > 0 && (
+        <p data-prova="fattura-scollegata" className="testo-sala text-b58-terracotta-dark-testo">
+          {conto.scollegate === 1 ? "Una fattura collegata è già pagata" : `${conto.scollegate} fatture collegate sono già pagate`}: collega anche il pagamento, se no non conta.
+        </p>
+      )}
+      <p data-prova="totale-voce" className="flex flex-wrap items-baseline justify-end gap-2 border-t border-dashed border-b58-charcoal/15 pt-1.5">
+        <span className={`testo-sala font-semibold ${totale.parola === "confermato" ? "text-b58-olive-dark-testo" : "text-b58-ambra-dark-testo"}`}>
+          Totale {totale.parola}
+        </span>
+        <span className="font-display text-xl text-b58-charcoal tabular-nums">{formatEUR(totale.importo)}</span>
+      </p>
+    </div>
   );
 }
 
@@ -858,21 +876,17 @@ export default function PianoInvestimento() {
                       );
                     }
                     return (
-                      <li key={v.id} data-prova="voce" className="py-3 flex items-start justify-between gap-3 flex-wrap">
-                        <div className="min-w-0">
-                          <p className="text-b58-charcoal font-medium">{v.descrizione}</p>
-                          <p className="testo-sala text-b58-charcoal-soft">
-                            {STATO_PAROLE[v.stato]} · dilazione {DILAZIONE_PAROLE[v.dilazione].toLowerCase()} · {Number(v.aliquota_iva) === 0 ? "senza IVA" : `IVA ${Number(v.aliquota_iva)}%`} · netto {formatEUR(v.netto)}
-                          </p>
-                          {conti && <SpesoDellaVoce voce={v} conto={conti.perVoce.get(v.id)} />}
+                      <li key={v.id} data-prova="voce" className="py-3 space-y-2">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <p className="text-b58-charcoal font-medium min-w-0">{v.descrizione}</p>
+                          <div className="flex items-center gap-3">
+                            <Quadra conto={quadra(v, rateVoce)} dataProva="quadra-voce" />
+                            <button type="button" className={bottone} disabled={inModifica} onClick={() => setAperta(v)}>
+                              Modifica<span className="sr-only"> {v.descrizione}</span>
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-b58-charcoal">{formatEUR(v.importo_ivato)}</span>
-                          <Quadra conto={quadra(v, rateVoce)} dataProva="quadra-voce" />
-                          <button type="button" className={bottone} disabled={inModifica} onClick={() => setAperta(v)}>
-                            Modifica<span className="sr-only"> {v.descrizione}</span>
-                          </button>
-                        </div>
+                        <RiquadriVoce voce={v} conto={conti ? (conti.perVoce.get(v.id) ?? { speso: 0, impegnato: 0 }) : null} />
                       </li>
                     );
                   })}
