@@ -11,6 +11,7 @@ import {
   riapriMovimentoBanca,
 } from "../../lib/api/banca";
 import { listCausali, listContiBancari } from "../../lib/api/cash";
+import { propostaSpesaBanca, speseBancaDaRegistrare } from "../../lib/calcoli/speseBanca";
 import { CASH_DOCUMENT_TYPES, formatDate, formatEUR } from "../../lib/constants";
 import { leggiFlussoCbi, movimentiDaCaricare } from "../../lib/calcoli/cbi";
 import { bancaDelCsv, leggiCsvBper, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
@@ -99,6 +100,8 @@ export default function MovimentiBanca() {
   const [csv, setCsv] = useState(null); // { nome, movimenti }: il CSV letto, in attesa di conto e saldi
   const [inviando, setInviando] = useState(false);
 
+  const [tutteLeCausali, setTutteLeCausali] = useState([]);
+
   const ricarica = () => listMovimentiBanca().then(setMovimenti);
 
   useEffect(() => {
@@ -106,6 +109,11 @@ export default function MovimentiBanca() {
     listContiBancari()
       .then(setConti)
       .catch((e) => setErrore(e.message));
+    // Le causali servono a riconoscere le spese della banca (12/11/2026).
+    // Se non si leggono, nessuna proposta: le righe restano a mano, e lo si dice.
+    listCausali()
+      .then(setTutteLeCausali)
+      .catch((e) => setErrore(`Non riesco a leggere le causali, quindi non propongo le spese della banca: ${e.message}`));
   }, []);
 
   const carica = async (files) => {
@@ -279,6 +287,13 @@ export default function MovimentiBanca() {
         ))}
       </div>
 
+      {stato === "da_abbinare" && movimenti && (
+        <SpeseDellaBanca
+          righe={speseBancaDaRegistrare(movimenti, tutteLeCausali)}
+          fatto={() => ricarica().catch((e) => setErrore(e.message))}
+        />
+      )}
+
       {movimenti === null ? (
         <p className="testo-sala-grande text-b58-charcoal-soft">
           {errore ? "Non sono riuscito a leggere i movimenti." : "Caricamento…"}
@@ -304,6 +319,146 @@ export default function MovimentiBanca() {
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * Le spese della banca tutte insieme (12/11/2026, richiesta di Alessio):
+ * commissioni, canoni, bolli e rimborsi riconosciuti dalla causale ABI si
+ * scrivono in prima nota con un tocco solo, DOPO averle viste elencate.
+ * ⚠️ La conferma sta nella pagina, non in un dialogo del browser.
+ * ⚠️ Una riga che non passa non ferma le altre, e si dice quale.
+ * 🔴 Una riga che ha già un movimento o una fattura con lo stesso importo
+ *    NON si scrive in blocco: potrebbe essere già in prima nota, e
+ *    scriverla di nuovo la conterebbe due volte. Resta da guardare a mano
+ *    (revisione ecc:react-reviewer, 12/11).
+ */
+function SpeseDellaBanca({ righe, fatto }) {
+  const [chiede, setChiede] = useState(false);
+  const [lavoro, setLavoro] = useState(false);
+  const [esito, setEsito] = useState(null); // { scritte, saltate: [testo], errori: [testo] }
+  const guardia = useRef(false);
+  const si = useRef(null);
+  const registra = useRef(null);
+  const resoconto = useRef(null);
+
+  useEffect(() => {
+    if (chiede) si.current?.focus();
+  }, [chiede]);
+
+  if (righe.length === 0 && !esito) return null;
+  const somma = (filtro) => Math.round(righe.filter(filtro).reduce((s, x) => s + Number(x.m.importo) * 100, 0)) / 100;
+  const uscite = somma((x) => Number(x.m.importo) < 0);
+  const entrate = somma((x) => Number(x.m.importo) > 0);
+  const nome = (m) => `${formatDate(m.data_contabile)} ${formatEUR(Number(m.importo))}`;
+
+  const registraTutte = async () => {
+    if (guardia.current) return;
+    guardia.current = true;
+    setLavoro(true);
+    const errori = [];
+    const saltate = [];
+    let scritte = 0;
+    try {
+      for (const { m, proposta } of righe) {
+        try {
+          const gia = await proposteMovimentoBanca(m.id);
+          if (gia?.length) {
+            saltate.push(nome(m));
+            continue;
+          }
+          await registraMovimentoBanca(m.id, { causaleId: proposta.causaleId, tipoDocumento: proposta.tipoDocumento, descrizione: "" });
+          scritte += 1;
+        } catch (e) {
+          errori.push(`${nome(m)}: ${e.message}`);
+        }
+      }
+      setEsito({ scritte, saltate, errori });
+      setChiede(false);
+      await fatto();
+    } finally {
+      guardia.current = false;
+      setLavoro(false);
+      requestAnimationFrame(() => resoconto.current?.focus());
+    }
+  };
+
+  return (
+    <section data-prova="spese-banca" className="mb-4 rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/10 p-3 space-y-2">
+      {righe.length > 0 && (
+        <>
+          <p className="testo-sala-grande text-b58-charcoal">
+            {righe.length === 1 ? "Una riga è una spesa della banca" : `${righe.length} righe sono spese della banca`}{" "}
+            (commissioni, canoni, bolli o rimborsi): {formatEUR(Math.abs(uscite))} di spese
+            {entrate > 0 && ` e ${formatEUR(entrate)} di rimborsi`}.
+          </p>
+          <ul className="testo-sala text-b58-charcoal-soft list-disc pl-5">
+            {righe.map(({ m, proposta }) => (
+              <li key={m.id}>
+                {nome(m)} → {proposta.causale}, estratto conto
+              </li>
+            ))}
+          </ul>
+          {!chiede ? (
+            <button
+              ref={registra}
+              type="button"
+              className={bottonePieno}
+              disabled={lavoro}
+              onClick={() => {
+                setEsito(null);
+                setChiede(true);
+              }}
+            >
+              Registra tutte ({righe.length})
+            </button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="testo-sala text-b58-charcoal">Le scrivo in prima nota così come sono elencate?</span>
+              <button ref={si} type="button" className={bottonePieno} disabled={lavoro} onClick={registraTutte}>
+                {lavoro ? "Le sto scrivendo…" : "Sì, scrivile"}
+              </button>
+              <button
+                type="button"
+                className={bottone}
+                disabled={lavoro}
+                onClick={() => {
+                  setChiede(false);
+                  requestAnimationFrame(() => registra.current?.focus());
+                }}
+              >
+                Lascia perdere
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      <div ref={resoconto} tabIndex={-1} role="status" aria-live="polite" className="testo-sala focus:outline-none">
+        {esito && esito.scritte > 0 && (
+          <p className="text-b58-olive-dark-testo">
+            ✓ {esito.scritte === 1 ? "Scritta in prima nota 1 spesa" : `Scritte in prima nota ${esito.scritte} spese`} della banca.
+          </p>
+        )}
+        {esito && esito.saltate.length > 0 && (
+          <p className="text-b58-charcoal">
+            Non ho scritto {esito.saltate.join(", ")}: c&apos;è già un movimento o una fattura con lo stesso importo, guardale a mano qui sotto.
+          </p>
+        )}
+      </div>
+      {esito && esito.errori.length > 0 && (
+        <div role="alert" className="testo-sala text-b58-terracotta-dark-testo">
+          <p>Queste non le ho scritte (restano da abbinare qui sotto):</p>
+          <ul className="list-disc pl-5">
+            {esito.errori.map((e) => <li key={e}>{e}</li>)}
+          </ul>
+        </div>
+      )}
+      {esito && (
+        <button type="button" className={bottone} onClick={() => setEsito(null)}>
+          Chiudi
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -400,13 +555,27 @@ function Abbina({ m, occupato, esegui }) {
   const [descrizione, setDescrizione] = useState("");
   const [perche, setPerche] = useState("");
 
+  const [proposta, setProposta] = useState(null);
+
   useEffect(() => {
     proposteMovimentoBanca(m.id)
       .then(setProposte)
       .catch((e) => setErroreProposte(e.message));
     listCausali(importo < 0 ? "uscita" : "entrata")
-      .then(setCausali)
+      .then((c) => {
+        setCausali(c);
+        // 12/11/2026: una spesa della banca arriva coi campi già compilati
+        // (si propone, non si scrive: il pulsante resta suo).
+        const p = propostaSpesaBanca(m, c);
+        setProposta(p);
+        if (p) {
+          setCausale((x) => x || p.causaleId);
+          setTipoDoc((x) => x || p.tipoDocumento);
+        }
+      })
       .catch((e) => setErroreProposte(e.message));
+    // ⚠️ `m` cambia oggetto a ogni rilettura: basta l'id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.id, importo]);
 
   return (
@@ -456,6 +625,11 @@ function Abbina({ m, occupato, esegui }) {
 
       <div>
         <h3 className="testo-sala font-medium text-b58-charcoal mb-1">È una cosa nuova: scrivila in prima nota</h3>
+        {proposta && (
+          <p data-prova="proposta-spesa-banca" className="testo-sala text-b58-olive-dark-testo mb-2">
+            Ho compilato io i campi: sono {proposta.perche}. Controlla e premi «Scrivi in prima nota».
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           <select value={causale} onChange={(e) => setCausale(e.target.value)} className={campo}>
             <option value="">Causale…</option>
