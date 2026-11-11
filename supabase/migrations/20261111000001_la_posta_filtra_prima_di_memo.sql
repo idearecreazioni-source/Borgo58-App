@@ -39,7 +39,7 @@ create or replace function posta_indirizzo(p_mittente text)
 returns text
 language sql
 immutable
-set search_path = public
+set search_path = public, pg_temp
 as $$
   -- «Credem <businesson@credem.it>» → «businesson@credem.it».
   select nullif(lower(btrim(coalesce(substring(p_mittente from '<([^<>]+)>'), p_mittente, ''))), '');
@@ -49,7 +49,7 @@ create or replace function posta_tipo_oggetto(p_oggetto text)
 returns text
 language sql
 immutable
-set search_path = public
+set search_path = public, pg_temp
 as $$
   -- Minuscole, senza «posta certificata:», «r:», «re:», «fw:», «fwd:» davanti,
   -- ogni gruppo di cifre diventa «#», gli spazi uno solo.
@@ -64,7 +64,7 @@ create or replace function posta_protetta(p_indirizzo text)
 returns boolean
 language sql
 immutable
-set search_path = public
+set search_path = public, pg_temp
 as $$
   -- Lo SdI scrive da «sdiNN@pec.fatturapa.it»; il gestore PEC incarta da
   -- «posta-certificata@…». Questi non si filtrano mai.
@@ -87,8 +87,14 @@ create table if not exists posta_filtri (
   mittente      text not null check (mittente = lower(btrim(mittente)) and mittente like '%@%'),
   -- Vuoto = tutto da questo mittente (solo se scelto apposta).
   oggetto_tipo  text check (oggetto_tipo is null or length(btrim(oggetto_tipo)) >= 3),
+  -- Come si confronta il tipo di oggetto (revisione ECC dell'11/11: «contiene»
+  -- da solo prendeva anche «Allerta: accesso mobile banking da nuovo
+  -- dispositivo»): uguale (il tasto), inizia con, oppure contiene (solo per
+  -- frasi lunghe).
+  modo          text not null default 'uguale' check (modo in ('uguale', 'inizia', 'contiene')),
   nota          text,
   creato_il     timestamptz not null default now(),
+  constraint posta_filtri_contiene_lungo check (modo <> 'contiene' or length(coalesce(oggetto_tipo, '')) >= 12),
   constraint posta_filtri_mai_la_pec check (not posta_protetta(mittente))
 );
 create unique index if not exists posta_filtri_unico on posta_filtri (mittente, coalesce(oggetto_tipo, ''));
@@ -118,25 +124,46 @@ returns uuid
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
   select f.id
     from posta_filtri f
    where not posta_protetta(posta_indirizzo(p_mittente))
+     -- La protezione anche sulla stringa intera: un mittente scritto in modo
+     -- strano non deve far uscire l'indirizzo sbagliato e scavalcarla.
+     and coalesce(lower(p_mittente), '') not like '%fatturapa.it%'
+     and coalesce(lower(p_mittente), '') not like '%posta-certificata@%'
      and f.mittente = posta_indirizzo(p_mittente)
      and (f.oggetto_tipo is null
-          or position(f.oggetto_tipo in coalesce(posta_tipo_oggetto(p_oggetto), '')) > 0)
+          or (f.modo = 'uguale' and coalesce(posta_tipo_oggetto(p_oggetto), '') = f.oggetto_tipo)
+          or (f.modo = 'inizia' and left(coalesce(posta_tipo_oggetto(p_oggetto), ''), length(f.oggetto_tipo)) = f.oggetto_tipo)
+          or (f.modo = 'contiene' and position(f.oggetto_tipo in coalesce(posta_tipo_oggetto(p_oggetto), '')) > 0))
    -- La regola più stretta vince: si dice quella giusta nella Posta.
    order by (f.oggetto_tipo is null), length(coalesce(f.oggetto_tipo, '')) desc
    limit 1;
 $$;
 revoke all on function posta_regola_per(text, text) from public, anon, authenticated;
 
+create or replace function posta_regola_in_italiano(p_f posta_filtri)
+returns text
+language sql
+immutable
+set search_path = public, pg_temp
+as $$
+  select case
+    when p_f.oggetto_tipo is null then 'tutte le mail da ' || p_f.mittente
+    when p_f.modo = 'uguale' then 'da ' || p_f.mittente || ' con oggetto «' || p_f.oggetto_tipo || '»'
+    when p_f.modo = 'inizia' then 'da ' || p_f.mittente || ' con oggetto che comincia per «' || p_f.oggetto_tipo || '»'
+    else 'da ' || p_f.mittente || ' con «' || p_f.oggetto_tipo || '» nell''oggetto'
+  end;
+$$;
+revoke all on function posta_regola_in_italiano(posta_filtri) from public, anon, authenticated;
+
 create or replace function posta_filtra_in_arrivo()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_regola uuid;
@@ -152,10 +179,7 @@ begin
   select * into v_f from posta_filtri where id = v_regola;
   new.stato := 'scartata';
   new.filtrata_da := v_regola;
-  new.lettura_note := 'Filtrata prima di MEMO, senza spesa: '
-    || case when v_f.oggetto_tipo is null then 'tutte le mail da ' || v_f.mittente
-            else 'da ' || v_f.mittente || ' con «' || v_f.oggetto_tipo || '» nell''oggetto' end
-    || '.';
+  new.lettura_note := 'Filtrata prima di MEMO, senza spesa: ' || posta_regola_in_italiano(v_f) || '.';
   return new;
 end $$;
 revoke all on function posta_filtra_in_arrivo() from public, anon, authenticated;
@@ -171,7 +195,7 @@ create or replace function aggiungi_filtro_posta(p_posta_id uuid, p_tutto_mitten
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_m     posta_ricevuta%rowtype;
@@ -202,18 +226,27 @@ begin
     end if;
   end if;
 
-  select id into v_id from posta_filtri
-   where mittente = v_ind and coalesce(oggetto_tipo, '') = coalesce(v_tipo, '');
+  -- Il tasto fa sempre una regola «uguale»: l'oggetto intero ripulito, non
+  -- una sua parte (revisione ECC dell'11/11). Due tocchi insieme non rompono
+  -- l'indice: il secondo trova la regola del primo.
+  insert into posta_filtri (mittente, oggetto_tipo, modo, nota)
+  values (v_ind, v_tipo, 'uguale', 'Dalla Posta: «' || left(coalesce(v_m.oggetto, ''), 120) || '»')
+  on conflict do nothing
+  returning id into v_id;
   if v_id is null then
-    insert into posta_filtri (mittente, oggetto_tipo, nota)
-    values (v_ind, v_tipo, 'Dalla Posta: «' || left(coalesce(v_m.oggetto, ''), 120) || '»')
-    returning id into v_id;
+    select id into v_id from posta_filtri
+     where mittente = v_ind and coalesce(oggetto_tipo, '') = coalesce(v_tipo, '');
   end if;
 
-  -- Questa mail va subito con le filtrate (se era ancora aperta).
-  update posta_ricevuta
-     set stato = 'scartata', filtrata_da = v_id
-   where id = p_posta_id and stato in ('da_leggere', 'proposta');
+  -- Questa mail va subito con le filtrate (se era ancora aperta), con la
+  -- nota che lo dice; le sue proposte ancora aperte si chiudono come «no».
+  update posta_ricevuta r
+     set stato = 'scartata', filtrata_da = v_id,
+         lettura_note = 'Filtrata prima di MEMO, senza spesa: '
+           || (select posta_regola_in_italiano(f) from posta_filtri f where f.id = v_id) || '.'
+   where r.id = p_posta_id and r.stato in ('da_leggere', 'proposta');
+  update posta_azioni set stato = 'rifiutata', decisa_il = now()
+   where posta_id = p_posta_id and stato = 'proposta';
 
   return jsonb_build_object('filtro_id', v_id, 'mittente', v_ind, 'oggetto_tipo', v_tipo);
 end $$;
@@ -235,7 +268,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
   with m as (select posta_indirizzo(p_mittente) as ind)
   select coalesce(posta_protetta(m.ind), false)
@@ -258,12 +291,12 @@ grant execute on function mittente_conosciuto_per_la_posta(text) to service_role
 -- ---------------------------------------------------------------------------
 -- 5. LE REGOLE DI PARTENZA (scelte da Alessio l'11/11)
 -- ---------------------------------------------------------------------------
-insert into posta_filtri (mittente, oggetto_tipo, nota)
+insert into posta_filtri (mittente, oggetto_tipo, modo, nota)
 values
-  ('businesson@credem.it', 'notifica accesso business on', 'Avviso di accesso a Business On (regola di partenza, 11/11)'),
-  ('businesson@credem.it', 'accesso mobile banking', 'Avviso di accesso al mobile banking (regola di partenza, 11/11)'),
-  ('businesson@credem.it', 'mybox: nuovi documenti disponibili', 'Solo un avviso, i documenti sono in banca (Alessio, 11/11)'),
-  ('comunicazioni@staff.aruba.it', 'inoltro automatico è stato impostato', 'Avviso di Aruba sull''inoltro (regola di partenza, 11/11)')
+  ('businesson@credem.it', 'notifica accesso business on', 'inizia', 'Avviso di accesso a Business On (regola di partenza, 11/11)'),
+  ('businesson@credem.it', 'notifica accesso mobile banking', 'inizia', 'Avviso di accesso al mobile banking (regola di partenza, 11/11)'),
+  ('businesson@credem.it', 'mybox: nuovi documenti disponibili', 'inizia', 'Solo un avviso, i documenti sono in banca (Alessio, 11/11)'),
+  ('comunicazioni@staff.aruba.it', 'inoltro automatico è stato impostato', 'contiene', 'Avviso di Aruba sull''inoltro (regola di partenza, 11/11)')
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -314,6 +347,38 @@ begin
     if v_stato <> 'da_leggere' then raise exception 'VERIFICA (1): la mail vera di Credem è stata filtrata.'; end if;
     if (select lettura_note from posta_ricevuta where messaggio_id = 'ZZ-FILTRO-1') not like 'Filtrata prima di MEMO%' then
       raise exception 'VERIFICA (1): la mail filtrata non dice perché.';
+    end if;
+    -- Un avviso di sicurezza che CONTIENE la stessa frase non è lo stesso
+    -- tipo di mail: passa (revisione ECC dell'11/11).
+    insert into posta_ricevuta (messaggio_id, casella, mittente, oggetto, stato)
+    values ('ZZ-FILTRO-1B', 'info@verifica', 'businesson@credem.it', 'Allerta: notifica accesso mobile banking da nuovo dispositivo', 'da_leggere')
+    returning stato into v_stato;
+    if v_stato <> 'da_leggere' then raise exception 'VERIFICA (1): un avviso di sicurezza è stato filtrato.'; end if;
+
+    -- 1bis. Come la chiave di servizio, che delle regole non vede niente: il
+    --       filtro funziona lo stesso, e il doppione si ignora.
+    set local role service_role;
+    insert into posta_ricevuta (messaggio_id, casella, mittente, oggetto, stato)
+    values ('ZZ-FILTRO-1C', 'info@verifica', 'Credem <businesson@credem.it>', 'MYBOX: Nuovi documenti disponibili', 'da_leggere')
+    on conflict (messaggio_id) do nothing
+    returning stato into v_stato;
+    if v_stato is distinct from 'scartata' then raise exception 'VERIFICA (1bis): con la chiave di servizio il filtro non scatta (%).', v_stato; end if;
+    insert into posta_ricevuta (messaggio_id, casella, mittente, oggetto, stato)
+    values ('ZZ-FILTRO-1C', 'info@verifica', 'Credem <businesson@credem.it>', 'MYBOX: Nuovi documenti disponibili', 'da_leggere')
+    on conflict (messaggio_id) do nothing;
+    v_respinto := false;
+    begin
+      perform 1 from posta_filtri limit 1;
+    exception when insufficient_privilege then v_respinto := true;
+    end;
+    if not v_respinto then raise exception 'VERIFICA (1bis): la chiave di servizio legge le regole.'; end if;
+    if not mittente_conosciuto_per_la_posta('sdi38@pec.fatturapa.it')
+       or mittente_conosciuto_per_la_posta('qualcuno@gmail.com') then
+      raise exception 'VERIFICA (1bis): il mittente conosciuto non risponde come deve.';
+    end if;
+    reset role;
+    if has_function_privilege('authenticated', 'mittente_conosciuto_per_la_posta(text)', 'execute') then
+      raise exception 'VERIFICA (1bis): la domanda sul mittente è aperta agli utenti.';
     end if;
 
     -- 2. La PEC dello SdI non si filtra, nemmeno con una regola scritta a mano.

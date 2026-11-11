@@ -54,7 +54,10 @@ export async function listPostaSistemata() {
     )
     // E le mail messe da parte dal filtro (11/11/2026): si vedono, per
     // accorgersi se il filtro ha preso una mail buona.
-    .or("stato.eq.archiviata,and(stato.eq.scartata,filtrata_da.not.is.null)")
+    // ⚠️ Riconosciute dalla nota, non dalla regola: tolta la regola
+    //    (`filtrata_da` torna vuoto) le mail che aveva messo da parte devono
+    //    restare in vista (revisione ECC dell'11/11).
+    .or("stato.eq.archiviata,and(stato.eq.scartata,lettura_note.like.Filtrata*)")
     .order("ricevuta_il", { ascending: false })
     .limit(SISTEMATE_MAX);
   if (error) throw error;
@@ -244,15 +247,15 @@ export async function aggiungiFiltroPosta(postaId, tuttoMittente = false) {
 export async function listFiltriPosta() {
   const { data, error } = await supabase
     .from("posta_filtri")
-    .select("id, mittente, oggetto_tipo, nota, creato_il")
+    .select("id, mittente, oggetto_tipo, modo, nota, creato_il")
     .order("creato_il", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
 
 /**
- * Toglie una regola. Le mail che aveva messo da parte restano tolte (e
- * perdono il bollino «Filtrata»): si rimettono una per una, se servono.
+ * Toglie una regola. Le mail che aveva messo da parte restano fra le
+ * filtrate in «Sistemate» (si riconoscono dalla nota): si rimettono una per una.
  * Una riga sola, con la RLS come barriera.
  */
 export async function togliFiltroPosta(filtroId) {

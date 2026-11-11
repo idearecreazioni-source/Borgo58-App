@@ -961,6 +961,8 @@ export default function PostaInArrivo() {
 
   const agisci = async (azioneId, fn, poi = null, tieniTolta = false) => {
     setErrore(null);
+    // Un altro gesto chiude il riquadro «Ignora» aperto su un'altra mail.
+    if (ignora && ignora.id !== azioneId) setIgnora(null);
     // L'«Annulla» vale per l'ultima mail tolta finché non si fa altro.
     if (!tieniTolta) setTolta(null);
     setInCorso(azioneId);
@@ -1237,7 +1239,7 @@ export default function PostaInArrivo() {
         {scheda !== "decidere" && filtri !== null && (
           <details className="mt-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-4 py-3">
             <summary className="tocco-bottone cursor-pointer testo-sala-grande text-b58-charcoal font-medium">
-              Mail che metto da parte prima di MEMO{Array.isArray(filtri) ? ` (${filtri.length} regole)` : ""}
+              Mail che metto da parte prima di MEMO{Array.isArray(filtri) ? ` (${filtri.length} ${filtri.length === 1 ? "regola" : "regole"})` : ""}
             </summary>
             {nonLetto(filtri) ? (
               <p className={`${avviso} mt-2`}>Non riesco a leggere le regole del filtro.</p>
@@ -1582,7 +1584,7 @@ export default function PostaInArrivo() {
               <button
                 type="button"
                 disabled={inCorso === m.id}
-                onClick={() => agisci(m.id, () => rimettiPosta(m.id, "da_leggere"), `riga-${m.id}`)}
+                onClick={() => agisci(m.id, () => rimettiPosta(m.id, "da_leggere"), `scheda-${scheda}`)}
                 className={bottoneTenue}
               >
                 {inCorso === m.id ? "…" : "Non era da filtrare: falla leggere"}
@@ -1590,15 +1592,15 @@ export default function PostaInArrivo() {
               {m.filtrata_da && (
                 <button
                   type="button"
-                  disabled={inCorso === m.filtrata_da}
-                  onClick={() => agisci(m.filtrata_da, () => togliFiltroPosta(m.filtrata_da), `riga-${m.id}`)}
+                  disabled={inCorso === `${m.id}:regola`}
+                  onClick={() => agisci(`${m.id}:regola`, () => togliFiltroPosta(m.filtrata_da), `scheda-${scheda}`)}
                   className={bottoneTenue}
                 >
                   Togli la regola
                 </button>
               )}
             </div>
-            {errore?.dove === m.filtrata_da && <p className={avviso}>{errore.messaggio}</p>}
+            {errore?.dove === `${m.id}:regola` && <p role="alert" className={avviso}>{errore.messaggio}</p>}
           </div>
         )}
 
@@ -1616,7 +1618,12 @@ export default function PostaInArrivo() {
               return (
                 <button
                   type="button"
-                  onClick={() => setIgnora({ id: m.id, tutto: !tipo })}
+                  id={`ignora-tasto-${m.id}`}
+                  aria-expanded={false}
+                  onClick={() => {
+                    setIgnora({ id: m.id, tutto: !tipo });
+                    metti(`ignora-scelta-${m.id}`);
+                  }}
                   className="tocco-testo self-start testo-sala-grande text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo mt-2"
                 >
                   Ignora le mail come questa
@@ -1626,12 +1633,13 @@ export default function PostaInArrivo() {
             return (
               <fieldset className="rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 flex flex-col gap-2">
                 <legend className="testo-sala uppercase tracking-wide text-b58-charcoal-soft px-1">
-                  Da adesso, mettere da parte prima di MEMO
+                  Cosa vuoi mettere da parte da adesso, prima di MEMO?
                 </legend>
                 {tipo && (
                   <label className="flex items-start gap-2 testo-sala-grande text-b58-charcoal">
                     <input
                       type="radio"
+                      id={`ignora-scelta-${m.id}`}
                       name={`ignora-${m.id}`}
                       checked={!tutto}
                       onChange={() => setIgnora({ id: m.id, tutto: false })}
@@ -1645,6 +1653,7 @@ export default function PostaInArrivo() {
                 <label className="flex items-start gap-2 testo-sala-grande text-b58-charcoal">
                   <input
                     type="radio"
+                    id={tipo ? undefined : `ignora-scelta-${m.id}`}
                     name={`ignora-${m.id}`}
                     checked={tutto}
                     onChange={() => setIgnora({ id: m.id, tutto: true })}
@@ -1661,8 +1670,10 @@ export default function PostaInArrivo() {
                 </label>
                 <p className="testo-sala text-b58-charcoal-soft">
                   Le mail messe da parte restano visibili in «Sistemate», e la regola si toglie quando vuoi.
+                  {(m.azioni ?? []).some((a) => a.stato === "proposta" && a.tipo !== "nessuna") &&
+                    " Le proposte di MEMO ancora aperte su questa mail non si faranno."}
                 </p>
-                {errore?.dove === m.id && <p className={avviso}>{errore.messaggio}</p>}
+                {errore?.dove === m.id && <p role="alert" className={avviso}>{errore.messaggio}</p>}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -1677,7 +1688,15 @@ export default function PostaInArrivo() {
                   >
                     {inCorso === m.id ? "…" : "Ignora"}
                   </button>
-                  <button type="button" disabled={inCorso === m.id} onClick={() => setIgnora(null)} className={bottoneTenue}>
+                  <button
+                    type="button"
+                    disabled={inCorso === m.id}
+                    onClick={() => {
+                      setIgnora(null);
+                      metti(`ignora-tasto-${m.id}`);
+                    }}
+                    className={bottoneTenue}
+                  >
                     Annulla
                   </button>
                 </div>

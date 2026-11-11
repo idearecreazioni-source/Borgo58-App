@@ -164,7 +164,7 @@ describe("la Posta a righe", () => {
     const tutto = screen.getByRole("radio", { name: /Tutte le mail da fatture@esempio\.it/ });
     expect(solo.checked).toBe(true);
     expect(tutto.checked).toBe(false);
-    expect(solo.closest("label").textContent).toMatch(/fatture@esempio\.it con «fattura #\/f»/);
+    expect(solo.closest("label").textContent).toMatch(/fatture@esempio\.it con oggetto «fattura #\/f»/);
     fireEvent.click(screen.getByRole("button", { name: "Ignora" }));
     await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", false));
   });

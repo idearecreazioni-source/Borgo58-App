@@ -451,7 +451,7 @@ export function notaInChiaro(nota) {
 export function statoDellaMail(mail, lettura) {
   if (mail?.stato === "archiviata") return "fatto";
   // Messa da parte da una regola del filtro, prima di MEMO (11/11/2026).
-  if (mail?.stato === "scartata" && mail?.filtrata_da) return "filtrata";
+  if (mail?.stato === "scartata" && (mail?.filtrata_da || /^Filtrata prima di MEMO/.test(mail?.lettura_note ?? ""))) return "filtrata";
   if (mail?.stato === "da_leggere") {
     return ["arresa", "lettore_fermo", "non_so"].includes(lettura?.chiave) ? "guarda" : "in_lettura";
   }
@@ -548,6 +548,9 @@ export function mittenteProtetto(indirizzo) {
 }
 
 /** Cosa filtrerà una regola, detto in italiano. */
-export function descriviRegola({ mittente, oggetto_tipo }) {
-  return oggetto_tipo ? `da ${mittente} con «${oggetto_tipo}» nell'oggetto` : `tutte le mail da ${mittente}`;
+export function descriviRegola({ mittente, oggetto_tipo, modo = "uguale" }) {
+  if (!oggetto_tipo) return `tutte le mail da ${mittente}`;
+  if (modo === "inizia") return `da ${mittente} con oggetto che comincia per «${oggetto_tipo}»`;
+  if (modo === "contiene") return `da ${mittente} con «${oggetto_tipo}» nell'oggetto`;
+  return `da ${mittente} con oggetto «${oggetto_tipo}»`;
 }

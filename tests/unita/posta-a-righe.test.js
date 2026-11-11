@@ -214,7 +214,8 @@ describe("il filtro della posta legge mittente e oggetto come il database", () =
   });
 
   it("la regola si dice in italiano", () => {
-    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso" })).toBe("da a@b.it con «avviso» nell'oggetto");
+    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso" })).toBe("da a@b.it con oggetto «avviso»");
+    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso", modo: "inizia" })).toBe("da a@b.it con oggetto che comincia per «avviso»");
     expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: null })).toBe("tutte le mail da a@b.it");
   });
 });
