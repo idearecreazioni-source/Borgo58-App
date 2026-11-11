@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { archiviaVoce, cambiaApertura, collegaSpesa, leggiPiano, leggiSpeso, salvaVoce, scollegaSpesa } from "../../lib/api/pianoInvestimento";
 import { formatEUR } from "../../lib/constants";
+import { segnaConVoce } from "../../lib/api/spuntaInvestimento";
+import { ScegliVoce } from "../../components/SceltaVoce";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import {
@@ -58,6 +60,94 @@ const bottone =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 px-3 testo-sala text-b58-charcoal hover:bg-b58-cream-dark disabled:opacity-50";
 const bottonePrimario =
   "tocco-bottone rounded-lg bg-b58-azione px-4 testo-sala font-medium text-white hover:opacity-90 disabled:opacity-50";
+
+// ---------------------------------------------------------------------
+// UNA SPESA DA ASSEGNARE, ASSEGNATA DA DOVE SI VEDE (11/11/2026)
+// ---------------------------------------------------------------------
+// Alessio, davanti alla lista: «non posso interagire». Il gesto c'era, ma
+// partiva dalla voce («Modifica», poi cercare la spesa): chi guarda la
+// spesa non sa da dove cominciare. Qui si parte dalla spesa: si sceglie la
+// voce, e la spesa va su quella per tutto il resto non assegnato, con la
+// stessa porta della spunta (`segna_investimento`).
+function RigaDaAssegnare({ spesa, onAssegnata }) {
+  const [aperta, setAperta] = useState(false);
+  const [voce, setVoce] = useState({ voceId: "", rataId: "" });
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState("");
+  const apri = useRef(null);
+
+  const assegna = async () => {
+    setErrore("");
+    setLavoro(true);
+    try {
+      await segnaConVoce(spesa.fonte, spesa.id, voce);
+      setAperta(false);
+      onAssegnata();
+    } catch (e) {
+      // Il collegamento è uno per voce: se la spesa è già in parte su questa
+      // voce, il database rifiuta il doppione. Si dice cosa fare.
+      setErrore(
+        /duplicate|unique|univoc/i.test(e.message)
+          ? "Questa spesa è già in parte su questa voce: cambia l'importo da «Modifica» della voce."
+          : e.message
+      );
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  return (
+    <li data-prova="spesa-da-assegnare" className="py-2">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <span className="min-w-0 text-b58-charcoal">{nomeDellaSpesa(spesa)}</span>
+        <span className="flex items-baseline gap-3">
+          <span className="text-b58-charcoal">
+            {formatEUR(spesa.resto)}
+            {Number(spesa.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(spesa.importo)}</span>}
+          </span>
+          {!aperta && (
+            <button
+              ref={apri}
+              type="button"
+              className={bottone}
+              aria-label={`Metti su una voce: ${nomeDellaSpesa(spesa)}`}
+              onClick={() => setAperta(true)}
+            >
+              Metti su una voce
+            </button>
+          )}
+        </span>
+      </div>
+      {aperta && (
+        <div className="mt-2 rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 flex flex-col gap-2">
+          <ScegliVoce valore={voce} onCambia={setVoce} disabilitata={lavoro} />
+          {errore && (
+            <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
+              {errore}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={bottonePrimario} disabled={lavoro || !voce.voceId} onClick={assegna}>
+              {lavoro ? "…" : `Assegna ${formatEUR(spesa.resto)}`}
+            </button>
+            <button
+              type="button"
+              className={bottone}
+              disabled={lavoro}
+              onClick={() => {
+                setAperta(false);
+                setErrore("");
+                requestAnimationFrame(() => apri.current?.focus());
+              }}
+            >
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
 
 function voceVuota(gruppo) {
   return { gruppo, descrizione: "", importo_ivato: "", aliquota_iva: 22, stato: "stimato", dilazione: "nessuna", nota: "" };
@@ -745,17 +835,11 @@ export default function PianoInvestimento() {
                 <span className="testo-sala text-b58-charcoal-soft">{formatEUR(conti.daAssegnare.totale)}</span>
               </div>
               <p className="testo-sala text-b58-charcoal-soft mb-3">
-                Sono segnate «investimento» ma non ancora collegate a una voce, o solo in parte. Apri la voce giusta con «Modifica» e collegale lì.
+                Spese già pagate e segnate «investimento», che il piano non sa ancora su quale voce mettere. Con «Metti su una voce» la voce le conta come spese, e il piano ti dice se sfori o risparmi.
               </p>
               <ul className="divide-y divide-b58-charcoal/10">
                 {conti.daAssegnare.righe.map((s) => (
-                  <li key={`${s.fonte}:${s.id}`} data-prova="spesa-da-assegnare" className="py-2 flex items-baseline justify-between gap-3 flex-wrap">
-                    <span className="min-w-0 text-b58-charcoal">{nomeDellaSpesa(s)}</span>
-                    <span className="text-b58-charcoal">
-                      {formatEUR(s.resto)}
-                      {Number(s.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(s.importo)}</span>}
-                    </span>
-                  </li>
+                  <RigaDaAssegnare key={`${s.fonte}:${s.id}`} spesa={s} onAssegnata={ricarica} />
                 ))}
               </ul>
             </section>
