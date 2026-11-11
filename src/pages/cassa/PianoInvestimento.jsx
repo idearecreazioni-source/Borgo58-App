@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { archiviaVoce, cambiaApertura, collegaSpesa, leggiPiano, leggiSpeso, salvaVoce, scollegaSpesa } from "../../lib/api/pianoInvestimento";
 import { formatEUR } from "../../lib/constants";
+import { segnaConVoce } from "../../lib/api/spuntaInvestimento";
+import { ScegliVoce } from "../../components/SceltaVoce";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import {
@@ -58,6 +60,154 @@ const bottone =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 px-3 testo-sala text-b58-charcoal hover:bg-b58-cream-dark disabled:opacity-50";
 const bottonePrimario =
   "tocco-bottone rounded-lg bg-b58-azione px-4 testo-sala font-medium text-white hover:opacity-90 disabled:opacity-50";
+
+// ---------------------------------------------------------------------
+// UNA SPESA DA ASSEGNARE, ASSEGNATA DA DOVE SI VEDE (11/11/2026)
+// ---------------------------------------------------------------------
+// Alessio, davanti alla lista: «non posso interagire». Il gesto c'era, ma
+// partiva dalla voce («Modifica», poi cercare la spesa): chi guarda la
+// spesa non sa da dove cominciare. Qui si parte dalla spesa: si sceglie la
+// voce, e la spesa va su quella per tutto il resto non assegnato, con la
+// stessa porta della spunta (`segna_investimento`).
+//
+// ⚠️ Revisione ECC dell'11/11:
+//    · mentre una voce è aperta in «Modifica» la riga è spenta, e il gesto
+//      passa dallo stesso blocco della voce: due collegamenti in parallelo
+//      sulla stessa spesa darebbero un doppione o un importo sbagliato;
+//    · dopo «Assegna» la riga sparisce: il cursore va al titolo della lista
+//      (o della pagina, se la lista è finita) e si dice cosa è successo;
+//    · un doppio tocco fa una chiamata sola.
+function RigaDaAssegnare({ spesa, bloccata, blocco, onAssegnata, onDetto }) {
+  const [aperta, setAperta] = useState(false);
+  const [voce, setVoce] = useState({ voceId: "", rataId: "" });
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState("");
+  const apri = useRef(null);
+  const modulo = useRef(null);
+  const inCorso = useRef(false);
+  const nome = nomeDellaSpesa(spesa);
+
+  // Se intanto si apre una voce, il modulo si chiude.
+  useEffect(() => {
+    if (bloccata && !inCorso.current) setAperta(false);
+  }, [bloccata]);
+
+  // Aprendo, il cursore va al menu delle voci appena compare.
+  useEffect(() => {
+    if (!aperta) return;
+    const t = setInterval(() => {
+      const sel = modulo.current?.querySelector("select");
+      if (sel) {
+        sel.focus();
+        clearInterval(t);
+      }
+    }, 50);
+    return () => clearInterval(t);
+  }, [aperta]);
+
+  const chiudi = () => {
+    setAperta(false);
+    setErrore("");
+    requestAnimationFrame(() => apri.current?.focus());
+  };
+
+  const assegna = async () => {
+    if (inCorso.current || blocco.current || bloccata || !voce.voceId) return;
+    inCorso.current = true;
+    blocco.current = true;
+    setErrore("");
+    setLavoro(true);
+    try {
+      await segnaConVoce(spesa.fonte, spesa.id, voce);
+    } catch (e) {
+      // Il collegamento è uno per voce: se la spesa è già in parte su questa
+      // voce, il database rifiuta il doppione (23505). Si dice cosa fare.
+      setErrore(
+        /duplicate|unique|univoc/i.test(e.message)
+          ? "Questa spesa è già in parte su questa voce: chiudi questo riquadro, apri la voce con «Modifica» e cambia lì l'importo."
+          : e.message
+      );
+      setLavoro(false);
+      inCorso.current = false;
+      blocco.current = false;
+      return;
+    }
+    blocco.current = false;
+    // ⚠️ Niente «lavoro» rimesso a falso: la riga sparisce con la rilettura,
+    //    e nel frattempo non deve tornare premibile.
+    onDetto(`«${nome}» messa sulla voce del piano.`);
+    await onAssegnata();
+    requestAnimationFrame(() =>
+      (document.getElementById("titolo-da-assegnare") ?? document.querySelector("h1"))?.focus()
+    );
+  };
+
+  return (
+    <li data-prova="spesa-da-assegnare" className="py-2">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <span className="min-w-0 text-b58-charcoal">{nome}</span>
+        <span className="flex items-baseline gap-3">
+          <span className="text-b58-charcoal">
+            {formatEUR(spesa.resto)}
+            {Number(spesa.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(spesa.importo)}</span>}
+          </span>
+          {!aperta && (
+            <button
+              ref={apri}
+              type="button"
+              className={bottone}
+              disabled={bloccata}
+              aria-label={`Metti su una voce: ${nome}`}
+              onClick={() => setAperta(true)}
+            >
+              Metti su una voce
+            </button>
+          )}
+        </span>
+      </div>
+      {aperta && (
+        <div
+          ref={modulo}
+          role="group"
+          aria-label={`Metti su una voce: ${nome}`}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && !lavoro) chiudi();
+          }}
+          className="mt-2 rounded-lg bg-b58-campo/60 ring-1 ring-b58-charcoal/10 p-3 flex flex-col gap-2"
+        >
+          <ScegliVoce
+            valore={voce}
+            onCambia={(v) => {
+              setErrore("");
+              setVoce(v);
+            }}
+            disabilitata={lavoro}
+          />
+          {errore && (
+            <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
+              {errore}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={bottonePrimario}
+              disabled={lavoro || bloccata || !voce.voceId}
+              aria-label={`Assegna ${formatEUR(spesa.resto)}: ${nome}`}
+              onClick={assegna}
+            >
+              {lavoro ? "…" : `Assegna ${formatEUR(spesa.resto)}`}
+            </button>
+            <button type="button" className={bottone} disabled={lavoro} onClick={chiudi}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
 
 function voceVuota(gruppo) {
   return { gruppo, descrizione: "", importo_ivato: "", aliquota_iva: 22, stato: "stimato", dilazione: "nessuna", nota: "" };
@@ -476,6 +626,8 @@ export default function PianoInvestimento() {
   const inAttesa = useRef([]);
   // Il blocco unico della voce aperta: salvare la voce, collegare, togliere.
   const bloccoVoce = useRef(false);
+  // Cosa è appena successo, detto a chi non vede la riga sparire (11/11).
+  const [detto, setDetto] = useState("");
   useEffect(() => {
     let vivo = true;
     setErroreSpeso("");
@@ -559,7 +711,7 @@ export default function PianoInvestimento() {
         </Link>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-4 inline-flex items-start gap-2 flex-wrap">
+      <h1 tabIndex={-1} className="font-display text-2xl text-b58-charcoal mb-4 inline-flex items-start gap-2 flex-wrap focus:outline-none">
         Piano dell'investimento
         <Didascalia etichetta="Come si legge questa pagina">
           È la tua simulazione: quanto prevedi di spendere per ogni voce, IVA inclusa, e quando
@@ -738,24 +890,19 @@ export default function PianoInvestimento() {
             );
           })}
 
+          <p role="status" aria-live="polite" className="sr-only">{detto}</p>
           {conti && conti.daAssegnare.righe.length > 0 && (
             <section data-prova="da-assegnare" className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 sm:p-6">
               <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-                <h2 className="font-display testo-sala-grande text-b58-charcoal">Spese da assegnare</h2>
+                <h2 id="titolo-da-assegnare" tabIndex={-1} className="font-display testo-sala-grande text-b58-charcoal focus:outline-none">Spese da assegnare</h2>
                 <span className="testo-sala text-b58-charcoal-soft">{formatEUR(conti.daAssegnare.totale)}</span>
               </div>
               <p className="testo-sala text-b58-charcoal-soft mb-3">
-                Sono segnate «investimento» ma non ancora collegate a una voce, o solo in parte. Apri la voce giusta con «Modifica» e collegale lì.
+                Spese già pagate e segnate «investimento», che il piano non sa ancora su quale voce mettere. Con «Metti su una voce» la voce le conta come spese, e il piano ti dice se sfori o risparmi.
               </p>
               <ul className="divide-y divide-b58-charcoal/10">
                 {conti.daAssegnare.righe.map((s) => (
-                  <li key={`${s.fonte}:${s.id}`} data-prova="spesa-da-assegnare" className="py-2 flex items-baseline justify-between gap-3 flex-wrap">
-                    <span className="min-w-0 text-b58-charcoal">{nomeDellaSpesa(s)}</span>
-                    <span className="text-b58-charcoal">
-                      {formatEUR(s.resto)}
-                      {Number(s.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(s.importo)}</span>}
-                    </span>
-                  </li>
+                  <RigaDaAssegnare key={`${s.fonte}:${s.id}`} spesa={s} bloccata={inModifica} blocco={bloccoVoce} onAssegnata={rileggiSpeso} onDetto={setDetto} />
                 ))}
               </ul>
             </section>
