@@ -826,9 +826,22 @@ async function leggiLaPosta() {
         }
       }
 
-      // C'è un documento vero da leggere? Allora si legge sul serio.
-      const modello = documenti.length ? MODELLO_ATTENTO : MODELLO_RAPIDO;
+      // C'è un documento vero da leggere? Allora si legge sul serio — ma col
+      // modello più caro solo se la mail viene da qualcuno che conosciamo
+      // (SdI, gestore PEC, un fornitore) o porta una fattura elettronica
+      // (Alessio, 11/11/2026: niente spesa grande per chi non conosciamo).
+      // ⚠️ Se la domanda non risponde si sceglie il modello rapido: costa
+      //    meno, e la mail si legge lo stesso.
       const testa = testaDellaMail(m);
+      let conosciuto = fattureLette.length > 0;
+      if (documenti.length && !conosciuto) {
+        const rc = await db("rpc/mittente_conosciuto_per_la_posta", {
+          method: "POST",
+          body: JSON.stringify({ p_mittente: testa.mittente ?? m.mittente ?? "" }),
+        });
+        conosciuto = rc.ok ? (await rc.json()) === true : false;
+      }
+      const modello = documenti.length && conosciuto ? MODELLO_ATTENTO : MODELLO_RAPIDO;
 
       const esito = await anthropic.messages.create({
         model: modello,

@@ -52,6 +52,24 @@ vi.mock("../../src/lib/api/pianoInvestimento", () => ({
   }),
 }));
 
+// La spesa assegnata dalla lista (11/11/2026): stessa porta della spunta.
+const spunta = vi.hoisted(() => ({ segnate: [], rifiuta: null }));
+vi.mock("../../src/lib/api/spuntaInvestimento", () => ({
+  vociPerLaSpunta: vi.fn(async () => ({
+    meseApertura: "2027-04-01",
+    voci: [
+      { id: "cappa", gruppo: "B", ordine: 1, descrizione: "Cappa aspirazione" },
+      { id: "pedana", gruppo: "A", ordine: 1, descrizione: "Pedana rialzata cucina" },
+    ],
+    rate: [],
+  })),
+  segnaConVoce: vi.fn(async (fonte, id, voce) => {
+    spunta.segnate.push({ fonte, id, voce });
+    if (spunta.rifiuta) throw new Error(spunta.rifiuta);
+  }),
+  togliSpunta: vi.fn(async () => {}),
+}));
+
 import PianoInvestimento from "../../src/pages/cassa/PianoInvestimento";
 
 const voce = (id, gruppo, descrizione, importo, extra = {}) => ({
@@ -537,5 +555,49 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
     const pannello = await pannelloDellaCappa(container);
     fireEvent.click(within(pannello).getByRole("button", { name: /Togli.*Fattura da pagare/ }));
     await waitFor(() => expect(finto.scollegate).toEqual(["c2"]));
+  });
+});
+
+// 🔴 11/11/2026, Alessio davanti alla lista: «non posso interagire». Il
+//    gesto c'era solo partendo dalla voce. Ora si parte dalla spesa.
+describe("il piano dell'investimento: una spesa da assegnare si assegna dalla lista", () => {
+  beforeEach(() => {
+    spunta.segnate = [];
+    spunta.rifiuta = null;
+  });
+
+  it("«Metti su una voce», scelta la voce, «Assegna» manda la spesa a quella voce", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[0];
+    fireEvent.click(within(riga).getByRole("button", { name: /Metti su una voce/ }));
+    const assegna = within(riga).getByRole("button", { name: /Assegna/ });
+    // Senza voce non si assegna niente.
+    expect(assegna.disabled).toBe(true);
+    const menu = await within(riga).findByLabelText("Voce del piano");
+    fireEvent.change(menu, { target: { value: "cappa" } });
+    expect(assegna.disabled).toBe(false);
+    fireEvent.click(assegna);
+    await waitFor(() => expect(spunta.segnate.length).toBe(1));
+    expect(spunta.segnate[0]).toMatchObject({ fonte: "prima_nota", voce: { voceId: "cappa" } });
+  });
+
+  it("mentre una voce è aperta in «Modifica», le righe da assegnare sono spente", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    await apriVoce(container, "B");
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[0];
+    expect(within(riga).getByRole("button", { name: /Metti su una voce/ }).disabled).toBe(true);
+  });
+
+  it("se la spesa è già in parte su quella voce, lo dice in italiano", async () => {
+    spunta.rifiuta = 'duplicate key value violates unique constraint "piano_collegamenti_voce_movimento"';
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[1];
+    fireEvent.click(within(riga).getByRole("button", { name: /Metti su una voce/ }));
+    fireEvent.change(await within(riga).findByLabelText("Voce del piano"), { target: { value: "cappa" } });
+    fireEvent.click(within(riga).getByRole("button", { name: /Assegna/ }));
+    expect((await within(riga).findByRole("alert")).textContent).toMatch(/già in parte su questa voce/);
   });
 });

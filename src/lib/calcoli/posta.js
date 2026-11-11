@@ -450,6 +450,8 @@ export function notaInChiaro(nota) {
  */
 export function statoDellaMail(mail, lettura) {
   if (mail?.stato === "archiviata") return "fatto";
+  // Messa da parte da una regola del filtro, prima di MEMO (11/11/2026).
+  if (mail?.stato === "scartata" && (mail?.filtrata_da || /^Filtrata prima di MEMO/.test(mail?.lettura_note ?? ""))) return "filtrata";
   if (mail?.stato === "da_leggere") {
     return ["arresa", "lettore_fermo", "non_so"].includes(lettura?.chiave) ? "guarda" : "in_lettura";
   }
@@ -466,6 +468,7 @@ export const BOLLINO_POSTA = {
   decidere: "Da decidere",
   fatto: "Fatto",
   niente: "Niente da fare",
+  filtrata: "Filtrata",
 };
 
 /** In quale scheda sta una mail: «Da decidere» raccoglie tutto ciò che non è chiuso. */
@@ -509,4 +512,45 @@ export function conVerboDavanti(verbo, nomeIntero) {
   const n = String(nomeIntero ?? "").trim();
   if (!n || n === v) return v;
   return n.toLowerCase().startsWith(v.toLowerCase()) ? n : `${v}: ${n}`;
+}
+
+// =====================================================================
+// IL FILTRO PRIMA DI MEMO — 11/11/2026
+// =====================================================================
+// Le stesse letture del database (`posta_indirizzo`, `posta_tipo_oggetto`,
+// `posta_protetta`, migrazione 20261111000001): servono alla Posta per far
+// vedere PRIMA cosa farà il tasto «Ignora le mail come questa». Decide il
+// database; qui si mostra. Le prove tengono le due versioni uguali.
+
+/** «Credem <businesson@credem.it>» → «businesson@credem.it». */
+export function indirizzoMittente(mittente) {
+  const s = String(mittente ?? "");
+  const m = s.match(/<([^<>]+)>/);
+  const v = (m ? m[1] : s).trim().toLowerCase();
+  return v || null;
+}
+
+/** L'oggetto ripulito: minuscole, senza «R:»/«Fwd:», cifre come «#». */
+export function tipoOggetto(oggetto) {
+  const v = String(oggetto ?? "")
+    .toLowerCase()
+    .replace(/^(\s*(posta certificata|r|re|fw|fwd|i|inoltro)\s*:\s*)+/, "")
+    .replace(/[0-9]+/g, "#")
+    .replace(/\s+/g, " ")
+    .trim();
+  return v || null;
+}
+
+/** Lo SdI e il gestore PEC: non si filtrano mai. */
+export function mittenteProtetto(indirizzo) {
+  const v = String(indirizzo ?? "");
+  return v.endsWith("fatturapa.it") || v.startsWith("posta-certificata@");
+}
+
+/** Cosa filtrerà una regola, detto in italiano. */
+export function descriviRegola({ mittente, oggetto_tipo, modo = "uguale" }) {
+  if (!oggetto_tipo) return `tutte le mail da ${mittente}`;
+  if (modo === "inizia") return `da ${mittente} con oggetto che comincia per «${oggetto_tipo}»`;
+  if (modo === "contiene") return `da ${mittente} con «${oggetto_tipo}» nell'oggetto`;
+  return `da ${mittente} con oggetto «${oggetto_tipo}»`;
 }
