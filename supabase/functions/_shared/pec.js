@@ -215,7 +215,8 @@ export function proposteDaFattura(nomeFile, xml, giaRegistrata = null) {
         `Registrata il ${giornoARoma(giaRegistrata.created_at)}` +
         ` (n. ${giaRegistrata.invoice_number ?? numero} del ${dataItaliana(giaRegistrata.invoice_date)}): non c'è niente da rifare.`,
       perche,
-      parametri: { gia_registrata: giaRegistrata, file_sdi: nomeFile },
+      // Chi, numero e totale anche qui: servono alla testata della Posta (11/11).
+      parametri: { gia_registrata: giaRegistrata, file_sdi: nomeFile, fornitore: chi, numero, totale: f.totaleCentesimi / 100 },
     }];
   }
 
@@ -255,9 +256,12 @@ function radiceSdi(nome) {
  * Fattura notaio 330/F». Era un doppione: registrandola, il suo file SdI era
  * già stato salvato).
  *
- * ⚠️ Si toglie solo l'archiviazione dello STESSO file (o di un file con la
- *    stessa radice SdI). Un altro allegato della stessa mail, per esempio un
- *    contratto, resta proposto com'era.
+ * ⚠️ Si toglie l'archiviazione dello STESSO file (o di un file con la stessa
+ *    radice SdI), dei file della busta (daticert, smime, metadati SdI) e
+ *    l'archiviazione della mail senza allegato (11/11/2026: la busta di una
+ *    fattura SdI non è un documento da archiviare: la fattura c'è già). Un
+ *    altro allegato vero della stessa mail, per esempio un contratto, resta
+ *    proposto com'era.
  *
  * @param {Array<Record<string, unknown>>} azioni
  * @param {Array<{id: string, file_name: string}>} allegati gli allegati della mail
@@ -268,16 +272,52 @@ export function senzaArchiviareLeGiaRegistrate(azioni, allegati, giaRegistrate) 
   if (!giaRegistrate?.length) return azioni;
   const radici = new Set(giaRegistrate.map(radiceSdi));
   const daTogliere = new Set(
-    (allegati ?? []).filter((x) => radici.has(radiceSdi(x.file_name))).map((x) => String(x.id)),
+    (allegati ?? [])
+      .filter((x) => {
+        const c = classificaAllegato(x.file_name);
+        return radici.has(radiceSdi(x.file_name)) || c === "tecnico" || c === "metadati_sdi";
+      })
+      .map((x) => String(x.id)),
   );
   return azioni.filter((a) => {
+    if (a.tipo !== "archivia_documento" && a.tipo !== "archivia_testo") return true;
     const p = /** @type {{allegato_id?: unknown}} */ (a.parametri ?? {});
-    return !(
-      (a.tipo === "archivia_documento" || a.tipo === "archivia_testo") &&
-      p.allegato_id &&
-      daTogliere.has(String(p.allegato_id))
-    );
+    // Il testo della mail resta proposto: un fornitore può scriverci condizioni
+    //    o scadenze (revisione ECC dell'11/11). Si toglie solo un «documento»
+    //    senza file, che di una busta SdI non ha niente da archiviare.
+    if (!p.allegato_id) return a.tipo === "archivia_testo";
+    return !daTogliere.has(String(p.allegato_id));
   });
+}
+
+/**
+ * Cosa dire nella testata di una mail con una fattura elettronica (11/11/2026:
+ * di una PEC dello SdI si vedevano solo «borgo58@pec.it» e «Invio File
+ * 18141078362»). Si legge dalle proposte costruite dal codice: chi ha fatto
+ * la fattura, il numero e il totale. Null se la mail non porta una fattura.
+ *
+ * @param {Array<{tipo?: string, parametri?: Record<string, any>}>} azioni
+ * @returns {{chi: string|null, numero: string|null, totale: number|null}|null}
+ */
+export function testataFattura(azioni) {
+  for (const a of azioni ?? []) {
+    const p = a?.parametri ?? {};
+    if (a?.tipo === "registra_fattura" && p.fattura) {
+      return {
+        chi: p.fattura.fornitore?.denominazione ?? null,
+        numero: p.fattura.numero ?? null,
+        totale: p.fattura.totale != null && Number.isFinite(Number(p.fattura.totale)) ? Number(p.fattura.totale) : null,
+      };
+    }
+    if (a?.tipo === "nessuna" && p.gia_registrata) {
+      return {
+        chi: p.fornitore ?? null,
+        numero: p.numero ?? p.gia_registrata.invoice_number ?? null,
+        totale: p.totale != null && Number.isFinite(Number(p.totale)) ? Number(p.totale) : null,
+      };
+    }
+  }
+  return null;
 }
 
 /** Si apre in `posta-leggi` come XML (anche i metadati SdI, per controllarli). */

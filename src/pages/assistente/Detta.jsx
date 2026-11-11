@@ -31,6 +31,7 @@ import {
   fraseDelMicrofono,
   riconoscitoreDisponibile,
   statoDettatura,
+  titoloDelRiscontro,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
 import BarraDelPollice from "../../components/BarraDelPollice";
@@ -438,9 +439,22 @@ export default function Detta() {
       // Le righe di questo appunto spariscono anche dal riquadro di sopra:
       // altrimenti resterebbero li' come se aspettassero ancora.
       const suoi = new Set((appunto.elementi ?? []).map((e) => e.id));
-      setRiscontro((r) =>
-        r ? { ...r, daGuardare: r.daGuardare.filter((a) => !suoi.has(a.id)) } : r,
-      );
+      // ⚠️ E il titolo si rifà (prova con Alessio, 11/11/2026): restava
+      //    «Un appunto da guardare prima di scriverlo» sopra un riquadro
+      //    ormai vuoto, come se ci fosse ancora qualcosa da guardare.
+      setRiscontro((r) => {
+        if (!r) return r;
+        const resto = r.daGuardare.filter((a) => !suoi.has(a.id));
+        const fatte = r.fatte?.length ?? 0;
+        return {
+          ...r,
+          daGuardare: resto,
+          titolo:
+            resto.length === 0 && fatte === 0
+              ? "Appunto buttato: non ho scritto niente."
+              : titoloDelRiscontro(fatte, resto.length),
+        };
+      });
     });
   };
 

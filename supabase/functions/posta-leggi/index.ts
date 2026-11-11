@@ -552,7 +552,10 @@ async function caricaCategorieAmmesse(): Promise<void> {
   sezioniAmmesse = null;
   vocabolariDiAlessio = null;
   try {
-    const r = await db("rpc/vocabolari_per_assistente", { method: "POST", body: "{}" });
+    // ⚠️ Dalla porta per la posta (20261111000003): `vocabolari_per_assistente`
+    //    alla chiave di servizio non risponde, e senza elenco il modello
+    //    inventava sezioni dell'archivio che poi la conferma rifiutava (11/11).
+    const r = await db("rpc/vocabolari_per_la_posta", { method: "POST", body: "{}" });
     if (!r.ok) return;
     const v = await r.json();
     vocabolariDiAlessio = v ?? null;
