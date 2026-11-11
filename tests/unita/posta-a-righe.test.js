@@ -9,11 +9,12 @@ import {
   mittenteProtetto,
   tipoOggetto,
   inScheda,
+  motivoAzioneBloccata,
   notaInChiaro,
   statoDellaMail,
   verboConferma,
 } from "../../src/lib/calcoli/posta";
-import { senzaArchiviareLeGiaRegistrate } from "../../supabase/functions/_shared/pec.js";
+import { senzaArchiviareLeGiaRegistrate, testataFattura } from "../../supabase/functions/_shared/pec.js";
 
 // LA POSTA A RIGHE (08/11/2026): una riga per mail con un bollino, tre
 // schede, solo gli allegati veri, gli avvisi solo quando tocca ad Alessio.
@@ -217,5 +218,46 @@ describe("il filtro della posta legge mittente e oggetto come il database", () =
     expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso" })).toBe("da a@b.it con oggetto «avviso»");
     expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso", modo: "inizia" })).toBe("da a@b.it con oggetto che comincia per «avviso»");
     expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: null })).toBe("tutte le mail da a@b.it");
+  });
+});
+
+// PR8b (11/11/2026): i tre difetti della Posta visti da Alessio.
+describe("la Posta, i difetti dell'11/11", () => {
+  it("una sezione che non esiste spegne «Archivia», con la ragione", () => {
+    const a = { tipo: "archivia_documento" };
+    const m = motivoAzioneBloccata(a, { tipo: "fatture_inventate", data: "2026-11-11" }, ["fatture", "contratti"]);
+    expect(m).toMatch(/non esiste nell'archivio/);
+    expect(motivoAzioneBloccata(a, { tipo: "fatture", data: "2026-11-11" }, ["fatture", "contratti"])).toBeNull();
+    // Senza l'elenco (non letto) non si indovina: decide il database.
+    expect(motivoAzioneBloccata(a, { tipo: "fatture_inventate", data: "2026-11-11" }, null)).toBeNull();
+  });
+
+  it("con una fattura già registrata non si archivia né il suo file, né la busta, né la mail senza allegato", () => {
+    const allegati = [
+      { id: "f", file_name: "IT01234567890_ab12C.xml.p7m" },
+      { id: "d", file_name: "daticert.xml" },
+      { id: "c", file_name: "contratto.pdf" },
+    ];
+    const azioni = [
+      { tipo: "archivia_documento", parametri: { allegato_id: "f" } },
+      { tipo: "archivia_documento", parametri: { allegato_id: "d" } },
+      { tipo: "archivia_testo", parametri: {} },
+      { tipo: "archivia_documento", parametri: { allegato_id: "c" } },
+      { tipo: "nessuna", parametri: {} },
+    ];
+    const tenute = senzaArchiviareLeGiaRegistrate(azioni, allegati, ["IT01234567890_ab12C.xml.p7m"]);
+    expect(tenute).toEqual([azioni[3], azioni[4]]);
+  });
+
+  it("la testata di una fattura dice chi, numero e totale", () => {
+    expect(
+      testataFattura([{ tipo: "registra_fattura", parametri: { fattura: { numero: "412/F", totale: 488, fornitore: { denominazione: "Fornitore Esempio srl" } } } }])
+    ).toEqual({ chi: "Fornitore Esempio srl", numero: "412/F", totale: 488 });
+    expect(
+      testataFattura([{ tipo: "nessuna", parametri: { gia_registrata: { invoice_number: "330/F" }, fornitore: "Studio Esempio", numero: "330/F", totale: 460 } }])
+    ).toEqual({ chi: "Studio Esempio", numero: "330/F", totale: 460 });
+    // Una proposta vecchia, senza fornitore: almeno il numero.
+    expect(testataFattura([{ tipo: "nessuna", parametri: { gia_registrata: { invoice_number: "330/F" } } }])).toEqual({ chi: null, numero: "330/F", totale: null });
+    expect(testataFattura([{ tipo: "archivia_documento", parametri: {} }])).toBeNull();
   });
 });

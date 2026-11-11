@@ -44,8 +44,8 @@ import { righeListaAperte } from "../../lib/api/shoppingList";
 import { sezioniArchivio } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
-import { formatDate, qtaConUnita } from "../../lib/constants";
-import { etichettaCasella, testaDellaMail } from "../../lib/calcoli/pec";
+import { formatDate, formatEUR, qtaConUnita } from "../../lib/constants";
+import { etichettaCasella, testaDellaMail, testataFattura } from "../../lib/calcoli/pec";
 
 // La posta arrivata al locale, in attesa di una decisione.
 //
@@ -1203,13 +1203,20 @@ export default function PostaInArrivo() {
                       className="w-full text-left grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 items-center px-4 py-3 min-h-16 hover:bg-b58-cream-dark/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-b58-terracotta"
                     >
                       <span className="text-b58-charcoal font-medium min-w-0 break-words">
-                        {testa.mittente || "Mittente sconosciuto"}
+                        {/* Una fattura dello SdI si presenta col fornitore vero, non con la casella (11/11). */}
+                        {testataFattura(m.azioni)?.chi || testa.mittente || "Mittente sconosciuto"}
                       </span>
                       <span className="testo-sala text-b58-charcoal-soft tabular-nums whitespace-nowrap">
                         {formatDate(m.ricevuta_il)}
                       </span>
                       <span className="testo-sala-grande text-b58-charcoal-soft min-w-0 break-words">
-                        {testa.oggetto || "(senza oggetto)"}
+                        {(() => {
+                          const ft = testataFattura(m.azioni);
+                          if (!ft || (!ft.numero && ft.totale == null)) return testa.oggetto || "(senza oggetto)";
+                          return [ft.numero ? `fatt. ${ft.numero}` : null, ft.totale != null ? formatEUR(ft.totale) : null]
+                            .filter(Boolean)
+                            .join(" · ");
+                        })()}
                       </span>
                       <span className={`justify-self-end rounded-full px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${COLORE_BOLLINO[stato]}`}>
                         {BOLLINO_POSTA[stato]}
@@ -1505,7 +1512,11 @@ export default function PostaInArrivo() {
             )}
 
             {(() => {
-              const bloccato = motivoAzioneBloccata(a, valori[a.id]);
+              const bloccato = motivoAzioneBloccata(
+                a,
+                valori[a.id],
+                nonLetto(sezioni) ? null : (sezioni ?? []).map((s) => s.codice)
+              );
               return (
                 <>
                   {bloccato && <p className={`${avviso} mt-2`}>{bloccato}</p>}

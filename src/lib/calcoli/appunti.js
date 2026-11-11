@@ -121,6 +121,8 @@ const ETICHETTE = {
   prima_stato: "adesso è",
   prima_previsto: "previsto adesso (euro)",
   prima_nota: "nota adesso",
+  // 11/11/2026: le rate che non tornano più col previsto nuovo.
+  avviso_rate: "attenzione",
 };
 
 // ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una
