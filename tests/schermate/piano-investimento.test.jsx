@@ -582,6 +582,14 @@ describe("il piano dell'investimento: una spesa da assegnare si assegna dalla li
     expect(spunta.segnate[0]).toMatchObject({ fonte: "prima_nota", voce: { voceId: "cappa" } });
   });
 
+  it("mentre una voce è aperta in «Modifica», le righe da assegnare sono spente", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    await apriVoce(container, "B");
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[0];
+    expect(within(riga).getByRole("button", { name: /Metti su una voce/ }).disabled).toBe(true);
+  });
+
   it("se la spesa è già in parte su quella voce, lo dice in italiano", async () => {
     spunta.rifiuta = 'duplicate key value violates unique constraint "piano_collegamenti_voce_movimento"';
     const { container } = monta();
