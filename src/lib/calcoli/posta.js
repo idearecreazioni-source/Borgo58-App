@@ -329,11 +329,18 @@ export function etichettaRifiuto(azione) {
  *    spegnere il pulsante CON LA RAGIONE invece di lasciarlo premere per
  *    essere rifiutato: non è una seconda regola, è la stessa detta prima.
  */
-export function motivoAzioneBloccata(azione, parametri) {
+export function motivoAzioneBloccata(azione, parametri, sezioniVere = null) {
   if (azioneArchivia(azione?.tipo)) {
     const p = parametri ?? {};
     const senzaTipo = !String(p.tipo ?? "").trim();
     const senzaData = !String(p.data ?? "").trim();
+    // 🔴 11/11/2026: una sezione che non esiste passava fino al database, che
+    //    la rifiutava al momento del sì (`documents_doc_type_fkey`). Se
+    //    l'elenco vero si è letto, si spegne il pulsante prima, con la ragione.
+    const tipo = String(p.tipo ?? "").trim();
+    if (tipo && Array.isArray(sezioniVere) && sezioniVere.length > 0 && !sezioniVere.includes(tipo)) {
+      return `La sezione «${tipo}» non esiste nell'archivio: premi «Correggi» e scegline una dall'elenco.`;
+    }
     if (senzaTipo && senzaData) {
       return "Prima di archiviarlo servono la sezione e la data: premi «Correggi», scegli la sezione e scrivi la data.";
     }
