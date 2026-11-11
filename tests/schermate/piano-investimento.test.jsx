@@ -427,11 +427,36 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
     const { container } = monta();
     await waitFor(() => expect(container.querySelectorAll('[data-prova="speso-voce"]').length).toBe(3));
     const esito = (g) => gruppo(container, g).querySelector('[data-prova="speso-voce"]');
+    // 12/11/2026: la riga è a riquadri (modello approvato da Alessio l'11/11).
+    const riquadro = (g, chiave) => esito(g).querySelector(`[data-riquadro="${chiave}"]`)?.textContent ?? "";
     expect(esito("B").dataset.esito).toBe("a_rischio");
-    expect(esito("B").textContent).toMatch(/spesi 10\.000,00.*7\.000,00.*da pagare.*supera di 1\.000,00/);
+    expect(riquadro("B", "spesi")).toMatch(/Spesi.*10\.000,00/);
+    expect(riquadro("B", "da_pagare")).toMatch(/Da pagare.*7\.000,00/);
+    expect(riquadro("B", "esito")).toMatch(/Supera di.*1\.000,00/);
     expect(esito("A").dataset.esito).toBe("sforato");
-    expect(esito("A").textContent).toMatch(/sforato di 500,00/);
-    expect(esito("E").textContent).toMatch(/restano 1\.200,00/);
+    expect(riquadro("A", "esito")).toMatch(/Sforato di.*\+ 500,00/);
+    expect(riquadro("E", "esito")).toMatch(/Restano.*1\.200,00/);
+  });
+
+  it("i riquadri dicono stato, dilazione, IVA e netto, e in fondo c'è sempre il totale con la parola giusta", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="totale-voce"]').length).toBe(3));
+    for (const g of ["A", "B", "E"]) {
+      const voce = gruppo(container, g).querySelector('[data-prova="voce"]');
+      for (const chiave of ["stato", "dilazione", "iva", "netto"]) {
+        expect(voce.querySelector(`[data-riquadro="${chiave}"]`)).not.toBeNull();
+      }
+      expect(voce.querySelector('[data-prova="totale-voce"]').textContent).toMatch(/^Totale (stimato|confermato)/);
+    }
+  });
+
+  it("il totale dice «confermato» solo sulla voce confermata; preventivato resta una stima", async () => {
+    finto.piano.voci[2].stato = "confermato";
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="totale-voce"]').length).toBe(3));
+    const totale = (g) => gruppo(container, g).querySelector('[data-prova="totale-voce"]').textContent;
+    expect(totale("E")).toMatch(/Totale confermato.*1\.500,00/);
+    expect(totale("B")).toMatch(/Totale stimato.*16\.000,00/);
   });
 
   it("in alto: speso, sforamenti delle sole voci sopra budget, e da assegnare", async () => {
@@ -483,6 +508,12 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
     expect(container.querySelector('[data-prova="previsto-totale"]')).not.toBeNull();
     expect(container.querySelector('[data-prova="speso-totale"]')).toBeNull();
     expect(container.querySelector('[data-prova="speso-voce"]')).toBeNull();
+    // 12/11: senza speso letto non ci sono i riquadri dello speso (non diventano
+    // zero), ma stato, IVA e il totale in fondo restano.
+    expect(container.querySelector('[data-riquadro="spesi"]')).toBeNull();
+    expect(container.querySelector('[data-riquadro="esito"]')).toBeNull();
+    expect(container.querySelector('[data-riquadro="stato"]')).not.toBeNull();
+    expect(container.querySelector('[data-prova="totale-voce"]')).not.toBeNull();
   });
 
   it("nella voce aperta si vedono le spese collegate, con la rata", async () => {

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   GRUPPI,
   esitoVoce,
+  riquadriVoce,
+  totaleVoce,
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
@@ -272,5 +274,63 @@ describe("il fabbisogno mese per mese", () => {
       { mese_rel: 1, etichetta: "Aprile 2027", importo: 0 },
       { mese_rel: 2, etichetta: "Maggio 2027", importo: 500 },
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// La riga a riquadri e il totale (12/11/2026, modello approvato l'11/11)
+// ---------------------------------------------------------------------
+
+describe("riquadriVoce", () => {
+  const voce = { stato: "confermato", dilazione: "stimata", aliquota_iva: 22, netto: 9836.07, importo_ivato: 12000 };
+  const per = (r) => Object.fromEntries(r.map((x) => [x.chiave, x]));
+
+  it("senza speso letto: solo stato, dilazione, IVA e netto (niente non è zero)", () => {
+    expect(riquadriVoce(voce, null).map((r) => r.chiave)).toEqual(["stato", "dilazione", "iva", "netto"]);
+  });
+
+  it("i colori: confermato verde, preventivato ambra, stimato neutro", () => {
+    expect(per(riquadriVoce(voce, null)).stato.tono).toBe("ok");
+    expect(per(riquadriVoce({ ...voce, stato: "preventivato" }, null)).stato.tono).toBe("attenzione");
+    expect(per(riquadriVoce({ ...voce, stato: "stimato" }, null)).stato.tono).toBe("neutro");
+  });
+
+  it("senza IVA si dice così, non «0%»", () => {
+    expect(per(riquadriVoce({ ...voce, aliquota_iva: 0 }, null)).iva.testo).toBe("senza IVA");
+  });
+
+  it("l'esempio del modello: spesi 1.875, da pagare 2.625, restano 7.500", () => {
+    const r = per(riquadriVoce(voce, { speso: 1875, impegnato: 2625 }));
+    expect(r.spesi.importo).toBe(1875);
+    expect(r.da_pagare).toMatchObject({ importo: 2625, tono: "attenzione" });
+    expect(r.esito).toMatchObject({ etichetta: "Restano", importo: 7500, tono: "ok" });
+  });
+
+  it("sforato è rosso e dice di quanto", () => {
+    expect(per(riquadriVoce({ ...voce, importo_ivato: 1500 }, { speso: 1800, impegnato: 0 })).esito)
+      .toMatchObject({ esito: "sforato", importo: 300, tono: "male" });
+  });
+
+  it("con le fatture da pagare che superano il previsto è rosso anche se lo speso è sotto", () => {
+    expect(per(riquadriVoce({ ...voce, importo_ivato: 1000 }, { speso: 500, impegnato: 700 })).esito)
+      .toMatchObject({ esito: "a_rischio", importo: 200, tono: "male" });
+  });
+
+  it("niente speso si scrive «niente», e non c'è il riquadro «da pagare»", () => {
+    const r = per(riquadriVoce(voce, { speso: 0, impegnato: 0 }));
+    expect(r.spesi.testo).toBe("niente");
+    expect(r.da_pagare).toBeUndefined();
+  });
+
+  it("i centesimi tornano", () => {
+    expect(per(riquadriVoce({ ...voce, importo_ivato: 3932.22 }, { speso: 0.1, impegnato: 0.2 })).esito.importo).toBe(3931.92);
+  });
+});
+
+describe("totaleVoce", () => {
+  it("confermato solo se la voce è confermata, tutto il resto è stimato", () => {
+    expect(totaleVoce({ stato: "confermato", importo_ivato: 2400 })).toEqual({ parola: "confermato", importo: 2400 });
+    expect(totaleVoce({ stato: "preventivato", importo_ivato: 6200 }).parola).toBe("stimato");
+    expect(totaleVoce({ stato: "stimato", importo_ivato: 50 }).parola).toBe("stimato");
   });
 });
