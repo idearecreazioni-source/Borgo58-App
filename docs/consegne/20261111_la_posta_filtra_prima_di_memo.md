@@ -1,6 +1,6 @@
 # La Posta filtra le mail inutili prima di MEMO (11/11/2026)
 
-Migrazione `20261111000001_la_posta_filtra_prima_di_memo`. È la richiesta di Alessio dell'11/11: niente spesa di MEMO per gli avvisi automatici, e una distinzione vera fra mail inutili e utili dello stesso mittente.
+Migrazioni `20261111000001_la_posta_filtra_prima_di_memo` e `20261111000002_i_vincoli_del_filtro_si_spiegano`. È la richiesta di Alessio dell'11/11: niente spesa di MEMO per gli avvisi automatici, e una distinzione vera fra mail inutili e utili dello stesso mittente.
 
 ## Cosa c'è
 - **Regole `posta_filtri`**: mittente + tipo di oggetto. Il tipo di oggetto è l'oggetto ripulito: minuscole, senza «R:»/«Fwd:», cifre al posto di «#». Il confronto può essere:
@@ -34,6 +34,7 @@ Migrazione `20261111000001_la_posta_filtra_prima_di_memo`. È la richiesta di Al
 - **Revisioni:**
   - `ecc:database-reviewer`: corretti il «contiene» troppo largo (aggiunto il modo), la prova con la chiave di servizio, la protezione sulla stringa intera, `pg_temp`, il tasto con `on conflict`, le proposte chiuse;
   - `ecc:react-reviewer`: corretti la visibilità dopo «Togli la regola», il cursore, gli errori sul posto giusto, il riquadro che si chiude, l'avviso sulle proposte, il singolare.
+- **Spiegazioni dei vincoli:** nella migrazione `20261111000002_i_vincoli_del_filtro_si_spiegano`, perché la prima era già su Prova.
 - **Prove:** tests/unita/posta-a-righe.test.js (letture uguali al database) e tests/schermate/posta-a-righe.test.jsx (il tasto).
 
 ## Applicazione su work
