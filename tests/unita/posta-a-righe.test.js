@@ -232,7 +232,7 @@ describe("la Posta, i difetti dell'11/11", () => {
     expect(motivoAzioneBloccata(a, { tipo: "fatture_inventate", data: "2026-11-11" }, null)).toBeNull();
   });
 
-  it("con una fattura già registrata non si archivia né il suo file, né la busta, né la mail senza allegato", () => {
+  it("con una fattura già registrata non si archivia né il suo file né la busta; il testo della mail resta proposto", () => {
     const allegati = [
       { id: "f", file_name: "IT01234567890_ab12C.xml.p7m" },
       { id: "d", file_name: "daticert.xml" },
@@ -246,7 +246,7 @@ describe("la Posta, i difetti dell'11/11", () => {
       { tipo: "nessuna", parametri: {} },
     ];
     const tenute = senzaArchiviareLeGiaRegistrate(azioni, allegati, ["IT01234567890_ab12C.xml.p7m"]);
-    expect(tenute).toEqual([azioni[3], azioni[4]]);
+    expect(tenute).toEqual([azioni[2], azioni[3], azioni[4]]);
   });
 
   it("la testata di una fattura dice chi, numero e totale", () => {

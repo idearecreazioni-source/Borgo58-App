@@ -282,7 +282,10 @@ export function senzaArchiviareLeGiaRegistrate(azioni, allegati, giaRegistrate) 
   return azioni.filter((a) => {
     if (a.tipo !== "archivia_documento" && a.tipo !== "archivia_testo") return true;
     const p = /** @type {{allegato_id?: unknown}} */ (a.parametri ?? {});
-    if (!p.allegato_id) return false;
+    // Il testo della mail resta proposto: un fornitore può scriverci condizioni
+    //    o scadenze (revisione ECC dell'11/11). Si toglie solo un «documento»
+    //    senza file, che di una busta SdI non ha niente da archiviare.
+    if (!p.allegato_id) return a.tipo === "archivia_testo";
     return !daTogliere.has(String(p.allegato_id));
   });
 }
@@ -303,14 +306,14 @@ export function testataFattura(azioni) {
       return {
         chi: p.fattura.fornitore?.denominazione ?? null,
         numero: p.fattura.numero ?? null,
-        totale: Number.isFinite(Number(p.fattura.totale)) ? Number(p.fattura.totale) : null,
+        totale: p.fattura.totale != null && Number.isFinite(Number(p.fattura.totale)) ? Number(p.fattura.totale) : null,
       };
     }
     if (a?.tipo === "nessuna" && p.gia_registrata) {
       return {
         chi: p.fornitore ?? null,
         numero: p.numero ?? p.gia_registrata.invoice_number ?? null,
-        totale: Number.isFinite(Number(p.totale)) ? Number(p.totale) : null,
+        totale: p.totale != null && Number.isFinite(Number(p.totale)) ? Number(p.totale) : null,
       };
     }
   }
