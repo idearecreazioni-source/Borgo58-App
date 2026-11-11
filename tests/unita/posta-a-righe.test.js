@@ -4,6 +4,10 @@ import {
   allegatiDaMostrare,
   allegatoTecnico,
   conVerboDavanti,
+  descriviRegola,
+  indirizzoMittente,
+  mittenteProtetto,
+  tipoOggetto,
   inScheda,
   notaInChiaro,
   statoDellaMail,
@@ -176,5 +180,42 @@ describe("il nome del pulsante comincia con quello che si vede", () => {
     expect(conVerboDavanti("Archivia", "Archivia «Fattura 412/F»")).toBe("Archivia «Fattura 412/F»");
     expect(conVerboDavanti("Carica", "Metti 3 righe in magazzino")).toBe("Carica: Metti 3 righe in magazzino");
     expect(conVerboDavanti("Registra", "")).toBe("Registra");
+  });
+});
+
+// IL FILTRO PRIMA DI MEMO (11/11/2026): le letture della pagina devono
+// dire le stesse cose di quelle del database (20261111000001), che le prova
+// con gli stessi esempi nella sua verifica.
+describe("il filtro della posta legge mittente e oggetto come il database", () => {
+  it("l'indirizzo dentro le parentesi, in minuscolo", () => {
+    expect(indirizzoMittente("Credem <BusinessOn@Credem.it>")).toBe("businesson@credem.it");
+    expect(indirizzoMittente("info@esempio.it")).toBe("info@esempio.it");
+    expect(indirizzoMittente("")).toBeNull();
+  });
+
+  it("il tipo di oggetto: senza R:/Fwd:, cifre come #", () => {
+    expect(tipoOggetto("R: Fwd: Notifica Accesso del 10/11/2026 ore 09:32")).toBe("notifica accesso del #/#/# ore #:#");
+    expect(tipoOggetto("Le offerte della settimana 45")).toBe("le offerte della settimana #");
+    expect(tipoOggetto("   ")).toBeNull();
+  });
+
+  it("lo SdI e il gestore PEC sono protetti, Credem no", () => {
+    expect(mittenteProtetto("sdi38@pec.fatturapa.it")).toBe(true);
+    expect(mittenteProtetto("posta-certificata@pec.aruba.it")).toBe(true);
+    expect(mittenteProtetto("businesson@credem.it")).toBe(false);
+  });
+
+  it("una mail filtrata sta fra le sistemate, col suo bollino", () => {
+    const s = statoDellaMail({ stato: "scartata", filtrata_da: "f1" });
+    expect(s).toBe("filtrata");
+    expect(BOLLINO_POSTA[s]).toBe("Filtrata");
+    expect(inScheda(s, "sistemate")).toBe(true);
+    expect(inScheda(s, "decidere")).toBe(false);
+  });
+
+  it("la regola si dice in italiano", () => {
+    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso" })).toBe("da a@b.it con oggetto «avviso»");
+    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: "avviso", modo: "inizia" })).toBe("da a@b.it con oggetto che comincia per «avviso»");
+    expect(descriviRegola({ mittente: "a@b.it", oggetto_tipo: null })).toBe("tutte le mail da a@b.it");
   });
 });

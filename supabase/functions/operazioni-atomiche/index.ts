@@ -370,6 +370,9 @@ const OPERAZIONI = new Set([
   // La stessa registrazione, confermata dalla Posta per una fattura
   // arrivata via PEC (20261108000001): fornitore, fattura e proposta.
   "registra_fattura_dalla_posta",
+  // Il tasto «Ignora le mail come questa» della Posta (11/11/2026): la regola
+  // e la mail messa da parte, insieme.
+  "aggiungi_filtro_posta",
   "paga_fattura_da_movimento_banca",
   "registra_movimento_banca",
   // 🔴 La voce si chiude insieme al dato (20261026000002): una cosa detta a

@@ -52,7 +52,12 @@ export async function listPostaSistemata() {
       "*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path, errore)," +
         " azioni:posta_azioni(id, tipo, titolo, descrizione, perche, parametri, stato)"
     )
-    .eq("stato", "archiviata")
+    // E le mail messe da parte dal filtro (11/11/2026): si vedono, per
+    // accorgersi se il filtro ha preso una mail buona.
+    // ⚠️ Riconosciute dalla nota, non dalla regola: tolta la regola
+    //    (`filtrata_da` torna vuoto) le mail che aveva messo da parte devono
+    //    restare in vista (revisione ECC dell'11/11).
+    .or("stato.eq.archiviata,and(stato.eq.scartata,lettura_note.like.Filtrata*)")
     .order("ricevuta_il", { ascending: false })
     .limit(SISTEMATE_MAX);
   if (error) throw error;
@@ -67,7 +72,7 @@ export async function listPostaSistemata() {
 export async function rimettiPosta(postaId, stato) {
   const { data, error } = await supabase
     .from("posta_ricevuta")
-    .update({ stato: stato === "da_leggere" ? "da_leggere" : "proposta" })
+    .update({ stato: stato === "da_leggere" ? "da_leggere" : "proposta", filtrata_da: null })
     .eq("id", postaId)
     .eq("stato", "scartata")
     .select("id");
@@ -223,4 +228,38 @@ export async function lettorePostaFermo() {
 export async function chiediLetturaAdesso() {
   const { error } = await supabase.rpc("chiedi_lettura_posta");
   if (error) throw error;
+}
+
+/**
+ * «Ignora le mail come questa» (11/11/2026): una regola mittente + tipo di
+ * oggetto, oppure tutto il mittente se `tuttoMittente`. Mette da parte
+ * anche questa mail. Due tabelle: dal corridoio. La PEC dello SdI la
+ * rifiuta il database.
+ */
+export async function aggiungiFiltroPosta(postaId, tuttoMittente = false) {
+  return eseguiOperazione("aggiungi_filtro_posta", {
+    p_posta_id: postaId,
+    p_tutto_mittente: !!tuttoMittente,
+  });
+}
+
+/** Le regole del filtro, le più recenti prima. */
+export async function listFiltriPosta() {
+  const { data, error } = await supabase
+    .from("posta_filtri")
+    .select("id, mittente, oggetto_tipo, modo, nota, creato_il")
+    .order("creato_il", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Toglie una regola. Le mail che aveva messo da parte restano fra le
+ * filtrate in «Sistemate» (si riconoscono dalla nota): si rimettono una per una.
+ * Una riga sola, con la RLS come barriera.
+ */
+export async function togliFiltroPosta(filtroId) {
+  const { data, error } = await supabase.from("posta_filtri").delete().eq("id", filtroId).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Questa regola non c'è più.");
 }
