@@ -329,12 +329,14 @@ describe("gli appunti vocali", () => {
 
     const { data: riga } = await titolare
       .from("azioni_dettate")
-      .select("dati, stato")
+      .select("dati, stato, frase")
       .eq("id", righe[0].id)
       .single();
     expect(Number(riga.dati.importo)).toBe(25);
     // 🔴 Correggere non e' approvare: la riga resta da guardare.
     expect(riga.stato).toBe("in_attesa");
+    // 12/11/2026: la frase dice che vale quello scritto sotto.
+    expect(riga.frase).toMatch(/^Corretto a mano\. Avevi detto: «/);
 
     const { data: appunto } = await titolare
       .from("appunti_vocali")
