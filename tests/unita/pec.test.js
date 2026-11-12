@@ -13,6 +13,8 @@ import {
   mittenteReale,
   oggettoPulito,
   testaDellaMail,
+  eCasellaSdi,
+  vieneDalloSdi,
 } from "../../supabase/functions/_shared/pec.js";
 import * as dallApp from "../../src/lib/calcoli/fatturaPA";
 import * as condiviso from "../../supabase/functions/_shared/fatturaPA.js";
@@ -339,5 +341,98 @@ describe("il nome della casella", () => {
     expect(etichettaCasella("sconosciuta")).toBe("sconosciuta");
     expect(etichettaCasella("constructor@prova-finta.resend.app")).toBe("constructor@");
     expect(etichettaCasella(null)).toBe("");
+  });
+});
+
+// 🔴 «ARRIVATA DALLO SDI» SOLO SE È VERO (revisione dell'11/11, punto 3).
+describe("la mail viene davvero dallo SdI?", () => {
+  const SDI = '"Per conto di: sdi01@pec.fatturapa.it" <posta-certificata@pec.aruba.it>';
+  const GESTORE = "posta-certificata@pec.aruba.it";
+  const BUSTA = [{ file_name: "daticert.xml" }, { file_name: "smime.p7s" }, { file_name: "IT0001_ab.xml.p7m" }];
+  const vera = { mittenteBusta: GESTORE, testo: testoBusta({ oggetto: "Invio File 18141078362", mittente: SDI }), allegati: BUSTA };
+
+  it("la PEC vera dello SdI, consegnata dal gestore con la sua busta", () => {
+    expect(vieneDalloSdi(vera)).toBe(true);
+    expect(vieneDalloSdi({ ...vera, mittenteBusta: `Posta Certificata <${GESTORE}>` })).toBe(true);
+    expect(vieneDalloSdi({ ...vera, allegati: [{ file_name: "daticert_1.xml" }, { file_name: "smime_5.p7s" }] })).toBe(true);
+  });
+
+  it("senza il mittente com'è arrivato (le mail di prima) non si crede", () => {
+    expect(vieneDalloSdi({ ...vera, mittenteBusta: null })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, mittenteBusta: "sdi01@pec.fatturapa.it" })).toBe(false);
+    expect(vieneDalloSdi()).toBe(false);
+  });
+
+  it("una mail normale che finge la busta, o il gestore scritto nel nome, non passa", () => {
+    expect(vieneDalloSdi({ ...vera, mittenteBusta: `"${GESTORE}" <truffa@esempio.it>` })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, testo: "Ti mando la fattura. sdi01@pec.fatturapa.it" })).toBe(false);
+  });
+
+  it("una PEC di un altro, anche con «sdi» o «fatturapa» nell'indirizzo, non è lo SdI", () => {
+    const con = (mittente) => ({ ...vera, testo: testoBusta({ mittente }) });
+    expect(vieneDalloSdi(con('"fornitore@pec.esempio.it"'))).toBe(false);
+    expect(vieneDalloSdi(con('"Per conto di: truffa@pec.esempio.it"'))).toBe(false);
+    expect(vieneDalloSdi(con('"Per conto di: sdi01@pec.fatturapa.it.esempio.it"'))).toBe(false);
+    expect(vieneDalloSdi(con('"Per conto di: sdi01@evilfatturapa.it"'))).toBe(false);
+    expect(vieneDalloSdi(con('"sdi01@pec.fatturapa.it"'))).toBe(false);
+  });
+
+  it("un oggetto che imita la riga dello SdI non basta: le righe «inviato da» diventano due", () => {
+    const finta = testoBusta({
+      oggetto: 'x" è stato inviato da "Per conto di: sdi01@pec.fatturapa.it',
+      mittente: '"truffa@pec.esempio.it"',
+    });
+    expect(vieneDalloSdi({ ...vera, testo: finta })).toBe(false);
+  });
+
+  it("senza daticert.xml e smime.p7s non è una busta vera", () => {
+    expect(vieneDalloSdi({ ...vera, allegati: [{ file_name: "daticert.xml" }] })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, allegati: [{ file_name: "smime.p7s" }] })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, allegati: [{ file_name: "IT0001_ab.xml.p7m" }] })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, allegati: [{ file_name: "daticert.xml.pdf" }] })).toBe(false);
+    expect(vieneDalloSdi({ ...vera, allegati: undefined })).toBe(false);
+  });
+
+  it("la casella dello SdI si riconosce per intero", () => {
+    expect(eCasellaSdi("sdi01@pec.fatturapa.it")).toBe(true);
+    expect(eCasellaSdi(" SDI38@PEC.FATTURAPA.IT ")).toBe(true);
+    expect(eCasellaSdi("sdi01@pec.fatturapa.it.esempio.it")).toBe(false);
+    expect(eCasellaSdi("info@fatturapa.it")).toBe(false);
+    expect(eCasellaSdi(null)).toBe(false);
+  });
+});
+
+describe("la busta con una riga dello SdI aggiunta dopo quella vera", () => {
+  it("l'ultima riga direbbe SdI, ma le righe sono due: non si crede", () => {
+    const vera = testoBusta({ mittente: '"truffa@pec.esempio.it"' });
+    const finta = vera.replace(
+      "Il messaggio originale",
+      'Nota: il messaggio è stato inviato da "Per conto di: sdi01@pec.fatturapa.it" ed è vero.\nIl messaggio originale',
+    );
+    expect(mittenteReale(finta, "posta-certificata@pec.aruba.it")).toBe("sdi01@pec.fatturapa.it");
+    expect(
+      vieneDalloSdi({ mittenteBusta: "posta-certificata@pec.aruba.it", testo: finta, allegati: [{ file_name: "daticert.xml" }, { file_name: "smime.p7s" }] }),
+    ).toBe(false);
+  });
+});
+
+describe("«Per conto di» vale solo se è tutto quello che c'è fra le virgolette", () => {
+  const busta = (mittente) => ({
+    mittenteBusta: "posta-certificata@pec.aruba.it",
+    testo: testoBusta({ mittente }),
+    allegati: [{ file_name: "daticert.xml" }, { file_name: "smime.p7s" }],
+  });
+  it("altro testo prima o dopo non passa", () => {
+    expect(vieneDalloSdi(busta('"x@truffa.it Per conto di: sdi01@pec.fatturapa.it" <posta-certificata@pec.aruba.it>'))).toBe(false);
+    expect(vieneDalloSdi(busta('"Per conto di: sdi01@pec.fatturapa.it x@truffa.it" <posta-certificata@pec.aruba.it>'))).toBe(false);
+    expect(vieneDalloSdi(busta('"Per conto di: sdi01@pec.fatturapa.it" <posta-certificata@pec.aruba.it>'))).toBe(true);
+  });
+  it("con gli a capo di Windows la busta vera passa lo stesso", () => {
+    const b = busta('"Per conto di: sdi01@pec.fatturapa.it" <posta-certificata@pec.aruba.it>');
+    expect(vieneDalloSdi({ ...b, testo: b.testo.replace(/\n/g, "\r\n") })).toBe(true);
+  });
+  it("senza il blocco inglese basta quello italiano", () => {
+    const b = busta('"Per conto di: sdi01@pec.fatturapa.it" <posta-certificata@pec.aruba.it>');
+    expect(vieneDalloSdi({ ...b, testo: b.testo.split("-- Certified mail message --")[0] })).toBe(true);
   });
 });

@@ -43,9 +43,11 @@ import {
   daAprireComeXml,
   eRicevutaPec,
   etichettaCasella,
+  ibanDellaFattura,
   proposteDaFattura,
   senzaArchiviareLeGiaRegistrate,
   testaDellaMail,
+  vieneDalloSdi,
   xmlPerIlModello,
 } from "../_shared/pec.js";
 
@@ -60,10 +62,13 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 // Deciso da Alessio il 12/08/2026: «se un documento arriva all'assistente
 // vuol dire che è importante, preferisco non risparmiare su queste cose».
 //
-// Il criterio non è il mittente né l'oggetto — si possono falsificare
-// entrambi — ma **la presenza di un documento vero da leggere**. Una mail
-// con un contratto in allegato merita una lettura attenta; una newsletter
-// senza allegati no, e sono la maggioranza.
+// Il primo criterio è **la presenza di un documento vero da leggere**. Una
+// mail con un contratto in allegato merita una lettura attenta; una
+// newsletter senza allegati no, e sono la maggioranza.
+// ⚠️ DALL'11/11 NON BASTA PIÙ: la casella PEC è pubblica, e chiunque poteva
+//    far leggere al modello caro decine di PDF. Il modello caro si usa solo
+//    se il mittente è qualcuno che conosciamo (lo SdI verificato, un
+//    fornitore in anagrafica): vedi più sotto, dove si sceglie.
 //
 // Costo misurato sul contratto vero del 12/08: due centesimi col modello
 // piccolo, circa trenta col grande. Col tetto di 10 $/mese restano una
@@ -685,9 +690,14 @@ async function leggiLaPosta() {
   const elenco = await db(
     `posta_ricevuta?stato=eq.da_leggere&tentativi_lettura=lt.${MAX_TENTATIVI}` +
       `&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
-      `&select=id,mittente,oggetto,testo,casella,tentativi_lettura,posta_allegati(id,file_name,mime,storage_path)`,
+      `&select=id,mittente,mittente_busta,oggetto,testo,casella,tentativi_lettura,posta_allegati(id,file_name,mime,storage_path)`,
   );
-  if (!elenco.ok) return;
+  if (!elenco.ok) {
+    // Detto, non taciuto: una colonna mancante (per esempio la funzione
+    // pubblicata prima della migrazione) fermerebbe la posta in silenzio.
+    console.error("posta non letta: elenco delle mail non leggibile", elenco.status, await elenco.text());
+    return;
+  }
   const messaggi = await elenco.json();
   if (!messaggi.length) return;
 
@@ -831,13 +841,23 @@ async function leggiLaPosta() {
 
       // C'è un documento vero da leggere? Allora si legge sul serio — ma col
       // modello più caro solo se la mail viene da qualcuno che conosciamo
-      // (SdI, gestore PEC, un fornitore) o porta una fattura elettronica
+      // (lo SdI verificato, un fornitore in anagrafica)
       // (Alessio, 11/11/2026: niente spesa grande per chi non conosciamo).
       // ⚠️ Se la domanda non risponde si sceglie il modello rapido: costa
       //    meno, e la mail si legge lo stesso.
+      // 🔴 NON PIÙ «PORTA UNA FATTURA ELETTRONICA» (revisione dell'11/11,
+      //    punto 1): un file-fattura lo può allegare chiunque, quindi bastava
+      //    attaccarne uno a ogni mail per far leggere tutto al modello caro.
+      //    Lo SdI conta solo se lo è davvero (`vieneDalloSdi`); il gestore
+      //    PEC da solo non conta (una busta che non si capisce, o un
+      //    indirizzo «…fatturapa.it» scritto in una mail normale, non sono
+      //    nessuno che conosciamo); i fornitori li dice il database.
       const testa = testaDellaMail(m);
-      let conosciuto = fattureLette.length > 0;
-      if (documenti.length && !conosciuto) {
+      const dalloSdi = vieneDalloSdi({ mittenteBusta: m.mittente_busta, testo: m.testo, allegati: tutti });
+      let conosciuto = dalloSdi;
+      const indirizzoMostrato = String(testa.mittente ?? m.mittente ?? "").toLowerCase();
+      const fingeLaPec = /fatturapa\.it|posta-certificata@/.test(indirizzoMostrato);
+      if (documenti.length && !conosciuto && !fingeLaPec) {
         const rc = await db("rpc/mittente_conosciuto_per_la_posta", {
           method: "POST",
           body: JSON.stringify({ p_mittente: testa.mittente ?? m.mittente ?? "" }),
@@ -1066,7 +1086,21 @@ async function leggiLaPosta() {
         if (!r.ok) throw new Error(`non riesco a controllare se la fattura ${fl.nome} è già registrata (${r.status})`);
         const gia = (await r.json())[0] ?? null;
         if (gia) giaRegistrate.push(fl.nome);
-        for (const pr of proposteDaFattura(fl.nome, fl.xml, gia)) {
+        // 🔴 Gli IBAN mai visti per questo fornitore (revisione dell'11/11,
+        //    punto 3). Se la domanda non risponde sono nuovi TUTTI: un
+        //    avviso in più è meglio di un IBAN falso taciuto.
+        const daControllare = ibanDellaFattura(fl.xml);
+        let ibanNuovi: string[] = [];
+        if (daControllare?.iban.length) {
+          const ri = await db("rpc/iban_nuovi_per_la_posta", {
+            method: "POST",
+            body: JSON.stringify({ p_partita_iva: daControllare.partitaIva, p_iban: daControllare.iban }),
+          });
+          const risposta = ri.ok ? await ri.json() : null;
+          ibanNuovi = Array.isArray(risposta) ? risposta.map(String) : daControllare.iban;
+        }
+        const provenienza = { dalloSdi, mittente: testa.mittente ?? m.mittente ?? null, ibanNuovi };
+        for (const pr of proposteDaFattura(fl.nome, fl.xml, gia, provenienza)) {
           azioni.push({ posta_id: m.id, ...pr });
         }
       }
