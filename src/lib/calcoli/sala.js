@@ -58,6 +58,33 @@ export const TOLLERANZA_CONTATTO_CM = 5;
  */
 export const CONTATTO_MINIMO_CM = 30;
 
+/**
+ * Quanti coperti perde un tavolone per ogni giunzione, se il formato non
+ * dice altro. Vale per i grandi: la sedia sul lato accostato sparisce, da
+ * entrambe le parti. Lo stesso numero è il default della colonna
+ * `formati_tavolo.posti_persi_per_giunzione` nel database.
+ */
+export const POSTI_PERSI_PER_GIUNZIONE_DI_DEFAULT = 2;
+
+/**
+ * I coperti calcolati di un tavolone (specchio puro di `coperti_del_giorno()`).
+ *
+ * LA REGOLA (12/11/2026): coperti = somma dei coperti dei singoli tavoli
+ * meno `postiPersi` per ogni giunzione. `postiPersi` è del FORMATO:
+ *   · grandi 160x80: 2 (come sempre);
+ *   · piccoli 70x80: 0 — le sedie stanno sui lati corti, accostare non ne
+ *     toglie, quindi 2 piccoli = 4 e N piccoli in fila = 2·N.
+ * Tutti i tavoli di un tavolone sono dello stesso formato, quindi il valore
+ * è uno solo per gruppo. Mai sotto zero.
+ */
+export function copertiCalcolati({
+  somma,
+  giunzioni,
+  postiPersi = POSTI_PERSI_PER_GIUNZIONE_DI_DEFAULT,
+}) {
+  return Math.max(somma - postiPersi * giunzioni, 0);
+}
+
 /** La tolleranza è utile solo se non può accostare due tavoli distinti. */
 export function tolleranzaCoerenteCollaGriglia(
   tolleranza = TOLLERANZA_CONTATTO_CM,
