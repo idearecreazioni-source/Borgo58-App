@@ -486,6 +486,17 @@ export function inScheda(stato, scheda) {
 }
 
 /**
+ * Quante mail della lista starebbero nella scheda «Da decidere» (12/11/2026).
+ * Serve alla Dashboard e al pulsante di Documenti: stessa regola della
+ * pagina Posta, così il numero fuori è il numero dentro.
+ * ⚠️ La lettura qui non si conosce e non serve: una mail `da_leggere` è
+ *    aperta sia come «guarda» sia come «in_lettura».
+ */
+export function contaDaDecidere(mail) {
+  return (mail ?? []).filter((m) => inScheda(statoDellaMail(m, null), "decidere")).length;
+}
+
+/**
  * Il verbo corto del pulsante che conferma. Il nome completo
  * (`etichettaConferma`) resta per i lettori di schermo e come titolo
  * della proposta: il pulsante non deve andare a capo su un telefono.
