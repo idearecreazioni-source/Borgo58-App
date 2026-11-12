@@ -170,7 +170,7 @@ create or replace function posta_filtra_in_arrivo()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path to 'public', 'pg_temp'
 as $$
 declare
   v_regola uuid;
