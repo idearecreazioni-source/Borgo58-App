@@ -13,6 +13,7 @@ vi.mock("../../src/lib/api/banca", () => ({
   abbinaMovimentoBanca: vi.fn(),
   caricaMovimentiBanca: vi.fn(),
   ignoraMovimentoBanca: vi.fn(),
+  listAvvisiBanca: vi.fn(() => Promise.resolve({ avvisi: [], totale: 0 })),
   listMovimentiBanca: (...a) => api.lista(...a),
   pagaFatturaDaMovimentoBanca: vi.fn(),
   proposteMovimentoBanca: (...a) => api.proposte(...a),

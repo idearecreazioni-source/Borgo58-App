@@ -17,6 +17,7 @@ import { leggiFlussoCbi, movimentiDaCaricare } from "../../lib/calcoli/cbi";
 import { bancaDelCsv, leggiCsvBper, leggiCsvCredem, sovrapposizioni } from "../../lib/calcoli/csvBanca";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
+import AvvisiDellaBanca from "./AvvisiDellaBanca";
 import CaricaCsvBanca from "./CaricaCsvBanca";
 
 // L'ESTRATTO CONTO DA FILE (24/10/2026). Alessio scarica dalla banca il
@@ -32,6 +33,10 @@ import CaricaCsvBanca from "./CaricaCsvBanca";
 // conto e saldi: li chiede CaricaCsvBanca. E lo stesso movimento, arrivato
 // dai due file, avrebbe due impronte diverse: per gli stessi giorni dello
 // stesso conto si carica da un formato solo (`sovrapposizioni`).
+//
+// 🔴 GLI AVVISI DELLA BANCA PER MAIL (12/11/2026, PR B1): si raccolgono e
+// basta, in un riquadro piccolo sopra i movimenti. Non diventano movimenti
+// finché il lettore non è scritto sulle mail vere.
 
 const STATI = [
   ["da_abbinare", "Da abbinare"],
@@ -271,6 +276,8 @@ export default function MovimentiBanca() {
           {errore}
         </p>
       )}
+
+      <AvvisiDellaBanca />
 
       <div className="flex flex-wrap gap-2 mb-4">
         {STATI.map(([k, nome]) => (
