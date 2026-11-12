@@ -58,7 +58,15 @@ export async function listPostaSistemata() {
     // ⚠️ Riconosciute dalla nota, non dalla regola: tolta la regola
     //    (`filtrata_da` torna vuoto) le mail che aveva messo da parte devono
     //    restare in vista (revisione ECC dell'11/11).
-    .or("stato.eq.archiviata,and(stato.eq.scartata,lettura_note.like.Filtrata*)")
+    // 🔴 E gli avvisi di sicurezza (12/11/2026, «Avviso di sicurezza: …») e
+    //    quelli della banca («Avviso della banca: …», 20261112000008), che
+    //    il filtro di prima lasciava fuori: senza, la scheda «Sistemate» non
+    //    li mostrava. ⚠️ Gli spazi sono «*»: dentro `or(...)` un valore con
+    //    gli spazi andrebbe fra virgolette, e il «*» li prende lo stesso.
+    .or(
+      "stato.eq.archiviata,and(stato.eq.scartata,or(lettura_note.like.Filtrata*," +
+        "lettura_note.like.Avviso*di*sicurezza*,lettura_note.like.Avviso*della*banca*))"
+    )
     .order("ricevuta_il", { ascending: false })
     .limit(SISTEMATE_MAX);
   if (error) throw error;
@@ -247,20 +255,30 @@ export async function chiediLetturaAdesso() {
  * oggetto, oppure tutto il mittente se `tuttoMittente`. Mette da parte
  * anche questa mail. Due tabelle: dal corridoio. La PEC dello SdI la
  * rifiuta il database.
+ *
+ * `esito` (12/11/2026, 20261112000011): «silenzio» come prima, oppure
+ * «avvisa» — la terza scelta «Archivia e avvisami su Telegram».
+ * ⚠️ `p_esito` parte SOLO per «avvisa»: le due scelte di prima arrivano
+ *    con la chiamata di prima, e funzionano anche su un database che la
+ *    migrazione non l'ha ancora (il parametro ha «silenzio» di base).
  */
-export async function aggiungiFiltroPosta(postaId, tuttoMittente = false) {
-  return eseguiOperazione("aggiungi_filtro_posta", {
-    p_posta_id: postaId,
-    p_tutto_mittente: !!tuttoMittente,
-  });
+export async function aggiungiFiltroPosta(postaId, tuttoMittente = false, esito = "silenzio") {
+  const parametri = { p_posta_id: postaId, p_tutto_mittente: !!tuttoMittente };
+  if (esito === "avvisa") parametri.p_esito = "avvisa";
+  return eseguiOperazione("aggiungi_filtro_posta", parametri);
 }
 
-/** Le regole del filtro, le più recenti prima. */
+/**
+ * Le regole del filtro, le più recenti prima, con `esito` (se avvisano).
+ * ⚠️ Su un database senza la colonna (42703, la migrazione 20261112000011
+ *    non ancora applicata) si rilegge senza: l'elenco resta, e nessuna
+ *    regola risulta che avvisa — che lì è la verità.
+ */
 export async function listFiltriPosta() {
-  const { data, error } = await supabase
-    .from("posta_filtri")
-    .select("id, mittente, oggetto_tipo, modo, nota, creato_il")
-    .order("creato_il", { ascending: false });
+  const leggi = (colonne) =>
+    supabase.from("posta_filtri").select(colonne).order("creato_il", { ascending: false });
+  let { data, error } = await leggi("id, mittente, oggetto_tipo, modo, nota, esito, creato_il");
+  if (error?.code === "42703") ({ data, error } = await leggi("id, mittente, oggetto_tipo, modo, nota, creato_il"));
   if (error) throw error;
   return data ?? [];
 }
