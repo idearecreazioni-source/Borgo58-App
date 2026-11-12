@@ -179,5 +179,5 @@ begin
 end $verifica$;
 
 insert into applied_migrations (version, name)
-values ('20261112000003', 'la_posta_sa_chi_l_ha_mandata')
+values ('20261112000005', 'la_posta_sa_chi_l_ha_mandata')
 on conflict (version) do nothing;
