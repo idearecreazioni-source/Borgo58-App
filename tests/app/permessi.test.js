@@ -180,13 +180,15 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // e' dentro `luogo_promemoria` (30 letture all'ora per chiave), e la
   // funzione LEGGE soltanto i titoli degli impegni aperti di quel luogo.
   // ⚠️ SALITO DA 17 A 18 il 04/11/2026: la quarta porta del ponte, qui sotto.
-  it("solo 18 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SCESO DA 18 A 17 il 12/11/2026: `luogo_promemoria` non c'e' piu'. La
+  // 20261112000007 la toglie con «Quando arrivo» (deciso da Alessio: raggio
+  // troppo largo, notifiche ripetute), e revoca le chiavi del luogo.
+  it("solo 17 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
       "giorni_chiusi_prenotabili",
       "is_titolare",
-      "luogo_promemoria",
       "normalize_phone",
       // ⚠️ LE TRE DEL PONTE (28/10/2026, 20261028000005): il programma sul
       //    mini-PC del ristorante non fa il login, quindi entra da qui. Il

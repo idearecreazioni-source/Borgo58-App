@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_LUOGHI, TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
+import { TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
@@ -37,7 +37,7 @@ const DA_VOCE = {
   ora: "due_time",
   priorita: "priority",
   categoria: "category",
-  luogo: "luogo",
+  // ⚠️ «luogo» non c'è più (12/11/2026): la voce non imposta un luogo.
   avviso_data: "remind_date",
   avviso_ora: "remind_time",
 };
@@ -80,7 +80,10 @@ const emptyForm = {
   //    e un impegno scritto dallo staff il DB lo rende comunque visibile
   //    (§3.18), perché lo staff la casella non la vede.
   visibile_staff: false,
-  luogo: "",
+  // ⚠️ IL LUOGO NON È PIÙ UN CAMPO DEL MODULO — 12/11/2026, tolto con
+  //    «Quando arrivo» (decisione di Alessio). E non va nemmeno nel
+  //    salvataggio: un impegno che il luogo ce l'ha già lo tiene così
+  //    com'è nel database, perché l'aggiornamento non nomina la colonna.
 };
 
 // Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
@@ -109,18 +112,12 @@ export default function TaskForm() {
   const [form, setForm] = useState(emptyForm);
   // ⚠️ Solo su un promemoria NUOVO: aprendo uno esistente i campi sono i
   //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
-  // ⚠️ Un luogo che non e' fra quelli ammessi (la voce che sente «garage») si
-  //    lascia cadere qui, come fa il database sull'approvazione diretta:
-  //    altrimenti nessun pulsante sarebbe acceso e il salvataggio verrebbe
-  //    respinto dal vincolo con un errore che non si capisce (28/10/2026).
+  // ⚠️ Il luogo detto a voce non si legge più (12/11/2026, tolto con
+  //    «Quando arrivo»): `DA_VOCE` non lo nomina, quindi `conCampi` lo
+  //    lascia cadere da sé.
   const venuto = useDaVoce((c) => {
     if (isEdit) return;
-    // «ristorante» è il nome di prima della cantina (28/10/2026): una voce
-    // che lo dice ancora va nello stesso posto.
-    const detto = String(c?.luogo ?? "").trim().toLowerCase();
-    const luogo = detto === "ristorante" ? "cantina" : detto;
-    const noto = TASK_LUOGHI.some((l) => l.value === luogo);
-    setForm((f) => conCampi(f, { ...c, luogo: noto ? luogo : undefined }, DA_VOCE));
+    setForm((f) => conCampi(f, c, DA_VOCE));
   });
   const [origineModulo, setOrigineModulo] = useState(null);
   // ⚠️ La categoria con cui l'impegno è arrivato: togliendo la casella dei
@@ -162,7 +159,6 @@ export default function TaskForm() {
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
-          luogo: t.luogo ?? "",
         });
         setOrigineModulo(t.origine_modulo);
         setCategoriaPrima(t.category && t.category !== "lavori" ? t.category : "altro");
@@ -275,7 +271,7 @@ export default function TaskForm() {
         status: form.status,
         category: form.category || "altro",
         preferito: form.preferito,
-        luogo: form.luogo || null,
+        // ⚠️ Niente `luogo` qui, apposta (12/11/2026): vedi `emptyForm`.
         // ⚠️ Le due caselle vanno insieme o non vanno: mandarne una sola
         //    il database lo rifiuta (vincolo `ricorrenza_intera`), ed è
         //    giusto — un numero senza unità non dice ogni quanto.
@@ -477,33 +473,10 @@ export default function TaskForm() {
           È un lavoro da fare
         </label>
 
-        {/* 🔴 DOVE TE LO RICORDO — 28/10/2026, chiesto da Alessio: «quando
-            arrivo a casa ricordami di pesare la mamma». Arrivando in quel
-            posto il telefono lo mostra in una notifica, finché non lo
-            spunti (`/agenda/luoghi` spiega come si prepara il telefono).
-            ⚠️ NIENTE «DA NESSUNA PARTE» (28/10/2026, Alessio: «trovo inutile
-            il tasto "da nessuna parte" preselezionato»): di partenza nessun
-            luogo è acceso, e toccare di nuovo quello acceso lo spegne. */}
-        <div role="group" aria-labelledby="titolo-luogo" data-scelta-luogo>
-          <p id="titolo-luogo" className={labelClass}>Ricordamelo quando arrivo</p>
-          <div className="flex flex-wrap gap-2">
-            {TASK_LUOGHI.map((l) => (
-              <button
-                key={l.value}
-                type="button"
-                aria-pressed={form.luogo === l.value}
-                onClick={() => setForm((f) => ({ ...f, luogo: f.luogo === l.value ? "" : l.value }))}
-                className={`tocco-bottone rounded-lg px-3 testo-sala transition-colors ${
-                  form.luogo === l.value
-                    ? "bg-b58-azione text-b58-sul-colore"
-                    : "text-b58-charcoal ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark"
-                }`}
-              >
-                {l.arrivo ?? l.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* ⚠️ QUI STAVA «RICORDAMELO QUANDO ARRIVO» (28/10/2026), tolto il
+            12/11/2026 con i promemoria per luogo: deciso da Alessio, il
+            raggio dei Comandi dell'iPhone era troppo largo e il GPS che
+            oscilla ripeteva le notifiche. */}
 
         {/* ⚠️ Niente linea sopra (28/10/2026, dal collaudo: «c'è una linea di
             troppo»): la casella sta con le altre caselle, e la linea che
