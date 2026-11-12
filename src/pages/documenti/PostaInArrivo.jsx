@@ -35,6 +35,8 @@ import {
   descriviRegola,
   indirizzoMittente,
   mittenteProtetto,
+  mittenteConMailImportanti,
+  descriviEsito,
   tipoOggetto,
 } from "../../lib/calcoli/posta";
 import { listIngredients } from "../../lib/api/ingredients";
@@ -71,6 +73,7 @@ const COLORE_BOLLINO = {
   fatto: "bg-b58-azione/15 text-b58-azione-dark-testo",
   niente: "bg-b58-cream-dark text-b58-charcoal-soft",
   filtrata: "bg-b58-cream-dark text-b58-charcoal-soft",
+  sicurezza: "bg-b58-terracotta/15 text-b58-terracotta-dark-testo",
 };
 
 const NOME_TIPO = {
@@ -1261,11 +1264,19 @@ export default function PostaInArrivo() {
               <ul className="mt-2 divide-y divide-b58-charcoal/10">
                 {filtri.map((r) => (
                   <li key={r.id} className="py-2 flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="testo-sala-grande text-b58-charcoal min-w-0 break-words">{descriviRegola(r)}</span>
+                    <span className="testo-sala-grande text-b58-charcoal min-w-0 break-words">
+                      {descriviRegola(r)}
+                      {/* La regola che avvisa si riconosce (12/11/2026). */}
+                      {descriviEsito(r) && (
+                        <span className="ml-2 inline-block rounded-full px-2 py-0.5 text-sm font-medium bg-b58-terracotta/15 text-b58-terracotta-dark-testo">
+                          Ti avvisa su Telegram
+                        </span>
+                      )}
+                    </span>
                     <button
                       type="button"
                       disabled={inCorso === r.id}
-                      aria-label={`Togli la regola: ${descriviRegola(r)}`}
+                      aria-label={`Togli la regola: ${[descriviRegola(r), descriviEsito(r)].filter(Boolean).join(" ")}`}
                       onClick={() => agisci(r.id, () => togliFiltroPosta(r.id))}
                       className="tocco-testo testo-sala text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo"
                     >
@@ -1291,7 +1302,8 @@ export default function PostaInArrivo() {
     const daDecidere = (m.azioni ?? []).filter((a) => a.stato === "proposta" && a.tipo !== "nessuna");
     const niente = (m.azioni ?? []).filter((a) => a.tipo === "nessuna");
     const decise = (m.azioni ?? []).filter((a) => a.tipo !== "nessuna" && a.stato !== "proposta");
-    const nota = m.stato === "da_leggere" || stato === "filtrata" ? null : notaInChiaro(m.lettura_note);
+    const nota =
+      m.stato === "da_leggere" || stato === "filtrata" || stato === "sicurezza" ? null : notaInChiaro(m.lettura_note);
     const { visibili, tecnici } = allegatiDaMostrare(m.allegati);
     const ce = cosaCeDaLeggere(m);
     const vediTecnici = tecniciAperti.has(m.id);
@@ -1590,8 +1602,10 @@ export default function PostaInArrivo() {
           <p className="testo-sala-grande text-b58-charcoal-soft">MEMO non ha proposto niente per questa mail.</p>
         )}
 
-        {/* LA MAIL FILTRATA (11/11/2026): perché, e come rimetterla. */}
-        {stato === "filtrata" && (
+        {/* LA MAIL FILTRATA (11/11/2026): perché, e come rimetterla. E
+            l'avviso di sicurezza (12/11/2026), che è una filtrata che ha
+            anche suonato su Telegram. */}
+        {(stato === "filtrata" || stato === "sicurezza") && (
           <div className="flex flex-col gap-2">
             <p className="testo-sala-grande text-b58-charcoal-soft">{m.lettura_note}</p>
             <div className="flex flex-wrap gap-2">
@@ -1628,6 +1642,13 @@ export default function PostaInArrivo() {
             const tipo = tipoOggetto(testaDellaMail(m).oggetto ?? m.oggetto);
             const aperto = ignora?.id === m.id;
             const tutto = aperto ? ignora.tutto : !tipo;
+            // La terza scelta (12/11/2026): archivia questo tipo di mail E
+            // manda una riga su Telegram. Solo con un oggetto da riconoscere.
+            const avvisa = aperto && !!ignora.avvisa && !!tipo;
+            // Domanda 4 del piano: «tutte le mail» di un mittente che manda
+            // anche mail importanti (Credem, Aruba, Google) chiede un sì in più.
+            const importante = mittenteConMailImportanti(indirizzo);
+            const confermando = aperto && !!ignora.conferma;
             if (!aperto) {
               return (
                 <button
@@ -1635,7 +1656,7 @@ export default function PostaInArrivo() {
                   id={`ignora-tasto-${m.id}`}
                   aria-expanded={false}
                   onClick={() => {
-                    setIgnora({ id: m.id, tutto: !tipo });
+                    setIgnora({ id: m.id, tutto: !tipo, avvisa: false, conferma: false });
                     metti(`ignora-scelta-${m.id}`);
                   }}
                   className="tocco-testo self-start testo-sala-grande text-b58-charcoal-soft underline underline-offset-2 hover:text-b58-terracotta-testo mt-2"
@@ -1655,8 +1676,8 @@ export default function PostaInArrivo() {
                       type="radio"
                       id={`ignora-scelta-${m.id}`}
                       name={`ignora-${m.id}`}
-                      checked={!tutto}
-                      onChange={() => setIgnora({ id: m.id, tutto: false })}
+                      checked={!tutto && !avvisa}
+                      onChange={() => setIgnora({ id: m.id, tutto: false, avvisa: false, conferma: false })}
                       className="mt-1"
                     />
                     <span>
@@ -1669,38 +1690,76 @@ export default function PostaInArrivo() {
                     type="radio"
                     id={tipo ? undefined : `ignora-scelta-${m.id}`}
                     name={`ignora-${m.id}`}
-                    checked={tutto}
-                    onChange={() => setIgnora({ id: m.id, tutto: true })}
+                    checked={tutto && !avvisa}
+                    onChange={() => setIgnora({ id: m.id, tutto: true, avvisa: false, conferma: false })}
                     className="mt-1"
                   />
                   <span>
                     Tutte le mail da {indirizzo}
-                    {tipo && (
+                    {(tipo || importante) && (
                       <span className="block testo-sala text-b58-terracotta-dark-testo">
-                        Attenzione: anche quelle utili di questo mittente.
+                        {importante
+                          ? "Attenzione: questo mittente manda anche mail importanti."
+                          : "Attenzione: anche quelle utili di questo mittente."}
                       </span>
                     )}
                   </span>
                 </label>
+                {tipo && (
+                  <label className="flex items-start gap-2 testo-sala-grande text-b58-charcoal">
+                    <input
+                      type="radio"
+                      name={`ignora-${m.id}`}
+                      checked={avvisa}
+                      onChange={() => setIgnora({ id: m.id, tutto: false, avvisa: true, conferma: false })}
+                      className="mt-1"
+                    />
+                    <span>
+                      Archivia e avvisami su Telegram
+                      <span className="block testo-sala text-b58-charcoal-soft">
+                        Per gli avvisi di sicurezza: le mail come questa vanno fra le «Sistemate» e ti arriva una riga su
+                        Telegram per ognuna (al massimo 5 all'ora).
+                      </span>
+                    </span>
+                  </label>
+                )}
                 <p className="testo-sala text-b58-charcoal-soft">
                   Le mail messe da parte restano visibili in «Sistemate», e la regola si toglie quando vuoi.
                   {(m.azioni ?? []).some((a) => a.stato === "proposta" && a.tipo !== "nessuna") &&
                     " Le proposte di MEMO ancora aperte su questa mail non si faranno."}
                 </p>
+                {tutto && !avvisa && importante && confermando && (
+                  <p role="alert" className="testo-sala-grande text-b58-terracotta-dark-testo">
+                    Questo mittente manda anche mail importanti (la banca, le fatture, gli avvisi di sicurezza). Vuoi
+                    davvero mettere da parte TUTTE le mail da {indirizzo}?
+                  </p>
+                )}
                 {errore?.dove === m.id && <p role="alert" className={avviso}>{errore.messaggio}</p>}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     disabled={inCorso === m.id}
-                    onClick={() =>
+                    onClick={() => {
+                      // Tutto un mittente che manda anche mail importanti:
+                      // prima il sì in più (domanda 4 del piano).
+                      if (tutto && !avvisa && importante && !confermando) {
+                        setIgnora({ ...ignora, conferma: true });
+                        return;
+                      }
                       agisci(m.id, async () => {
-                        await aggiungiFiltroPosta(m.id, tutto);
+                        await aggiungiFiltroPosta(m.id, avvisa ? false : tutto, avvisa ? "avvisa" : "silenzio");
                         setIgnora(null);
-                      })
-                    }
+                      });
+                    }}
                     className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-sul-colore font-medium px-4 py-1.5 testo-sala-grande"
                   >
-                    {inCorso === m.id ? "…" : "Ignora"}
+                    {inCorso === m.id
+                      ? "…"
+                      : avvisa
+                        ? "Archivia e avvisami"
+                        : tutto && importante && confermando
+                          ? "Sì, tutte"
+                          : "Ignora"}
                   </button>
                   <button
                     type="button"

@@ -5,6 +5,8 @@ import {
   allegatoTecnico,
   conVerboDavanti,
   descriviRegola,
+  descriviEsito,
+  mittenteConMailImportanti,
   indirizzoMittente,
   mittenteProtetto,
   tipoOggetto,
@@ -109,7 +111,7 @@ describe("il bollino di ogni mail", () => {
   });
 
   it("ogni stato ha un bollino con le parole", () => {
-    for (const s of ["guarda", "in_lettura", "decidere", "fatto", "niente"]) {
+    for (const s of ["guarda", "in_lettura", "decidere", "fatto", "niente", "filtrata", "sicurezza"]) {
       expect(BOLLINO_POSTA[s], s).toBeTruthy();
     }
   });
@@ -259,5 +261,59 @@ describe("la Posta, i difetti dell'11/11", () => {
     // Una proposta vecchia, senza fornitore: almeno il numero.
     expect(testataFattura([{ tipo: "nessuna", parametri: { gia_registrata: { invoice_number: "330/F" } } }])).toEqual({ chi: null, numero: "330/F", totale: null });
     expect(testataFattura([{ tipo: "archivia_documento", parametri: {} }])).toBeNull();
+  });
+});
+
+// GLI AVVISI DI SICUREZZA (12/11/2026, 20261112000011): la nota scritta dal
+// database decide il bollino; la conferma in più sui mittenti importanti.
+describe("gli avvisi di sicurezza", () => {
+  const nota =
+    "Avviso di sicurezza: archiviato prima di MEMO, senza spesa, e segnalato su Telegram (con una riga sua, o contato nella riga «altri N avvisi di sicurezza»). Regola: da businesson@credem.it con oggetto che comincia per «codice mr. pin inserito errato».";
+
+  it("l'avviso di sicurezza ha il suo bollino e sta fra le sistemate", () => {
+    const s = statoDellaMail({ stato: "scartata", filtrata_da: "f1", lettura_note: nota });
+    expect(s).toBe("sicurezza");
+    expect(BOLLINO_POSTA[s]).toBe("Sicurezza");
+    expect(inScheda(s, "sistemate")).toBe(true);
+    expect(inScheda(s, "decidere")).toBe(false);
+  });
+
+  it("anche tolta la regola (filtrata_da vuoto) resta un avviso di sicurezza", () => {
+    expect(statoDellaMail({ stato: "scartata", filtrata_da: null, lettura_note: nota })).toBe("sicurezza");
+  });
+
+  it("anche quella sistemata dal tasto «Archivia e avvisami»", () => {
+    const n = "Avviso di sicurezza: archiviato prima di MEMO, senza spesa; le prossime come questa arrivano anche su Telegram (da a@b.it con oggetto «x»).";
+    expect(statoDellaMail({ stato: "scartata", filtrata_da: "f1", lettura_note: n })).toBe("sicurezza");
+  });
+
+  it("una filtrata in silenzio e l'avviso della banca restano «Filtrata»", () => {
+    expect(statoDellaMail({ stato: "scartata", filtrata_da: "f1", lettura_note: "Filtrata prima di MEMO, senza spesa: x." })).toBe("filtrata");
+    expect(statoDellaMail({ stato: "scartata", lettura_note: "Avviso della banca: va in Banca, non in MEMO." })).toBe("filtrata");
+  });
+
+  it("una mail ancora da decidere non è un avviso di sicurezza, qualunque sia la nota", () => {
+    expect(statoDellaMail({ stato: "da_leggere", lettura_note: nota }, { chiave: "in_coda" })).toBe("in_lettura");
+  });
+
+  it("la regola dice se avvisa", () => {
+    expect(descriviEsito({ esito: "avvisa" })).toBe("e ti avvisa su Telegram");
+    expect(descriviEsito({ esito: "silenzio" })).toBeNull();
+    // Un database senza la colonna: la regola tace.
+    expect(descriviEsito({})).toBeNull();
+  });
+
+  it("Credem, Aruba e Google mandano anche mail importanti, anche dai sottodomini", () => {
+    for (const ind of [
+      "businesson@credem.it",
+      "noreply@fatturazioneelettronica.aruba.it",
+      "comunicazioni@staff.aruba.it",
+      "no-reply@accounts.google.com",
+    ]) {
+      expect(mittenteConMailImportanti(ind), ind).toBe(true);
+    }
+    for (const ind of ["news@esempio.it", "credem.it@esempio.it", "info@nocredem.it", "", null]) {
+      expect(mittenteConMailImportanti(ind), String(ind)).toBe(false);
+    }
   });
 });
