@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import {
   copiaPiuRecente,
   ORE_MASSIME_BACKUP,
   quandoDalNome,
+  TIMBRO_COPIA_COMPLETA,
 } from "../../scripts/comune.mjs";
 
 // 🔴 IL SESTO FRENO DI `npm run migra` (30/08/2026): non si tocca il
@@ -30,11 +31,12 @@ function radiceFinta() {
   RADICI.push(r);
   return r;
 }
-/** Una cartella di backup col nome giusto. `completa` decide se ha 05_conteggi.txt. */
+/** Una cartella di backup col nome giusto. `completa` decide se ha il timbro (oltre a 05_conteggi.txt, che c'è sempre). */
 function copiaFinta(radice, nome, { completa = true } = {}) {
   const d = path.join(radice, nome);
   mkdirSync(d, { recursive: true });
-  if (completa) writeFileSync(path.join(d, "05_conteggi.txt"), "tabella = 1\n");
+  writeFileSync(path.join(d, "05_conteggi.txt"), "tabella = 1\n");
+  if (completa) writeFileSync(path.join(d, TIMBRO_COPIA_COMPLETA), "Copia completa e controllata\n");
   return d;
 }
 // ⚠️ «Adesso» e' FISSO, a meta' luglio (26/10/2026): con l'orologio vero la
@@ -154,5 +156,39 @@ describe("la decisione: si passa o ci si ferma", () => {
 
   it("il limite predefinito e' 24 ore", () => {
     expect(ORE_MASSIME_BACKUP).toBe(24);
+  });
+});
+
+// 🔴 UNA COPIA FALLITA A META' VENIVA CREDUTA BUONA (revisione dell'11/11,
+//    punto 9): il «timbro» era `05_conteggi.txt`, che il backup scrive prima
+//    dei documenti e del controllo.
+describe("il timbro di copia completa", () => {
+  it("una cartella con 05_conteggi.txt ma senza timbro NON e' una copia completa", () => {
+    const r = radiceFinta();
+    copiaFinta(r, "2026-08-30_2059", { completa: false });
+    expect(copiaPiuRecente(r)).toBeNull();
+  });
+
+  it("il backup scrive il timbro per ultimo: dopo i documenti, il controllo e lo zip", () => {
+    const sorgente = readFileSync("scripts/backup.mjs", "utf8").replace(/^\s*\/\/[^\n]*$/gm, "");
+    const timbro = sorgente.search(/writeFileSync\(\s*path\.join\(cartella, TIMBRO_COPIA_COMPLETA\)/);
+    expect(timbro).toBeGreaterThan(0);
+    for (const prima of [
+      'writeFileSync(path.join(cartella, "05_conteggi.txt")',
+      "await deposito.download(",
+      "const mancanoFile = differenze(",
+      "Compress-Archive",
+      "if (!controllo.ok) {",
+    ]) {
+      const dove = sorgente.indexOf(prima);
+      expect(dove, prima).toBeGreaterThan(0);
+      expect(dove, `${prima} deve venire prima del timbro`).toBeLessThan(timbro);
+    }
+    // E il timbro si scrive una volta sola.
+    expect(sorgente.slice(timbro + 1)).not.toMatch(/writeFileSync\(\s*path\.join\(cartella, TIMBRO_COPIA_COMPLETA\)/);
+    // E un timbro vecchio (due copie nello stesso minuto) si toglie prima di cominciare.
+    const togli = sorgente.indexOf("rmSync(path.join(cartella, TIMBRO_COPIA_COMPLETA)");
+    expect(togli).toBeGreaterThan(0);
+    expect(togli).toBeLessThan(sorgente.indexOf('dump("01_schema.sql"'));
   });
 });
