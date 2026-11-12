@@ -277,11 +277,12 @@ if (mancanti.length === 0) {
 // tre; qui se ne automatizza **una**, e le altre due si dicono a voce
 // alta invece di sparire dentro un «fatto».
 //
-// ⚠️ E LA CARTELLA VUOLE `05_conteggi.txt`: e' quello che dimostra che il
-// backup e' arrivato in fondo. Una cartella nata da un backup interrotto
-// a meta' ha un nome con l'ora giusta e dentro non ha niente su cui
-// contare le righe — cioe' sarebbe **una copia recente che non e' una
-// copia**. ⚠️ Lo zip invece NON si pretende: `backup.mjs` dichiara che se
+// ⚠️ E LA CARTELLA VUOLE IL TIMBRO `00_copia_completa.txt` (dal 12/11/2026;
+// prima era `05_conteggi.txt`, che il backup scrive a meta'): il backup lo
+// scrive per ultimo, dopo il controllo, quindi dimostra che e' arrivato in
+// fondo. Una cartella nata da un backup interrotto o bocciato ha un nome
+// con l'ora giusta e niente timbro — cioe' sarebbe **una copia recente che
+// non e' una copia**. ⚠️ Lo zip invece NON si pretende: `backup.mjs` dichiara che se
 // lo zip fallisce la copia non e' persa, e pretenderlo qui direbbe il
 // contrario di quello che dice il comando che lo produce.
 //
