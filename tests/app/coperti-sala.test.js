@@ -215,17 +215,18 @@ describe("I coperti dentro il tavolo", () => {
 
     const b = await getPostoPerLaSerata(GIORNO);
 
-    // Tre giunzioni in più devono togliere esattamente sei coperti. È la
+    // Dal 12/11 i piccoli accostati non perdono posti: delle tre giunzioni
+    // (due fra piccoli, una fra grandi) ne toglie due solo quella dei grandi. È la
     // DIFFERENZA a essere la prova, non il numero.
-    expect(b.capienza).toBe(a.capienza - 6);
+    expect(b.capienza).toBe(a.capienza - 2);
     expect(b.prenotati).toBe(a.prenotati);
-    expect(b.restanti).toBe(a.restanti - 6);
+    expect(b.restanti).toBe(a.restanti - 2);
 
     const gruppiB = await getCopertiDelGiorno(GIORNO);
     const fila = gruppoDi(gruppiB, quadrati[0].id);
     expect(fila.tavoli).toHaveLength(3);
     expect(fila.giunzioni).toBe(2);
-    expect(fila.coperti_calcolati).toBe(3 * baseQ - 4);
+    expect(fila.coperti_calcolati).toBe(3 * baseQ);
 
     const tavolone = gruppoDi(gruppiB, lunghi[0].id);
     expect(tavolone.tavoli).toHaveLength(2);
@@ -287,7 +288,7 @@ describe("I coperti dentro il tavolo", () => {
     expect(gruppoDi(gruppi, quadrati[0].id).corretto).toBe(true);
     // ⚠️ Il numero calcolato non sparisce: resta accanto, o in sala non si
     // saprebbe quale dei due si sta guardando.
-    expect(gruppoDi(gruppi, quadrati[0].id).coperti_calcolati).toBe(2 * baseQ - 2);
+    expect(gruppoDi(gruppi, quadrati[0].id).coperti_calcolati).toBe(2 * baseQ);
     expect(gruppoDi(gruppi, quadrati[0].id).ragione).toBe("uno contro il muro");
     // ⚠️ Chi e quando: una correzione senza autore è un numero che nessuno
     // può spiegare tre giorni dopo. Lo scrive il database, non la
@@ -333,7 +334,7 @@ describe("I coperti dentro il tavolo", () => {
 
     gruppi = await getCopertiDelGiorno(GIORNO);
     expect(gruppoDi(gruppi, quadrati[0].id).corretto).toBe(false);
-    expect(gruppoDi(gruppi, quadrati[0].id).coperti).toBe(2 * baseQ - 2);
+    expect(gruppoDi(gruppi, quadrati[0].id).coperti).toBe(2 * baseQ);
   });
 
   it("7 · le misure della sala reggono l'ipotesi su cui poggia la tolleranza", async () => {
