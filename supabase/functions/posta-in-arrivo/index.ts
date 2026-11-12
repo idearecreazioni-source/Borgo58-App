@@ -178,8 +178,9 @@ Deno.serve(async (req) => {
   // Una PEC arriva incartata da Aruba: mittente «posta-certificata@…» e
   // oggetto «POSTA CERTIFICATA: Fwd: …». Si registrano il mittente vero e
   // l'oggetto pulito (08/11/2026); la busta originale resta nel testo.
+  const mittenteArrivato = d.from ?? messaggio?.from ?? null;
   const testa = testaDellaMail({
-    mittente: d.from ?? messaggio?.from ?? null,
+    mittente: mittenteArrivato,
     oggetto: d.subject ?? messaggio?.subject ?? null,
     testo,
   });
@@ -193,6 +194,12 @@ Deno.serve(async (req) => {
       messaggio_id: emailId,
       casella: destinatari[0] ?? "sconosciuta",
       mittente: testa.mittente,
+      // 🔴 Il mittente COM'È ARRIVATO, prima della pulizia (12/11/2026,
+      //    revisione dell'11/11, punto 3): solo da qui `posta-leggi` sa se
+      //    una PEC l'ha consegnata davvero il gestore, e quindi se una
+      //    fattura viene davvero dallo SdI. Ripulito, «sdi01@pec.fatturapa.it»
+      //    si potrebbe scrivere in qualunque mail.
+      mittente_busta: mittenteArrivato == null ? null : String(mittenteArrivato).slice(0, 500),
       oggetto: testa.oggetto,
       // Solo il testo: l'HTML di una newsletter è enorme, non aggiunge
       // niente a chi deve capire di che documento si tratta, e costerebbe
