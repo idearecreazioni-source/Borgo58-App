@@ -457,6 +457,13 @@ export function notaInChiaro(nota) {
  */
 export function statoDellaMail(mail, lettura) {
   if (mail?.stato === "archiviata") return "fatto";
+  // Un avviso di sicurezza preso da una regola che avvisa (12/11/2026,
+  // 20261112000011): archiviato E segnalato su Telegram. Si riconosce dalla
+  // nota, che resta anche se la regola si toglie. Prima di «filtrata»:
+  // anche lui ha `filtrata_da`.
+  if (mail?.stato === "scartata" && /^Avviso di sicurezza/.test(mail?.lettura_note ?? "")) {
+    return "sicurezza";
+  }
   // Messa da parte da una regola del filtro, prima di MEMO (11/11/2026).
   // 🔴 E l'avviso arrivato alla casella della banca (12/11/2026,
   //    20261112000008): nasce scartato con «Avviso della banca: …». Senza
@@ -485,6 +492,7 @@ export const BOLLINO_POSTA = {
   fatto: "Fatto",
   niente: "Niente da fare",
   filtrata: "Filtrata",
+  sicurezza: "Sicurezza",
 };
 
 /** In quale scheda sta una mail: «Da decidere» raccoglie tutto ciò che non è chiuso. */
@@ -580,4 +588,28 @@ export function descriviRegola({ mittente, oggetto_tipo, modo = "uguale" }) {
   if (modo === "inizia") return `da ${mittente} con oggetto che comincia per «${oggetto_tipo}»`;
   if (modo === "contiene") return `da ${mittente} con «${oggetto_tipo}» nell'oggetto`;
   return `da ${mittente} con oggetto «${oggetto_tipo}»`;
+}
+
+// =====================================================================
+// GLI AVVISI DI SICUREZZA — 12/11/2026 (20261112000011)
+// =====================================================================
+
+/** Cosa fa una regola oltre a mettere da parte, detto in italiano; null se tace. */
+export function descriviEsito(regola) {
+  return regola?.esito === "avvisa" ? "e ti avvisa su Telegram" : null;
+}
+
+/**
+ * I mittenti che mandano mail inutili E mail importanti (domanda 4 del
+ * piano del 12/11): la banca, la PEC e le fatture di Aruba, gli account
+ * Google. «Tutte le mail da …» su di loro chiede una conferma in più.
+ * Si guarda il dominio, anche quando è un sottodominio
+ * («fatturazioneelettronica.aruba.it», «accounts.google.com»).
+ */
+export const DOMINI_CON_MAIL_IMPORTANTI = ["credem.it", "aruba.it", "arubapec.it", "google.com"];
+
+export function mittenteConMailImportanti(indirizzo) {
+  const dominio = String(indirizzo ?? "").toLowerCase().split("@")[1] ?? "";
+  if (!dominio) return false;
+  return DOMINI_CON_MAIL_IMPORTANTI.some((d) => dominio === d || dominio.endsWith(`.${d}`));
 }

@@ -180,6 +180,15 @@ function formatAlarmMessage(allarme: Record<string, unknown>): string {
     ].join("\n");
   }
 
+  // Un avviso di sicurezza della Posta (12/11/2026, 20261112000011): codice
+  // errato, verifica in 2 passaggi disattivata, accesso da un dispositivo
+  // nuovo. La mail è già archiviata: qui basta UNA riga, che dica subito
+  // che è sicurezza e non un guasto del gestionale. La riga la scrive il
+  // database (chi l'ha mandata + l'oggetto, oppure «altri N avvisi»).
+  if (categoria === "sicurezza") {
+    return `🔐 SICUREZZA — ${messaggio}`;
+  }
+
   if (categoria === "rincaro") {
     return [
       "💶 RINCARO",
