@@ -116,6 +116,15 @@ describe("la Posta a righe", () => {
     expect(screen.queryByRole("button", { name: /^Archivia/ })).toBeNull();
   });
 
+  it("🔴 la frase in cima usa lo stesso numero della scheda, e dice a parte quelle che MEMO sta leggendo (12/11)", async () => {
+    finte.listPostaInAttesa.mockResolvedValueOnce([
+      ...IN_ATTESA,
+      { id: "m3", stato: "da_leggere", mittente: "Cliente <c@esempio.it>", oggetto: "Prenotazione", ricevuta_il: "2026-11-09T08:00:00Z", tentativi_lettura: 0, allegati: [], azioni: [] },
+    ]);
+    apri();
+    expect(await screen.findByText("2 mail da decidere. MEMO ne sta ancora leggendo una.")).toBeTruthy();
+  });
+
   it("aperta: allegati veri in vista, quelli della busta nascosti, nessuna nota in gergo", async () => {
     apri();
     fireEvent.click(await screen.findByRole("button", { name: /Fornitore Esempio srl/ }));
