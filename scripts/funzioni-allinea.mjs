@@ -234,7 +234,11 @@ function principale() {
     //    i file da mandare. Lo scarico, al contrario, va fuori.
     const r = eseguiIn(
       "npx",
-      ["supabase", "functions", "deploy", e.nome, "--project-ref", REF_PROVA],
+      // 12/11/2026: «--yes» come in scripts/funzione.mjs. Qui siamo gia'
+      // oltre `--conferma` (sopra si esce in sola lettura) e il progetto e'
+      // solo Prova: senza, la CLI in modalita' agente rifiuta il deploy
+      // (HostedMutationConsentRequiredError).
+      ["supabase", "functions", "deploy", e.nome, "--project-ref", REF_PROVA, "--yes"],
       process.cwd()
     );
     if (r.uscita) {
