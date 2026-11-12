@@ -20,6 +20,8 @@ import {
   campiPer,
   cosaMancaPer,
   etichettaDestinazione,
+  IMPORTO_NON_CHIARO,
+  importoDaInviare,
 } from "../../lib/calcoli/daCollocare";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { formatDate, formatEUR } from "../../lib/constants";
@@ -431,15 +433,24 @@ function SchedaDallaVoce({ venuto, scheda, setScheda, onScritta }) {
   const guardia = useRef(unaVoltaSola());
 
   const imposta = (k) => (e) => setScheda((c) => ({ ...c, [k]: e.target.value }));
-  const vuota = !scheda.importo.trim() && !scheda.descrizione.trim();
+  // ⚠️ I campi capiti da MEMO arrivano dal database: l'importo può essere un
+  //    numero e non un testo, e `.trim()` su un numero romperebbe la scheda.
+  const testoImporto = String(scheda.importo ?? "").trim();
+  const vuota = !testoImporto && !String(scheda.descrizione ?? "").trim();
+  // 🔴 «1.200» partiva così com'era e il database lo leggeva 1,20 €
+  //    (revisione dell'11/11, punto 2): adesso parte già letto, «1200», e
+  //    un importo che non si capisce non parte affatto.
+  const importo = importoDaInviare(scheda.importo);
+  const importoNonChiaro = importo === undefined;
+  const ferma = vuota || importoNonChiaro;
 
   const salva = async (e) => {
     e.preventDefault();
-    if (vuota || !venuto.idDaChiudere || !guardia.current.prendi("salva")) return;
+    if (ferma || !venuto.idDaChiudere || !guardia.current.prendi("salva")) return;
     setErrore("");
     setLavoro(true);
     try {
-      await annotaSpesaDettataAMano(venuto.idDaChiudere, scheda);
+      await annotaSpesaDettataAMano(venuto.idDaChiudere, { ...scheda, importo: importo ?? "" });
       venuto.segnaChiusa();
       onScritta();
     } catch (err) {
@@ -476,6 +487,11 @@ function SchedaDallaVoce({ venuto, scheda, setScheda, onScritta }) {
           Scrivi almeno l'importo o che cosa hai comprato.
         </p>
       )}
+      {!vuota && importoNonChiaro && (
+        <p id="voce-manca" className="testo-sala mt-2 text-b58-ambra-dark-testo">
+          Manca {IMPORTO_NON_CHIARO}: «{testoImporto}» non si capisce.
+        </p>
+      )}
       {errore && (
         <p role="alert" className="testo-sala mt-2 rounded bg-red-50 p-2 text-red-700">
           {errore}
@@ -487,8 +503,8 @@ function SchedaDallaVoce({ venuto, scheda, setScheda, onScritta }) {
       <button
         type="submit"
         disabled={lavoro}
-        aria-disabled={vuota || undefined}
-        aria-describedby={vuota ? "voce-manca" : undefined}
+        aria-disabled={ferma || undefined}
+        aria-describedby={ferma ? "voce-manca" : undefined}
         className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-sul-colore hover:bg-b58-azione-dark disabled:opacity-60 aria-disabled:opacity-60"
       >
         {lavoro ? "La sto mettendo…" : "Mettila fra quelle da collocare"}

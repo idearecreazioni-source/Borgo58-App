@@ -16,6 +16,7 @@ import {
 import { esisteUnoScontrino } from "../../lib/api/orders";
 import { riepilogoProgetto, riquadroInQuartaPosizione } from "../../lib/calcoli/progettoFinora";
 import { CAUSALE_ALTRO, omaggiAListino, percentualeOmaggi } from "../../lib/calcoli/omaggi";
+import { entratiUscitiDelMese } from "../../lib/calcoli/totaliPrimaNota";
 import { getEntities } from "../../lib/api/entities";
 import { contaSpeseDaCollocare } from "../../lib/api/speseDaCollocare";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
@@ -127,14 +128,8 @@ export default function CassaHome() {
       .finally(() => setLoading(false));
   }, [entityId]);
 
-  const monthIn = useMemo(
-    () => monthMovements.filter((m) => m.direction === "entrata").reduce((s, m) => s + Number(m.amount), 0),
-    [monthMovements]
-  );
-  const monthOut = useMemo(
-    () => monthMovements.filter((m) => m.direction === "uscita").reduce((s, m) => s + Number(m.amount), 0),
-    [monthMovements]
-  );
+  // Senza giroconti, prestiti e caparre: vedi `entratiUscitiDelMese`.
+  const { inc: monthIn, out: monthOut } = useMemo(() => entratiUscitiDelMese(monthMovements), [monthMovements]);
 
   // 🔴 IN EVIDENZA CI VANNO SOLO GLI OMAGGI «ALTRO» (decisione di Alessio,
   // 23/08). Gli sconti non spariscono da nessuna parte — restano distinti
@@ -173,7 +168,10 @@ export default function CassaHome() {
       getCashBalance(entityId),
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
-      listCashMovements({ entityId, from: currentMonthStart() }),
+      // ⚠️ Fino a oggi, come la prima lettura qui sopra: senza, dopo un
+      //    versamento la scheda contava anche i pagamenti postdatati
+      //    (revisione dell'11/11, punto 7).
+      listCashMovements({ entityId, from: currentMonthStart(), to: oggiLocale() }),
     ]).then(([bal, fut, tes, monthMov]) => {
       setBalance(bal);
       setFuture(fut);
@@ -332,6 +330,7 @@ export default function CassaHome() {
                 −{formatEUR(monthOut)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">usciti</span>
               </div>
+              <div className="testo-sala text-b58-charcoal-soft mt-1">fino a oggi, senza versamenti, prestiti e caparre</div>
             </div>
 
             {quartoRiquadro === "attesa" ? (
