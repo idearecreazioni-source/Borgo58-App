@@ -51,10 +51,9 @@ import PiantaSala from "../../components/PiantaSala";
 import Didascalia from "../../components/Didascalia";
 import Scorciatoia from "../../components/Scorciatoia";
 import {
-  ZONE_DEL_BANCO,
-  ZONE_DEL_PANNELLO,
+  ZONE_DEI_RIQUADRI_COMANDE,
   ZONE_FONDALE,
-  pannelloAllargato,
+  pannelloNelDisegno,
   pannelloNellaPianta,
 } from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
@@ -540,10 +539,9 @@ export default function Sala() {
   //
   // ⚠️ Tavolo libero → **niente**, non un riquadro vuoto: un pannello che
   // dice «nessuno» occupa lo stesso spazio di uno che dice qualcosa.
-  const riquadroBanco = useMemo(
-    () => pannelloAllargato(ZONE_FONDALE, sagome, ZONE_DEL_BANCO),
-    [sagome]
-  );
+  // 🔴 DAL 12/11/2026 NON STA PIÙ SUL BANCONE: la pianta è ritagliata sulla
+  // sala e il bancone è fuori dal foglio. Sta nella stanza in basso a
+  // sinistra, sopra i gesti del conto (vedi `riquadroComande` più giù).
   const nomiDelTavolo = prenotazioniDeiTavoli(selezione);
   // 🔴 CON UN CONTO APERTO IL RIQUADRO PARLA DI CHI PAGA (23/08, blocco 5).
   //
@@ -601,12 +599,17 @@ export default function Sala() {
   // «Apri il tavolo»; tavolo con un conto → i tre gesti del conto. Chi guarda
   // non deve scegliere fra pulsanti che non c'entrano.
   //
-  // ⚠️ L'area è quella di cucina e servizi (`ZONE_DEL_PANNELLO`), la stessa
-  // che il Calendario usa per il modulo di prenotazione — ed **eredita la
-  // sua rete**: se un tavolo finisse là dentro, il pannello sparisce invece
-  // di coprirlo.
-  const riquadroGesti = useMemo(
-    () => pannelloNellaPianta(ZONE_FONDALE, sagome, ZONE_DEL_PANNELLO),
+  // ⚠️ Fino all'11/11 l'area era quella di cucina e servizi
+  // (`ZONE_DEL_PANNELLO`) e il nome di chi ha prenotato stava sul bancone.
+  // 🔴 DAL 12/11/2026 (pianta ritagliata sulla sala, decisione di Alessio)
+  // stanno TUTTI E DUE nella stanza in basso a sinistra
+  // (`ZONE_DEI_RIQUADRI_COMANDE`), impilati: prima il nome, poi i gesti. È
+  // più piccola di prima, quindi il riquadro scorre al suo interno quando
+  // il contenuto non ci sta. ⚠️ Eredita la rete di sempre: se un tavolo
+  // finisse là dentro, il riquadro sparisce invece di coprirlo — e
+  // `pannelloNelDisegno` lo toglie se la zona uscisse dal foglio.
+  const riquadroComande = useMemo(
+    () => pannelloNelDisegno(pannelloNellaPianta(ZONE_FONDALE, sagome, ZONE_DEI_RIQUADRI_COMANDE)),
     [sagome]
   );
 
@@ -1196,8 +1199,10 @@ export default function Sala() {
     </button>
   );
 
+  // ⚠️ Niente `h-full overflow-auto` qui dal 12/11: impilati sotto il nome,
+  // a scorrere è il riquadro intero della pianta, uno solo.
   const pannelloGesti = order ? (
-    <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5">
+    <div className="p-1.5 flex flex-col gap-1.5">
       <p className="testo-sala font-semibold text-b58-charcoal-soft leading-none">
         {order.table_label}
       </p>
@@ -1886,9 +1891,19 @@ export default function Sala() {
             onSfondo={toccaSfondo}
             selezione={selezione}
             onSeleziona={toccaSagoma}
+            // Un riquadro solo, nella stanza in basso a sinistra: il nome
+            // sopra, i gesti sotto (12/11/2026). Scorre il riquadro intero.
             pannelli={[
-              { contenuto: bancoBar, riquadro: riquadroBanco },
-              { contenuto: pannelloGesti, riquadro: riquadroGesti },
+              {
+                contenuto:
+                  bancoBar || pannelloGesti ? (
+                    <div className="flex flex-col gap-1.5">
+                      {bancoBar}
+                      {pannelloGesti}
+                    </div>
+                  ) : null,
+                riquadro: riquadroComande,
+              },
             ]}
             // Nessuna scritta dentro la sagoma oltre alla cifra dei coperti:
             // dentro un quadrato di 90 cm girato non ci sta niente di

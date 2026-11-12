@@ -2,9 +2,10 @@ import { render } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "vitest";
 import PiantaSala from "../../src/components/PiantaSala";
 import {
-  MURI_FONDALE,
-  SALA_LARGHEZZA_CM,
+  DISEGNO_LARGHEZZA_CM,
+  PILASTRO_FONDALE,
   SALA_PROFONDITA_CM,
+  STANZA_IN_BASSO_FONDALE,
   USCITA_FONDALE,
   ZONE_FONDALE,
 } from "../../src/lib/calcoli/sala";
@@ -16,6 +17,9 @@ import {
 // numeri; questa guarda che la schermata disegni quei numeri — i muri del
 // file vero, il contorno aperto sull'uscita, le sagome — e che dei nomi
 // «sala alta» e «sala bassa» non resti traccia a schermo.
+// 🔴 DAL 12/11/2026 LA PIANTA È RITAGLIATA SULLA SALA (Alessio): il foglio
+// si ferma al bancone, e del fondale restano pilastro, scala, contorno della
+// sala e contorno della stanza in basso a sinistra. Niente zone colorate.
 
 const P = "piccolo";
 const G = "grande";
@@ -92,35 +96,88 @@ describe("la pianta nuova sullo schermo", () => {
     expect(nomi.sort()).toEqual(SALA_NUOVA.map((s) => s.label).sort());
   });
 
-  it("il disegno ha le misure della sala nuova, sdraiata e in piedi", () => {
+  it("il disegno è ritagliato sulla sala (1150 × 950), sdraiato e in piedi", () => {
     const sdraiata = render(<PiantaSala sagome={SALA_NUOVA} inPiedi={false} />);
     expect(sdraiata.container.querySelector("svg").getAttribute("viewBox")).toBe(
-      `0 0 ${SALA_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
+      `0 0 ${DISEGNO_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
     );
+    expect(DISEGNO_LARGHEZZA_CM).toBe(1150);
     sdraiata.unmount();
     const inPiedi = render(<PiantaSala sagome={SALA_NUOVA} inPiedi />);
     expect(inPiedi.container.querySelector("svg").getAttribute("viewBox")).toBe(
-      `0 0 ${SALA_PROFONDITA_CM} ${SALA_LARGHEZZA_CM}`
+      `0 0 ${SALA_PROFONDITA_CM} ${DISEGNO_LARGHEZZA_CM}`
+    );
+    // il quarto di giro usa la stessa misura, altrimenti il disegno scivola
+    expect(inPiedi.container.querySelector("g[transform]").getAttribute("transform")).toBe(
+      `translate(0 ${DISEGNO_LARGHEZZA_CM}) rotate(-90)`
     );
   });
 
-  it("disegna i muri presi dal file vero", () => {
+  it("del fondale restano solo pilastro, scala e stanza in basso — niente zone colorate", () => {
     const { container } = render(<PiantaSala sagome={SALA_NUOVA} inPiedi={false} />);
-    // Tutti i muri, e tutte le righe della scala (8 gradini = 9 righe).
-    expect(container.querySelectorAll("[data-muro]")).toHaveLength(MURI_FONDALE.length);
+    // Un solo muro pieno, il pilastro fra T2 e T10, alle sue misure.
+    const muri = [...container.querySelectorAll("[data-muro]")];
+    expect(muri).toHaveLength(1);
+    expect(muri[0].getAttribute("x")).toBe(String(PILASTRO_FONDALE.x));
+    expect(muri[0].getAttribute("y")).toBe(String(PILASTRO_FONDALE.y));
+    expect(muri[0].getAttribute("width")).toBe(String(PILASTRO_FONDALE.larghezza));
+    expect(muri[0].getAttribute("height")).toBe(String(PILASTRO_FONDALE.profondita));
+    // La scala: 8 gradini = 9 righe.
     expect(container.querySelectorAll("[data-gradino]")).toHaveLength(9);
-    // Un rettangolo per ogni muro, alle sue misure: si cerca il muro di
-    // spina centrale, che è quello che divide la sala in due ma non la
-    // fa diventare due sale.
-    const spina = MURI_FONDALE[1];
-    const trovato = [...container.querySelectorAll("rect")].some(
-      (r) =>
-        r.getAttribute("x") === String(spina.x) &&
-        r.getAttribute("y") === String(spina.y) &&
-        r.getAttribute("width") === String(spina.larghezza) &&
-        r.getAttribute("height") === String(spina.profondita)
+    // La stanza in basso a sinistra è solo una linea, senza riempimento.
+    const stanza = container.querySelector("[data-stanza]");
+    expect(stanza.getAttribute("fill")).toBe("none");
+    expect(stanza.getAttribute("d")).toBe(
+      `M ${STANZA_IN_BASSO_FONDALE.larghezza} 0 V ${STANZA_IN_BASSO_FONDALE.profondita} H 0`
     );
-    expect(trovato).toBe(true);
+    // Nessun rettangolo del fondale grande come una zona: le zone non si
+    // disegnano più (prima ce n'era uno per zona, colorato).
+    for (const z of ZONE_FONDALE) {
+      const zona = [...container.querySelectorAll("rect")].find(
+        (r) =>
+          r.getAttribute("x") === String(z.x) &&
+          r.getAttribute("y") === String(z.y) &&
+          r.getAttribute("width") === String(z.larghezza) &&
+          r.getAttribute("height") === String(z.profondita)
+      );
+      expect(zona, z.nome).toBeUndefined();
+    }
+  });
+
+  it("un pannello fuori dal foglio non si disegna, uno dentro sì", () => {
+    const { container, unmount } = render(
+      <PiantaSala
+        sagome={SALA_NUOVA}
+        inPiedi
+        pannelli={[
+          { contenuto: <span>fuori</span>, riquadro: { x: 1350, y: 0, larghezza: 640, profondita: 950 } },
+          { contenuto: <span>dentro</span>, riquadro: { x: 0, y: 0, larghezza: 360, profondita: 440 } },
+        ]}
+      />
+    );
+    expect(container.textContent).not.toContain("fuori");
+    const dentro = container.querySelector(".pannello-pianta");
+    expect(dentro.textContent).toBe("dentro");
+    // in piedi la stanza in basso a sinistra sta in fondo al foglio: la
+    // cima è (1150 - 360) / 1150 del disegno
+    expect(dentro.style.top).toBe(`${((DISEGNO_LARGHEZZA_CM - 360) / DISEGNO_LARGHEZZA_CM) * 100}%`);
+    expect(dentro.style.left).toBe("0%");
+    unmount();
+  });
+
+  it("e sdraiata il riquadro si misura sul foglio ritagliato, non sulla sala intera", () => {
+    const { container } = render(
+      <PiantaSala
+        sagome={SALA_NUOVA}
+        inPiedi={false}
+        pannelli={[{ contenuto: <span>dentro</span>, riquadro: { x: 0, y: 0, larghezza: 360, profondita: 440 } }]}
+      />
+    );
+    const dentro = container.querySelector(".pannello-pianta");
+    expect(dentro.style.left).toBe("0%");
+    expect(dentro.style.top).toBe("0%");
+    expect(dentro.style.width).toBe(`${(360 / DISEGNO_LARGHEZZA_CM) * 100}%`);
+    expect(dentro.style.height).toBe(`${(440 / SALA_PROFONDITA_CM) * 100}%`);
   });
 
   it("il contorno della sala si apre dove c'è l'uscita", () => {
