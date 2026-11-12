@@ -30,6 +30,7 @@ const IN_ITALIANO = {
   chiudi_azione_a_mano: "segnare che l'hai fatta tu",
   promuovi_bozza_ricetta: "confermare la bozza",
   collega_ingrediente_ricetta: "collegare l'ingrediente",
+  dividi_spesa: "dividere la spesa sulle voci",
 };
 
 const comeSiChiama = (operazione) =>

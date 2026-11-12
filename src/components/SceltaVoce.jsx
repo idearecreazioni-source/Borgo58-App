@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { vociPerLaSpunta } from "../lib/api/spuntaInvestimento";
 import { formatEUR } from "../lib/constants";
+import { useVociDelPiano } from "./useVociDelPiano";
 import { meseDellaRata, nomeGruppo } from "../lib/calcoli/pianoInvestimento";
 
 // LA VOCE DEL PIANO, SCELTA QUANDO SI SPUNTA «INVESTIMENTO» (parte 6 del
@@ -11,23 +11,8 @@ import { meseDellaRata, nomeGruppo } from "../lib/calcoli/pianoInvestimento";
 // ⚠️ Se le voci non si leggono, lo dice e non offre una lista vuota che si
 //    leggerebbe «il piano non ha voci».
 
-// Tre righe con la spunta aperte insieme non devono fare tre letture
-// uguali; ma una voce aggiunta nel piano deve comparire poco dopo, quindi
-// la lettura vale solo mezzo minuto.
-let inCorso = null;
-let lettaIl = 0;
-const VALE_PER = 30000;
-function leggiVoci() {
-  if (inCorso && Date.now() - lettaIl > VALE_PER) inCorso = null;
-  if (!inCorso) {
-    lettaIl = Date.now();
-    inCorso = vociPerLaSpunta().catch((e) => {
-      inCorso = null;
-      throw e;
-    });
-  }
-  return inCorso;
-}
+// La lettura delle voci (con la memoria di mezzo minuto) sta in
+// useVociDelPiano.js: la usa anche «Dividi su più voci» (12/11/2026).
 
 const campo =
   "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -39,17 +24,7 @@ const campo =
  */
 export function ScegliVoce({ valore, onCambia, disabilitata = false }) {
   const id = useId();
-  const [piano, setPiano] = useState(null);
-  const [errore, setErrore] = useState("");
-  useEffect(() => {
-    let vivo = true;
-    leggiVoci()
-      .then((p) => vivo && setPiano(p))
-      .catch((e) => vivo && setErrore(e.message));
-    return () => {
-      vivo = false;
-    };
-  }, []);
+  const { piano, errore } = useVociDelPiano();
 
   if (errore) {
     return (
