@@ -1,10 +1,14 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
   GRIGLIA_CM,
-  SALA_LARGHEZZA_CM,
+  DISEGNO_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
-  MURI_FONDALE,
+  PILASTRO_FONDALE,
+  LINEA_STANZA_FONDALE,
+  SPESSORE_MURO_STANZA_CM,
+  OSTACOLI_FONDALE,
+  BORDO_SAGOMA,
   USCITA_FONDALE,
   SCALA_FONDALE,
   SOGLIA_IN_PIEDI_CM_REALI,
@@ -17,6 +21,7 @@ import {
   sagomaDisegnata,
   sagomeTagliateDallaVista,
   sagomaPerIlDisegno,
+  pannelloNelDisegno,
   raggioMagneteCm,
 } from "../lib/calcoli/sala";
 import { COLORI } from "../lib/coloriSala";
@@ -34,8 +39,16 @@ const aggancia = (v) => Math.round(v / GRIGLIA_CM) * GRIGLIA_CM;
 // quindi si calcolano una volta e non a ogni disegno.
 const AREE_VIETATE = areeVietateAiMobili(ZONE_FONDALE);
 // Il contorno della sala, interrotto dove c'è l'uscita (muro di sinistra).
+// Dal 12/11 il lato verso il bancone è il bordo del foglio ritagliato.
 const CONTORNO_SALA =
-  `M 0 ${USCITA_FONDALE.daY} V 0 H ${SALA_LARGHEZZA_CM} V ${SALA_PROFONDITA_CM} H 0 V ${USCITA_FONDALE.aY}`;
+  `M 0 ${USCITA_FONDALE.daY} V 0 H ${DISEGNO_LARGHEZZA_CM} V ${SALA_PROFONDITA_CM} H 0 V ${USCITA_FONDALE.aY}`;
+// La stanza in basso a sinistra: i due lati che danno sulla sala. Gli altri
+// due coincidono col contorno della sala.
+// ⚠️ La linea sta DENTRO la stanza (13/11, `LINEA_STANZA_FONDALE`): non sborda
+// verso la sala, dove T7 è appoggiato al muro vero.
+const MEZZO_MURO = SPESSORE_MURO_STANZA_CM / 2;
+const CONTORNO_STANZA =
+  `M ${LINEA_STANZA_FONDALE.larghezza - MEZZO_MURO} 0 V ${LINEA_STANZA_FONDALE.profondita - MEZZO_MURO} H 0`;
 // I gradini della scala davanti all'uscita, come righe sottili.
 const GRADINI = Array.from({ length: SCALA_FONDALE.gradini + 1 }, (_, i) =>
   SCALA_FONDALE.x + (i * SCALA_FONDALE.larghezza) / SCALA_FONDALE.gradini
@@ -237,7 +250,7 @@ export default function PiantaSala({
   // intercetta il dito. Un tavolo che si vede grande e si prende piccolo
   // sarebbe peggio di prima.
   const crescitaCm = largPx
-    ? ingrandimentoCm((verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / largPx, leggiPxCm())
+    ? ingrandimentoCm((verticale ? SALA_PROFONDITA_CM : DISEGNO_LARGHEZZA_CM) / largPx, leggiPxCm())
     : 0;
   // ⚠️ Il varco che deve restare fra due sagome disegnate, nella stessa
   // unità dell'ingrandimento: millimetri veri, tradotti in centimetri di
@@ -245,17 +258,19 @@ export default function PiantaSala({
   // `lib/calcoli/sala.js`.
   const varcoMinimoCm = largPx
     ? ingrandimentoCm(
-        (verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / largPx,
+        (verticale ? SALA_PROFONDITA_CM : DISEGNO_LARGHEZZA_CM) / largPx,
         leggiPxCm(),
         VARCO_MINIMO_MM
       )
     : 0;
-  const limitiSala = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+  const limitiSala = { larghezza: DISEGNO_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
   // ⚠️ DOVE I MOBILI NON POSSONO ANDARE (19/08, idea di Alessio): cucina e
   // servizi. La sala dei tavoli è una L capovolta, non un rettangolo — e
   // l'area è **la stessa** del pannello, perché il pannello sta lì proprio
   // in quanto lì non ci sono mobili. Dal 12/11 (pianta nuova) le aree sono
-  // più d'una: anche i bagni e il pezzo di cucina sotto il bancone.
+  // più d'una: anche i bagni e il pezzo di cucina sotto il bancone. Dal
+  // 12/11 sera (pianta ritagliata) il riquadro delle Comande sta proprio nei
+  // bagni, che per questo restano vietati.
   const vietata = AREE_VIETATE;
   // I vicini con cui una sagoma deve fare i conti quando cresce: tutti, in
   // misure VERE — è il varco vero che decide quanto si può crescere.
@@ -306,9 +321,9 @@ export default function PiantaSala({
     const fx = (evento.clientX - riquadro.left) / riquadro.width;
     const fy = (evento.clientY - riquadro.top) / riquadro.height;
     if (verticale) {
-      return { x: SALA_LARGHEZZA_CM * (1 - fy), y: fx * SALA_PROFONDITA_CM };
+      return { x: DISEGNO_LARGHEZZA_CM * (1 - fy), y: fx * SALA_PROFONDITA_CM };
     }
-    return { x: fx * SALA_LARGHEZZA_CM, y: fy * SALA_PROFONDITA_CM };
+    return { x: fx * DISEGNO_LARGHEZZA_CM, y: fy * SALA_PROFONDITA_CM };
   };
 
 
@@ -334,10 +349,10 @@ export default function PiantaSala({
     const sagoma = sagome.find((s) => s.id === trascina.id);
     if (!sagoma) return;
     const mia = misureSagoma(sagoma);
-    const limiti = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+    const limiti = { larghezza: DISEGNO_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
     const grezzoX = aggancia(punto.x - trascina.dx);
     const grezzoY = aggancia(punto.y - trascina.dy);
-    let x = limita(grezzoX, 0, SALA_LARGHEZZA_CM - mia.larghezza);
+    let x = limita(grezzoX, 0, DISEGNO_LARGHEZZA_CM - mia.larghezza);
     let y = limita(grezzoY, 0, SALA_PROFONDITA_CM - mia.profondita);
     // ⚠️ FUORI DALLA SALA IL GESTO SI ANNULLA, e il tavolo torna dov'era
     // (Alessio, 19/08). Prima si fermava appoggiato al bordo, e i due esiti
@@ -368,7 +383,7 @@ export default function PiantaSala({
     // che e' esattamente cio' che il giro E fa al disegno.
     const riquadro = svgRef.current?.getBoundingClientRect();
     const cmPerPunto = riquadro?.width
-      ? (verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / riquadro.width
+      ? (verticale ? SALA_PROFONDITA_CM : DISEGNO_LARGHEZZA_CM) / riquadro.width
       : 0;
     const preso = agganciaAiVicini({
       sagoma: { id: sagoma.id, formato_id: sagoma.formato_id, ...mia },
@@ -495,8 +510,8 @@ export default function PiantaSala({
         }}
         viewBox={
           verticale
-            ? `0 0 ${SALA_PROFONDITA_CM} ${SALA_LARGHEZZA_CM}`
-            : `0 0 ${SALA_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
+            ? `0 0 ${SALA_PROFONDITA_CM} ${DISEGNO_LARGHEZZA_CM}`
+            : `0 0 ${DISEGNO_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
         }
         className="block w-full select-none"
         style={{
@@ -505,14 +520,14 @@ export default function PiantaSala({
           // DISEGNO, e quando la pianta è più larga dello schermo il
           // contenitore e il disegno non coincidono.
           aspectRatio: verticale
-            ? `${SALA_PROFONDITA_CM} / ${SALA_LARGHEZZA_CM}`
-            : `${SALA_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
+            ? `${SALA_PROFONDITA_CM} / ${DISEGNO_LARGHEZZA_CM}`
+            : `${DISEGNO_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
           height: "auto",
         }}
         onPointerMove={muovi}
       >
         {/* Un quarto di giro a tutto il disegno: l'uscita e i bagni
-            finiscono in basso, cucina e servizi in cima. Le coordinate di ogni sagoma
+            finiscono in basso, il lato del bancone in cima. Le coordinate di ogni sagoma
             restano quelle della sala vera — qui gira il foglio, non la
             stanza. */}
         <defs>
@@ -563,62 +578,42 @@ export default function PiantaSala({
             />
           </pattern>
         </defs>
-        <g transform={verticale ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
+        <g transform={verticale ? `translate(0 ${DISEGNO_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
             si spostano, non si ridimensionano, non hanno stato. */}
-        {/* ⚠️ LE ZONE SI DISEGNANO, I LORO NOMI NO (Alessio, 19/08:
-            via SALA ALTA, SALA BASSA, BANCONE, CUCINA, SERVIZI e l'ingresso
-            per intero, parola e segno della porta). Con le sagome, i colori,
-            i coperti e il pannello dentro la pianta, quelle scritte erano
-            diventate rumore — e una si sovrapponeva all'etichetta NOTE del
-            modulo.
-            🔴 MA I NOMI RESTANO NEI DATI, ed è la trappola da non prendere:
-            `riquadroDelPannello()` filtra le zone PER NOME per sapere dove
-            mettere il pannello. Se sparisse il campo `nome`, il pannello
-            smetterebbe di comparire **senza nessun errore** — si limiterebbe
-            a non succedere. La prova che dichiara il fatto sta in
-            tests/unita/sala-misure.test.js. */}
-        {ZONE_FONDALE.map((z) => (
-          <rect
-            key={z.nome}
-            x={z.x}
-            y={z.y}
-            width={z.larghezza}
-            height={z.profondita}
-            fill={z.servizio ? "var(--color-b58-cream-dark)" : "var(--color-b58-parchment)"}
-            fillOpacity={z.servizio ? 0.6 : 0.45}
-          />
-        ))}
-
-        {/* ⚠️ LE ZONE NON HANNO PIÙ IL BORDO (Alessio, 19/08). Tolte le
-            didascalie, restavano due righe che non separavano più niente —
-            il confine fra servizi e cucina e quello fra sala bassa e
-            bancone. Le altre coincidevano col perimetro o fra colori uguali,
-            e non si notavano.
-            ⚠️ Le zone restano nei dati, coi loro nomi: sparisce la riga
-            disegnata, come per le didascalie — e `riquadroDelPannello()`
-            continua a cercarle per nome.
-            Il perimetro della sala invece resta, ed è uno solo: senza, la
-            stanza non avrebbe più un contorno. */}
-        {/* 🔴 I MURI DELLA PIANTA NUOVA (12/11/2026). Con la sala vera presa
-            dal file di Sweet Home 3D le zone da sole non dicevano più dove
-            si passa: il muro di spina in mezzo alla sala ha quattro pezzi e
-            tre varchi, e i bagni e la cucina hanno le loro porte. Si
-            disegnano pieni e tenui, sotto le sagome: sono fondale, non si
-            toccano (un tocco lì vale come un tocco sul vuoto). */}
-        {MURI_FONDALE.map((m) => (
-          <rect
-            key={`${m.x}-${m.y}`}
-            data-muro=""
-            aria-hidden="true"
-            x={m.x}
-            y={m.y}
-            width={m.larghezza}
-            height={m.profondita}
-            fill="var(--color-b58-charcoal)"
-            fillOpacity="0.28"
-          />
-        ))}
+        {/* 🔴 LA PIANTA RITAGLIATA SULLA SALA (12/11/2026, Alessio). Via le
+            stanze di sopra (bancone, cucina, servizi: stanno fuori dal
+            foglio, vedi DISEGNO_LARGHEZZA_CM), via i muri interni e via le
+            zone colorate: il pavimento è tutto del colore del fondo.
+            Restano il pilastro fra T2 e T10, la scala, il contorno della
+            sala e quello della stanza in basso a sinistra.
+            ⚠️ LE ZONE RESTANO NEI DATI, coi loro nomi: non si disegnano più,
+            ma dicono dove i mobili non vanno e dove stanno i pannelli
+            (`riquadroDelPannello()` le cerca PER NOME). */}
+        {/* La stanza in basso a sinistra: solo la linea di muro sui due lati
+            verso la sala, l'interno bianco. Dentro ci stanno i riquadri
+            delle Comande. */}
+        <path
+          d={CONTORNO_STANZA}
+          data-stanza=""
+          aria-hidden="true"
+          fill="none"
+          stroke="var(--color-b58-charcoal)"
+          strokeOpacity="0.3"
+          strokeWidth={SPESSORE_MURO_STANZA_CM}
+        />
+        {/* Il pilastro fra T2 e T10: pieno e tenue, sotto le sagome. È
+            fondale, non si tocca (un tocco lì vale come un tocco sul vuoto). */}
+        <rect
+          data-muro=""
+          aria-hidden="true"
+          x={PILASTRO_FONDALE.x}
+          y={PILASTRO_FONDALE.y}
+          width={PILASTRO_FONDALE.larghezza}
+          height={PILASTRO_FONDALE.profondita}
+          fill="var(--color-b58-charcoal)"
+          fillOpacity="0.28"
+        />
         {/* La scala davanti all'uscita: righe sottili, una per gradino. */}
         {GRADINI.map((gx) => (
           <line
@@ -731,7 +726,10 @@ export default function PiantaSala({
             crescitaCm,
             limitiSala,
             viciniVeri,
-            varcoMinimoCm
+            varcoMinimoCm,
+            // Pilastro e muro della stanza: cresce solo nello spazio che c'è
+            // (13/11, «i tavoli sbordano»).
+            OSTACOLI_FONDALE
           );
           const bx = box.x - x;
           const by = box.y - y;
@@ -819,7 +817,7 @@ export default function PiantaSala({
                       ? COLORE_AGGANCIO
                       : colore.bordo
                 }
-                strokeWidth={inMano ? 10 : inGruppo ? 1.5 : 5}
+                strokeWidth={inMano ? 10 : inGruppo ? 1.5 : BORDO_SAGOMA}
                 strokeOpacity={!inMano && inGruppo ? 0.3 : 1}
                 // ⚠️ Fuori dalla sala si vede PRIMA di lasciare: la sagoma si
                 // fa trasparente e prende il bordo del rifiuto. Un gesto che
@@ -994,7 +992,7 @@ export default function PiantaSala({
           // ⚠️ Cresce insieme alle sagome che racchiude: col solo ingombro
           // vero il perimetro finirebbe DENTRO i tavoli, e il tavolone
           // sembrerebbe segnato da una riga che gli passa in mezzo.
-          const b = sagomaDisegnata(t, crescitaCm, limitiSala);
+          const b = sagomaDisegnata(t, crescitaCm, limitiSala, [], varcoMinimoCm, OSTACOLI_FONDALE);
           return (
             <rect
               key={`tavolone-${t.chiave}`}
@@ -1005,7 +1003,7 @@ export default function PiantaSala({
               rx={12}
               fill="none"
               stroke={colore.bordo}
-              strokeWidth={5}
+              strokeWidth={BORDO_SAGOMA}
               pointerEvents="none"
             />
           );
@@ -1034,7 +1032,11 @@ export default function PiantaSala({
           const b = sagomaDisegnata(
             { x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 },
             crescitaCm + 20,
-            limitiSala
+            limitiSala,
+            [],
+            varcoMinimoCm,
+            // anche il segno del magnete non passa sopra pilastro e muro (13/11)
+            OSTACOLI_FONDALE
           );
           return (
             <rect
@@ -1063,9 +1065,14 @@ export default function PiantaSala({
           lui: con la sala in piedi quell'area finisce in basso a sinistra.
           ⚠️ E ci arriva SOLO se là dentro non c'è nessun tavolo. La decisione
           la prende chi chiama (`pannelloNellaPianta` in lib/calcoli/sala.js);
-          qui si disegna quello che è stato deciso. */}
+          qui si disegna quello che è stato deciso.
+          🔴 DAL 12/11/2026 (pianta ritagliata) cucina e servizi sono fuori
+          dal foglio: il Calendario rimette il modulo sotto la pianta, le
+          Comande usano la stanza in basso a sinistra. Un riquadro fuori dal
+          foglio qui non si disegna comunque (`pannelloNelDisegno`): finirebbe
+          sopra il resto della pagina. */}
       {pannelli
-        .filter((p) => p && p.contenuto && p.riquadro)
+        .filter((p) => p && p.contenuto && pannelloNelDisegno(p.riquadro))
         .map((p, i) => (
         <div
           key={i}
@@ -1078,18 +1085,23 @@ export default function PiantaSala({
           //    senza, il testo si misura sulla finestra e resta uguale
           //    mentre il riquadro cambia taglia.
           className="pannello-pianta absolute overflow-auto"
+          // Dal 12/11 il riquadro delle Comande è piccolo e scorre quasi
+          // sempre: deve potersi raggiungere e scorrere anche da tastiera.
+          tabIndex={0}
+          role="region"
+          aria-label="Riquadro del tavolo"
           style={
             verticale
               ? {
                   left: `${(p.riquadro.y / SALA_PROFONDITA_CM) * 100}%`,
-                  top: `${((SALA_LARGHEZZA_CM - p.riquadro.x - p.riquadro.larghezza) / SALA_LARGHEZZA_CM) * 100}%`,
+                  top: `${((DISEGNO_LARGHEZZA_CM - p.riquadro.x - p.riquadro.larghezza) / DISEGNO_LARGHEZZA_CM) * 100}%`,
                   width: `${(p.riquadro.profondita / SALA_PROFONDITA_CM) * 100}%`,
-                  height: `${(p.riquadro.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                  height: `${(p.riquadro.larghezza / DISEGNO_LARGHEZZA_CM) * 100}%`,
                 }
               : {
-                  left: `${(p.riquadro.x / SALA_LARGHEZZA_CM) * 100}%`,
+                  left: `${(p.riquadro.x / DISEGNO_LARGHEZZA_CM) * 100}%`,
                   top: `${(p.riquadro.y / SALA_PROFONDITA_CM) * 100}%`,
-                  width: `${(p.riquadro.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                  width: `${(p.riquadro.larghezza / DISEGNO_LARGHEZZA_CM) * 100}%`,
                   height: `${(p.riquadro.profondita / SALA_PROFONDITA_CM) * 100}%`,
                 }
           }

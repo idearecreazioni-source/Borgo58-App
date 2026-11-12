@@ -5,7 +5,7 @@ import LegendaDellaSala from "../../components/LegendaDellaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
-import { ZONE_FONDALE, pannelloNellaPianta } from "../../lib/calcoli/sala";
+import { ZONE_FONDALE, pannelloNelDisegno, pannelloNellaPianta } from "../../lib/calcoli/sala";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -880,8 +880,15 @@ export default function PiantaGiornata() {
   // deve sapere PRIMA di disegnarsi che i campi vanno in colonna e alti.
   // ⚠️ E la decisione sta qui e non dentro la pianta, perché serve a tutte e
   // due: la schermata deve sapere se disegnare il pannello sotto.
+  // 🔴 DAL 12/11/2026 LA RISPOSTA È SEMPRE «SOTTO»: la pianta è ritagliata
+  // sulla sala e cucina e servizi sono fuori dal foglio, quindi
+  // `pannelloNelDisegno` dice null e il modulo torna sotto la pianta (scelta
+  // di Alessio). Il meccanismo resta: se quella zona tornasse nel foglio,
+  // il pannello ci rientra da solo.
   const dentroLaPianta =
-    (toccato && !modo) || modo === "nuova" ? pannelloNellaPianta(ZONE_FONDALE, sagome) : null;
+    (toccato && !modo) || modo === "nuova"
+      ? pannelloNelDisegno(pannelloNellaPianta(ZONE_FONDALE, sagome))
+      : null;
 
   // ⚠️ I DUE PANNELLI DELLA SALA, ESTRATTI PERCHÉ POSSONO STARE IN DUE
   // POSTI. Dal 19/08 vanno DENTRO la pianta, nello spazio di cucina e

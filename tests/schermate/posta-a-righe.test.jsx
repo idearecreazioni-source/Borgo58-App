@@ -56,6 +56,7 @@ const finte = {
   listPostaInAttesa: vi.fn(() => Promise.resolve(IN_ATTESA)),
   listPostaSistemata: vi.fn(() => Promise.resolve([])),
   aggiungiFiltroPosta: vi.fn(() => Promise.resolve({})),
+  listFiltriPosta: vi.fn(() => Promise.resolve([])),
 };
 
 vi.mock("../../src/lib/api/posta", () => ({
@@ -66,7 +67,7 @@ vi.mock("../../src/lib/api/posta", () => ({
   scartaPosta: (...a) => finte.scartaPosta(...a),
   rimettiPosta: (...a) => finte.rimettiPosta(...a),
   aggiungiFiltroPosta: (...a) => finte.aggiungiFiltroPosta(...a),
-  listFiltriPosta: vi.fn(() => Promise.resolve([])),
+  listFiltriPosta: (...a) => finte.listFiltriPosta(...a),
   togliFiltroPosta: vi.fn(() => Promise.resolve()),
   rifiutaAzione: vi.fn(() => Promise.resolve()),
   registraFatturaDallaPosta: vi.fn(() => Promise.resolve({})),
@@ -175,6 +176,111 @@ describe("la Posta a righe", () => {
     expect(tutto.checked).toBe(false);
     expect(solo.closest("label").textContent).toMatch(/fatture@esempio\.it con oggetto «fattura #\/f»/);
     fireEvent.click(screen.getByRole("button", { name: "Ignora" }));
-    await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", false));
+    await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", false, "silenzio"));
+  });
+});
+
+// GLI AVVISI DI SICUREZZA (12/11/2026, 20261112000011): la terza scelta
+// «Archivia e avvisami su Telegram», il sì in più su Credem/Aruba/Google
+// (domanda 4 del piano) e il bollino «Sicurezza».
+const DA_CREDEM = {
+  id: "m3",
+  stato: "proposta",
+  mittente: "Credem <businesson@credem.it>",
+  oggetto: "Estratto conto di ottobre",
+  ricevuta_il: "2026-11-12T08:00:00Z",
+  allegati: [],
+  azioni: [
+    {
+      id: "a3",
+      tipo: "archivia_testo",
+      titolo: "Estratto conto",
+      descrizione: "Archivia l'estratto conto.",
+      parametri: { titolo: "Estratto conto", tipo: "fatture", data: "2026-11-12" },
+      stato: "proposta",
+    },
+  ],
+};
+
+const AVVISO_SICUREZZA = {
+  id: "s1",
+  stato: "scartata",
+  filtrata_da: "f9",
+  mittente: "Credem <businesson@credem.it>",
+  oggetto: "Codice Mr. Pin inserito errato",
+  ricevuta_il: "2026-11-12T10:00:00Z",
+  lettura_note:
+    "Avviso di sicurezza: archiviato prima di MEMO, senza spesa, e segnalato su Telegram (con una riga sua, o contato nella riga «altri N avvisi di sicurezza»). Regola: da businesson@credem.it con oggetto che comincia per «codice mr. pin inserito errato».",
+  allegati: [],
+  azioni: [],
+};
+
+describe("gli avvisi di sicurezza nella Posta", () => {
+  it("la terza scelta «Archivia e avvisami su Telegram» fa una regola che avvisa", async () => {
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: /Fornitore Esempio srl/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ignora le mail come questa" }));
+    const avvisami = screen.getByRole("radio", { name: /Archivia e avvisami su Telegram/ });
+    expect(avvisami.checked).toBe(false);
+    fireEvent.click(avvisami);
+    expect(avvisami.checked).toBe(true);
+    expect(screen.getByRole("radio", { name: /Solo le mail come questa/ }).checked).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Archivia e avvisami" }));
+    await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", false, "avvisa"));
+  });
+
+  it("«Tutte le mail» da Credem chiede un sì in più: manda anche mail importanti", async () => {
+    finte.listPostaInAttesa.mockImplementation(() => Promise.resolve([...IN_ATTESA, DA_CREDEM]));
+    try {
+      apri();
+      fireEvent.click(await screen.findByRole("button", { name: /Credem/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ignora le mail come questa" }));
+      const tutte = screen.getByRole("radio", { name: /Tutte le mail da businesson@credem.it/ });
+      expect(tutte.closest("label").textContent).toMatch(/manda anche mail importanti/);
+      fireEvent.click(tutte);
+      fireEvent.click(screen.getByRole("button", { name: "Ignora" }));
+      // Il primo tocco non fa la regola: chiede.
+      expect(await screen.findByText(/Vuoi davvero mettere da parte TUTTE le mail da businesson@credem.it/)).toBeTruthy();
+      expect(finte.aggiungiFiltroPosta).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Sì, tutte" }));
+      await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m3", true, "silenzio"));
+    } finally {
+      finte.listPostaInAttesa.mockImplementation(() => Promise.resolve(IN_ATTESA));
+    }
+  });
+
+  it("un mittente qualunque: «Tutte le mail» senza il sì in più", async () => {
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: /Fornitore Esempio srl/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ignora le mail come questa" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Tutte le mail da fatture@esempio.it/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ignora" }));
+    await waitFor(() => expect(finte.aggiungiFiltroPosta).toHaveBeenCalledWith("m1", true, "silenzio"));
+    expect(screen.queryByText(/Vuoi davvero/)).toBeNull();
+  });
+
+  it("in «Sistemate» l'avviso ha il bollino «Sicurezza», e la regola dice che avvisa", async () => {
+    finte.listPostaSistemata.mockImplementation(() => Promise.resolve([AVVISO_SICUREZZA]));
+    finte.listFiltriPosta.mockImplementation(() =>
+      Promise.resolve([
+        { id: "f9", mittente: "businesson@credem.it", oggetto_tipo: "codice mr. pin inserito errato", modo: "inizia", nota: "Credem", esito: "avvisa" },
+        { id: "f8", mittente: "news@esempio.it", oggetto_tipo: "le novità del mese", modo: "uguale", nota: null, esito: "silenzio" },
+      ])
+    );
+    try {
+      apri();
+      fireEvent.click(await screen.findByRole("tab", { name: /Sistemate/ }));
+      const riga = await screen.findByRole("button", { name: /Credem/ });
+      expect(within(riga).getByText("Sicurezza")).toBeTruthy();
+      fireEvent.click(riga);
+      expect(screen.getByText(/segnalato su Telegram/)).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Togli la regola" })).toBeTruthy();
+      // L'elenco delle regole: quella che avvisa lo dice, quella muta no.
+      expect(await screen.findByRole("button", { name: /Togli la regola: .*codice mr. pin.* e ti avvisa su Telegram/ })).toBeTruthy();
+      expect(screen.getAllByText("Ti avvisa su Telegram")).toHaveLength(1);
+    } finally {
+      finte.listPostaSistemata.mockImplementation(() => Promise.resolve([]));
+      finte.listFiltriPosta.mockImplementation(() => Promise.resolve([]));
+    }
   });
 });
