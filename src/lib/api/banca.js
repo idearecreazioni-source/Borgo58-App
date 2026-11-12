@@ -92,3 +92,21 @@ export async function riapriMovimentoBanca(movimentoId) {
   const { error } = await supabase.rpc("riapri_movimento_banca", { p_movimento: movimentoId });
   if (error) throw error;
 }
+
+// GLI AVVISI DELLA BANCA (12/11/2026, PR B1 del piano «avvisi banca e
+// posta»). Le mail che la banca manda alla sua casella non passano da MEMO:
+// si raccolgono in `avvisi_banca`, e qui si leggono e basta. Il lettore che
+// le trasforma in movimenti arriva quando ne conosciamo il formato vero.
+//
+// ⚠️ Solo gli ultimi `quanti`, col numero totale accanto: il testo di una
+// mail può essere lungo, e per sapere «arrivano?» bastano i più recenti.
+export async function listAvvisiBanca(quanti = 30) {
+  const { data, error, count } = await supabase
+    .from("avvisi_banca")
+    .select("id, ricevuta_il, mittente, oggetto, testo, stato", { count: "exact" })
+    .order("ricevuta_il", { ascending: false })
+    .order("id")
+    .limit(quanti);
+  if (error) throw error;
+  return { avvisi: data ?? [], totale: count ?? (data ?? []).length };
+}

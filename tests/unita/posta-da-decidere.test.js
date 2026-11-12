@@ -18,7 +18,21 @@ const MAIL = [
   { stato: "archiviata", azioni: [] },
   { stato: "scartata", filtrata_da: "regola-1", azioni: [] },
   { stato: "scartata", lettura_note: "Filtrata prima di MEMO, senza spesa", azioni: [] },
+  // 12/11/2026: l'avviso della banca nasce scartato e non è da decidere.
+  { stato: "scartata", lettura_note: "Avviso della banca: va in Banca, non in MEMO. Senza spesa; la copia è fra gli avvisi della banca.", azioni: [] },
 ];
+
+describe("l'avviso della banca (12/11/2026)", () => {
+  it("si mostra come filtrato, con la sua nota intera, e non è da decidere", () => {
+    const avviso = MAIL.at(-1);
+    expect(statoDellaMail(avviso, null)).toBe("filtrata");
+    expect(inScheda(statoDellaMail(avviso, null), "decidere")).toBe(false);
+  });
+
+  it("la stessa nota su una mail non scartata non la fa filtrata", () => {
+    expect(statoDellaMail({ stato: "da_leggere", lettura_note: "Avviso della banca: va in Banca" }, null)).toBe("in_lettura");
+  });
+});
 
 describe("contaDaDecidere", () => {
   it("conta solo le mail non lette e quelle con una proposta vera aperta", () => {

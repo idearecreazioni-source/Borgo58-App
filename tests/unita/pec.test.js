@@ -336,6 +336,13 @@ describe("il nome della casella", () => {
     expect(etichettaCasella("amministrazione@prova-finta.resend.app")).toBe("amministrazione@");
   });
 
+  it("la casella degli avvisi della banca si riconosce come «banca@» (12/11/2026)", () => {
+    // Le sue mail non passano da MEMO (20261112000008), ma nella Posta,
+    // fra le Sistemate, devono dire da dove vengono.
+    expect(etichettaCasella("banca@prova-finta.resend.app")).toBe("banca@");
+    expect(etichettaCasella("BANCA@prova-finta.resend.app")).toBe("banca@");
+  });
+
   it("un indirizzo vero o strano resta com'è", () => {
     expect(etichettaCasella("info@borgo58.it")).toBe("info@borgo58.it");
     expect(etichettaCasella("sconosciuta")).toBe("sconosciuta");
