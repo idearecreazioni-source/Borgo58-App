@@ -10,7 +10,9 @@ import {
   TOCCO_TAVOLO_CM,
   marginePiantaInPiedi,
   areaVietataAiMobili,
+  areeVietateAiMobili,
   dentroAreaVietata,
+  MURI_FONDALE,
   SPOSTATE_NEL_DISEGNO,
   sagomaPerIlDisegno,
   VARCO_MINIMO_MM,
@@ -369,18 +371,129 @@ describe("Le zone restano nominate anche se non si scrivono più a schermo", () 
   // È la stessa forma del difetto che nessuna prova prende: non un guasto,
   // una cosa che smette di avvenire.
   it("il fondale vero porta ancora le zone del pannello, e il pannello ci sta", () => {
+    // Pianta nuova (12/11/2026): servizi e cucina sono il blocco di destra,
+    // tutta l'altezza della sala.
     expect(riquadroDelPannello(ZONE_FONDALE)).toEqual({
-      x: 0,
+      x: 1350,
       y: 0,
-      larghezza: 1400,
-      profondita: 515,
+      larghezza: 640,
+      profondita: 950,
     });
   });
 
   it("ogni zona del fondale ha un nome — anche quelle che non lo mostrano", () => {
     for (const z of ZONE_FONDALE) expect(z.nome).toBeTruthy();
   });
+
+  it("e i nomi sono tutti diversi: il disegno li usa come chiave", () => {
+    const nomi = ZONE_FONDALE.map((z) => z.nome);
+    expect(new Set(nomi).size).toBe(nomi.length);
+  });
 });
+
+// =====================================================================
+// LA PIANTA NUOVA (12/11/2026) — una sola sala, presa dal file vero
+// =====================================================================
+describe("la pianta nuova", () => {
+  it("una sola sala: nessuna zona si chiama più «sala alta» o «sala bassa»", () => {
+    for (const z of ZONE_FONDALE) expect(z.nome.toLowerCase()).not.toMatch(/sala (alta|bassa)/);
+  });
+
+  it("le zone coprono tutta la sala, senza buchi e senza sovrapporsi", () => {
+    // ⚠️ Un buco sarebbe un pezzo di pavimento senza colore; una
+    // sovrapposizione due colori uno sopra l'altro. La somma delle aree
+    // uguale al rettangolo, più nessuna coppia che si sovrappone, vuol dire
+    // tutte e due le cose insieme.
+    const area = ZONE_FONDALE.reduce((t, z) => t + z.larghezza * z.profondita, 0);
+    expect(area).toBe(SALA_LARGHEZZA_CM * SALA_PROFONDITA_CM);
+    for (const a of ZONE_FONDALE) {
+      for (const b of ZONE_FONDALE) {
+        if (a === b) continue;
+        expect(dentroAreaVietata(a, b), `${a.nome} si sovrappone a ${b.nome}`).toBe(false);
+      }
+    }
+  });
+
+  it("i muri stanno dentro il disegno", () => {
+    for (const m of MURI_FONDALE) {
+      expect(m.x).toBeGreaterThanOrEqual(0);
+      expect(m.y).toBeGreaterThanOrEqual(0);
+      expect(m.x + m.larghezza).toBeLessThanOrEqual(SALA_LARGHEZZA_CM);
+      expect(m.y + m.profondita).toBeLessThanOrEqual(SALA_PROFONDITA_CM);
+    }
+  });
+
+  it("nessun mobile della pianta di partenza sta sopra un muro", () => {
+    // Le posizioni vengono dal file di Sweet Home 3D arrotondate a 10 cm:
+    // l'arrotondamento non deve aver spinto un tavolo dentro una parete.
+    for (const s of PIANTA_DI_PARTENZA) {
+      const rett = { x: s.x, y: s.y, ...misure(s) };
+      for (const m of MURI_FONDALE) {
+        expect(dentroAreaVietata(rett, m), `${s.label} sta sopra un muro`).toBe(false);
+      }
+    }
+  });
+
+  it("bagni, cucina e servizi sono vietati ai mobili, il bancone e la sala no", () => {
+    const aree = areeVietateAiMobili(ZONE_FONDALE);
+    // la prima è sempre il riquadro del pannello
+    expect(aree[0]).toEqual(areaVietataAiMobili(ZONE_FONDALE));
+    const t = (x, y) => ({ x, y, larghezza: 80, profondita: 70 });
+    expect(dentroAreaVietata(t(100, 100), aree)).toBe(true); // bagni
+    expect(dentroAreaVietata(t(1200, 700), aree)).toBe(true); // cucina sotto il bancone
+    expect(dentroAreaVietata(t(1500, 700), aree)).toBe(true); // cucina
+    expect(dentroAreaVietata(t(1500, 100), aree)).toBe(true); // servizi
+    expect(dentroAreaVietata(t(1200, 100), aree)).toBe(false); // bancone
+    expect(dentroAreaVietata(t(600, 600), aree)).toBe(false); // sala
+  });
+
+  it("e nessun mobile della pianta di partenza sta in un'area vietata", () => {
+    const aree = areeVietateAiMobili(ZONE_FONDALE);
+    for (const s of PIANTA_DI_PARTENZA) {
+      expect(dentroAreaVietata({ x: s.x, y: s.y, ...misure(s) }, aree), s.label).toBe(false);
+    }
+  });
+
+  it("il pannello del Calendario e delle Comande ci sta, con la sala di partenza", () => {
+    expect(pannelloNellaPianta(ZONE_FONDALE, PIANTA_DI_PARTENZA)).not.toBeNull();
+  });
+
+  it("🔴 il pannello del bancone cresce verso la sala anche se non sta contro il bordo", () => {
+    // Nella sala vecchia il bancone stava contro il bordo destro, e solo lì
+    // il pannello cresceva. Nella pianta nuova ha i servizi alle spalle: se
+    // non crescesse, resterebbe alto 200 cm — il riquadro che Alessio aveva
+    // già segnalato tre volte. Cresce fino a 10 cm dal tavolo più vicino
+    // nella sua fascia (T5-T6, che finiscono a x 1030).
+    const r = pannelloAllargato(ZONE_FONDALE, PIANTA_DI_PARTENZA, ["Bancone"]);
+    expect(r).toEqual({ x: 1040, y: 0, larghezza: 310, profondita: 510 });
+  });
+
+  it("e con la fascia vuota si ferma ai bagni, non al muro di sinistra", () => {
+    // Revisione del 12/11: senza tavoli davanti, il pannello non deve
+    // finire sopra un'area vietata ai mobili.
+    const r = pannelloAllargato(ZONE_FONDALE, [], ["Bancone"]);
+    expect(r).toEqual({ x: 360, y: 0, larghezza: 990, profondita: 510 });
+  });
+
+  it("e la gemella: con un servizio solo per metà alle spalle NON cresce", () => {
+    // ⚠️ «Spalle chiuse» vuol dire chiuse per tutta l'altezza del pannello:
+    // un servizio che copre solo metà lascerebbe l'altra metà aperta.
+    const zone = [
+      { nome: "Sala", x: 0, y: 0, larghezza: 1000, profondita: 500 },
+      { nome: "Bancone", x: 1000, y: 0, larghezza: 200, profondita: 500, servizio: true },
+      { nome: "Servizi", x: 1200, y: 0, larghezza: 300, profondita: 250, servizio: true },
+    ];
+    expect(pannelloAllargato(zone, [], ["Bancone"])).toEqual({ x: 1000, y: 0, larghezza: 200, profondita: 500 });
+  });
+});
+
+// Le misure di una sagoma nel suo verso (come `misureSagoma`, scritta qui per
+// non far dipendere la prova dalla funzione che il disegno usa).
+function misure(s) {
+  return s.ruotato
+    ? { larghezza: s.profondita_cm, profondita: s.larghezza_cm }
+    : { larghezza: s.larghezza_cm, profondita: s.profondita_cm };
+}
 
 describe("Le sagome si disegnano più grandi del vero", () => {
   // 🔴 Rovesciamento di Alessio del 19/08: il disegno smette di dire il vero
@@ -530,11 +643,13 @@ describe("La crescita si ferma prima del vicino", () => {
 });
 
 describe("le sagome spostate solo nel disegno", () => {
-  it("la Chef Table è l'unica spostata, e il resto della sagoma non cambia", () => {
-    // ⚠️ Se questa prova diventa rossa, qualcuno ha aggiunto o tolto una
-    // sagoma finta: è una bugia voluta e va letta prima di cambiarla
-    // (docs/decisioni_rovesciate.md n. 15).
-    expect(Object.keys(SPOSTATE_NEL_DISEGNO)).toEqual(["Chef Table"]);
+  it("dal 12/11 nessuna sagoma è spostata: la Chef Table è spenta", () => {
+    // ⚠️ Se questa prova diventa rossa, qualcuno ha aggiunto una sagoma
+    // finta: è una bugia voluta e va letta prima di cambiarla
+    // (docs/decisioni_rovesciate.md n. 15). Fino all'11/11 c'era la Chef
+    // Table, disegnata sotto i divani; con la pianta nuova è spenta, e la
+    // sua posizione finta era scritta nella sala vecchia.
+    expect(Object.keys(SPOSTATE_NEL_DISEGNO)).toEqual([]);
 
     const vera = {
       id: "x",
@@ -545,14 +660,8 @@ describe("le sagome spostate solo nel disegno", () => {
       profondita_cm: 70,
       ruotato: false,
     };
-    const disegnata = sagomaPerIlDisegno(vera);
-    expect([disegnata.x, disegnata.y]).not.toEqual([vera.x, vera.y]);
-    expect(disegnata.ruotato).toBe(true);
-    // le misure del mobile NON si toccano: si sposta, non si rimpicciolisce
-    expect(disegnata.larghezza_cm).toBe(200);
-    expect(disegnata.profondita_cm).toBe(70);
-    // e la sagoma vera resta intatta
-    expect(vera.x).toBe(980);
+    // Se la si riaccende, si disegna dove dice il database.
+    expect(sagomaPerIlDisegno(vera)).toBe(vera);
   });
 
   it("ogni altra sagoma torna identica, non una copia", () => {
@@ -700,7 +809,7 @@ describe("la sala si vede tutta", () => {
   });
 
   it("una sagoma dentro i limiti non viene segnalata", () => {
-    expect(sagomeFuoriDalDisegno([tavolo("T1", 0, 0), tavolo("T2", 1900, 900)])).toEqual([]);
+    expect(sagomeFuoriDalDisegno([tavolo("T1", 0, 0), tavolo("T2", 1900, 860)])).toEqual([]);
   });
 
   it("🔴 una sagoma che sfora a destra viene nominata", () => {
@@ -732,9 +841,12 @@ describe("la sala si vede tutta", () => {
     // apposta il codice — fatto guardare il dato vero invece del disegno —
     // **nessuna prova diventava rossa**. Misurava una coincidenza.
     //
-    // ⚠️ Adesso il caso è costruito perché le due risposte siano DIVERSE:
-    // una Chef Table messa fuori dal foglio nei dati, e dentro nel disegno
-    // (rovesciamento n. 15: in pianta si disegna sotto i divani).
+    // ⚠️ Il caso era costruito perché le due risposte fossero DIVERSE: una
+    // Chef Table fuori dal foglio nei dati e dentro nel disegno. Dal 12/11
+    // l'elenco delle sagome spostate è vuoto (Chef Table spenta), quindi il
+    // disegno È il dato: la stessa sagoma ora viene nominata. Se un giorno
+    // l'elenco torna ad avere una voce, questa prova va riscritta com'era
+    // (con la sua posizione finta) — ed è la prima a diventare rossa.
     const fuoriNeiDati = {
       label: "Chef Table",
       x: SALA_LARGHEZZA_CM - 20,
@@ -743,38 +855,38 @@ describe("la sala si vede tutta", () => {
       profondita_cm: 70,
       ruotato: false,
     };
-    // Il disegno la mette a (150, 800) girata: ci sta.
-    expect(sagomeFuoriDalDisegno([fuoriNeiDati])).toEqual([]);
-    // E la controprova che il caso sia davvero discriminante: senza lo
-    // spostamento, quella stessa sagoma sfora.
-    expect(sagomeFuoriDalDisegno([{ ...fuoriNeiDati, label: "T1" }])).toHaveLength(1);
+    expect(sagomaPerIlDisegno(fuoriNeiDati)).toBe(fuoriNeiDati);
+    expect(sagomeFuoriDalDisegno([fuoriNeiDati])).toHaveLength(1);
   });
 
   it("🔴 la pianta VERA di partenza sta tutta dentro il disegno", () => {
-    // Le 13 sagome come le ha messe Alessio. Se un domani qualcuno ne
+    // Le sagome come le mette la migrazione della sala nuova. Se un domani qualcuno ne
     // spostasse una oltre il bordo, questa diventa rossa **prima** che la
     // sala si presenti in servizio con un tavolo in meno.
     expect(sagomeFuoriDalDisegno(PIANTA_DI_PARTENZA)).toEqual([]);
   });
 });
 
-// La pianta base di produzione al 22/08/2026 — ⚠️ è una FOTOGRAFIA, e come
-// tale invecchia: serve a provare la regola, non a descrivere la sala di
-// oggi. Quella la guarda la prova sui dati veri.
+// La pianta base della sala nuova (migrazione 20261112000004, 12/11/2026) —
+// ⚠️ è una FOTOGRAFIA, e come tale invecchia: serve a provare la regola, non
+// a descrivere la sala di oggi. Quella la guarda la prova sui dati veri.
+// La Chef Table non c'è: è spenta, e la pianta disegna solo le accese.
 const PIANTA_DI_PARTENZA = [
-  { label: "T1", x: 1860, y: 330, larghezza_cm: 180, profondita_cm: 90, ruotato: true },
-  { label: "T2", x: 1600, y: 0, larghezza_cm: 180, profondita_cm: 90, ruotato: true },
-  { label: "T3", x: 1600, y: 360, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T4", x: 1860, y: 60, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T5", x: 1330, y: 870, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T6", x: 1330, y: 780, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T7", x: 1610, y: 870, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T8", x: 1610, y: 780, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "T9", x: 1610, y: 690, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
-  { label: "Divano 1", x: 300, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
-  { label: "Divano 2", x: 620, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
-  { label: "Divano 3", x: 940, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
-  { label: "Chef Table", x: 980, y: 530, larghezza_cm: 200, profondita_cm: 70, ruotato: false },
+  { label: "T1", x: 450, y: 0, larghezza_cm: 160, profondita_cm: 80, ruotato: true },
+  { label: "T2", x: 650, y: 270, larghezza_cm: 160, profondita_cm: 80, ruotato: true },
+  { label: "T3", x: 700, y: 0, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T4", x: 700, y: 70, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T5", x: 950, y: 0, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T6", x: 950, y: 70, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T7", x: 360, y: 340, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T8", x: 910, y: 240, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T9", x: 910, y: 310, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T10", x: 650, y: 520, larghezza_cm: 80, profondita_cm: 70, ruotato: true },
+  { label: "T11", x: 920, y: 500, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "T12", x: 920, y: 570, larghezza_cm: 80, profondita_cm: 70, ruotato: false },
+  { label: "Divano 1", x: 300, y: 750, larghezza_cm: 220, profondita_cm: 200, ruotato: false },
+  { label: "Divano 2", x: 520, y: 750, larghezza_cm: 220, profondita_cm: 200, ruotato: false },
+  { label: "Divano 3", x: 740, y: 750, larghezza_cm: 220, profondita_cm: 200, ruotato: false },
 ];
 
 // =====================================================================
@@ -793,6 +905,13 @@ describe("il bersaglio del dito quando la pianta si adatta", () => {
       // la convenzione di 1,05 cm presa dal brief. È l'unico dei due che la
       // realtà abbia confermato.
       expect(bersaglioTavoloCm(s.utili, s.pxcm)).toBeGreaterThan(BERSAGLIO_PROVATO_CM);
+    });
+
+    it(`${s.nome}: e ci resta anche il tavolo piccolo da 70 cm della pianta nuova`, () => {
+      // ⚠️ `bersaglioTavoloCm` ragiona su 90 cm, che dal 12/11 è un
+      // riferimento e non più il tavolo più piccolo: il lato corto dei
+      // piccoli è 70, quindi il loro bersaglio è 70/90 di quel numero.
+      expect((bersaglioTavoloCm(s.utili, s.pxcm) * 70) / 90).toBeGreaterThan(BERSAGLIO_PROVATO_CM);
     });
   }
 
@@ -894,12 +1013,17 @@ describe("le sagome che non si vedono per intero", () => {
 // disposizione di stasera. Il pannello cresce fin dove può e si ferma
 // prima del vicino — se domani un tavolo va lì sotto, si ritira.
 describe("il pannello del bancone si allarga nel vuoto", () => {
+  // ⚠️ La sala di queste prove è quella VECCHIA nelle forme (bancone contro
+  // il bordo destro), con la larghezza di oggi: è il caso «spalle contro il
+  // bordo». Il caso della pianta nuova (spalle contro i servizi) sta in
+  // «la pianta nuova», più su.
+  const W = SALA_LARGHEZZA_CM;
   const ZONE_CON_BANCO = [
     { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
     { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
-    { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
-    { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
-    { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
+    { nome: "Sala, in alto", x: 1400, y: 0, larghezza: W - 1400, profondita: 515 },
+    { nome: "Sala", x: 0, y: 515, larghezza: W - 240, profondita: 515 },
+    { nome: "Bancone", x: W - 240, y: 515, larghezza: 240, profondita: 515, servizio: true },
   ];
   const BANCO = ["Bancone"];
   const sagoma = (x, y, l = 90, p = 90) => ({ id: `s${x}-${y}`, x, y, larghezza_cm: l, profondita_cm: p });
@@ -907,7 +1031,7 @@ describe("il pannello del bancone si allarga nel vuoto", () => {
   it("con la fascia sgombra cresce fino al bordo della sala", () => {
     // Nessuna sagoma nella fascia del bancone: il pannello arriva a x = 0.
     const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(200, 100)], BANCO);
-    expect(r).toEqual({ x: 0, y: 515, larghezza: 2070, profondita: 515 });
+    expect(r).toEqual({ x: 0, y: 515, larghezza: W, profondita: 515 });
   });
 
   it("e si FERMA prima del vicino, lasciando il varco", () => {
@@ -915,7 +1039,7 @@ describe("il pannello del bancone si allarga nel vuoto", () => {
     // parte da 1510 (10 cm di varco), non da 1500 e non da 0.
     const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(1410, 600)], BANCO);
     expect(r.x).toBe(1510);
-    expect(r.larghezza).toBe(2070 - 1510);
+    expect(r.larghezza).toBe(W - 1510);
   });
 
   it("una sagoma FUORI dalla fascia non lo ferma — è la differenza che conta", () => {
@@ -929,8 +1053,8 @@ describe("il pannello del bancone si allarga nel vuoto", () => {
   it("non si restringe MAI sotto la sagoma del bancone", () => {
     // Una sagoma appiccicata al bancone: il pannello resta quello che era,
     // non diventa più stretto del rettangolo da cui parte.
-    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(1700, 600, 130)], BANCO);
-    expect(r.x).toBe(1830);
+    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(W - 240 - 130, 600, 130)], BANCO);
+    expect(r.x).toBe(W - 240);
     expect(r.larghezza).toBe(240);
   });
 

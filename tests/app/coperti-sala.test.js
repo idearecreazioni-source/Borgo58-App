@@ -29,6 +29,11 @@ import {
 // ⚠️ E si esercitano ENTRAMBI i formati: una regola scritta solo per i
 // quadrati passerebbe una prova costruita solo sui quadrati.
 //
+// 🔴 DAL 12/11/2026 (pianta nuova) i formati sono «Piccolo 70x80» e «Grande
+// 160x80». I nomi delle variabili (quadrati, lunghi) sono rimasti; le
+// posizioni non nominano più una misura: si leggono dai tavoli veri (LQ =
+// larghezza di un piccolo, LL e PL = larghezza e profondità di un grande).
+//
 // ⚠️ Perché dal client e non solo dentro la migrazione: una verifica in
 // migrazione gira come proprietaria del database e SCAVALCA la RLS —
 // il 16/08 è così che un difetto di permessi è vissuto sedici giorni
@@ -43,6 +48,9 @@ let quadrati = [];
 let lunghi = [];
 let baseQ = 0;
 let baseL = 0;
+let LQ = 0;
+let LL = 0;
+let PL = 0;
 
 // Mette i tavoli dove diciamo noi, solo per quel giorno. Scrive lo
 // scostamento, mai la pianta base: la sala di Alessio non si tocca.
@@ -86,14 +94,14 @@ beforeAll(async () => {
     .from("formati_tavolo")
     .select("id, nome, coperti_base");
   if (eF) throw new Error(eF.message);
-  const fq = formati.find((f) => f.nome === "Quadrato 90x90");
-  const fl = formati.find((f) => f.nome === "Rettangolare 180x90");
+  const fq = formati.find((f) => f.nome === "Piccolo 70x80");
+  const fl = formati.find((f) => f.nome === "Grande 160x80");
   baseQ = fq.coperti_base;
   baseL = fl.coperti_base;
 
   const { data: tavoli, error: eT } = await titolare
     .from("dining_tables")
-    .select("id, label, formato_id")
+    .select("id, label, formato_id, larghezza_cm, profondita_cm")
     .eq("tipo", "tavolo")
     .eq("active", true)
     .order("label");
@@ -107,9 +115,12 @@ beforeAll(async () => {
   // una verifica smette di verificare senza che nessuno se ne accorga.
   if (quadrati.length < 3 || lunghi.length < 2) {
     throw new Error(
-      `Servono almeno 3 tavoli quadrati e 2 rettangolari, ce ne sono ${quadrati.length} e ${lunghi.length}.`
+      `Servono almeno 3 tavoli piccoli e 2 grandi, ce ne sono ${quadrati.length} e ${lunghi.length}.`
     );
   }
+  LQ = quadrati[0].larghezza_cm;
+  LL = lunghi[0].larghezza_cm;
+  PL = lunghi[0].profondita_cm;
 
   await pulisci();
 });
@@ -132,9 +143,9 @@ afterAll(async () => {
 // passerebbe anche con la convenzione rovesciata.
 describe("Il verso del tavolo, fra disegno e conteggio", () => {
   it("due tavoli girati si toccano dove il verso li fa toccare", async () => {
-    // Girati, un 180×90 ingombra 90 di larghezza e 180 di profondità.
-    // Appoggiati fianco a fianco: 100→190 e 190→280.
-    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 190, 100]], true);
+    // Girati, un grande ingombra PL di larghezza e LL di profondità.
+    // Appoggiati fianco a fianco: 100→100+PL e 100+PL→100+2·PL.
+    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 100 + PL, 100]], true);
     const gruppi = await getCopertiDelGiorno(GIORNO);
     const g = gruppoDi(gruppi, lunghi[0].id);
     expect(g.tavoli).toHaveLength(2);
@@ -142,9 +153,9 @@ describe("Il verso del tavolo, fra disegno e conteggio", () => {
   });
 
   it("e NON si toccano dove li farebbe toccare il verso sbagliato", async () => {
-    // A 280 il secondo tocca il primo solo leggendolo sdraiato (100→280).
-    // Girati sono lontani 90 cm, cioè due tavoli distinti.
-    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 280, 100]], true);
+    // A 100+LL il secondo tocca il primo solo leggendolo sdraiato
+    // (100→100+LL). Girati sono lontani LL-PL cm, cioè due tavoli distinti.
+    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 100 + LL, 100]], true);
     const gruppi = await getCopertiDelGiorno(GIORNO);
     expect(gruppoDi(gruppi, lunghi[0].id).tavoli).toHaveLength(1);
     expect(gruppoDi(gruppi, lunghi[1].id).tavoli).toHaveLength(1);
@@ -161,7 +172,7 @@ describe("Il verso del tavolo, fra disegno e conteggio", () => {
     expect(t.formato_id).toBe(lunghi[0].formato_id);
     // La misura che il disegno userà è quella girata — la stessa che il
     // conteggio ha appena usato per decidere chi tocca chi.
-    expect(misureSagoma(t)).toEqual({ larghezza: 90, profondita: 180 });
+    expect(misureSagoma(t)).toEqual({ larghezza: PL, profondita: LL });
     // E ogni tavolo della sala vera porta il suo formato: un buco qui
     // lascerebbe il magnete cieco proprio su quel tavolo.
     const tavoli = pianta.filter((s) => s.tipo === "tavolo");
@@ -196,10 +207,10 @@ describe("I coperti dentro il tavolo", () => {
     // --- Disposizione B: tre quadrati in fila, i due lunghi accostati ---
     await metti([
       [quadrati[0].id, 0, 0],
-      [quadrati[1].id, 90, 0],
-      [quadrati[2].id, 180, 0],
+      [quadrati[1].id, LQ, 0],
+      [quadrati[2].id, 2 * LQ, 0],
       [lunghi[0].id, 0, 300],
-      [lunghi[1].id, 180, 300],
+      [lunghi[1].id, LL, 300],
     ]);
 
     const b = await getPostoPerLaSerata(GIORNO);
@@ -233,7 +244,7 @@ describe("I coperti dentro il tavolo", () => {
     await metti([...quadrati, ...lunghi].map((t, i) => [t.id, 2000 + i * 300, 2000]));
     await metti([
       [quadrati[0].id, 0, 1000],
-      [lunghi[0].id, 90, 1000],
+      [lunghi[0].id, LQ, 1000],
     ]);
 
     const gruppi = await getCopertiDelGiorno(GIORNO);
@@ -246,10 +257,10 @@ describe("I coperti dentro il tavolo", () => {
   it("3 · la correzione a mano sopravvive a un ricalcolo che non cambia l'insieme", async () => {
     await metti([
       [quadrati[0].id, 0, 0],
-      [quadrati[1].id, 90, 0],
+      [quadrati[1].id, LQ, 0],
       [quadrati[2].id, 900, 0],
       [lunghi[0].id, 0, 300],
-      [lunghi[1].id, 180, 300],
+      [lunghi[1].id, LL, 300],
     ]);
 
     let gruppi = await getCopertiDelGiorno(GIORNO);
@@ -283,7 +294,7 @@ describe("I coperti dentro il tavolo", () => {
     // da capo. Il numero scritto a mano deve restare.
     await metti([
       [lunghi[0].id, 40, 300],
-      [lunghi[1].id, 220, 300],
+      [lunghi[1].id, 40 + LL, 300],
     ]);
     gruppi = await getCopertiDelGiorno(GIORNO);
     expect(gruppoDi(gruppi, lunghi[0].id).coperti).toBe(11);

@@ -4,9 +4,12 @@ import {
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
+  MURI_FONDALE,
+  USCITA_FONDALE,
+  SCALA_FONDALE,
   SOGLIA_IN_PIEDI_CM_REALI,
   agganciaAiVicini,
-  areaVietataAiMobili,
+  areeVietateAiMobili,
   dentroAreaVietata,
   VARCO_MINIMO_MM,
   ingrandimentoCm,
@@ -27,6 +30,16 @@ import { COLORI } from "../lib/coloriSala";
 const COLORE_AGGANCIO = "var(--color-b58-olive-dark)";
 
 const aggancia = (v) => Math.round(v / GRIGLIA_CM) * GRIGLIA_CM;
+// Le aree dove i mobili non vanno: dipendono solo dal fondale, che è fisso,
+// quindi si calcolano una volta e non a ogni disegno.
+const AREE_VIETATE = areeVietateAiMobili(ZONE_FONDALE);
+// Il contorno della sala, interrotto dove c'è l'uscita (muro di sinistra).
+const CONTORNO_SALA =
+  `M 0 ${USCITA_FONDALE.daY} V 0 H ${SALA_LARGHEZZA_CM} V ${SALA_PROFONDITA_CM} H 0 V ${USCITA_FONDALE.aY}`;
+// I gradini della scala davanti all'uscita, come righe sottili.
+const GRADINI = Array.from({ length: SCALA_FONDALE.gradini + 1 }, (_, i) =>
+  SCALA_FONDALE.x + (i * SCALA_FONDALE.larghezza) / SCALA_FONDALE.gradini
+);
 // Quanti punti di schermo vale un centimetro vero su QUESTO dispositivo.
 // Sta qui perche' lo leggono in due: la soglia che gira la sala e il
 // raggio del magnete, che e' scritto in dito reale.
@@ -241,8 +254,9 @@ export default function PiantaSala({
   // ⚠️ DOVE I MOBILI NON POSSONO ANDARE (19/08, idea di Alessio): cucina e
   // servizi. La sala dei tavoli è una L capovolta, non un rettangolo — e
   // l'area è **la stessa** del pannello, perché il pannello sta lì proprio
-  // in quanto lì non ci sono mobili.
-  const vietata = areaVietataAiMobili(ZONE_FONDALE);
+  // in quanto lì non ci sono mobili. Dal 12/11 (pianta nuova) le aree sono
+  // più d'una: anche i bagni e il pezzo di cucina sotto il bancone.
+  const vietata = AREE_VIETATE;
   // I vicini con cui una sagoma deve fare i conti quando cresce: tutti, in
   // misure VERE — è il varco vero che decide quanto si può crescere.
   const viciniVeri = sagome
@@ -497,8 +511,8 @@ export default function PiantaSala({
         }}
         onPointerMove={muovi}
       >
-        {/* Un quarto di giro a tutto il disegno: l'ingresso finisce in
-            basso, la sala alta in cima. Le coordinate di ogni sagoma
+        {/* Un quarto di giro a tutto il disegno: l'uscita e i bagni
+            finiscono in basso, cucina e servizi in cima. Le coordinate di ogni sagoma
             restano quelle della sala vera — qui gira il foglio, non la
             stanza. */}
         <defs>
@@ -586,15 +600,48 @@ export default function PiantaSala({
             continua a cercarle per nome.
             Il perimetro della sala invece resta, ed è uno solo: senza, la
             stanza non avrebbe più un contorno. */}
-        <rect
-          x={0}
-          y={0}
-          width={SALA_LARGHEZZA_CM}
-          height={SALA_PROFONDITA_CM}
+        {/* 🔴 I MURI DELLA PIANTA NUOVA (12/11/2026). Con la sala vera presa
+            dal file di Sweet Home 3D le zone da sole non dicevano più dove
+            si passa: il muro di spina in mezzo alla sala ha quattro pezzi e
+            tre varchi, e i bagni e la cucina hanno le loro porte. Si
+            disegnano pieni e tenui, sotto le sagome: sono fondale, non si
+            toccano (un tocco lì vale come un tocco sul vuoto). */}
+        {MURI_FONDALE.map((m) => (
+          <rect
+            key={`${m.x}-${m.y}`}
+            data-muro=""
+            aria-hidden="true"
+            x={m.x}
+            y={m.y}
+            width={m.larghezza}
+            height={m.profondita}
+            fill="var(--color-b58-charcoal)"
+            fillOpacity="0.28"
+          />
+        ))}
+        {/* La scala davanti all'uscita: righe sottili, una per gradino. */}
+        {GRADINI.map((gx) => (
+          <line
+            key={gx}
+            data-gradino=""
+            aria-hidden="true"
+            x1={gx}
+            y1={SCALA_FONDALE.y}
+            x2={gx}
+            y2={SCALA_FONDALE.y + SCALA_FONDALE.profondita}
+            stroke="var(--color-b58-charcoal)"
+            strokeOpacity="0.25"
+            strokeWidth="3"
+          />
+        ))}
+        {/* Il contorno, aperto dove c'è l'uscita. */}
+        <path
+          d={CONTORNO_SALA}
+          aria-hidden="true"
           fill="none"
           stroke="var(--color-b58-charcoal)"
-          strokeOpacity="0.18"
-          strokeWidth="4"
+          strokeOpacity="0.3"
+          strokeWidth="6"
         />
 
         {/* LE SAGOME — le uniche cose vive del disegno. */}
