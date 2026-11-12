@@ -166,5 +166,5 @@ begin
 end $verifica$;
 
 insert into applied_migrations (version, name)
-values ('20261112000006', 'i_piccoli_accostati_fanno_quattro')
+values ('20261112000009', 'i_piccoli_accostati_fanno_quattro')
 on conflict (version) do nothing;

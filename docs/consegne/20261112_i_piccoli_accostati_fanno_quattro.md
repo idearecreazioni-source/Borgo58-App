@@ -1,6 +1,6 @@
 # I piccoli accostati fanno quattro (12/11/2026)
 
-Migrazione `20261112000006_i_piccoli_accostati_fanno_quattro`. Decisione del proprietario: con la sala nuova due tavoli piccoli (70x80, 2 posti) accostati contano **4 coperti**, non 2. Le sedie stanno sui lati corti e accostare i tavoli non ne toglie.
+Migrazione `20261112000009_i_piccoli_accostati_fanno_quattro`. Decisione del proprietario: con la sala nuova due tavoli piccoli (70x80, 2 posti) accostati contano **4 coperti**, non 2. Le sedie stanno sui lati corti e accostare i tavoli non ne toglie.
 
 ## Cosa succedeva
 `coperti_del_giorno()` calcolava, per ogni gruppo di tavoli accostati, «somma dei posti meno 2 per ogni giunzione». Con due piccoli: 2 + 2 − 2 = 2, cioè si perdevano due posti che in sala ci sono.

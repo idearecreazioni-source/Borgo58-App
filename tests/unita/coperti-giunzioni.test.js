@@ -43,7 +43,7 @@ describe("copertiCalcolati", () => {
 
 describe("la migrazione dei coperti accostati", () => {
   const sql = readFileSync(
-    new URL("../../supabase/migrations/20261112000006_i_piccoli_accostati_fanno_quattro.sql", import.meta.url),
+    new URL("../../supabase/migrations/20261112000009_i_piccoli_accostati_fanno_quattro.sql", import.meta.url),
     "utf8"
   );
 
