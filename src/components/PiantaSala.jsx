@@ -5,7 +5,10 @@ import {
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
   PILASTRO_FONDALE,
-  STANZA_IN_BASSO_FONDALE,
+  LINEA_STANZA_FONDALE,
+  SPESSORE_MURO_STANZA_CM,
+  OSTACOLI_FONDALE,
+  BORDO_SAGOMA,
   USCITA_FONDALE,
   SCALA_FONDALE,
   SOGLIA_IN_PIEDI_CM_REALI,
@@ -41,8 +44,11 @@ const CONTORNO_SALA =
   `M 0 ${USCITA_FONDALE.daY} V 0 H ${DISEGNO_LARGHEZZA_CM} V ${SALA_PROFONDITA_CM} H 0 V ${USCITA_FONDALE.aY}`;
 // La stanza in basso a sinistra: i due lati che danno sulla sala. Gli altri
 // due coincidono col contorno della sala.
+// ⚠️ La linea sta DENTRO la stanza (13/11, `LINEA_STANZA_FONDALE`): non sborda
+// verso la sala, dove T7 è appoggiato al muro vero.
+const MEZZO_MURO = SPESSORE_MURO_STANZA_CM / 2;
 const CONTORNO_STANZA =
-  `M ${STANZA_IN_BASSO_FONDALE.larghezza} 0 V ${STANZA_IN_BASSO_FONDALE.profondita} H 0`;
+  `M ${LINEA_STANZA_FONDALE.larghezza - MEZZO_MURO} 0 V ${LINEA_STANZA_FONDALE.profondita - MEZZO_MURO} H 0`;
 // I gradini della scala davanti all'uscita, come righe sottili.
 const GRADINI = Array.from({ length: SCALA_FONDALE.gradini + 1 }, (_, i) =>
   SCALA_FONDALE.x + (i * SCALA_FONDALE.larghezza) / SCALA_FONDALE.gradini
@@ -594,7 +600,7 @@ export default function PiantaSala({
           fill="none"
           stroke="var(--color-b58-charcoal)"
           strokeOpacity="0.3"
-          strokeWidth="10"
+          strokeWidth={SPESSORE_MURO_STANZA_CM}
         />
         {/* Il pilastro fra T2 e T10: pieno e tenue, sotto le sagome. È
             fondale, non si tocca (un tocco lì vale come un tocco sul vuoto). */}
@@ -720,7 +726,10 @@ export default function PiantaSala({
             crescitaCm,
             limitiSala,
             viciniVeri,
-            varcoMinimoCm
+            varcoMinimoCm,
+            // Pilastro e muro della stanza: cresce solo nello spazio che c'è
+            // (13/11, «i tavoli sbordano»).
+            OSTACOLI_FONDALE
           );
           const bx = box.x - x;
           const by = box.y - y;
@@ -808,7 +817,7 @@ export default function PiantaSala({
                       ? COLORE_AGGANCIO
                       : colore.bordo
                 }
-                strokeWidth={inMano ? 10 : inGruppo ? 1.5 : 5}
+                strokeWidth={inMano ? 10 : inGruppo ? 1.5 : BORDO_SAGOMA}
                 strokeOpacity={!inMano && inGruppo ? 0.3 : 1}
                 // ⚠️ Fuori dalla sala si vede PRIMA di lasciare: la sagoma si
                 // fa trasparente e prende il bordo del rifiuto. Un gesto che
@@ -983,7 +992,7 @@ export default function PiantaSala({
           // ⚠️ Cresce insieme alle sagome che racchiude: col solo ingombro
           // vero il perimetro finirebbe DENTRO i tavoli, e il tavolone
           // sembrerebbe segnato da una riga che gli passa in mezzo.
-          const b = sagomaDisegnata(t, crescitaCm, limitiSala);
+          const b = sagomaDisegnata(t, crescitaCm, limitiSala, [], varcoMinimoCm, OSTACOLI_FONDALE);
           return (
             <rect
               key={`tavolone-${t.chiave}`}
@@ -994,7 +1003,7 @@ export default function PiantaSala({
               rx={12}
               fill="none"
               stroke={colore.bordo}
-              strokeWidth={5}
+              strokeWidth={BORDO_SAGOMA}
               pointerEvents="none"
             />
           );
@@ -1023,7 +1032,11 @@ export default function PiantaSala({
           const b = sagomaDisegnata(
             { x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 },
             crescitaCm + 20,
-            limitiSala
+            limitiSala,
+            [],
+            varcoMinimoCm,
+            // anche il segno del magnete non passa sopra pilastro e muro (13/11)
+            OSTACOLI_FONDALE
           );
           return (
             <rect

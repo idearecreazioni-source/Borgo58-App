@@ -14,6 +14,8 @@ import {
   dentroAreaVietata,
   DISEGNO_LARGHEZZA_CM,
   PILASTRO_FONDALE,
+  OSTACOLI_FONDALE,
+  BORDO_SAGOMA,
   STANZA_IN_BASSO_FONDALE,
   ZONE_DEI_RIQUADRI_COMANDE,
   pannelloNelDisegno,
@@ -442,6 +444,97 @@ describe("la pianta nuova", () => {
       const rett = { x: s.x, y: s.y, ...misure(s) };
       expect(dentroAreaVietata(rett, PILASTRO_FONDALE), `${s.label} sta sopra il pilastro`).toBe(false);
     }
+  });
+
+  // 🔴 «I TAVOLI SBORDANO» (Alessio dal telefono, 13/11/2026): T2 copriva il
+  // pilastro e T7 la linea del muro della stanza. Non in misura vera — nel
+  // DISEGNO, che fa crescere le sagome per il dito. Qui si disegna la pianta
+  // di partenza come fa la schermata, con crescite da telefono a monitor, e
+  // si chiede che nessun tavolo disegnato (bordo compreso) tocchi pilastro o
+  // muro.
+  it.each([
+    ["telefono", 950 / 340, 37.8],
+    ["tablet in verticale", 950 / 740, 64],
+    ["computer sdraiato", DISEGNO_LARGHEZZA_CM / 1000, 37.8],
+  ])("🔴 nessun tavolo disegnato copre pilastro o muro della stanza (%s)", (_, cmPerPunto, pxcm) => {
+    const crescita = ingrandimentoCm(cmPerPunto, pxcm);
+    const varco = ingrandimentoCm(cmPerPunto, pxcm, VARCO_MINIMO_MM);
+    expect(crescita).toBeGreaterThan(10); // il caso è vero: si cresce davvero
+    const vicini = PIANTA_DI_PARTENZA.map((v) => ({ x: v.x, y: v.y, ...misure(v) }));
+    const sala = { larghezza: DISEGNO_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+    for (const [i, s] of PIANTA_DI_PARTENZA.entries()) {
+      const b = sagomaDisegnata(vicini[i], crescita, sala, vicini, varco, OSTACOLI_FONDALE);
+      // il bordo sta per metà fuori dal rettangolo: conta anche lui
+      const conBordo = {
+        x: b.x - BORDO_SAGOMA / 2,
+        y: b.y - BORDO_SAGOMA / 2,
+        larghezza: b.larghezza + BORDO_SAGOMA,
+        profondita: b.profondita + BORDO_SAGOMA,
+      };
+      for (const o of OSTACOLI_FONDALE) {
+        expect(dentroAreaVietata(conBordo, o), `${s.label} copre ${JSON.stringify(o)}`).toBe(false);
+      }
+    }
+  });
+
+  it("e la gemella: SENZA ostacoli T2 e T7 sborderebbero — la prova discrimina", () => {
+    const crescita = ingrandimentoCm(950 / 340, 37.8);
+    const vicini = PIANTA_DI_PARTENZA.map((v) => ({ x: v.x, y: v.y, ...misure(v) }));
+    const sala = { larghezza: DISEGNO_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+    const sbordano = PIANTA_DI_PARTENZA.filter((s, i) => {
+      const b = sagomaDisegnata(vicini[i], crescita, sala, vicini, 0);
+      return OSTACOLI_FONDALE.some((o) => dentroAreaVietata(b, o));
+    }).map((s) => s.label);
+    expect(sbordano).toEqual(expect.arrayContaining(["T2", "T7"]));
+  });
+
+  // I casi d'angolo della crescita verso il fondale, con un ostacolo
+  // inventato: le prove sulla pianta vera da sole non direbbero niente se la
+  // regola cambiasse in un punto che oggi nessun tavolo tocca.
+  const SALA_FINTA = { larghezza: 1000, profondita: 1000 };
+  const OST = { x: 500, y: 500, larghezza: 100, profondita: 100 };
+  const marg = BORDO_SAGOMA / 2;
+  it("verso un ostacolo di fronte cresce solo nello spazio che c'è, meno mezzo bordo", () => {
+    // tavolo sopra l'ostacolo (stessa colonna), 6 cm di aria
+    const t = { x: 520, y: 424, larghezza: 50, profondita: 70 };
+    const b = sagomaDisegnata(t, 40, SALA_FINTA, [], 0, [OST]);
+    expect(b.y + b.profondita).toBe(500 - marg);
+    expect(b.y).toBe(404); // dall'altra parte la crescita è piena
+  });
+  it("attaccato all'ostacolo da quella parte non cresce", () => {
+    const t = { x: 520, y: 430, larghezza: 50, profondita: 70 };
+    const b = sagomaDisegnata(t, 40, SALA_FINTA, [], 0, [OST]);
+    expect(b.y + b.profondita).toBe(500);
+  });
+  it("🔴 in diagonale l'angolo non entra nell'ostacolo (fila e colonna sulla sagoma già cresciuta)", () => {
+    // in alto a sinistra dell'ostacolo, 5 cm di aria in tutte e due le
+    // direzioni: né in fila né in colonna con la sagoma vera
+    const t = { x: 425, y: 425, larghezza: 70, profondita: 70 };
+    const b = sagomaDisegnata(t, 40, SALA_FINTA, [], 0, [OST]);
+    const conBordo = { x: b.x - marg, y: b.y - marg, larghezza: b.larghezza + 2 * marg, profondita: b.profondita + 2 * marg };
+    expect(dentroAreaVietata(conBordo, OST)).toBe(false);
+  });
+  it("un ostacolo già sotto la sagoma non la fa sparire né la sposta", () => {
+    const t = { x: 520, y: 520, larghezza: 50, profondita: 50 };
+    const b = sagomaDisegnata(t, 40, SALA_FINTA, [], 0, [OST]);
+    expect(b.larghezza).toBeGreaterThanOrEqual(50);
+    expect(b.x).toBeLessThanOrEqual(520);
+  });
+  it("con la crescita a zero il disegno è la misura vera, ostacoli o no", () => {
+    const t = { x: 425, y: 425, larghezza: 70, profondita: 70 };
+    expect(sagomaDisegnata(t, 0, SALA_FINTA, [], 0, [OST])).toEqual(t);
+  });
+
+  it("lontano dal fondale la crescita resta piena: il dito non ci perde", () => {
+    const crescita = 30;
+    const solo = { x: 900, y: 700, larghezza: 80, profondita: 70 };
+    const sala = { larghezza: DISEGNO_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+    expect(sagomaDisegnata(solo, crescita, sala, [], 0, OSTACOLI_FONDALE)).toEqual({
+      x: 885,
+      y: 685,
+      larghezza: 110,
+      profondita: 100,
+    });
   });
 
   it("bagni, cucina e servizi sono vietati ai mobili, il bancone e la sala no", () => {
