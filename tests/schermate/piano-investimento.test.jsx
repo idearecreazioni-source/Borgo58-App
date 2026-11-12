@@ -632,3 +632,58 @@ describe("il piano dell'investimento: una spesa da assegnare si assegna dalla li
     expect((await within(riga).findByRole("alert")).textContent).toMatch(/già in parte su questa voce/);
   });
 });
+
+describe("il piano dell'investimento: le sottovoci (12/11/2026)", () => {
+  const conSottovoci = () => {
+    finto.piano.voci.push(
+      voce("cucina", "D", "Attrezzature sala", 1600, { stato: "stimato" }),
+      voce("divano", "D", "Divano", 1000, { madre_id: "cucina", stato: "confermato", aliquota_iva: 0, netto: 1000 }),
+      voce("lampade", "D", "Lampade", 600, { madre_id: "cucina" }),
+    );
+  };
+
+  it("la voce divisa dice quante sottovoci ha, e il totale «di cui confermato»", async () => {
+    conSottovoci();
+    const { container } = monta();
+    await waitFor(() => expect(gruppo(container, "D")).not.toBeNull());
+    const d = gruppo(container, "D");
+    expect(within(d).getByRole("button", { name: /Apri le 2 sottovoci/ })).toBeTruthy();
+    // Le sottovoci non stanno nella lista del gruppo finché non si apre.
+    expect(d.querySelectorAll('[data-prova="sottovoce"]').length).toBe(0);
+    expect(d.querySelector('[data-prova="totale-voce"]').textContent).toMatch(/di cui confermato 1\.000,00.*Totale stimato.*1\.600,00/);
+    expect(d.querySelector('[data-riquadro="iva"]').textContent).toMatch(/mista/);
+  });
+
+  it("aprendo, le sottovoci si vedono con i loro riquadri, e si può aggiungerne una", async () => {
+    conSottovoci();
+    const { container } = monta();
+    await waitFor(() => expect(gruppo(container, "D")).not.toBeNull());
+    const d = gruppo(container, "D");
+    fireEvent.click(within(d).getByRole("button", { name: /Apri le 2 sottovoci/ }));
+    expect(d.querySelectorAll('[data-prova="sottovoce"]').length).toBe(2);
+    fireEvent.click(within(d).getByRole("button", { name: /Aggiungi una sottovoce/ }));
+    const modulo = d.querySelector('[data-prova="modulo-voce"]');
+    expect(within(modulo).getByLabelText("Sottovoce")).toBeTruthy();
+    // Il gruppo è quello della madre: non si sceglie.
+    expect(within(modulo).queryByLabelText("Gruppo")).toBeNull();
+  });
+
+  it("la voce divisa in «Modifica» non chiede cifra, stato né rate", async () => {
+    conSottovoci();
+    const { container } = monta();
+    await waitFor(() => expect(gruppo(container, "D")).not.toBeNull());
+    const d = gruppo(container, "D");
+    fireEvent.click(within(d).getByRole("button", { name: /Modifica.*Attrezzature sala/ }));
+    const modulo = d.querySelector('[data-prova="modulo-voce"]');
+    expect(modulo.querySelector('[data-prova="madre-calcolata"]')).not.toBeNull();
+    expect(within(modulo).queryByLabelText(/Previsto/)).toBeNull();
+    expect(within(modulo).queryByLabelText("Stato")).toBeNull();
+    expect(within(modulo).queryByText("Come la paghi")).toBeNull();
+  });
+
+  it("una voce senza sottovoci si può dividere", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(gruppo(container, "A")).not.toBeNull());
+    expect(within(gruppo(container, "A")).getByRole("button", { name: /Dividi in sottovoci/ })).toBeTruthy();
+  });
+});

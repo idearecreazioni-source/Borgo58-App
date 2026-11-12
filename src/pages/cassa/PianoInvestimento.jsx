@@ -16,6 +16,10 @@ import {
   PAROLE_STATO,
   riquadriVoce,
   totaleVoce,
+  esitoVoce,
+  sottovociPerMadre,
+  voceConSottovoci,
+  contoConSottovoci,
   fabbisognoPerMese,
   importoNelCampo,
   leggiImporto,
@@ -230,7 +234,10 @@ function Quadra({ conto, dataProva }) {
 }
 
 /** Il pannello per scrivere o cambiare una voce, con l'acconto e le rate. */
-function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla, onArchivia, blocco }) {
+function ModuloVoce({ iniziale, rateIniziali, meseApertura, conSottovoci = false, onSalvato, onAnnulla, onArchivia, blocco }) {
+  // 12/11: una voce con sottovoci ha cifra, stato e rate dalle sottovoci (lo
+  // fa il database); una sottovoce ha il gruppo della madre.
+  const sottovoce = Boolean(iniziale.madre_id);
   const [voce, setVoce] = useState(() => ({ ...iniziale, importo_ivato: importoNelCampo(iniziale.importo_ivato) }));
   const [rate, setRate] = useState(() =>
     Object.fromEntries((rateIniziali ?? []).map((r) => [r.mese_rel, importoNelCampo(r.importo)]))
@@ -285,16 +292,25 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
     <form onSubmit={salva} data-prova="modulo-voce" className="rounded-xl bg-b58-campo ring-1 ring-b58-charcoal/15 p-4 space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className={labelClass} htmlFor="voce-nome">Voce</label>
+          <label className={labelClass} htmlFor="voce-nome">{sottovoce ? "Sottovoce" : "Voce"}</label>
           {/* oxlint-disable-next-line jsx-a11y/no-autofocus -- si apre con un tocco su «Modifica»: il fuoco va dove si scrive */}
           <input id="voce-nome" autoFocus className={inputClass} value={voce.descrizione} onChange={(e) => setVoce({ ...voce, descrizione: e.target.value })} />
         </div>
+        {!sottovoce && (
         <div>
           <label className={labelClass} htmlFor="voce-gruppo">Gruppo</label>
           <select id="voce-gruppo" className={inputClass} value={voce.gruppo} onChange={(e) => setVoce({ ...voce, gruppo: e.target.value })}>
             {GRUPPI.map((g) => <option key={g.codice} value={g.codice}>{g.codice}. {g.nome}</option>)}
           </select>
         </div>
+        )}
+        {conSottovoci && (
+          <p data-prova="madre-calcolata" className="sm:col-span-2 testo-sala text-b58-charcoal-soft">
+            Questa voce è divisa in sottovoci: la cifra è la loro somma, lo stato viene da loro, e le rate e le spese
+            stanno su ognuna. Qui cambi il nome, il gruppo, la dilazione e la nota.
+          </p>
+        )}
+        {!conSottovoci && (<>
         <div>
           <label className={labelClass} htmlFor="voce-importo">Previsto, IVA inclusa (€)</label>
           <input id="voce-importo" inputMode="decimal" className={inputClass} value={voce.importo_ivato} onChange={(e) => setVoce({ ...voce, importo_ivato: e.target.value })} />
@@ -314,6 +330,7 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
             {STATI.map((s) => <option key={s} value={s}>{PAROLE_STATO[s]}</option>)}
           </select>
         </div>
+        </>)}
         <div>
           <label className={labelClass} htmlFor="voce-dilazione">Dilazione</label>
           <select id="voce-dilazione" className={inputClass} value={voce.dilazione} onChange={(e) => setVoce({ ...voce, dilazione: e.target.value })}>
@@ -322,6 +339,7 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
         </div>
       </div>
 
+      {!conSottovoci && (
       <fieldset>
         <legend className={labelClass}>Come la paghi</legend>
         <p className="testo-sala text-b58-charcoal-soft mb-2">In euro (2.000) oppure in percentuale del previsto (50%).</p>
@@ -351,6 +369,7 @@ function ModuloVoce({ iniziale, rateIniziali, meseApertura, onSalvato, onAnnulla
               : `✗ Le rate superano il totale di ${formatEUR(-conto.mancano)}. Puoi salvare lo stesso.`}
         </p>
       </fieldset>
+      )}
 
       <div>
         <label className={labelClass} htmlFor="voce-nota">Nota</label>
@@ -385,10 +404,10 @@ const TONO_RIQUADRO = {
  * approvato da Alessio l'11/11). `conto` è null finché lo speso non si è
  * letto: allora i riquadri dello speso non ci sono, non diventano zero.
  */
-function RiquadriVoce({ voce, conto }) {
+function RiquadriVoce({ voce, conto, figlie = [] }) {
   const riquadri = riquadriVoce(voce, conto);
   const esito = riquadri.find((r) => r.chiave === "esito")?.esito;
-  const totale = totaleVoce(voce);
+  const totale = totaleVoce(voce, figlie);
   return (
     <div className="space-y-2">
       <ul
@@ -413,6 +432,11 @@ function RiquadriVoce({ voce, conto }) {
         </p>
       )}
       <p data-prova="totale-voce" className="flex flex-wrap items-baseline justify-end gap-2 border-t border-dashed border-b58-charcoal/15 pt-1.5">
+        {figlie.length > 0 && (
+          <span className="testo-sala text-b58-charcoal-soft mr-auto">
+            Somma delle sottovoci{totale.diCuiConfermato ? ` · di cui confermato ${formatEUR(totale.diCuiConfermato)}` : ""}
+          </span>
+        )}
         <span className={`testo-sala font-semibold ${totale.parola === "confermato" ? "text-b58-olive-dark-testo" : "text-b58-ambra-dark-testo"}`}>
           Totale {totale.parola}
         </span>
@@ -693,7 +717,13 @@ export default function PianoInvestimento() {
     () => totaliDelPiano(vive.map((v) => ({ ...v, speso: conti?.perVoce.get(v.id)?.speso ?? 0, impegnato: conti?.perVoce.get(v.id)?.impegnato ?? 0 }))),
     [vive, conti]
   );
-  const nonQuadrano = useMemo(() => vive.filter((v) => !quadra(v, ratePerVoce.get(v.id)).quadra), [vive, ratePerVoce]);
+  // 12/11: le sottovoci. Una madre non ha rate sue: il ✓ vale per le sottovoci.
+  const sottovoci = useMemo(() => sottovociPerMadre(vive), [vive]);
+  const [aperteSotto, setAperteSotto] = useState(() => new Set());
+  const nonQuadrano = useMemo(
+    () => vive.filter((v) => !sottovoci.has(v.id) && !quadra(v, ratePerVoce.get(v.id)).quadra),
+    [vive, ratePerVoce, sottovoci]
+  );
   const mesi = useMemo(() => (piano ? fabbisognoPerMese(piano.meseApertura, vive, piano.rate) : []), [piano, vive]);
 
   // ⚠️ Il piano vecchio resta in vista mentre si rilegge: niente pagina che
@@ -720,6 +750,122 @@ export default function PianoInvestimento() {
   }
 
   const inModifica = aperta !== null;
+
+  const contoDi = (v) => (conti ? (conti.perVoce.get(v.id) ?? { speso: 0, impegnato: 0 }) : null);
+
+  /** Il modulo di una voce aperta, con le sue spese collegate sotto. */
+  function voceInModifica(v, figlie) {
+    const rateVoce = ratePerVoce.get(v.id) ?? [];
+    return (
+      <li key={v.id} className="py-3">
+        <ModuloVoce
+          iniziale={v}
+          rateIniziali={rateVoce}
+          meseApertura={piano.meseApertura}
+          conSottovoci={figlie.length > 0}
+          onSalvato={chiudiERicarica}
+          onAnnulla={() => setAperta(null)}
+          onArchivia={(id) => gesto(async () => {
+            await archiviaVoce(id, true);
+            setAperta(null);
+          })}
+          blocco={bloccoVoce}
+        />
+        {figlie.length === 0 && !conti && (
+          <p role="status" className="mt-3 testo-sala text-b58-charcoal-soft">
+            {erroreSpeso ? "Lo speso non si è letto: i collegamenti tornano quando lo rileggo (vedi sopra)." : "Leggo le spese collegate…"}
+          </p>
+        )}
+        {figlie.length === 0 && conti && (
+          <CollegamentiVoce
+            voce={v}
+            rate={rateVoce}
+            collegamenti={collegamentiPerVoce.get(v.id) ?? []}
+            spese={letturaSpeso.spese}
+            daAssegnare={conti.daAssegnare.righe}
+            meseApertura={piano.meseApertura}
+            onCambiato={rileggiSpeso}
+            blocco={bloccoVoce}
+          />
+        )}
+      </li>
+    );
+  }
+
+  /**
+   * Una voce nella lista: le sue righe a riquadri e, se è divisa, le
+   * sottovoci (modello approvato l'11/11). Una sottovoce si disegna con la
+   * stessa funzione, senza sottovoci sue.
+   */
+  function rigaDellaVoce(v) {
+    const figlie = sottovoci.get(v.id) ?? [];
+    if (aperta?.id === v.id) return voceInModifica(v, figlie);
+    const madre = figlie.length > 0;
+    const aperte = aperteSotto.has(v.id);
+    const nuovaFiglia = aperta && !aperta.id && aperta.madre_id === v.id;
+    const sforate = madre && conti
+      ? figlie.filter((f) => esitoVoce({ previsto: f.importo_ivato, speso: contoDi(f).speso, impegnato: 0 }).esito === "sforato").length
+      : 0;
+    const apriChiudi = () => setAperteSotto((s) => {
+      const n = new Set(s);
+      if (n.has(v.id)) n.delete(v.id); else n.add(v.id);
+      return n;
+    });
+    const nuovaSottovoce = () => {
+      setAperteSotto((s) => new Set(s).add(v.id));
+      setAperta({ ...voceVuota(v.gruppo), madre_id: v.id, stato: "stimato" });
+    };
+    return (
+      <li key={v.id} data-prova={v.madre_id ? "sottovoce" : "voce"} className="py-3 space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-b58-charcoal font-medium min-w-0">{v.descrizione}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            {!madre && <Quadra conto={quadra(v, ratePerVoce.get(v.id) ?? [])} dataProva="quadra-voce" />}
+            {madre && (
+              <button type="button" className={bottone} aria-expanded={aperte} onClick={apriChiudi}>
+                {aperte ? "Chiudi le sottovoci" : `Apri le ${figlie.length} sottovoci`}
+                <span className="sr-only"> di {v.descrizione}</span>
+              </button>
+            )}
+            {!v.madre_id && !madre && (
+              <button type="button" className={bottone} disabled={inModifica} onClick={nuovaSottovoce}>
+                Dividi in sottovoci<span className="sr-only"> {v.descrizione}</span>
+              </button>
+            )}
+            <button type="button" className={bottone} disabled={inModifica} onClick={() => setAperta(v)}>
+              Modifica<span className="sr-only"> {v.descrizione}</span>
+            </button>
+          </div>
+        </div>
+        <RiquadriVoce
+          voce={voceConSottovoci(v, figlie)}
+          conto={conti ? (madre ? contoConSottovoci(figlie, conti.perVoce) : contoDi(v)) : null}
+          figlie={figlie}
+        />
+        {sforate > 0 && (
+          <p data-prova="sottovoci-sforate" className="testo-sala text-b58-terracotta-dark-testo">
+            {sforate === 1 ? "Una sottovoce è sforata" : `${sforate} sottovoci sono sforate`}: apri le sottovoci per vedere quale.
+          </p>
+        )}
+        {(madre || nuovaFiglia) && (aperte || nuovaFiglia) && (
+          <div data-prova="elenco-sottovoci" className="ml-1 border-l-4 border-b58-olive/30 pl-3 sm:pl-4">
+            <ul className="divide-y divide-b58-charcoal/10">
+              {figlie.map((f) => rigaDellaVoce(f))}
+            </ul>
+            {nuovaFiglia ? (
+              <div className="mt-3">
+                <ModuloVoce iniziale={aperta} rateIniziali={[]} meseApertura={piano.meseApertura} onSalvato={chiudiERicarica} onAnnulla={() => setAperta(null)} />
+              </div>
+            ) : (
+              <button type="button" className={`${bottone} mt-2`} disabled={inModifica} onClick={nuovaSottovoce}>
+                + Aggiungi una sottovoce<span className="sr-only"> a {v.descrizione}</span>
+              </button>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  }
 
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
@@ -827,9 +973,9 @@ export default function PianoInvestimento() {
           )}
 
           {GRUPPI.map((g) => {
-            const qui = vive.filter((v) => v.gruppo === g.codice);
+            const qui = vive.filter((v) => v.gruppo === g.codice && !v.madre_id);
             const t = totali.perGruppo[g.codice];
-            const nuova = aperta && !aperta.id && aperta.gruppo === g.codice;
+            const nuova = aperta && !aperta.id && !aperta.madre_id && aperta.gruppo === g.codice;
             return (
               <section key={g.codice} data-prova={`gruppo-${g.codice}`} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 sm:p-6">
                 <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
@@ -838,58 +984,7 @@ export default function PianoInvestimento() {
                 </div>
                 {qui.length === 0 && !nuova && <p className="testo-sala text-b58-charcoal-soft mb-3">Nessuna voce in questo gruppo.</p>}
                 <ul className="divide-y divide-b58-charcoal/10">
-                  {qui.map((v) => {
-                    const rateVoce = ratePerVoce.get(v.id) ?? [];
-                    if (aperta?.id === v.id) {
-                      return (
-                        <li key={v.id} className="py-3">
-                          <ModuloVoce
-                            iniziale={v}
-                            rateIniziali={rateVoce}
-                            meseApertura={piano.meseApertura}
-                            onSalvato={chiudiERicarica}
-                            onAnnulla={() => setAperta(null)}
-                            onArchivia={(id) => gesto(async () => {
-                              await archiviaVoce(id, true);
-                              setAperta(null);
-                            })}
-                            blocco={bloccoVoce}
-                          />
-                          {!conti && (
-                            <p role="status" className="mt-3 testo-sala text-b58-charcoal-soft">
-                              {erroreSpeso ? "Lo speso non si è letto: i collegamenti tornano quando lo rileggo (vedi sopra)." : "Leggo le spese collegate…"}
-                            </p>
-                          )}
-                          {conti && (
-                            <CollegamentiVoce
-                              voce={v}
-                              rate={rateVoce}
-                              collegamenti={collegamentiPerVoce.get(v.id) ?? []}
-                              spese={letturaSpeso.spese}
-                              daAssegnare={conti.daAssegnare.righe}
-                              meseApertura={piano.meseApertura}
-                              onCambiato={rileggiSpeso}
-                              blocco={bloccoVoce}
-                            />
-                          )}
-                        </li>
-                      );
-                    }
-                    return (
-                      <li key={v.id} data-prova="voce" className="py-3 space-y-2">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <p className="text-b58-charcoal font-medium min-w-0">{v.descrizione}</p>
-                          <div className="flex items-center gap-3">
-                            <Quadra conto={quadra(v, rateVoce)} dataProva="quadra-voce" />
-                            <button type="button" className={bottone} disabled={inModifica} onClick={() => setAperta(v)}>
-                              Modifica<span className="sr-only"> {v.descrizione}</span>
-                            </button>
-                          </div>
-                        </div>
-                        <RiquadriVoce voce={v} conto={conti ? (conti.perVoce.get(v.id) ?? { speso: 0, impegnato: 0 }) : null} />
-                      </li>
-                    );
-                  })}
+                  {qui.map((v) => rigaDellaVoce(v))}
                 </ul>
                 {nuova ? (
                   <div className="mt-3">

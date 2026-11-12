@@ -14,11 +14,32 @@ import { eseguiOperazione } from "../operazioni";
 export async function vociPerLaSpunta() {
   const [imp, voci, rate] = await Promise.all([
     supabase.from("piano_impostazioni").select("mese_apertura").maybeSingle(),
-    supabase.from("piano_voci").select("id, gruppo, ordine, descrizione").is("archiviata_il", null).order("gruppo").order("ordine").order("descrizione"),
+    supabase.from("piano_voci").select("id, gruppo, ordine, descrizione, madre_id").is("archiviata_il", null).order("gruppo").order("ordine").order("descrizione"),
     supabase.from("piano_rate").select("id, voce_id, mese_rel, importo").order("mese_rel"),
   ]);
   for (const r of [imp, voci, rate]) if (r.error) throw r.error;
-  return { meseApertura: imp.data?.mese_apertura ?? null, voci: voci.data ?? [], rate: rate.data ?? [] };
+  return { meseApertura: imp.data?.mese_apertura ?? null, voci: vociSceglibili(voci.data ?? []), rate: rate.data ?? [] };
+}
+
+/**
+ * 12/11/2026, le sottovoci: una voce divisa in sottovoci non prende spese
+ * (le prendono le sottovoci, lo pretende il database), e una sottovoce si
+ * legge «Madre › Sottovoce», subito sotto la sua madre.
+ */
+export function vociSceglibili(voci) {
+  const perId = new Map(voci.map((v) => [v.id, v]));
+  const madri = new Set(voci.filter((v) => v.madre_id).map((v) => v.madre_id));
+  const fuori = [];
+  for (const v of voci) {
+    if (v.madre_id) continue;
+    if (!madri.has(v.id)) fuori.push(v);
+    for (const f of voci.filter((x) => x.madre_id === v.id)) {
+      fuori.push({ ...f, gruppo: v.gruppo, descrizione: `${v.descrizione} › ${f.descrizione}` });
+    }
+  }
+  // Una sottovoce la cui madre non è fra le vive non resta fuori dalla scelta.
+  for (const f of voci) if (f.madre_id && !perId.has(f.madre_id)) fuori.push(f);
+  return fuori;
 }
 
 /**

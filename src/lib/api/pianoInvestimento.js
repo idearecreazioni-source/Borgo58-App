@@ -59,7 +59,7 @@ export async function salvaVoce(voce, rate) {
   } else {
     const { data, error } = await supabase
       .from("piano_voci")
-      .insert({ ...campiVoce(voce), ordine: Number(voce.ordine ?? 0) })
+      .insert({ ...campiVoce(voce), ordine: Number(voce.ordine ?? 0), madre_id: voce.madre_id ?? null })
       .select("id")
       .single();
     if (error) throw error;
