@@ -26,4 +26,5 @@ Coperti di un tavolone = somma dei coperti dei suoi tavoli **meno `posti_persi_p
 - Prove sui dati veri (`tests/app/coperti-sala.test.js`) aggiornate alla regola nuova.
 
 ## Da fare al rilascio
-Applicare la migrazione su Prova, poi su work (con l'ok di Alessio). Non ancora applicata.
+- `20261112000009_i_piccoli_accostati_fanno_quattro`: su Prova il 12/11 (sì di Alessio); su work al rilascio, con il suo sì.
+- `20261112000010_i_posti_persi_parlano`: solo la frase in italiano del vincolo nuovo sui posti persi per giunzione. L'aveva trovato muto la rete `vincoli-che-parlano` dei Controlli; la 000009 era già su Prova e non si riscrive. Su Prova il 12/11, su work insieme alla 000009.
