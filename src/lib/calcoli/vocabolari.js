@@ -287,6 +287,12 @@ export const GUARDIE_ESENTI = [
       "non è una guardia ma un ramo: nomina i due tipi di MEMO che parlano di una voce del piano che c'è già (piano_collega, piano_voce_aggiorna), un sottoinsieme apposta dei tipi di tipi_azione_vocale. Il terzo, piano_voce_nuova, la voce non ce l'ha ancora. La funzione la chiama solo voce_risolvi_dati, per quei tre tipi (08/11/2026, 20261108000003)",
   },
   {
+    funzione: "dividi_spesa",
+    parametro: "p_fonte",
+    perche:
+      "non è un vocabolario di una tabella ma i tre posti da cui viene una spesa del piano (prima_nota = cash_movements, anticipazione = anticipazioni_socio, fattura = supplier_invoices): ognuno è una colonna diversa di piano_collegamenti, e il vincolo piano_collegamento_una_origine è quello che li tiene. Gli stessi tre li nomina segna_investimento con i suoi rami (12/11/2026, 20261112000003)",
+  },
+  {
     funzione: "azione_domanda",
     parametro: "p_stato",
     perche:
