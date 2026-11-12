@@ -1,4 +1,4 @@
-import { TASK_LUOGHI, formatDate, labelFor } from "../constants";
+import { formatDate } from "../constants";
 
 // COME SI LEGGE L'AGENDA — 30/08/2026, Blocco 3 del mandato.
 //
@@ -153,8 +153,11 @@ export function campiImpegno(t) {
     ...(!t.due_date && t.giorni_in_lista > 13
       ? [{ chiave: "eta", etichetta: "In lista da", valore: anzianita(t.giorni_in_lista) }]
       : []),
-    // 28/10/2026: un promemoria per luogo dice dove te lo ricorderò.
-    ...(t.luogo ? [{ chiave: "luogo", etichetta: "Quando arrivo", valore: labelFor(TASK_LUOGHI, t.luogo) }] : []),
+    // ⚠️ QUI STAVA «QUANDO ARRIVO», tolta il 12/11/2026 con i promemoria
+    //    per luogo (decisione di Alessio: raggio troppo largo, notifiche
+    //    ripetute). Un impegno che ha ancora un luogo nel database è un
+    //    impegno come gli altri: mostrare il luogo farebbe credere che
+    //    qualcuno lo ricorderà all'arrivo, e non succede più.
   ];
 }
 

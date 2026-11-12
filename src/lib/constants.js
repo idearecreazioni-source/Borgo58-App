@@ -93,14 +93,18 @@ export const SUPPLIER_CATEGORIES = [
 ];
 
 // 🔴 I LUOGHI DEI PROMEMORIA — 28/10/2026, chiesto da Alessio: «ricordami di
-//    fare questo quando arrivo a casa». Lo stesso elenco del vincolo
-//    `luogo_chiuso` (migrazione 20261028000001) e della funzione
-//    `promemoria-luogo`: aggiungerne uno vuol dire toccare tutti e tre.
+//    fare questo quando arrivo a casa».
+// ⚠️ LA FUNZIONE «QUANDO ARRIVO» È STATA TOLTA il 12/11/2026 (decisione di
+//    Alessio: raggio troppo largo dei Comandi dell'iPhone, GPS che oscilla,
+//    notifiche ripetute). Nessuna schermata la usa più, e l'elenco resta
+//    lo stesso per una ragione sola: è lo specchio del vincolo
+//    `luogo_chiuso` (20261028000006), che resta, perché gli impegni che
+//    hanno già un luogo lo tengono — nessun dato perso. La rete dei
+//    vocabolari (`vocabolari.js`) controlla che i due dicano la stessa cosa.
 export const TASK_LUOGHI = [
-  // `arrivo`: come si dice nella frase «ricordamelo quando arrivo …».
-  { value: "casa", label: "Casa", arrivo: "a casa" },
+  { value: "casa", label: "Casa" },
   // ⚠️ Era «ristorante» fino al 28/10/2026: Alessio l'ha chiamata cantina.
-  { value: "cantina", label: "Cantina", arrivo: "in cantina" },
+  { value: "cantina", label: "Cantina" },
 ];
 
 // LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
