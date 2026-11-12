@@ -463,11 +463,16 @@ export function correggiAgenda(azioni: AzioneDettata[], dettato = ""): AzioneDet
  * rete deterministica: la rete conosce le parole di oggi, il modello capisce
  * anche quelle che non ho pensato. Le due strade insieme coprono più di
  * ciascuna da sola, e a decidere è sempre quella deterministica.
+ *
+ * ⚠️ IL «LUOGO» NON SI CHIEDE PIÙ — 12/11/2026, tolto con «Quando arrivo»
+ * (deciso da Alessio: raggio troppo largo dei Comandi dell'iPhone,
+ * notifiche ripetute). Lo stesso in `index.ts`: il posto detto resta nel
+ * titolo, invece di finire in una colonna che nessuno mostra più.
  */
 export function istruzioniAgenda(): string {
   return `
 🔴 SULL'AGENDA CI SONO TRE COSE DIVERSE, E VANNO TENUTE DISTINTE.
-- "promemoria": una cosa NUOVA da ricordare. «Ricordami di chiamare Tiziana domani», «aggiungi il rinnovo della firma digitale per venerdi'». dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null, "avviso_chiesto": true|false, "categoria": "lavori"|null, "luogo": "cantina"|"casa"|null } — "categoria" e' "lavori" solo se ha detto che va fra i lavori da fare, altrimenti null. "luogo" e' "casa" o "cantina" (anche se dice «ristorante»: e' lo stesso posto) solo se ha detto di ricordarglielo quando arriva li' («quando arrivo a casa ricordami di…»), e allora il luogo non va nel titolo; altrimenti null.
+- "promemoria": una cosa NUOVA da ricordare. «Ricordami di chiamare Tiziana domani», «aggiungi il rinnovo della firma digitale per venerdi'». dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null, "avviso_chiesto": true|false, "categoria": "lavori"|null } — "categoria" e' "lavori" solo se ha detto che va fra i lavori da fare, altrimenti null. Non c'e' un campo per il luogo: «quando arrivo a casa ricordami di…» lascia il posto nel titolo.
   ⚠️ I CAMPI DELL'AVVISO CI SONO ANCHE QUI, e non è una ripetizione per bellezza: questo elenco e quello generale descrivono lo STESSO tipo, e finché uno dei due li ometteva il modello poteva leggere quello corto e lasciare cadere l'avviso che aveva capito. Le regole per riempirli sono scritte per intero nell'elenco generale.
 - "${TIPO_FATTO}": un impegno che GIA' ESISTE e che e' stato fatto. «Segna come fatto il rinnovo della firma digitale», «l'ho fatto», «spunta l'ordine delle verdure». dati: { "impegno": "il nome dell'impegno come l'ha detto lui" }
 - "${TIPO_SPOSTA}": un impegno che GIA' ESISTE e va spostato a un altro giorno. «Sposta a venerdi' l'ordine delle verdure», «rimanda a lunedi' la chiamata al commercialista». dati: { "impegno": "il nome come l'ha detto lui", "data_nuova": "AAAA-MM-GG" }

@@ -114,7 +114,10 @@ const ETICHETTE = {
   ogni_mesi: "si ripete ogni (mesi)",
   telefono_non_capito: "telefono non capito (non lo scrivo)",
   // 28/10/2026: il promemoria per luogo, letto come lo si e' detto.
-  luogo: "ricordamelo quando arrivo a",
+  // ⚠️ Dal 12/11/2026 la voce non lo chiede piu' («Quando arrivo» tolto):
+  //    resta solo per gli appunti di prima, e dice «luogo» e basta — la
+  //    promessa «te lo ricordo quando arrivi» non la mantiene piu' nessuno.
+  luogo: "luogo",
   // Il piano dell'investimento (08/11/2026).
   voce_nome: "voce del piano",
   spesa_nome: "spesa",

@@ -128,7 +128,7 @@ export default function ElencoAdattivo({
   if (!righe || righe.length === 0) return null;
   // ⚠️ LE COLONNE SONO QUELLE DI TUTTE LE RIGHE, non della prima (revisione,
   //    28/10/2026): un campo che c'e' solo su alcune righe — «In lista da»,
-  //    «Quando arrivo» — spostava le celle sotto l'intestazione sbagliata e
+  //    «Quando arrivo» (tolta il 12/11/2026) — spostava le celle sotto l'intestazione sbagliata e
   //    il pulsante della riga sotto un'altra colonna. Dove manca, la cella
   //    resta vuota.
   const colonne = [];

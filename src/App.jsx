@@ -113,7 +113,6 @@ const PiattiDelGiorno = lazy(() => import("./pages/menu-editor/PiattiDelGiorno")
 const AgricoloHome = lazy(() => import("./pages/agricolo/AgricoloHome"));
 const Cessioni = lazy(() => import("./pages/agricolo/Cessioni"));
 // Arrivate dopo il 27/10: anche loro si scaricano quando si aprono.
-const PromemoriaLuogo = lazy(() => import("./pages/agenda/PromemoriaLuogo"));
 const Stampanti = lazy(() => import("./pages/comande/Stampanti"));
 const CodaCasa = lazy(() => import("./pages/casa/CodaCasa"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
@@ -241,17 +240,13 @@ function AppRoutes() {
         {/* Agenda (condivisa titolare/staff) */}
         <Route path="/agenda" element={<AgendaList />} />
         <Route path="/agenda/nuovo" element={<TaskForm />} />
-        {/* Le chiavi dei promemoria per luogo: solo del titolare (28/10/2026) */}
-        <Route
-          path="/agenda/luoghi"
-          element={
-            <RequireTitolare>
-              <Suspense fallback={<Caricamento />}>
-                <PromemoriaLuogo />
-              </Suspense>
-            </RequireTitolare>
-          }
-        />
+        {/* ⚠️ «QUANDO ARRIVO…» È STATO TOLTO — 12/11/2026, deciso da Alessio:
+            il raggio dei Comandi dell'iPhone era troppo largo e il GPS che
+            oscilla ripeteva le notifiche. La pagina delle chiavi non c'è
+            più; l'indirizzo resta e porta all'Agenda, altrimenti un vecchio
+            segnalibro aprirebbe la scheda di un impegno «luoghi» che non
+            esiste (lo prenderebbe /agenda/:id). */}
+        <Route path="/agenda/luoghi" element={<Navigate to="/agenda" replace />} />
         {/* Adempimenti societari: riservati al titolare (§3.5/§3.18) */}
         <Route
           path="/agenda/adempimenti"

@@ -458,7 +458,16 @@ export function notaInChiaro(nota) {
 export function statoDellaMail(mail, lettura) {
   if (mail?.stato === "archiviata") return "fatto";
   // Messa da parte da una regola del filtro, prima di MEMO (11/11/2026).
-  if (mail?.stato === "scartata" && (mail?.filtrata_da || /^Filtrata prima di MEMO/.test(mail?.lettura_note ?? ""))) return "filtrata";
+  // 🔴 E l'avviso arrivato alla casella della banca (12/11/2026,
+  //    20261112000008): nasce scartato con «Avviso della banca: …». Senza
+  //    questa riga la sua nota passerebbe da `notaInChiaro`, che la legge
+  //    come «allegato: motivo» e la storpia.
+  if (
+    mail?.stato === "scartata" &&
+    (mail?.filtrata_da || /^(Filtrata prima di MEMO|Avviso della banca)/.test(mail?.lettura_note ?? ""))
+  ) {
+    return "filtrata";
+  }
   if (mail?.stato === "da_leggere") {
     return ["arresa", "lettore_fermo", "non_so"].includes(lettura?.chiave) ? "guarda" : "in_lettura";
   }
@@ -483,6 +492,17 @@ export function inScheda(stato, scheda) {
   if (scheda === "tutte") return true;
   const aperta = stato === "decidere" || stato === "guarda" || stato === "in_lettura";
   return scheda === "decidere" ? aperta : !aperta;
+}
+
+/**
+ * Quante mail della lista starebbero nella scheda «Da decidere» (12/11/2026).
+ * Serve alla Dashboard e al pulsante di Documenti: stessa regola della
+ * pagina Posta, così il numero fuori è il numero dentro.
+ * ⚠️ La lettura qui non si conosce e non serve: una mail `da_leggere` è
+ *    aperta sia come «guarda» sia come «in_lettura».
+ */
+export function contaDaDecidere(mail) {
+  return (mail ?? []).filter((m) => inScheda(statoDellaMail(m, null), "decidere")).length;
 }
 
 /**

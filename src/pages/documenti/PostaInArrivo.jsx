@@ -1049,8 +1049,12 @@ export default function PostaInArrivo() {
     });
   const conta = (s) => tutte.filter((x) => inScheda(x.stato, s)).length;
   const visibili = tutte.filter((x) => inScheda(x.stato, scheda));
-  // Quelle che aspettano LUI: non quelle che MEMO leggerà da solo.
-  const nDecidere = tutte.filter((x) => x.stato === "decidere" || x.stato === "guarda").length;
+  // 12/11/2026, deciso da Alessio: la frase in cima usa LO STESSO numero
+  // della scheda «Da decidere» (e della Dashboard). Prima escludeva le mail
+  // che MEMO deve ancora leggere: fuori si leggeva «3», qui «2 aspettano te».
+  // Quelle ancora in lettura si dicono a parte, nella stessa frase.
+  const nDecidere = conta("decidere");
+  const nInLettura = tutte.filter((x) => x.stato === "in_lettura").length;
 
   const SCHEDE = [
     { id: "decidere", nome: "Da decidere" },
@@ -1096,9 +1100,8 @@ export default function PostaInArrivo() {
         <p className="testo-sala-grande text-b58-charcoal-soft mt-1 mb-4">
           {nDecidere === 0
             ? "Non c'è niente da decidere."
-            : nDecidere === 1
-              ? "Una mail aspetta te."
-              : `${nDecidere} mail aspettano te.`}
+            : `${nDecidere === 1 ? "Una mail" : `${nDecidere} mail`} da decidere.` +
+              (nInLettura > 0 ? ` MEMO ne sta ancora leggendo ${nInLettura === 1 ? "una" : nInLettura}.` : "")}
         </p>
       )}
 

@@ -38,7 +38,10 @@ export const ORFANE_SEMPRE = {
   registra_dettatura_da_chiave: "chiamata da ascolta-voce (la Scorciatoia)",
   registra_lettura_foto: "chiamata da leggi-foto",
   voce_apri_sessione: "chiamata da ascolta-voce",
-  luogo_promemoria: "chiamata da promemoria-luogo (l'automazione «quando arrivo a…» dell'iPhone)",
+  // ⚠️ QUI STAVA `luogo_promemoria`, uscita il 12/11/2026: non perché abbia
+  //    trovato una porta, ma perché non c'è più — la 20261112000007 la
+  //    toglie insieme a «Quando arrivo» (deciso da Alessio). Lasciarla
+  //    iscritta racconterebbe una funzione che nel database non esiste.
   // ⚠️ DEBITO (31/10/2026): la vecchia porta della pagina Cucina. Da oggi
   //    Cucina e Bar chiamano `stato_stampa(reparto)` (20261031000001); questa
   //    resta per il gestionale già pubblicato finché non arriva quello nuovo.

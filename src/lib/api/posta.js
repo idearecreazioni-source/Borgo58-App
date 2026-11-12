@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { contaDaDecidere } from "../calcoli/posta";
 
 // La posta in arrivo (§ modulo del 12/08/2026). Tutto qui dentro è
 // visibile al solo titolare: la barriera vera è la RLS sulle tabelle,
@@ -82,13 +83,24 @@ export async function rimettiPosta(postaId, stato) {
   if (!data?.length) throw new Error("Non riesco a rimetterla: questa mail non è più fra quelle tolte.");
 }
 
+/**
+ * Quante mail stanno nella scheda «Da decidere» della pagina Posta.
+ *
+ * 🔴 12/11/2026 — LO STESSO NUMERO DELLA PAGINA POSTA, NON UN ALTRO.
+ *    Prima si contavano tutte le mail in `da_leggere` o `proposta`, e
+ *    dentro finivano anche quelle «Niente da fare», che la pagina Posta
+ *    mette fra le Sistemate: su work la Dashboard diceva 8 mentre la
+ *    scheda «Da decidere» era vuota. Ora la scheda la decide la stessa
+ *    regola della pagina (`statoDellaMail` + `inScheda`), così i due
+ *    numeri non possono più divergere.
+ */
 export async function contaPostaInAttesa() {
-  const { count, error } = await supabase
+  const { data, error } = await supabase
     .from("posta_ricevuta")
-    .select("id", { count: "exact", head: true })
+    .select("id, stato, filtrata_da, lettura_note, azioni:posta_azioni(tipo, stato)")
     .in("stato", ["da_leggere", "proposta"]);
   if (error) throw error;
-  return count ?? 0;
+  return contaDaDecidere(data);
 }
 
 /**
