@@ -145,7 +145,6 @@ export default function Dashboard() {
   const today = tasks.filter((t) => t.due_date && t.due_date >= oggi);
   const undated = tasks.filter((t) => !t.due_date);
   const todayLabel = formatDate(oggi);
-  const daGuardare = richieste.length + posta;
 
   return (
     /* 🔴 IL TELAIO DELLA MATTINA SU UNO SCHERMO DA SCRIVANIA (05/09/2026).
@@ -241,9 +240,12 @@ export default function Dashboard() {
               seconda. Senza, impilandosi si toccherebbero. */
         <div className="2xl:grid 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] 2xl:gap-8 2xl:items-start">
         <div className="space-y-6">
-          {!isStaff && daGuardare > 0 && (
-            <RichiesteDeiClienti richieste={richieste} posta={posta} />
+          {/* 12/11/2026, deciso da Alessio: le mail non sono «richieste dei
+              clienti». Due riquadri distinti, ognuno solo se c'è qualcosa. */}
+          {!isStaff && richieste.length > 0 && (
+            <RichiesteDeiClienti richieste={richieste} />
           )}
+          {!isStaff && posta > 0 && <PostaDaDecidere posta={posta} />}
 
           {/* 🔴 QUELLO CHE HA DETTATO E NON HA ANCORA GUARDATO.
               Niente scade da solo: una cosa detta in cella resta lì finché
@@ -409,38 +411,54 @@ export default function Dashboard() {
 // conferma niente e non si legge nessuna mail: si dice che c'è qualcuno
 // in attesa e si porta dove si risponde. Una seconda schermata che facesse
 // lo stesso lavoro divergerebbe dalla prima al primo cambiamento.
-function RichiesteDeiClienti({ richieste, posta }) {
+function RichiesteDeiClienti({ richieste }) {
   return (
     <section className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
       <div className="flex items-center gap-2.5 mb-2">
         <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
-          {richieste.length + posta}
+          {richieste.length}
         </span>
         <h2 className="font-display testo-sala-grande text-b58-charcoal">
           Richieste dei clienti da guardare
         </h2>
       </div>
       <div className="flex flex-wrap gap-2">
-        {richieste.length > 0 && (
-          <Link
-            to="/calendario-eventi"
-            className="tocco-riga flex items-center rounded-lg bg-b58-cream-dark/50 hover:bg-b58-cream-dark px-4 testo-sala text-b58-charcoal transition-colors"
-          >
-            {richieste.length}{" "}
-            {richieste.length === 1
-              ? "prenotazione da confermare"
-              : "prenotazioni da confermare"}{" "}
-            →
-          </Link>
-        )}
-        {posta > 0 && (
-          <Link
-            to="/documenti/posta"
-            className="tocco-riga flex items-center rounded-lg bg-b58-cream-dark/50 hover:bg-b58-cream-dark px-4 testo-sala text-b58-charcoal transition-colors"
-          >
-            {posta} {posta === 1 ? "messaggio in arrivo" : "messaggi in arrivo"} →
-          </Link>
-        )}
+        <Link
+          to="/calendario-eventi"
+          className="tocco-riga flex items-center rounded-lg bg-b58-cream-dark/50 hover:bg-b58-cream-dark px-4 testo-sala text-b58-charcoal transition-colors"
+        >
+          {richieste.length}{" "}
+          {richieste.length === 1
+            ? "prenotazione da confermare"
+            : "prenotazioni da confermare"}{" "}
+          →
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+// --- (c bis) LA POSTA DA DECIDERE ------------------------------------
+//
+// 12/11/2026 — riquadro suo, deciso da Alessio. Il numero è quello della
+// scheda «Da decidere» della pagina Posta (`contaPostaInAttesa`), e come
+// sopra è un richiamo: porta dove si decide, non decide niente qui.
+function PostaDaDecidere({ posta }) {
+  return (
+    <section className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
+      <div className="flex items-center gap-2.5 mb-2">
+        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-sul-colore testo-sala font-medium px-2.5 py-1">
+          {posta}
+        </span>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal">Posta da decidere</h2>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          to="/documenti/posta"
+          className="tocco-riga flex items-center rounded-lg bg-b58-cream-dark/50 hover:bg-b58-cream-dark px-4 testo-sala text-b58-charcoal transition-colors"
+        >
+          {posta} mail da decidere →
+        </Link>
       </div>
     </section>
   );
