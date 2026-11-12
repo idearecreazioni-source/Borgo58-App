@@ -400,7 +400,13 @@ export default function Detta() {
   // ⚠️ L'esito sta SULLA RIGA che è stata toccata, non in cima alla pagina:
   //    «un rifiuto lontano dal gesto è un rifiuto che non c'è», ed è la
   //    lezione del 17/08 pagata già una volta in Cassa.
-  const { inAzione, esiti, approva, butta, scegli: scegliElemento } = useGestiAppunti();
+  const { inAzione, esiti, approva, butta, scegli: scegliElemento, correggi: correggiElemento } = useGestiAppunti();
+
+  // «Correggi» (12/11/2026): stessa guardia e stessa rilettura della scelta.
+  const correggi = (appunto, elementoId, dati) => {
+    setErrore("");
+    return correggiElemento(appunto, elementoId, dati, rileggiRiscontro);
+  };
 
   /**
    * Rimette a posto la schermata dopo un gesto RIUSCITO.
@@ -804,6 +810,7 @@ export default function Detta() {
                       onApprova={() => conferma(a)}
                       onScarta={() => annulla(a)}
                       onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
+                      onCorreggi={(elementoId, dati) => correggi(a, elementoId, dati)}
                     />
                   ))}
                 </ul>
@@ -883,6 +890,7 @@ export default function Detta() {
                   onApprova={() => conferma(a)}
                   onScarta={() => annulla(a)}
                   onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
+                  onCorreggi={(elementoId, dati) => correggi(a, elementoId, dati)}
                 />
               ))}
             </ul>

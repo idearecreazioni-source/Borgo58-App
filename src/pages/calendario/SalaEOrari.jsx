@@ -286,12 +286,14 @@ export default function SalaEOrari() {
             totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
             vede sulla{" "}
             pianta, e lì si corregge a mano quando la sala dice altro. Due tavoli si accostano{" "}
-            <strong>solo se sono dello stesso formato</strong>: i due lunghi fra loro, i quadrati fra
+            <strong>solo se sono dello stesso formato</strong>: i grandi fra loro, i piccoli fra
             loro. Non è il gestionale che sceglie — è che sono mobili diversi.
           </Didascalia>
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {formati.map((f) => (
+          {/* Solo i formati in uso: quelli della sala vecchia (90x90 e
+              180x90) sono spenti dal 12/11 e restano solo per lo storico. */}
+          {formati.filter((f) => f.attivo !== false).map((f) => (
             <div key={f.id} className="bg-b58-campo rounded-lg px-3 py-2">
               <label className={labelClass}>{f.nome}</label>
               <CampoAutosalvato

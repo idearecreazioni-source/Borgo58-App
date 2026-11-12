@@ -32,7 +32,7 @@ export default function AppuntiInDashboard({ dettate, onCambiato }) {
   const location = useLocation();
   const [aperto, setAperto] = useState(false);
   const [appunti, setAppunti] = useState(null);
-  const { inAzione, esiti, approva, butta, scegli } = useGestiAppunti();
+  const { inAzione, esiti, approva, butta, scegli, correggi } = useGestiAppunti();
 
   // 🔴 VINCE LA LETTURA PIÙ RECENTE, NON LA PIÙ VELOCE — trovato dalla
   //    revisione del diff, 11/09/2026. Aprire, chiudere e riaprire mette in
@@ -108,6 +108,7 @@ export default function AppuntiInDashboard({ dettate, onCambiato }) {
                   onApprova={() => approva(a, dopo)}
                   onScarta={() => butta(a, dopo)}
                   onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId, dopo)}
+                  onCorreggi={(elementoId, dati) => correggi(a, elementoId, dati, dopo)}
                 />
               ))}
             </ul>

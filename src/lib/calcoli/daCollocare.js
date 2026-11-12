@@ -1,4 +1,5 @@
 // Le spese «Da collocare» — le regole che la schermata mostra (11/10/2026, C12).
+import { importoNelCampo, leggiImporto } from "./pianoInvestimento";
 //
 // ⚠️ Qui si DICE, nel database si FA RISPETTARE: cosa serve a ogni
 //    destinazione è controllato da `colloca_spesa`, e la stessa lista vive
@@ -16,11 +17,32 @@ export const DESTINAZIONI = [
 
 export const etichettaDestinazione = (v) => DESTINAZIONI.find((d) => d.value === v)?.label ?? v;
 
+// 🔴 «1.200» ERA 1,20 € (revisione dell'11/11, punto 2): qui si cambiava
+//    solo la virgola in punto, e il punto delle migliaia diventava quello
+//    dei decimali. Adesso legge lo stesso lettore del piano: «1.200» è
+//    milleduecento, «1.200,50», «1200,5» e «12.5» si capiscono, e quello che
+//    non si capisce («1.2345», «1,234,5») si rifiuta invece di indovinare.
+/** L'importo scritto: un numero, null se il campo è vuoto, NaN se non si capisce. */
 const numero = (v) => {
   if (v === null || v === undefined || String(v).trim() === "") return null;
-  const n = Number(String(v).replace(",", "."));
-  return Number.isFinite(n) ? n : NaN;
+  const n = leggiImporto(v);
+  return n === null ? NaN : n;
 };
+
+/** La frase per un importo che non si capisce (la usa anche la scheda dalla voce). */
+// ⚠️ Niente virgole dentro: la schermata unisce le mancanze con «, ».
+export const IMPORTO_NON_CHIARO = "un importo che si capisca (per esempio 1.200 o 12.50)";
+
+/**
+ * L'importo come parte verso il database: «1200.5», col punto e basta.
+ * null se il campo è vuoto, undefined se non si capisce: in quel caso chi
+ * chiama NON deve far partire niente.
+ */
+export function importoDaInviare(v) {
+  const n = numero(v);
+  if (n === null) return null;
+  return Number.isNaN(n) ? undefined : String(n);
+}
 
 /**
  * Che cosa manca perché la spesa entri in quella destinazione.
@@ -34,8 +56,11 @@ export function cosaMancaPer(dove, campi = {}) {
   const importo = numero(campi.importo);
   if (dove !== "archivio") {
     if (importo === null) manca.push("l'importo");
-    else if (Number.isNaN(importo) || importo <= 0) manca.push("un importo valido");
-  } else if (Number.isNaN(importo) || (importo !== null && importo <= 0)) {
+    else if (Number.isNaN(importo)) manca.push(IMPORTO_NON_CHIARO);
+    else if (importo <= 0) manca.push("un importo valido");
+  } else if (Number.isNaN(importo)) {
+    manca.push(`${IMPORTO_NON_CHIARO}, oppure lascialo vuoto`);
+  } else if (importo !== null && importo <= 0) {
     manca.push("un importo valido, oppure lascialo vuoto");
   }
   if (dove === "prima_nota" && campi.mezzo === "banca" && !campi.conto_id) manca.push("il conto della banca");
@@ -52,7 +77,9 @@ const testoONiente = (v) => (typeof v === "string" && v.trim() !== "" ? v.trim()
 /** I campi che partono verso il database: solo quelli della destinazione. */
 export function campiPer(dove, campi = {}) {
   const base = {
-    importo: campi.importo === "" || campi.importo == null ? null : String(campi.importo).replace(",", "."),
+    // ⚠️ Un importo che non si capisce qui non arriva: lo ferma cosaMancaPer.
+    //    Se arrivasse lo stesso parte vuoto, e il database chiede l'importo.
+    importo: importoDaInviare(campi.importo) ?? null,
     data: campi.data || null,
     // ⚠️ Un campo vuoto parte come «niente», non come testo vuoto.
     descrizione: testoONiente(campi.descrizione),
@@ -75,7 +102,7 @@ export function campiPer(dove, campi = {}) {
 /** I campi di partenza, da ciò che MEMO ha capito. */
 export function campiIniziali(spesa) {
   return {
-    importo: spesa.importo == null ? "" : String(spesa.importo).replace(".", ","),
+    importo: importoNelCampo(spesa.importo),
     data: spesa.data ?? "",
     descrizione: spesa.descrizione ?? "",
     controparte: spesa.controparte ?? "",

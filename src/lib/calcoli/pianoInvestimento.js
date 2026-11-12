@@ -158,6 +158,123 @@ export function esitoVoce({ previsto, speso = 0, impegnato = 0, confermata = fal
   return { esito: "in_linea", differenza: euro(p - s) };
 }
 
+// =====================================================================
+// LA RIGA DELLA VOCE A RIQUADRI — 12/11/2026, modello approvato da
+// Alessio l'11/11 (https://claude.ai/artifact/ARhaRmdURjj5SnnPm3KiVD)
+// =====================================================================
+// Le informazioni che erano una riga grigia («Stimato · dilazione … ·
+// IVA … · netto …») diventano riquadri leggibili a colpo d'occhio, e in
+// fondo c'è SEMPRE il totale con scritto «stimato» o «confermato».
+// Il tono: «ok» verde (a posto), «attenzione» ambra (da tenere d'occhio),
+// «male» rosso (sforato), «neutro» senza colore.
+
+export const PAROLE_STATO = { stimato: "Stimato", preventivato: "Preventivato", confermato: "Confermato" };
+export const PAROLE_DILAZIONE = { nessuna: "Nessuna", stimata: "Stimata", confermata: "Confermata" };
+const TONO_STATO = { stimato: "neutro", preventivato: "attenzione", confermato: "ok" };
+
+/**
+ * I riquadri di una voce.
+ * @param voce  {stato, dilazione, aliquota_iva, netto, importo_ivato}
+ * @param conto {speso, impegnato} oppure null se lo speso non è letto:
+ *              allora i riquadri dello speso NON ci sono (niente non è zero).
+ * @returns [{chiave, etichetta, testo?, importo?, tono}]
+ */
+export function riquadriVoce(voce, conto) {
+  const iva = Number(voce?.aliquota_iva ?? 0);
+  const riquadri = [
+    { chiave: "stato", etichetta: "Stato", testo: PAROLE_STATO[voce?.stato] ?? voce?.stato ?? "—", tono: TONO_STATO[voce?.stato] ?? "neutro" },
+    { chiave: "dilazione", etichetta: "Dilazione", testo: PAROLE_DILAZIONE[voce?.dilazione] ?? voce?.dilazione ?? "—", tono: "neutro" },
+    { chiave: "iva", etichetta: "IVA", testo: voce?.iva_mista ? "mista" : iva === 0 ? "senza IVA" : `${iva}%`, tono: "neutro" },
+    { chiave: "netto", etichetta: "Netto", importo: euro(centesimi(voce?.netto)), tono: "neutro" },
+  ];
+  if (!conto) return riquadri;
+
+  const speso = euro(centesimi(conto.speso));
+  const impegnato = euro(centesimi(conto.impegnato));
+  riquadri.push(
+    speso > 0
+      ? { chiave: "spesi", etichetta: "Spesi", importo: speso, tono: "neutro" }
+      : { chiave: "spesi", etichetta: "Spesi", testo: "niente", tono: "neutro" },
+  );
+  if (impegnato > 0) riquadri.push({ chiave: "da_pagare", etichetta: "Da pagare", importo: impegnato, tono: "attenzione" });
+
+  const e = esitoVoce({ previsto: voce?.importo_ivato, speso, impegnato });
+  if (e.esito === "sforato") {
+    riquadri.push({ chiave: "esito", etichetta: "Sforato di", importo: e.differenza, tono: "male", esito: e.esito });
+  } else if (e.esito === "a_rischio") {
+    riquadri.push({ chiave: "esito", etichetta: "Supera di", importo: e.differenza, tono: "male", esito: e.esito });
+  } else {
+    // «Restano» toglie anche le fatture da pagare: quei soldi sono già impegnati.
+    const restano = euro(centesimi(voce?.importo_ivato) - centesimi(speso) - centesimi(impegnato));
+    riquadri.push({ chiave: "esito", etichetta: "Restano", importo: restano, tono: "ok", esito: e.esito });
+  }
+  return riquadri;
+}
+
+/**
+ * Il totale in fondo alla riga: sempre con la parola giusta.
+ * «Confermato» solo se la voce è confermata; tutto il resto è una stima.
+ */
+export function totaleVoce(voce, figlie = []) {
+  const parola = voce?.stato === "confermato" ? "confermato" : "stimato";
+  const totale = { parola, importo: euro(centesimi(voce?.importo_ivato)) };
+  // Con le sottovoci: «stimato · di cui confermato X» (modello dell'11/11).
+  if (figlie.length > 0 && parola === "stimato") {
+    const conf = figlie.filter((f) => f.stato === "confermato").reduce((s, f) => s + centesimi(f.importo_ivato), 0);
+    if (conf > 0) totale.diCuiConfermato = euro(conf);
+  }
+  return totale;
+}
+
+// =====================================================================
+// LE SOTTOVOCI — 12/11/2026 (migrazione 20261112000002)
+// =====================================================================
+// Una sottovoce è una voce con `madre_id`. La madre ha cifra e stato
+// calcolati dal database; qui si mettono insieme le cose che il database
+// non può tenere in una colonna: il netto (con aliquote diverse) e lo
+// speso, che sta tutto sulle sottovoci.
+
+/** Le sottovoci vive di ogni madre, in ordine. */
+export function sottovociPerMadre(voci) {
+  const m = new Map();
+  for (const v of voci ?? []) {
+    if (!v.madre_id || v.archiviata_il) continue;
+    if (!m.has(v.madre_id)) m.set(v.madre_id, []);
+    m.get(v.madre_id).push(v);
+  }
+  for (const figlie of m.values()) {
+    figlie.sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0) || String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")));
+  }
+  return m;
+}
+
+/** La madre come la mostra la riga: netto sommato, IVA «mista» se le aliquote sono diverse. */
+export function voceConSottovoci(madre, figlie) {
+  if (!figlie?.length) return madre;
+  const aliquote = new Set(figlie.map((f) => Number(f.aliquota_iva)));
+  return {
+    ...madre,
+    netto: euro(figlie.reduce((s, f) => s + centesimi(f.netto), 0)),
+    aliquota_iva: aliquote.size === 1 ? [...aliquote][0] : madre.aliquota_iva,
+    iva_mista: aliquote.size > 1,
+  };
+}
+
+/** Speso e impegnato della madre: la somma delle sottovoci. */
+export function contoConSottovoci(figlie, perVoce) {
+  return (figlie ?? []).reduce(
+    (t, f) => {
+      const c = perVoce?.get(f.id);
+      return {
+        speso: euro(centesimi(t.speso) + centesimi(c?.speso)),
+        impegnato: euro(centesimi(t.impegnato) + centesimi(c?.impegnato)),
+        scollegate: (t.scollegate ?? 0) + (c?.scollegate ?? 0),
+      };
+    },
+    { speso: 0, impegnato: 0, scollegate: 0 },
+  );
+}
+
 /**
  * I totali del piano, per gruppo e in tutto.
  * 🔴 Due numeri, non uno: la differenza netta (speso − previsto) e gli
@@ -166,7 +283,10 @@ export function esitoVoce({ previsto, speso = 0, impegnato = 0, confermata = fal
  * @param voci [{id, gruppo, importo_ivato, archiviata_il, speso?, impegnato?}]
  */
 export function totaliDelPiano(voci) {
-  const vive = (voci ?? []).filter((v) => !v.archiviata_il);
+  // 12/11: una madre è la somma delle sue sottovoci, che sono già qui:
+  // contarla farebbe il doppio. Si contano le voci senza sottovoci.
+  const madri = new Set((voci ?? []).filter((v) => v.madre_id && !v.archiviata_il).map((v) => v.madre_id));
+  const vive = (voci ?? []).filter((v) => !v.archiviata_il && !madri.has(v.id));
   const vuoto = () => ({ previsto: 0, speso: 0, impegnato: 0, sforamenti: 0, voci: 0 });
   const perGruppo = Object.fromEntries(GRUPPI.map((g) => [g.codice, vuoto()]));
   const tutto = vuoto();

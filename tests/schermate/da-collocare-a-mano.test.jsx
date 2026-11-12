@@ -82,7 +82,7 @@ describe("Da collocare — «Fallo a mano» di una spesa detta", () => {
 
     await waitFor(() => expect(finte.annota).toHaveBeenCalledTimes(1));
     expect(finte.annota).toHaveBeenCalledWith("az-1", {
-      importo: "3,50",
+      importo: "3.5",
       data: "",
       controparte: "Panificio Russo",
       descrizione: "pane",
@@ -152,5 +152,36 @@ describe("Da collocare — «Fallo a mano» di una spesa detta", () => {
     expect(await screen.findByText("Niente da collocare.")).toBeTruthy();
     expect(finte.aMano).not.toHaveBeenCalled();
     expect(screen.queryByText("La spesa che hai detto")).toBeNull();
+  });
+
+  // 🔴 «1.200» PARTIVA COSÌ COM'ERA e il database lo leggeva 1,20 €
+  //    (revisione dell'11/11, punto 2).
+  it("«1.200» parte come milleduecento", async () => {
+    mostra();
+    const importo = await screen.findByDisplayValue("3");
+    fireEvent.change(importo, { target: { value: "1.200" } });
+    fireEvent.click(screen.getByRole("button", { name: "Mettila fra quelle da collocare" }));
+    await waitFor(() => expect(finte.annota).toHaveBeenCalledTimes(1));
+    expect(finte.annota.mock.calls[0][1].importo).toBe("1200");
+  });
+
+  it("un importo che non si capisce non parte, e la scheda dice perché", async () => {
+    mostra();
+    const importo = await screen.findByDisplayValue("3");
+    fireEvent.change(importo, { target: { value: "1.2345" } });
+    const bottone = screen.getByRole("button", { name: "Mettila fra quelle da collocare" });
+    expect(bottone.getAttribute("aria-disabled")).toBe("true");
+    expect(document.getElementById("voce-manca").textContent).toMatch(/«1\.2345» non si capisce/);
+    fireEvent.click(bottone);
+    expect(finte.annota).not.toHaveBeenCalled();
+  });
+
+  it("se MEMO manda l'importo come numero la scheda non si rompe", async () => {
+    finte.aMano.mockResolvedValue({ ...AZIONE, campi: { importo: 1200, descrizione: "pane" } });
+    mostra();
+    expect(await screen.findByDisplayValue("1200")).toBe(screen.getByLabelText("Importo (€)"));
+    fireEvent.click(screen.getByRole("button", { name: "Mettila fra quelle da collocare" }));
+    await waitFor(() => expect(finte.annota).toHaveBeenCalledTimes(1));
+    expect(finte.annota.mock.calls[0][1].importo).toBe("1200");
   });
 });

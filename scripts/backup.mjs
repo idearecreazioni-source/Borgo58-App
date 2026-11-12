@@ -24,10 +24,13 @@
 //   09_file_conteggi.txt quanti documenti il database dichiarava, cartella
 //                   per cartella: senza, un file non copiato non lo vede
 //                   nessuno
+//   00_copia_completa.txt il TIMBRO, scritto per ultimo: c'e' solo se la
+//                   copia e' arrivata in fondo e ha passato il controllo
+//                   (e' l'unico file di cui si fida `npm run migra`)
 //
 // Sola lettura sul database vero: non scrive nulla, non cancella nulla.
 
-import { mkdirSync, writeFileSync, statSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, statSync, existsSync, rmSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { createClient } from "@supabase/supabase-js";
@@ -40,6 +43,7 @@ import {
   fermati,
   titolo,
   timbroLocale,
+  TIMBRO_COPIA_COMPLETA,
   pretendiProgetto,
   REF_PRODUZIONE,
   urlApiDi,
@@ -81,6 +85,9 @@ const pgDump = strumento("pg_dump");
 const radice = config.BACKUP_CARTELLA || path.join(os.homedir(), "Desktop", "Backup Borgo 58");
 const cartella = path.join(radice, timbroLocale());
 mkdirSync(cartella, { recursive: true });
+// ⚠️ Due copie nello stesso minuto finiscono nella stessa cartella: il timbro
+//    della prima non deve restare a garantire la seconda, se questa si ferma.
+rmSync(path.join(cartella, TIMBRO_COPIA_COMPLETA), { force: true });
 
 console.log(`Copia di sicurezza in corso.`);
 console.log(`Cartella: ${cartella}`);
@@ -326,6 +333,31 @@ if (!controllo.ok) {
   );
 }
 
+if (!existsSync(path.join(cartella, "02_dati.sql"))) fermati("Copia incompleta.");
+
+// ---------------------------------------------------------------------
+// IL TIMBRO, PER ULTIMO (12/11/2026, revisione dell'11/11, punto 9).
+// ---------------------------------------------------------------------
+// 🔴 Il freno di `npm run migra` crede solo alle cartelle col timbro
+//    (`copiaPiuRecente`). Prima faceva da timbro `05_conteggi.txt`, scritto
+//    a meta': una copia che falliva sui documenti o sul controllo restava
+//    lì e passava per buona. Adesso il timbro nasce QUI, quando dati e
+//    documenti sono salvati, contati e controllati e lo zip è stato tentato:
+//    qualunque `fermati` sopra lascia la cartella SENZA timbro.
+// ⚠️ Lo zip mancante non toglie il timbro: la cartella è controllata e
+//    intera (lo dice anche il messaggio qui sotto). Il timbro scrive se lo
+//    zip c'è, e il comando finisce lo stesso con un errore.
+writeFileSync(
+  path.join(cartella, TIMBRO_COPIA_COMPLETA),
+  [
+    `Copia completa e controllata: ${new Date().toLocaleString("it-IT")}`,
+    `Righe: ${righeTotali}`,
+    `Documenti: ${quanti}`,
+    `Zip: ${zipRiuscito ? path.basename(zip) : "NON riuscito (si porta fuori la cartella)"}`,
+  ].join("\n") + "\n",
+  "utf8"
+);
+
 if (!zipRiuscito) {
   fermati(
     "COPIA FATTA, MA SENZA LO ZIP.",
@@ -340,5 +372,3 @@ console.log("");
 console.log("  ORA COPIA QUESTA CARTELLA FUORI DAL COMPUTER");
 console.log("  (chiavetta USB, disco esterno o cloud personale).");
 console.log("");
-
-if (!existsSync(path.join(cartella, "02_dati.sql"))) fermati("Copia incompleta.");

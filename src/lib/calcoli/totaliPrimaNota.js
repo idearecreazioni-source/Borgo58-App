@@ -14,3 +14,16 @@ export function totaliDelPeriodo(movimenti) {
   const out = movimenti.filter((m) => m.direction === "uscita").reduce((s, m) => s + Number(m.amount), 0);
   return { inc, out, saldo: inc - out };
 }
+
+// 🔴 «QUESTO MESE ENTRATI / USCITI» CONTAVA ANCHE GLI SPOSTAMENTI (revisione
+//    dell'11/11, punto 7): versare 800 € in banca faceva «+800 entrati» e
+//    «−800 usciti», e il prestito di ottobre risultava 8.000 € entrati.
+//    Le causali «di sistema» (versamenti, differenze di cassa, rimborso al
+//    titolare, caparre, prestiti) sono soldi che si spostano, non che si
+//    guadagnano o si spendono: il gestionale le scrive da solo, e qui non
+//    si contano. Una riga senza causale si conta, come prima.
+// ⚠️ SOLO per il riquadro della Cassa: la Prima nota resta il registro di
+//    tutti i movimenti e somma con `totaliDelPeriodo`, spostamenti compresi.
+export function entratiUscitiDelMese(movimenti) {
+  return totaliDelPeriodo((movimenti ?? []).filter((m) => m.causale?.di_sistema !== true));
+}

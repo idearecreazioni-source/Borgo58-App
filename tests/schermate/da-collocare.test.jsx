@@ -118,8 +118,25 @@ describe("Da collocare", () => {
     fireEvent.click(screen.getByRole("button", { name: "Metti in «Prima nota»" }));
     await waitFor(() => expect(api.togli).toHaveBeenCalledWith("s2", "da-collocare/x.jpg"));
     expect(api.colloca.mock.calls[0][2]).toMatchObject({
-      importo: "18.40", mezzo: "cassa", documento: "scontrino", conto_id: null,
+      importo: "18.4", mezzo: "cassa", documento: "scontrino", conto_id: null,
     });
+  });
+
+  // 🔴 «1.200» DIVENTAVA 1,20 € (revisione dell'11/11, punto 2).
+  it("«1.200» parte come milleduecento; «1.2345» ferma il pulsante e dice perché", async () => {
+    api.colloca.mockResolvedValue({ dove: "prima_nota", foto_da_togliere: null });
+    mostra();
+    await screen.findByText("cancelleria");
+    fireEvent.click(riga("s2").querySelector("button"));
+    fireEvent.click(screen.getByRole("radio", { name: /Prima nota/ }));
+    const campoImporto = riga("s2").querySelector('input[inputmode="decimal"]');
+    fireEvent.change(campoImporto, { target: { value: "1.2345" } });
+    expect(screen.getByRole("button", { name: "Metti in «Prima nota»" }).disabled).toBe(true);
+    expect(screen.getByText(/Manca un importo che si capisca/)).toBeTruthy();
+    fireEvent.change(campoImporto, { target: { value: "1.200" } });
+    fireEvent.click(screen.getByRole("button", { name: "Metti in «Prima nota»" }));
+    await waitFor(() => expect(api.colloca).toHaveBeenCalledTimes(1));
+    expect(api.colloca.mock.calls[0][2].importo).toBe("1200");
   });
 
   it("in archivio servono sezione e data, e la foto resta", async () => {

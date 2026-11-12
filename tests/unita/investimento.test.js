@@ -333,6 +333,10 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // l'etichetta solo dentro la propria verifica annullata; il
       // collegamento vero passa da `segna_investimento`.
       "20261108000003_memo_gestisce_il_piano.sql",
+      // Dividi su più voci (12/11/2026): NON e' fiscale, mette l'etichetta
+      // sulla spesa che si divide (come segna_investimento) e sostituisce i
+      // suoi collegamenti al piano.
+      "20261112000003_dividi_su_piu_voci.sql",
     ]);
   });
 

@@ -469,6 +469,8 @@ export function esegui(programma, argomenti, opzioni = {}) {
     //    diceva «il database non ha risposto» stampando metà delle funzioni.
     maxBuffer: 64 * 1024 * 1024,
     shell: opzioni.shell === true,
+    // Facoltativo: senza, si aspetta quanto serve (com'era prima).
+    ...(opzioni.timeout ? { timeout: opzioni.timeout } : {}),
     env: { ...process.env, PGCLIENTENCODING: "UTF8", ...(opzioni.env || {}) },
   });
   const errore = r.error ? r.error.code || String(r.error.message) : null;
@@ -643,13 +645,27 @@ export function quandoDalNome(nome) {
 }
 
 /**
+ * Il TIMBRO DI COPIA COMPLETA: il file che `backup.mjs` scrive per ULTIMO,
+ * dopo che la copia ha passato il controllo e dopo lo zip.
+ *
+ * 🔴 PRIMA IL TIMBRO ERA `05_conteggi.txt` (revisione dell'11/11, punto 9):
+ *    il backup lo scrive A META', prima di scaricare i documenti e prima del
+ *    controllo. Una copia che salvava i dati e poi falliva sui documenti o
+ *    sul controllo lasciava una cartella col timbro, e il freno di
+ *    `npm run migra` si fidava di una copia rotta.
+ */
+export const TIMBRO_COPIA_COMPLETA = "00_copia_completa.txt";
+
+/**
  * La copia di sicurezza piu' recente e COMPLETA, o null.
  *
- * ⚠️ «Completa» vuol dire che contiene `05_conteggi.txt`, che il backup
- * scrive verso la fine: una cartella lasciata da un backup interrotto ha
- * il nome con l'ora giusta e dentro non ha niente su cui contare le
- * righe. Sarebbe **una copia recente che non e' una copia**, cioe' la
- * cosa peggiore — un freno che si lascia soddisfare da un guscio.
+ * ⚠️ «Completa» vuol dire che contiene il timbro (`TIMBRO_COPIA_COMPLETA`),
+ * che il backup scrive come ultimo gesto: una cartella lasciata da un backup
+ * interrotto o bocciato ha il nome con l'ora giusta e il timbro no. Sarebbe
+ * **una copia recente che non e' una copia**, cioe' la cosa peggiore — un
+ * freno che si lascia soddisfare da un guscio.
+ * ⚠️ Le copie fatte prima del 12/11/2026 non hanno il timbro e qui non
+ *    contano: basta la prima copia della sera dopo l'aggiornamento.
  */
 export function copiaPiuRecente(cartella) {
   const radice = cartella || path.join(homedir(), "Desktop", "Backup Borgo 58");
@@ -659,7 +675,7 @@ export function copiaPiuRecente(cartella) {
     if (!voce.isDirectory()) continue;
     const quando = quandoDalNome(voce.name);
     if (!quando) continue;
-    if (!existsSync(path.join(radice, voce.name, "05_conteggi.txt"))) continue;
+    if (!existsSync(path.join(radice, voce.name, TIMBRO_COPIA_COMPLETA))) continue;
     if (!migliore || quando > migliore.quando) {
       migliore = { nome: voce.name, quando, dove: path.join(radice, voce.name) };
     }

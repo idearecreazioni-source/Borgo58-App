@@ -67,9 +67,9 @@
 // toccarla. Girata di un quarto ci sta in larghezza e scorre in
 // verticale — che è il verso in cui si scorre su un telefono.
 //
-// **Il disegno gira, la sala no.** L'ingresso finisce in basso, cioè
-// dalla parte da cui si entra guardando lo schermo, e la sala alta in
-// cima. ⚠️ **Le scritte NON girano**: ogni etichetta si rigira di un
+// **Il disegno gira, la sala no.** L'uscita e i bagni finiscono in basso,
+// cioè dalla parte da cui si entra guardando lo schermo, e cucina e
+// servizi in cima (pianta nuova, 12/11/2026). ⚠️ **Le scritte NON girano**: ogni etichetta si rigira di un
 // quarto in senso contrario, altrimenti si leggerebbe di traverso — e un
 // nome di tavolo che si legge piegando la testa, durante un servizio,
 // non si legge.

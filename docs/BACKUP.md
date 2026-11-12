@@ -107,6 +107,69 @@ non protegge dal guasto del PC.
 - **Sempre prima** di applicare migrazioni o di una consegna grossa.
 - **Sempre prima** di mettere mano a qualcosa di importante da soli.
 
+### Il timbro di copia completa (dal 12/11/2026)
+
+Dentro ogni cartella, l'ultimo file che la copia scrive è
+**`00_copia_completa.txt`**. Nasce solo quando dati e documenti sono
+salvati, contati e controllati, e dopo lo zip. Una copia fallita a metà
+lascia la cartella **senza** timbro.
+
+`npm run migra` crede solo alle cartelle col timbro. Prima si fidava di
+`05_conteggi.txt`, che però si scrive a metà: una copia rotta passava per
+buona.
+
+⚠️ Le copie fatte prima del 12/11 non hanno il timbro. Dopo
+l'aggiornamento serve una copia nuova, quella della sera basta, prima di
+una migrazione.
+
+⚠️ Il timbro si scrive dopo lo zip, quindi non è dentro lo zip: una
+cartella rimessa insieme da uno zip non conta per `npm run migra`. Il
+freno guarda le cartelle del PC, non le copie portate fuori.
+
+### La copia della sera e l'avviso su Telegram (dal 12/11/2026)
+
+```bash
+npm run backup:sera       # fa la copia; se non riesce, avvisa su Telegram
+npm run backup:controlla  # non copia: avvisa se l'ultima copia completa ha più di 2 giorni
+```
+
+- **`backup:sera`** lancia `npm run backup` com'è. Se la copia non riesce
+  (password cambiata, rete, documenti mancanti, controllo fallito) arriva
+  un messaggio «💾 COPIA DI SICUREZZA» con:
+  - le ultime righe dell'errore, senza indirizzi né password;
+  - l'età dell'ultima copia buona.
+- **`backup:controlla`** serve per quello che la copia della sera non può
+  dire da sola: il PC spento per giorni, o l'operazione pianificata che non
+  parte.
+  - Lo stesso avviso arriva al massimo una volta ogni 12 ore, non a ogni
+    accesso al PC (memoria in `ultimo_avviso_copia.txt`, nella cartella
+    delle copie).
+  - Il limite è di 48 ore, e si cambia con `BACKUP_AVVISO_ORE` in `.env`.
+- **Le chiavi.** Servono `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` in
+  `.env`: gli stessi valori dei Secrets della funzione online delle
+  notifiche.
+  - Se mancano, l'avviso non parte e il comando finisce con un errore che
+    lo dice.
+  - L'avviso va a Telegram direttamente, non passa dal database: uno dei
+    guasti da segnalare è proprio il database che non risponde.
+- **L'esito.** Tutti e due escono con errore quando c'è qualcosa da dire.
+  Così anche l'operazione pianificata di Windows mostra un «ultimo
+  risultato» diverso da 0.
+
+**Sul PC, nell'Utilità di pianificazione** (da fare a mano, una volta):
+
+1. Nell'operazione «Borgo58 - copia work», l'azione da `npm run backup`
+   diventa `npm run backup:sera`. Il comando si sposta da solo nella
+   cartella del progetto, ma è meglio lasciare quella come cartella di
+   partenza.
+2. Una seconda operazione, per esempio «Borgo58 - controllo copia»:
+   - lancia `npm run backup:controlla` ogni giorno alle 10:00 e
+     all'accesso;
+   - nella stessa cartella di partenza.
+3. In tutte e due, nelle Impostazioni: «Esegui l'operazione appena
+   possibile dopo un avvio pianificato non eseguito» (è il caso del 10/11:
+   le 21:30 saltate).
+
 ---
 
 ## 4. Cosa la copia NON contiene

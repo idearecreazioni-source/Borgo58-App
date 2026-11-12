@@ -122,11 +122,18 @@ export function misureSagoma(sagoma) {
 // tests/unita/sala-misure.test.js.
 // La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
 // non è interattivo — pareti e zone non si spostano, non si
-// ridimensionano, non hanno stato. Le proporzioni vengono dalla
-// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
-// sala, serve che le zone siano riconoscibili a colpo d'occhio.
-export const SALA_LARGHEZZA_CM = 2070;
-export const SALA_PROFONDITA_CM = 1030;
+// ridimensionano, non hanno stato.
+//
+// 🔴 LA PIANTA NUOVA (12/11/2026, decisioni di Alessio dell'11/11). Le
+// misure non sono più «in proporzione»: vengono dal file Sweet Home 3D
+// «Borgo 58 prova bagni», letto muro per muro. L'origine (0, 0) è lo
+// spigolo INTERNO in alto a sinistra dei muri perimetrali; da lì la sala
+// misura 1990 × 950 cm dentro i muri (prima era 2070 × 1030, l'ingombro
+// esterno di un disegno in proporzione).
+// ⚠️ Misure e zone sono arrotondate a 10 cm, come le sagome (è la griglia
+// della pianta); i muri restano al centimetro, perché sono solo disegno.
+export const SALA_LARGHEZZA_CM = 1990;
+export const SALA_PROFONDITA_CM = 950;
 
 /**
  * Quanto si rimpicciolisce il disegno della sala rispetto alla regola dei
@@ -148,6 +155,11 @@ export const SALA_PROFONDITA_CM = 1030;
  * qualunque fattore sotto 0,788**. Il pavimento morde solo su uno schermo
  * più stretto — un telefono da 375 punti — e lì il margine è tutto ciò che
  * separa «entra» da «scorre».
+ *
+ * ⚠️ I NUMERI QUI SOPRA SONO DELLA SALA VECCHIA (profonda 1030). Con la
+ * pianta nuova (950) la pianta in piedi pretende 11,08 cm, cioè 419 punti:
+ * il minimo esatto diventa 0,854 e a 0,75 il pavimento scende a 314 punti.
+ * Il fattore resta 0,75 — c'è più margine di prima, non meno.
  */
 export const RIDUZIONE_DISEGNO = 0.75;
 
@@ -164,6 +176,14 @@ export const RIDUZIONE_DISEGNO = 0.75;
 // 0,7 per far stare menu e pianta affiancati, e quelle due colonne non
 // esistono più — a tutta larghezza la pianta ci sta comunque. *Un numero
 // si abbassa quando serve, non per prudenza.*
+//
+// ⚠️ IL «90» DEI CONTI QUI SOTTO È UN RIFERIMENTO, NON PIÙ IL TAVOLO PIÙ
+// PICCOLO (12/11/2026). Con la pianta nuova il lato più corto è 70 cm (i
+// tavoli piccoli 70×80): il loro bersaglio è 70/90 di quello calcolato
+// qui, cioè circa 6,1 mm sul telefono invece di 7,9 — ancora sopra i
+// 5,3 mm provati con le mani. Rifare i conti su 70 avrebbe fatto
+// sbordare la pianta dal telefono (servirebbero 404 punti, ce ne sono
+// 358) per difendere un margine che la prova del 18/08 dice non serve.
 export const TOCCO_TAVOLO_CM = 1.05;
 
 /**
@@ -466,13 +486,73 @@ export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti, 
   return { x: scelta.x, y: scelta.y, agganci };
 }
 
+// 🔴 LE ZONE DELLA PIANTA NUOVA (12/11/2026). Una sola sala: niente più
+// «sala alta» e «sala bassa» (decisione di Alessio dell'11/11). La sala è
+// disegnata con DUE rettangoli solo perché ha la forma di una L intorno ai
+// bagni: sono la stessa sala, e i due nomi servono a non avere due chiavi
+// uguali, non a distinguere qualcosa.
+//
+// ⚠️ PERCHÉ «SERVIZI» E «CUCINA» NON SONO ESATTAMENTE LE STANZE VERE. Il
+// pannello dentro la pianta pretende che le due zone formino un
+// rettangolo (`riquadroDelPannello`). La cucina vera comincia al muro
+// della feritoia (x 1160), ma il suo pezzo fra 1150 e 1350 sta sotto il
+// bancone: con quel pezzo dentro, cucina e servizi farebbero una L e il
+// pannello non comparirebbe più. Quindi «Servizi» + «Cucina» sono il
+// blocco di destra (lavaggio, bagno del personale, cucina e dispensa,
+// 640 × 950) e il pezzo di cucina sotto il bancone è una zona a parte,
+// vietata ai mobili come il resto (`vietata: true`). I muri disegnati
+// sopra dicono dove stanno davvero le pareti.
 export const ZONE_FONDALE = [
-  { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
-  { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
-  { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
-  { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
-  { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
+  { nome: "Bagni", x: 0, y: 0, larghezza: 360, profondita: 440, servizio: true, vietata: true },
+  { nome: "Sala, fra bagni e bancone", x: 360, y: 0, larghezza: 790, profondita: 440 },
+  { nome: "Sala", x: 0, y: 440, larghezza: 1150, profondita: 510 },
+  { nome: "Bancone", x: 1150, y: 0, larghezza: 200, profondita: 510, servizio: true },
+  { nome: "Cucina, lato sala", x: 1150, y: 510, larghezza: 200, profondita: 440, servizio: true, vietata: true },
+  { nome: "Servizi", x: 1350, y: 0, larghezza: 640, profondita: 510, servizio: true },
+  { nome: "Cucina", x: 1350, y: 510, larghezza: 640, profondita: 440, servizio: true },
 ];
+
+// I MURI INTERNI della pianta nuova, come rettangoli pieni (asse e spessore
+// presi dal file di Sweet Home 3D, porte già tolte). Il perimetro non è
+// qui: lo disegna la schermata come contorno della sala, con il varco
+// dell'uscita (`USCITA_FONDALE`).
+// ⚠️ Solo disegno: i muri non fermano un tavolo trascinato. A tenere i
+// mobili fuori da bagni, cucina e servizi sono le zone `vietata` qui sopra.
+export const MURI_FONDALE = [
+  // Il muro di spina, in quattro pezzi: fra un pezzo e l'altro si passa.
+  { x: 0, y: 437, larghezza: 227, profondita: 77 },
+  { x: 580, y: 437, larghezza: 212, profondita: 77 },
+  { x: 1155, y: 437, larghezza: 200, profondita: 77 },
+  { x: 1741, y: 437, larghezza: 249, profondita: 77 },
+  // Bagni (porta del primo bagno fra y 176 e 266)
+  { x: 226, y: 0, larghezza: 24, profondita: 176 },
+  { x: 226, y: 266, larghezza: 24, profondita: 188 },
+  { x: 0, y: 270, larghezza: 236, profondita: 8 },
+  { x: 0, y: 132, larghezza: 353, profondita: 8 },
+  { x: 348, y: 135, larghezza: 10, profondita: 378 },
+  // Fra bancone e servizi (porta fra y 2 e 92)
+  { x: 1348, y: 92, larghezza: 8, profondita: 352 },
+  // Lavaggio e bagno del personale (porte a x 1476-1576 e y 302-382)
+  { x: 1353, y: 437, larghezza: 123, profondita: 8 },
+  { x: 1576, y: 437, larghezza: 171, profondita: 8 },
+  { x: 1815, y: 0, larghezza: 8, profondita: 302 },
+  { x: 1815, y: 382, larghezza: 8, profondita: 59 },
+  { x: 1819, y: 119, larghezza: 171, profondita: 8 },
+  { x: 1960, y: 0, larghezza: 30, profondita: 441 },
+  // Cucina: la parete della feritoia verso la sala (porta fra y 514 e 604)
+  { x: 1155, y: 604, larghezza: 10, profondita: 346 },
+  // Cucina e dispensa (porte fra y 517-597 e 871-951)
+  { x: 1741, y: 597, larghezza: 15, profondita: 274 },
+  { x: 1753, y: 728, larghezza: 214, profondita: 15 },
+  { x: 1964, y: 513, larghezza: 25, profondita: 437 },
+];
+
+// L'uscita sul muro di sinistra, in cima alla scala: il contorno della
+// sala si interrompe qui.
+export const USCITA_FONDALE = { daY: 654, aY: 814 };
+
+// La scala davanti all'uscita: otto gradini da 20 cm.
+export const SCALA_FONDALE = { x: 0, y: 624, larghezza: 160, profondita: 222, gradini: 8 };
 
 // =====================================================================
 // LO SPAZIO VUOTO DENTRO LA PIANTA (19/08/2026, idea di Alessio)
@@ -630,12 +710,27 @@ export function pannelloAllargato(zone = [], sagome = [], quali = ZONE_DEL_BANCO
   const r = pannelloNellaPianta(zone, sagome, quali);
   if (!r) return null;
 
-  // Il bancone sta contro il bordo della sala: cresce verso l'interno, cioè
-  // verso le x più piccole. ⚠️ Il verso si ricava dal fondale, non si scrive
-  // a mano: se un giorno il pannello stesse dall'altra parte, questa regola
-  // direbbe una cosa falsa e nessun errore lo mostrerebbe.
-  const controIlBordoDestro = Math.abs(r.x + r.larghezza - SALA_LARGHEZZA_CM) < 1;
-  if (!controIlBordoDestro) return r;
+  // Il bancone ha le spalle chiuse: cresce verso l'interno, cioè verso le x
+  // più piccole. ⚠️ Il verso si ricava dal fondale, non si scrive a mano: se
+  // un giorno il pannello stesse dall'altra parte, questa regola direbbe una
+  // cosa falsa e nessun errore lo mostrerebbe.
+  // 🔴 «SPALLE CHIUSE» DAL 12/11/2026 VUOL DIRE DUE COSE. Nella sala vecchia
+  // il bancone stava contro il bordo destro del disegno; nella pianta nuova
+  // sta in mezzo, con dietro i servizi. Senza la seconda condizione il
+  // pannello non sarebbe più cresciuto, e sarebbe tornato alto 200 cm
+  // invece dei ~360 della sala vecchia — il riquadro che Alessio aveva già
+  // segnalato tre volte come illeggibile.
+  const dietro = r.x + r.larghezza;
+  const controIlBordoDestro = Math.abs(dietro - SALA_LARGHEZZA_CM) < 1;
+  const controUnServizio = zone.some(
+    (z) =>
+      z.servizio &&
+      !quali.includes(z.nome) &&
+      Math.abs(z.x - dietro) < 1 &&
+      z.y <= r.y &&
+      z.y + z.profondita >= r.y + r.profondita
+  );
+  if (!controIlBordoDestro && !controUnServizio) return r;
 
   // Le sagome che stanno nella stessa fascia di profondità del pannello:
   // sono quelle che gli verrebbero incontro crescendo.
@@ -648,8 +743,16 @@ export function pannelloAllargato(zone = [], sagome = [], quali = ZONE_DEL_BANCO
         s.x + mis.larghezza <= r.x
     )
     .map(({ s, mis }) => s.x + mis.larghezza);
+  // 🔴 E SI FERMA ANCHE DAVANTI ALLE AREE VIETATE (revisione del 12/11). Con
+  // la pianta nuova, a sinistra del bancone ci sono i bagni: in una sera
+  // senza tavoli in quella fascia il pannello sarebbe arrivato fino al muro
+  // di sinistra, sopra i bagni.
+  const vietateDavanti = zone
+    .filter((z) => z.vietata && z.y < r.y + r.profondita && z.y + z.profondita > r.y && z.x + z.larghezza <= r.x)
+    .map((z) => z.x + z.larghezza);
+  const ostacoli = [...davanti.map((x) => x + varcoCm), ...vietateDavanti];
 
-  const limite = davanti.length > 0 ? Math.max(...davanti) + varcoCm : 0;
+  const limite = ostacoli.length > 0 ? Math.max(...ostacoli) : 0;
   const nuovoX = Math.max(0, Math.min(r.x, limite));
   return { ...r, x: nuovoX, larghezza: r.x + r.larghezza - nuovoX };
 }
@@ -682,13 +785,29 @@ export function areaVietataAiMobili(zone = []) {
   return riquadroDelPannello(zone);
 }
 
+// 🔴 CON LA PIANTA NUOVA LE AREE VIETATE SONO PIÙ D'UNA (12/11/2026). Il
+// riquadro del pannello resta la prima, ed è sempre la stessa cosa del
+// pannello; in più valgono le zone segnate `vietata` nel fondale — i bagni
+// in alto a sinistra e il pezzo di cucina sotto il bancone, che non
+// potevano entrare nel rettangolo del pannello. Senza queste, la «L
+// capovolta» di Alessio sarebbe tornata un rettangolo proprio nei punti
+// dove un tavolo finisce dietro un muro.
+export function areeVietateAiMobili(zone = []) {
+  const pannello = areaVietataAiMobili(zone);
+  const altre = zone
+    .filter((z) => z.vietata)
+    .map(({ x, y, larghezza, profondita }) => ({ x, y, larghezza, profondita }));
+  return pannello ? [pannello, ...altre] : altre;
+}
+
 /**
  * La sagoma finirebbe dentro l'area vietata?
  *
  * @param rett   { x, y, larghezza, profondita } — misure VERE, già nel verso
- * @param vietata il riquadro vietato, o null se non ce n'è
+ * @param vietata il riquadro vietato, un elenco di riquadri, o null
  */
 export function dentroAreaVietata(rett, vietata) {
+  if (Array.isArray(vietata)) return vietata.some((v) => dentroAreaVietata(rett, v));
   if (!vietata || !rett) return false;
   return (
     rett.x < vietata.x + vietata.larghezza &&
@@ -729,9 +848,15 @@ export function dentroAreaVietata(rett, vietata) {
 // Chef Table si vede **a sinistra dei divani e in piedi**. La richiesta è
 // nata guardando il telefono, che è la strada maestra; sul computer non è
 // sbagliata, è solo l'altra faccia dello stesso spostamento.
-export const SPOSTATE_NEL_DISEGNO = {
-  "Chef Table": { x: 150, y: 800, ruotato: true },
-};
+//
+// 🔴 DAL 12/11/2026 L'ELENCO È VUOTO. Con la pianta nuova la Chef Table è
+// SPENTA (decisione di Alessio dell'11/11: «da togliere per ora»; spenta e
+// non cancellata, perché ha uno storico), quindi non si disegna. La sua
+// posizione finta era scritta nelle coordinate della sala vecchia: tenerla
+// qui l'avrebbe fatta ricomparire, il giorno che la si riaccende, sopra la
+// scala. Se torna, la posizione si decide sulla pianta nuova.
+// Il meccanismo resta, perché la ragione di Alessio vale ancora.
+export const SPOSTATE_NEL_DISEGNO = {};
 
 /** La sagoma come va disegnata, se qualcuno l'ha spostata solo sul foglio. */
 export function sagomaPerIlDisegno(sagoma) {

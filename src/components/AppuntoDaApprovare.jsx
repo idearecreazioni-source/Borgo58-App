@@ -1,5 +1,8 @@
+import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  campiCorreggibili,
+  datiCorretti,
   avvisoDellElemento,
   candidatiDellElemento,
   impegnoScelto,
@@ -33,7 +36,7 @@ import { indirizzoAMano } from "../lib/calcoli/aMano";
 //    autorizzerebbe una scrittura che non ha visto. Per questo ogni elemento
 //    porta i **dati concreti** — quelli che finiranno nel gestionale — e non
 //    una frase gentile.
-function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onScegli }) {
+function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onScegli, onCorreggi }) {
   const inCorso = esito?.stato === "in_corso" || occupato;
   const fatto = esito?.stato === "fatta";
   const fallito = esito?.stato === "fallita";
@@ -92,6 +95,8 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
             elemento={e}
             inCorso={inCorso}
             onScegli={(sceltaId) => onScegli(e.id, sceltaId)}
+            onCorreggi={onCorreggi && !fatto && !buttato ? (dati) => onCorreggi(e.id, dati) : null}
+            erroreDelGesto={fallito ? esito.messaggio : ""}
           />
         ))}
       </ul>
@@ -155,7 +160,15 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
   );
 }
 
-function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
+function ElementoDellAppunto({ elemento, inCorso, onScegli, onCorreggi, erroreDelGesto }) {
+  const [correggendo, setCorreggendo] = useState(false);
+  const bottoneCorreggi = useRef(null);
+  const campiDaCorreggere = onCorreggi ? campiCorreggibili(elemento.dati) : [];
+  const chiudiCorreggi = () => {
+    setCorreggendo(false);
+    // Il fuoco torna dove si era, non in cima alla pagina.
+    requestAnimationFrame(() => bottoneCorreggi.current?.focus());
+  };
   const scelte = Array.isArray(elemento.scelte) ? elemento.scelte : [];
   const chiedeQuale = elemento.domanda === "scegli" && scelte.length > 0;
   // ⚠️ `manca` è il caso in cui nemmeno il gestionale sa cosa proporre: non
@@ -183,6 +196,42 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
       <p className="testo-sala mt-0.5 text-b58-charcoal-soft">
         {concreti === "" ? "nessun dato da scrivere" : concreti}
       </p>
+
+      {/* 🔴 «CORREGGI» — 12/11/2026, richiesta di Alessio: se MEMO ha capito
+          male un pezzo (il gruppo, l'importo, la voce), si cambia quel pezzo
+          invece di buttare l'appunto e ridire tutta la frase. Correggere
+          NON approva: l'appunto resta qui, e il sì resta un gesto a parte. */}
+      {campiDaCorreggere.length > 0 && !correggendo && (
+        <p className="mt-1">
+          <button
+            ref={bottoneCorreggi}
+            type="button"
+            onClick={() => setCorreggendo(true)}
+            disabled={inCorso}
+            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta-testo hover:underline disabled:opacity-60"
+          >
+            Correggi<span className="sr-only"> «{elemento.frase}»</span>
+          </button>
+        </p>
+      )}
+      {correggendo && (
+        <ModuloCorreggi
+          // ⚠️ Se i dati cambiano mentre il modulo è aperto (la lista si
+          //    rilegge), il modulo riparte da quelli nuovi: la porta li
+          //    sostituisce interi, e mandare i vecchi cancellerebbe i nuovi.
+          key={JSON.stringify(elemento.dati ?? {})}
+          frase={elemento.frase}
+          campi={campiDaCorreggere}
+          dati={elemento.dati}
+          inCorso={inCorso}
+          erroreDelGesto={erroreDelGesto}
+          onAnnulla={chiudiCorreggi}
+          onSalva={async (dati) => {
+            const riuscito = await onCorreggi(dati);
+            if (riuscito) chiudiCorreggi();
+          }}
+        />
+      )}
 
       {/* 🔴 L'AVVISO SI LEGGE PER INTERO PRIMA DI FIRMARE — 10/09/2026.
           Quello che si approva qui non è un dato in tabella: è **un
@@ -331,6 +380,136 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
         </div>
       )}
     </li>
+  );
+}
+
+const inputCorreggi =
+  "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-b58-campo px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+const labelCorreggi = "block testo-sala text-b58-charcoal-soft mb-1";
+
+/**
+ * Il modulo di «Correggi»: un campo per ogni dato che si può cambiare.
+ * ⚠️ Rimanda i dati INTERI (la porta del database li sostituisce, non li
+ *    unisce): `datiCorretti` parte da quelli di prima.
+ */
+function ModuloCorreggi({ frase, campi, dati, inCorso, erroreDelGesto, onAnnulla, onSalva }) {
+  const base = useId();
+  const [valori, setValori] = useState(() => Object.fromEntries(campi.map((c) => [c.chiave, c.valore])));
+  const [errore, setErrore] = useState("");
+  const [voci, setVoci] = useState(null);
+  const [vociNonLette, setVociNonLette] = useState("");
+  const primo = useRef(null);
+  const conVoce = campi.some((c) => c.tipo === "voce_piano");
+
+  useEffect(() => {
+    primo.current?.focus();
+  }, []);
+
+  // Le voci del piano si leggono solo se servono, e solo qui.
+  useEffect(() => {
+    if (!conVoce) return undefined;
+    let vivo = true;
+    import("../lib/api/pianoInvestimento")
+      .then(({ leggiPiano }) => leggiPiano())
+      .then((p) => {
+        if (vivo) setVoci(p.voci.filter((v) => !v.archiviata_il));
+      })
+      .catch((e) => {
+        // Non si tace: sotto il campo si dice che le altre voci non si sono
+        // lette, e perché. La voce di adesso resta scelta.
+        if (vivo) {
+          setVoci([]);
+          setVociNonLette(e?.message || "errore sconosciuto");
+        }
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [conVoce]);
+
+  function salva(e) {
+    e.preventDefault();
+    const r = datiCorretti(dati, valori);
+    if (r.errore) {
+      setErrore(r.errore);
+      return;
+    }
+    setErrore("");
+    onSalva(r.dati);
+  }
+
+  return (
+    <form onSubmit={salva} className="mt-2 space-y-3 rounded-lg ring-1 ring-b58-charcoal/15 p-3" aria-label={`Correggi i dati di «${frase}»`}>
+      {campi.map((c, i) => {
+        const id = `${base}-${c.chiave}`;
+        const cambia = (ev) => setValori((v) => ({ ...v, [c.chiave]: ev.target.value }));
+        const rif = i === 0 ? primo : undefined;
+        let campo;
+        if (c.tipo === "voce_piano") {
+          const elenco = voci ?? [];
+          const presente = elenco.some((v) => v.id === c.valore);
+          campo = (
+            <select id={id} ref={rif} className={inputCorreggi} value={valori[c.chiave]} onChange={cambia} aria-busy={voci === null}>
+              {!presente && <option value={c.valore}>{dati.voce_nome ?? (voci === null ? "Leggo le voci…" : "la voce di adesso")}</option>}
+              {elenco.map((v) => (
+                <option key={v.id} value={v.id}>{`${v.gruppo}. ${v.descrizione}`}</option>
+              ))}
+            </select>
+          );
+        } else if (c.tipo === "scelta") {
+          campo = (
+            <select id={id} ref={rif} className={inputCorreggi} value={valori[c.chiave]} onChange={cambia}>
+              {valori[c.chiave] === "" && <option value="">—</option>}
+              {c.scelte.map((s) => (
+                <option key={s.valore} value={s.valore}>{s.nome}</option>
+              ))}
+            </select>
+          );
+        } else {
+          const tipo = c.tipo === "data" ? "date" : c.tipo === "ora" ? "time" : "text";
+          campo = (
+            <input
+              id={id}
+              ref={rif}
+              type={tipo}
+              inputMode={c.tipo === "numero" ? "decimal" : undefined}
+              className={inputCorreggi}
+              value={valori[c.chiave]}
+              onChange={cambia}
+            />
+          );
+        }
+        return (
+          <div key={c.chiave}>
+            <label className={labelCorreggi} htmlFor={id}>{c.etichetta}</label>
+            {campo}
+            {c.tipo === "voce_piano" && vociNonLette && (
+              <p role="alert" className="testo-sala mt-1 text-b58-terracotta-dark-testo">
+                Non sono riuscito a leggere le altre voci del piano ({vociNonLette}): per ora resta quella di adesso.
+              </p>
+            )}
+          </div>
+        );
+      })}
+      {errore && <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">{errore}</p>}
+      {/* L'errore del database si dice anche qui, accanto al modulo aperto. */}
+      {!errore && erroreDelGesto && (
+        <p role="alert" className="testo-sala text-b58-terracotta-dark-testo">
+          La correzione non è passata: {erroreDelGesto}
+        </p>
+      )}
+      <p className="testo-sala text-b58-charcoal-soft">
+        Correggere non approva: dopo controlli i dati e premi «Approva».
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <button type="submit" disabled={inCorso} className="tocco-riga rounded-lg bg-b58-azione px-4 testo-sala text-b58-sul-colore disabled:opacity-60">
+          {inCorso ? "Correggo…" : "Salva la correzione"}
+        </button>
+        <button type="button" onClick={onAnnulla} disabled={inCorso} className="tocco-riga rounded-lg px-4 testo-sala text-b58-charcoal disabled:opacity-60">
+          Annulla
+        </button>
+      </div>
+    </form>
   );
 }
 

@@ -1,4 +1,5 @@
 import { formatDate } from "../constants";
+import { GRUPPI } from "./pianoInvestimento";
 
 // =====================================================================
 // COME SI LEGGE UN APPUNTO VOCALE — SPEC-0013
@@ -366,4 +367,133 @@ export function impegnoScelto(elemento) {
  */
 export function nonDistinguibili(elemento) {
   return elemento?.dati?.indistinguibili === true;
+}
+
+// =====================================================================
+// «CORREGGI» — quali campi di un elemento si possono cambiare a mano
+// 12/11/2026, richiesta di Alessio dalla prova di MEMO sul piano
+// =====================================================================
+//
+// 🔴 SI CORREGGE QUELLO CHE ALESSIO HA DETTO, NON QUELLO CHE IL DATABASE
+//    HA CALCOLATO. Il nome della voce, il nome della spesa, «adesso è…»,
+//    l'avviso sulle rate li riscrive il database a ogni correzione: si
+//    tolgono prima di rimandare i dati, così non restano vecchi.
+// ⚠️ Gli identificativi non si scrivono a mano. L'unico che si sceglie è la
+//    voce del piano, da un elenco: il resto (prodotto, frigo, spesa…) se è
+//    sbagliato si ridice o si fa a mano.
+// ⚠️ La porta del database SOSTITUISCE i dati, non li unisce: si rimanda
+//    sempre l'oggetto intero, con i campi di servizio dentro.
+
+const SOLO_USCITA = ["voce_nome", "spesa_nome", "prima_stato", "prima_previsto", "prima_nota", "avviso_rate"];
+// I numeri di catalogo («la voce 3») valgono solo nell'elenco del momento.
+const NUMERI_DI_CATALOGO = new Set(["voce", "spesa", "prodotto", "frigorifero", "pulizia"]);
+const STATI_PIANO = ["stimato", "preventivato", "confermato"];
+// I campi che sono numeri anche quando il database li tiene come testo.
+const NUMERICI = new Set(["importo", "quota", "quanto_ce", "temperatura", "gradi", "persone", "quantita"]);
+const ALIQUOTE = ["0", "4", "5", "10", "22"];
+const GRUPPI_PIANO = GRUPPI.map((g) => ({ valore: g.codice, nome: `${g.codice}. ${g.nome}` }));
+
+function nomeCampo(chiave) {
+  return ETICHETTE[chiave] ?? chiave.replaceAll("_", " ");
+}
+
+/**
+ * I campi che «Correggi» mostra, nell'ordine dei dati.
+ * Ognuno: `{ chiave, etichetta, tipo, valore, scelte? }` con `tipo` fra
+ * testo, numero, data, ora, scelta, voce_piano. `valore` è sempre una
+ * stringa, pronta per un campo del modulo.
+ */
+export function campiCorreggibili(dati) {
+  if (!dati || typeof dati !== "object" || Array.isArray(dati)) return [];
+  const campi = [];
+  const conSpesa = Boolean(dati.spesa_id);
+  for (const [chiave, v] of Object.entries(dati)) {
+    if (chiave === "voce_id") {
+      campi.push({ chiave, etichetta: "voce del piano", tipo: "voce_piano", valore: String(v ?? "") });
+      continue;
+    }
+    if (DI_SERVIZIO.has(chiave) || SOLO_USCITA.includes(chiave)) continue;
+    if (chiave.endsWith("_id") || NUMERI_DI_CATALOGO.has(chiave)) continue;
+    // Collegando una spesa, l'importo è quanto ne resta: lo dice il database.
+    if (conSpesa && chiave === "importo") continue;
+    if (v !== null && typeof v === "object") continue;
+    const etichetta = nomeCampo(chiave);
+    const testo = v === null || v === undefined ? "" : String(v);
+    if (chiave === "gruppo") {
+      // Un valore fuori elenco resta in elenco: un menu non deve mostrare
+      // una cosa e mandarne un'altra.
+      const scelte = testo === "" || GRUPPI_PIANO.some((g) => g.valore === testo)
+        ? GRUPPI_PIANO
+        : [{ valore: testo, nome: testo }, ...GRUPPI_PIANO];
+      campi.push({ chiave, etichetta: "gruppo", tipo: "scelta", valore: testo, scelte });
+    } else if (chiave === "stato" && (testo === "" || STATI_PIANO.includes(testo))) {
+      campi.push({ chiave, etichetta, tipo: "scelta", valore: testo, scelte: STATI_PIANO.map((s) => ({ valore: s, nome: s })) });
+    } else if (chiave === "aliquota_iva") {
+      const val = testo === "" ? "" : String(Number(testo));
+      const elenco = val === "" || ALIQUOTE.includes(val) ? ALIQUOTE : [val, ...ALIQUOTE];
+      campi.push({ chiave, etichetta, tipo: "scelta", valore: val, scelte: elenco.map((a) => ({ valore: a, nome: a === "0" ? "senza IVA" : `${a}%` })) });
+    } else if (typeof v === "boolean") {
+      campi.push({ chiave, etichetta, tipo: "scelta", valore: v ? "sì" : "no", scelte: [{ valore: "sì", nome: "sì" }, { valore: "no", nome: "no" }] });
+    } else if (typeof v === "number" || (NUMERICI.has(chiave) && /^-?\d+(\.\d+)?$/.test(testo))) {
+      // Un importo può arrivare come testo («25.00»): resta un numero.
+      campi.push({ chiave, etichetta, tipo: "numero", valore: testo.replace(".", ",") });
+    } else if (SOLO_DATA.test(testo)) {
+      campi.push({ chiave, etichetta, tipo: "data", valore: testo });
+    } else if (SOLO_ORA.test(testo)) {
+      campi.push({ chiave, etichetta, tipo: "ora", valore: testo.slice(0, 5) });
+    } else {
+      campi.push({ chiave, etichetta, tipo: "testo", valore: testo });
+    }
+  }
+  return campi;
+}
+
+/** Un numero scritto all'italiana («1.200,50») o all'inglese; `null` se non lo è. */
+export function numeroScritto(testo) {
+  const t = String(testo ?? "").trim().replace(/\s|€/g, "");
+  if (t === "") return null;
+  let normale = null;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) normale = t.replace(/\./g, "").replace(",", "."); // 1.200,50 e 1.200
+  else if (/^-?\d{1,3}(,\d{3})+\.\d+$/.test(t)) normale = t.replace(/,/g, ""); // 1,200.50
+  else if (/^-?\d+,\d+$/.test(t)) normale = t.replace(",", "."); // 12,5
+  else if (/^-?\d+(\.\d+)?$/.test(t)) normale = t; // 12.5 e 30
+  // Il resto («1e3», «0x10», «trenta») non è un numero scritto da una persona.
+  if (normale === null) return null;
+  const n = Number(normale);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * I dati da rimandare al database: quelli di prima, coi campi del modulo
+ * al posto dei vecchi. Torna `{ dati }`, oppure `{ errore }` se un numero
+ * non è un numero (si dice prima di partire, non dopo).
+ */
+export function datiCorretti(dati, valori) {
+  const nuovi = { ...(dati ?? {}) };
+  for (const k of SOLO_USCITA) delete nuovi[k];
+  for (const campo of campiCorreggibili(dati)) {
+    if (!(campo.chiave in valori)) continue;
+    const scritto = String(valori[campo.chiave] ?? "").trim();
+    if (campo.tipo === "voce_piano") {
+      if (scritto !== "" && scritto !== campo.valore) {
+        nuovi.voce_id = scritto;
+        delete nuovi.voce;
+      }
+      continue;
+    }
+    if (scritto === "") {
+      delete nuovi[campo.chiave];
+      continue;
+    }
+    if (campo.tipo === "numero" || (campo.tipo === "scelta" && campo.chiave === "aliquota_iva")) {
+      const n = numeroScritto(scritto);
+      if (n === null) return { errore: `«${campo.etichetta}» deve essere un numero: hai scritto «${scritto}».` };
+      nuovi[campo.chiave] = n;
+    } else if (campo.tipo === "scelta" && typeof dati[campo.chiave] === "boolean") {
+      nuovi[campo.chiave] = scritto === "sì";
+    } else {
+      nuovi[campo.chiave] = scritto;
+    }
+  }
+  return { dati: nuovi };
 }

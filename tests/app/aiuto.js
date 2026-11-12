@@ -376,12 +376,16 @@ export async function sagomeDiProva(titolare, quante = 3) {
         position: 900 + i,
         active: true,
         tipo: "tavolo",
-        zona: "sala_bassa",
+        // Dal 12/11/2026 la sala è una sola (zona 'sala'): 'sala_bassa' il
+        // vincolo non la accetta piu'.
+        zona: "sala",
         larghezza_cm: 90,
         profondita_cm: 90,
         formato_id: formato.id,
         x: 100 + i * 100,
-        y: 900,
+        // 850 e non piu' 900: la sala nuova e' profonda 950, e un 90x90 a 900
+        // finirebbe fuori dal disegno.
+        y: 850,
       }))
     )
     .select("id, label");

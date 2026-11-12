@@ -44,6 +44,8 @@
     "prova:rimetti": "node scripts/prova-copia.mjs --rimetti",
     "backup:verifica": "node scripts/backup-verifica.mjs",
     "backup:ripristina": "node scripts/backup-ripristina.mjs",
+    "backup:sera": "node scripts/backup-sera.mjs",
+    "backup:controlla": "node scripts/backup-sera.mjs --solo-controllo",
     "numeri": "node scripts/numeri-sospetti.mjs",
     "numeri:censimento": "node scripts/censimento-numeri.mjs",
     "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs",

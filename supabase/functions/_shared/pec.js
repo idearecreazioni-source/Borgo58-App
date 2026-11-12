@@ -170,16 +170,39 @@ const euroItaliano = (c) =>
  * Un XML che non si legge come fattura non produce niente: l'ha già visto
  * il modello come testo.
  *
+ * 🔴 «ARRIVATA DALLO SDI» SOLO SE È VERO (revisione dell'11/11, punto 3).
+ *    Prima si diceva per ogni file-fattura, chiunque l'avesse mandato: un
+ *    truffatore poteva scrivere in un XML il nome di un fornitore vero e il
+ *    proprio IBAN, e compariva «Registra la fattura», con scritto che veniva
+ *    dallo SdI. Adesso il pulsante nasce solo se la mail viene davvero dallo
+ *    SdI (`vieneDalloSdi`). Altrimenti la proposta è «da fare a mano», con
+ *    scritto «mittente NON verificato» e chi l'ha mandata: la si registra da
+ *    Fatture → Importa fattura elettronica dopo averla controllata, oppure
+ *    si aspetta la copia dello SdI.
+ * ⚠️ E L'IBAN NUOVO SI DICE SEMPRE, anche dallo SdI: l'IBAN lo scrive il
+ *    fornitore, e uno mai visto per lui è il primo segno di una truffa.
+ *
  * @param {string} nomeFile il nome del file SdI (diventa `file_sdi`)
  * @param {string} xml l'XML intero
  * @param {{invoice_number?: string, invoice_date?: string, created_at?: string}|null} [giaRegistrata]
  *   la fattura già presente con lo stesso file SdI, se c'è
+ * @param {{dalloSdi?: boolean, mittente?: string|null, ibanNuovi?: string[]}} [provenienza]
+ *   se la mail viene davvero dallo SdI (senza, NON si crede), chi l'ha
+ *   mandata, e gli IBAN della fattura mai visti per questo fornitore
  * @returns {Array<{tipo: string, titolo: string, descrizione: string, perche: string, parametri: object}>}
  */
-export function proposteDaFattura(nomeFile, xml, giaRegistrata = null) {
+export function proposteDaFattura(nomeFile, xml, giaRegistrata = null, provenienza = {}) {
   const { fatture, errori } = leggiFatturaPA(xml);
   if (errori.length || !fatture.length) return [];
-  const perche = "È una fattura elettronica arrivata dallo SdI: i dati si leggono dai campi del file, senza interpretarli.";
+  const dalloSdi = provenienza?.dalloSdi === true;
+  const daChi = String(provenienza?.mittente ?? "").trim() || "un mittente sconosciuto";
+  const ibanNuovi = [...new Set((provenienza?.ibanNuovi ?? []).map(ibanNormale).filter(Boolean))];
+  const avvisoIban = ibanNuovi.length
+    ? `IBAN nuovo per questo fornitore (${ibanNuovi.join(", ")}): controllalo col fornitore prima di pagare.`
+    : null;
+  const perche = dalloSdi
+    ? "È una fattura elettronica arrivata dallo SdI: i dati si leggono dai campi del file, senza interpretarli."
+    : `Mittente NON verificato: il file l'ha mandato ${daChi}, non lo SdI. Chiunque può scrivere in un file il nome di un fornitore vero.`;
 
   if (fatture.length > 1) {
     const titolo = `Registra le ${fatture.length} fatture del file ${nomeFile}`;
@@ -222,15 +245,64 @@ export function proposteDaFattura(nomeFile, xml, giaRegistrata = null) {
 
   const tipo = TIPI_REGISTRABILI[f.tipo] ?? "Fattura";
   const scadenza = f.scadenza ? `, da pagare entro il ${dataItaliana(f.scadenza)}` : "";
+  const avvisi = avvisoIban ? [...f.avvisi, avvisoIban] : f.avvisi;
+
+  if (!dalloSdi) {
+    const titolo = `Mittente NON verificato: controlla la fattura n. ${numero} di ${chi} (${euroItaliano(f.totaleCentesimi)})`;
+    const passi = [
+      `Chiedi a ${chi}, con un numero che conosci già (non quelli scritti nella fattura), se l'ha mandata davvero`,
+      "Oppure aspetta la copia dallo SdI: arriva da sola nella PEC",
+      "Se è vera, registrala da Fatture → Importa fattura elettronica",
+    ];
+    if (avvisoIban) passi.unshift(avvisoIban);
+    return [{
+      tipo: "da_fare_a_mano",
+      titolo,
+      descrizione:
+        `Non arriva dallo SdI: l'ha mandata ${daChi}. ${tipo} del ${dataItaliana(f.data)}, totale ${euroItaliano(f.totaleCentesimi)}${scadenza}.` +
+        ` Non si registra da qui finché non sei sicuro che sia vera.` +
+        (avvisi.length ? ` Attenzione: ${avvisi.join(" ")}` : ""),
+      perche,
+      parametri: { titolo, passi, file_sdi: nomeFile, mittente_verificato: false, iban_nuovi: ibanNuovi },
+    }];
+  }
+
   return [{
     tipo: "registra_fattura",
     titolo: `Registra la fattura n. ${numero} di ${chi} (${euroItaliano(f.totaleCentesimi)})`,
     descrizione:
       `${tipo} del ${dataItaliana(f.data)}, totale ${euroItaliano(f.totaleCentesimi)}${scadenza}. Va su Borgo 58.` +
-      (f.avvisi.length ? ` Attenzione: ${f.avvisi.join(" ")}` : ""),
+      (avvisi.length ? ` Attenzione: ${avvisi.join(" ")}` : ""),
     perche,
-    parametri: { fattura: payloadFattura(f, nomeFile), file_sdi: nomeFile, avvisi: f.avvisi },
+    parametri: { fattura: payloadFattura(f, nomeFile), file_sdi: nomeFile, avvisi, mittente_verificato: true, iban_nuovi: ibanNuovi },
   }];
+}
+
+/** Un IBAN scritto in qualunque modo, in maiuscolo e senza spazi; null se vuoto. */
+export function ibanNormale(iban) {
+  const s = String(iban ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return s || null;
+}
+
+/**
+ * Partita IVA del fornitore e IBAN di una fattura, per chiedere al database
+ * se quegli IBAN sono già noti. Null se il file non è UNA fattura leggibile
+ * (un lotto si registra dall'import, che mostra tutto).
+ *
+ * @param {string} xml
+ * @returns {{partitaIva: string|null, iban: string[]}|null}
+ */
+export function ibanDellaFattura(xml) {
+  let letto;
+  try {
+    letto = leggiFatturaPA(xml);
+  } catch {
+    return null;
+  }
+  if (letto.errori.length || letto.fatture.length !== 1) return null;
+  const f = letto.fatture[0];
+  const iban = [...new Set((f.scadenze ?? []).map((s) => ibanNormale(s.iban)).filter(Boolean))];
+  return { partitaIva: f.fornitore?.partitaIva ?? f.fornitore?.codiceFiscale ?? null, iban };
 }
 
 /**
@@ -407,6 +479,64 @@ export function mittenteReale(testo, mittenteBusta) {
   if (pcd >= 0) dentro = dentro.slice(pcd).replace(PER_CONTO_DI, "");
   const m = dentro.match(INDIRIZZO);
   return m ? m[0].replace(/[.:]+$/, "").toLowerCase() : null;
+}
+
+/** Le caselle da cui scrive lo SdI: «sdi01@pec.fatturapa.it», «sdi38@…». */
+const CASELLA_SDI = /^sdi\d{1,3}@pec\.fatturapa\.it$/;
+
+/** È una casella dello SdI, scritta per intero (non «…fatturapa.it» qualunque)? */
+export function eCasellaSdi(indirizzo) {
+  return CASELLA_SDI.test(String(indirizzo ?? "").trim().toLowerCase());
+}
+
+/** In un blocco della busta: c'è UNA sola riga «inviato da», ed è «Per conto di: <casella SdI>»? */
+function bloccoDelloSdi(blocco) {
+  const trovati = [...blocco.matchAll(INVIATO_DA)];
+  if (trovati.length !== 1) return false;
+  // ⚠️ Tutto quello che sta fra le virgolette, e nient'altro: con una
+  //    ricerca dentro, «x@truffa Per conto di: sdi01@…» passava (revisione
+  //    di sicurezza del 12/11).
+  const m = /^\s*Per conto di:\s*(\S+)\s*$/i.exec(trovati[0][1]);
+  return Boolean(m) && eCasellaSdi(m[1]);
+}
+
+/**
+ * La mail viene DAVVERO dallo SdI? (revisione dell'11/11, punto 3)
+ *
+ * Tre cose insieme, tutte e tre:
+ * 1. l'ha consegnata il gestore della PEC: il mittente COM'È ARRIVATO
+ *    (non quello ripulito che si mostra) è `posta-certificata@pec.aruba.it`.
+ *    Una mail normale, anche con scritto «sdi01@pec.fatturapa.it», non lo è;
+ * 2. il testo è la busta del gestore, e dice UNA volta sola chi l'ha
+ *    mandata, nella forma che il gestore usa per lo SdI: «Per conto di:
+ *    sdiNN@pec.fatturapa.it». Se le righe «inviato da» sono più d'una (un
+ *    oggetto o un testo scritti apposta per imitarla), non si crede;
+ * 3. fra gli allegati ci sono `daticert.xml` e `smime.p7s`, i due file che il
+ *    gestore mette in ogni busta vera (anche col numero: `daticert_1.xml`).
+ *
+ * ⚠️ Senza il mittente com'è arrivato (le mail registrate prima di questa
+ *    correzione) la risposta è NO: meglio un «da fare a mano» in più che un
+ *    pulsante creduto per sbaglio.
+ * ⚠️ Una PEC la può mandare solo chi ha quella casella (il gestore lo
+ *    controlla): per questo «Per conto di: sdiNN@pec.fatturapa.it» vale.
+ *    Quello che qui NON si può escludere è una mail scritta apposta e
+ *    mandata direttamente all'indirizzo tecnico di ricezione, fingendo
+ *    tutto: per quella servirebbe controllare la firma della busta
+ *    (`smime.p7s`), che non si fa.
+ *
+ * @param {{mittenteBusta?: string|null, testo?: string|null, allegati?: Array<{file_name?: string}>}} mail
+ * @returns {boolean}
+ */
+export function vieneDalloSdi({ mittenteBusta = null, testo = null, allegati = [] } = {}) {
+  if (!eGestorePec(mittenteBusta)) return false;
+  const t = String(testo ?? "");
+  if (!eBustaPec(t)) return false;
+  const inglese = t.search(/--\s*Certified mail message\s*--/i);
+  const blocchi = inglese > 0 ? [t.slice(0, inglese), t.slice(inglese)] : [t];
+  if (!blocchi.every(bloccoDelloSdi)) return false;
+  // La busta vera porta tutti e due i file del gestore: i dati e la firma.
+  const nomi = (allegati ?? []).map((a) => String(a?.file_name ?? "").trim());
+  return TECNICI.every((r) => nomi.some((n) => r.test(n)));
 }
 
 /** I prefissi che la busta e gli inoltri mettono davanti all'oggetto. */

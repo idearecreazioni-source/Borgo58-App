@@ -173,6 +173,10 @@ const OPERAZIONI = new Set([
   // resterebbe una spesa segnata senza voce, che il database rifiuta.
   "segna_investimento",
   "togli_investimento",
+  // Dividere una spesa su più voci (12/11/2026): la spunta sulla spesa E
+  // tutti i suoi collegamenti, sostituiti insieme. A meta' resterebbe una
+  // spesa divisa per metà, che sembra giusta e non lo è.
+  "dividi_spesa",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",

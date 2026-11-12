@@ -42,8 +42,9 @@ import { oggiLocale } from "../../src/lib/constants";
 // Una data senza scostamenti: la pianta base, quella che vale sempre.
 const GIORNO = "1992-05-04";
 // La scala del disegno sul telefono di Alessio: la pianta in piedi
-// larga 358 punti mostra 1030 cm di sala.
-const CM_PER_PUNTO = 1030 / 358;
+// larga 358 punti mostra tutta la profondità della sala (950 cm dal 12/11,
+// con la pianta nuova; prima 1030).
+const CM_PER_PUNTO = SALA_PROFONDITA_CM / 358;
 const PXCM = 37.79528;
 
 let entrato = false;
@@ -175,7 +176,20 @@ describe("Il magnete sulla sala vera", () => {
     const tavoli = pianta
       .filter((s) => s.tipo === "tavolo")
       .map((s) => ({ id: s.id, formato_id: s.formato_id, x: s.x, y: s.y, ...misureSagoma(s) }));
-    const quadrati = tavoli.filter((t) => t.larghezza === 90 && t.profondita === 90);
+    // Due tavoli dello stesso formato e con le stesse misure nel loro verso
+    // (dal 12/11 sono i piccoli 70×80; prima erano i quadrati 90×90): il
+    // nome della variabile è rimasto, la prova no — non nomina più una
+    // misura, prende quella che la sala ha.
+    const primo = tavoli.find((t) =>
+      tavoli.some(
+        (u) => u.id !== t.id && u.formato_id === t.formato_id &&
+          u.larghezza === t.larghezza && u.profondita === t.profondita
+      )
+    );
+    const quadrati = tavoli.filter(
+      (t) => primo && t.formato_id === primo.formato_id &&
+        t.larghezza === primo.larghezza && t.profondita === primo.profondita
+    );
     expect(quadrati.length).toBeGreaterThan(1);
 
     // Si porta il primo quadrato vicino al secondo, staccato di 20 cm:

@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { leggiAPagine } from "../calcoli/investimento";
+import { eseguiOperazione } from "../operazioni";
 
 // IL PIANO DELL'INVESTIMENTO — lettura e scrittura (07/11/2026).
 // Le tabelle sono del solo titolare (RLS, migrazione 20261107000001): uno
@@ -59,7 +60,7 @@ export async function salvaVoce(voce, rate) {
   } else {
     const { data, error } = await supabase
       .from("piano_voci")
-      .insert({ ...campiVoce(voce), ordine: Number(voce.ordine ?? 0) })
+      .insert({ ...campiVoce(voce), ordine: Number(voce.ordine ?? 0), madre_id: voce.madre_id ?? null })
       .select("id")
       .single();
     if (error) throw error;
@@ -118,7 +119,12 @@ export async function leggiSpeso() {
     supabase.rpc("costo_del_progetto", { p_dal: null, p_al: null }),
     supabase
       .from("piano_collegamenti")
-      .select("id, voce_id, rata_id, cash_movement_id, anticipazione_id, supplier_invoice_id, importo_attribuito")
+      // 12/11: `da_dividere` (pagamento di una fattura divisa, da dividere a
+      // mano) e la fattura collegata, per dire «4.500 € di 7.200 €».
+      .select(
+        "id, voce_id, rata_id, cash_movement_id, anticipazione_id, supplier_invoice_id, importo_attribuito, da_dividere," +
+          " fattura:supplier_invoice_id(id, amount, invoice_number, invoice_date, status, supplier:supplier_id(name))"
+      )
       .order("created_at")
       .order("id"),
     // Le rate ancora da pagare (parte 7): la parte che pagamenti e fatture
@@ -144,6 +150,30 @@ export async function collegaSpesa({ voceId, rataId, spesa, importo }) {
     importo_attribuito: Math.round(Number(importo) * 100) / 100,
   });
   if (error) throw error;
+}
+
+// =====================================================================
+// 12/11/2026: DIVIDERE UNA SPESA SU PIÙ VOCI
+// =====================================================================
+/**
+ * Divide una spesa su una o più voci del piano, ognuna con la sua cifra:
+ * sostituisce TUTTI i collegamenti di quella spesa, in un gesto solo.
+ * @param fonte "prima_nota" | "anticipazione" | "fattura"
+ * @param parti [{voceId, rataId?, importo}] — la somma deve fare l'importo
+ *              della spesa al centesimo (lo pretende il database).
+ * 🔴 DAL CORRIDOIO (Contratto B4): scrive la spunta sulla spesa e i
+ *    collegamenti, due tabelle.
+ */
+export async function dividiSpesa({ fonte, id, parti }) {
+  await eseguiOperazione("dividi_spesa", {
+    p_fonte: fonte,
+    p_id: id,
+    p_parti: (parti ?? []).map((p) => ({
+      voce_id: p.voceId,
+      rata_id: p.rataId || null,
+      importo: Math.round(Number(p.importo) * 100) / 100,
+    })),
+  });
 }
 
 /** Toglie un collegamento: la spesa torna fra quelle da assegnare. */

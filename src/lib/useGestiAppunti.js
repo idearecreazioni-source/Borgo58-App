@@ -33,7 +33,7 @@
 //      `Detta.jsx` e `AppuntiInDashboard.jsx`).
 
 import { useCallback, useRef, useState } from "react";
-import { approvaAppunto, scartaAppunto, scegliPerAzione } from "./api/voce";
+import { approvaAppunto, correggiElemento, scartaAppunto, scegliPerAzione } from "./api/voce";
 import { unaVoltaSola } from "./calcoli/voce";
 
 /**
@@ -110,5 +110,15 @@ export function useGestiAppunti() {
     [sottoGuardia],
   );
 
-  return { inAzione, esiti, approva, butta, scegli };
+  // «Correggi» (12/11/2026): cambia i dati di un elemento e lascia l'appunto
+  // aperto. Stessa chiave e stessa guardia degli altri gesti; l'esito si
+  // chiama «corretta», non «fatta», perché non è stato scritto niente nel
+  // gestionale e il pulsante «Approva» non deve dire «✓ Fatto».
+  const correggi = useCallback(
+    (appunto, elementoId, dati, dopo) =>
+      sottoGuardia(appunto.id, () => correggiElemento(elementoId, dati), dopo, "corretta"),
+    [sottoGuardia],
+  );
+
+  return { inAzione, esiti, approva, butta, scegli, correggi };
 }
