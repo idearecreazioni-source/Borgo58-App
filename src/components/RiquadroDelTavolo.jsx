@@ -53,6 +53,10 @@
 // Misurato: 160 punti diventano 238 quando sotto non c'e' nessun tavolo.
 // Non e' un numero fisso — se Alessio sposta un tavolo li' sotto, il
 // riquadro si ritira invece di coprirlo.
+// 🔴 NON PIÙ DAL 12/11/2026: con la pianta ritagliata sulla sala il
+// bancone è fuori dal foglio, e questo riquadro sta nella stanza in basso
+// a sinistra, sopra i gesti del conto (`ZONE_DEI_RIQUADRI_COMANDE`). Lì
+// non cresce: se non ci sta, scorre il riquadro intero.
 //
 // 🔴 E CI STA UN NOME SOLO. Col pagante scritto, due nomi leggibili
 // chiedono 112 punti su 95: scorrono a qualunque taglia, anche mandando

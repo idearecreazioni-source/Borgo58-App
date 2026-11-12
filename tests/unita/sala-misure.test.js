@@ -12,7 +12,11 @@ import {
   areaVietataAiMobili,
   areeVietateAiMobili,
   dentroAreaVietata,
-  MURI_FONDALE,
+  DISEGNO_LARGHEZZA_CM,
+  PILASTRO_FONDALE,
+  STANZA_IN_BASSO_FONDALE,
+  ZONE_DEI_RIQUADRI_COMANDE,
+  pannelloNelDisegno,
   SPOSTATE_NEL_DISEGNO,
   sagomaPerIlDisegno,
   VARCO_MINIMO_MM,
@@ -414,23 +418,29 @@ describe("la pianta nuova", () => {
     }
   });
 
-  it("i muri stanno dentro il disegno", () => {
-    for (const m of MURI_FONDALE) {
-      expect(m.x).toBeGreaterThanOrEqual(0);
-      expect(m.y).toBeGreaterThanOrEqual(0);
-      expect(m.x + m.larghezza).toBeLessThanOrEqual(SALA_LARGHEZZA_CM);
-      expect(m.y + m.profondita).toBeLessThanOrEqual(SALA_PROFONDITA_CM);
+  // 🔴 LA PIANTA RITAGLIATA SULLA SALA (12/11/2026). Il foglio si ferma
+  // dove comincia il bancone; del fondale restano pilastro, scala, contorno
+  // della sala e contorno della stanza in basso a sinistra.
+  it("il foglio si ferma esattamente dove comincia il bancone", () => {
+    const bancone = ZONE_FONDALE.find((z) => z.nome === "Bancone");
+    expect(DISEGNO_LARGHEZZA_CM).toBe(bancone.x);
+    // e tutte le zone della sala (non di servizio) stanno nel foglio
+    for (const z of ZONE_FONDALE.filter((z) => !z.servizio)) {
+      expect(z.x + z.larghezza, z.nome).toBeLessThanOrEqual(DISEGNO_LARGHEZZA_CM);
     }
   });
 
-  it("nessun mobile della pianta di partenza sta sopra un muro", () => {
-    // Le posizioni vengono dal file di Sweet Home 3D arrotondate a 10 cm:
-    // l'arrotondamento non deve aver spinto un tavolo dentro una parete.
+  it("pilastro, scala e stanza in basso stanno dentro il foglio", () => {
+    const dentro = (r) =>
+      r.x >= 0 && r.y >= 0 && r.x + r.larghezza <= DISEGNO_LARGHEZZA_CM && r.y + r.profondita <= SALA_PROFONDITA_CM;
+    expect(dentro(PILASTRO_FONDALE)).toBe(true);
+    expect(dentro({ x: 0, y: 0, ...STANZA_IN_BASSO_FONDALE })).toBe(true);
+  });
+
+  it("nessun mobile della pianta di partenza sta sopra il pilastro", () => {
     for (const s of PIANTA_DI_PARTENZA) {
       const rett = { x: s.x, y: s.y, ...misure(s) };
-      for (const m of MURI_FONDALE) {
-        expect(dentroAreaVietata(rett, m), `${s.label} sta sopra un muro`).toBe(false);
-      }
+      expect(dentroAreaVietata(rett, PILASTRO_FONDALE), `${s.label} sta sopra il pilastro`).toBe(false);
     }
   });
 
@@ -454,8 +464,29 @@ describe("la pianta nuova", () => {
     }
   });
 
-  it("il pannello del Calendario e delle Comande ci sta, con la sala di partenza", () => {
-    expect(pannelloNellaPianta(ZONE_FONDALE, PIANTA_DI_PARTENZA)).not.toBeNull();
+  it("il pannello del Calendario sta nella sala vera, ma fuori dal foglio ritagliato", () => {
+    // Cucina e servizi ci sono ancora nei dati, quindi la geometria dice «ci
+    // sta»; ma dal 12/11 sono fuori dal disegno, e il modulo va sotto.
+    const r = pannelloNellaPianta(ZONE_FONDALE, PIANTA_DI_PARTENZA);
+    expect(r).not.toBeNull();
+    expect(pannelloNelDisegno(r)).toBeNull();
+  });
+
+  it("🔴 i riquadri delle Comande stanno nella stanza in basso a sinistra, dentro il foglio", () => {
+    const r = pannelloNelDisegno(pannelloNellaPianta(ZONE_FONDALE, PIANTA_DI_PARTENZA, ZONE_DEI_RIQUADRI_COMANDE));
+    expect(r).toEqual({ x: 0, y: 0, larghezza: 360, profondita: 440 });
+  });
+
+  it("e un tavolo messo nella stanza toglie il riquadro invece di finirci sotto", () => {
+    const intruso = { id: "x", x: 100, y: 100, larghezza_cm: 80, profondita_cm: 70 };
+    expect(pannelloNellaPianta(ZONE_FONDALE, [intruso], ZONE_DEI_RIQUADRI_COMANDE)).toBeNull();
+  });
+
+  it("pannelloNelDisegno: dentro il foglio passa, fuori anche di poco no", () => {
+    expect(pannelloNelDisegno(null)).toBeNull();
+    const r = { x: 1000, y: 0, larghezza: 150, profondita: 100 };
+    expect(pannelloNelDisegno(r)).toBe(r);
+    expect(pannelloNelDisegno({ ...r, larghezza: 151 })).toBeNull();
   });
 
   it("🔴 il pannello del bancone cresce verso la sala anche se non sta contro il bordo", () => {
@@ -809,11 +840,12 @@ describe("la sala si vede tutta", () => {
   });
 
   it("una sagoma dentro i limiti non viene segnalata", () => {
-    expect(sagomeFuoriDalDisegno([tavolo("T1", 0, 0), tavolo("T2", 1900, 860)])).toEqual([]);
+    expect(sagomeFuoriDalDisegno([tavolo("T1", 0, 0), tavolo("T2", DISEGNO_LARGHEZZA_CM - 90, 860)])).toEqual([]);
   });
 
   it("🔴 una sagoma che sfora a destra viene nominata", () => {
-    const fuori = sagomeFuoriDalDisegno([tavolo("T9", SALA_LARGHEZZA_CM - 40, 0)]);
+    // Dal 12/11 il bordo è quello del foglio ritagliato, non il muro di fondo.
+    const fuori = sagomeFuoriDalDisegno([tavolo("T9", DISEGNO_LARGHEZZA_CM - 40, 0)]);
     expect(fuori).toHaveLength(1);
     expect(fuori[0].label).toBe("T9");
   });
@@ -849,7 +881,7 @@ describe("la sala si vede tutta", () => {
     // (con la sua posizione finta) — ed è la prima a diventare rossa.
     const fuoriNeiDati = {
       label: "Chef Table",
-      x: SALA_LARGHEZZA_CM - 20,
+      x: DISEGNO_LARGHEZZA_CM - 20,
       y: SALA_PROFONDITA_CM - 20,
       larghezza_cm: 200,
       profondita_cm: 70,

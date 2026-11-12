@@ -4,7 +4,7 @@ import { supabase } from "../../src/lib/supabase";
 import {
   TOLLERANZA_CONTATTO_CM,
   agganciaAiVicini,
-  SALA_LARGHEZZA_CM,
+  DISEGNO_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   SPOSTATE_NEL_DISEGNO,
   sagomeFuoriDalDisegno,
@@ -248,7 +248,7 @@ describe("le sagome spostate solo nel disegno esistono davvero", () => {
       expect(s).toBeTruthy();
       expect(s.x).toBeGreaterThanOrEqual(0);
       expect(s.y).toBeGreaterThanOrEqual(0);
-      expect(s.x + s.larghezza).toBeLessThanOrEqual(SALA_LARGHEZZA_CM);
+      expect(s.x + s.larghezza).toBeLessThanOrEqual(DISEGNO_LARGHEZZA_CM);
       expect(s.y + s.profondita).toBeLessThanOrEqual(SALA_PROFONDITA_CM);
       for (const altra of disegnate) {
         if (altra.label === nome) continue;

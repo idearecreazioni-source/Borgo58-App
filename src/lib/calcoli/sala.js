@@ -162,6 +162,20 @@ export function misureSagoma(sagoma) {
 export const SALA_LARGHEZZA_CM = 1990;
 export const SALA_PROFONDITA_CM = 950;
 
+// 🔴 LA PIANTA SI DISEGNA SOLO FINO AL BANCONE (12/11/2026, richiesta di
+// Alessio: «ritagliare la pianta sulla sola sala», per avere i tavoli più
+// grandi e comodi da toccare). Bancone, cucina e servizi stanno da x 1150
+// in su e non si disegnano più: il foglio parte dall'origine come prima e
+// si ferma qui, quindi **nessuna coordinata dei tavoli cambia** — cambia
+// solo quanta sala sta nel foglio.
+// ⚠️ SALA_LARGHEZZA_CM resta 1990: è la sala vera, e le zone (che servono
+// alle aree vietate) la coprono tutta. Tutto ciò che riguarda il FOGLIO —
+// riquadro di vista, trascinamento, ingrandimento, pannelli, «sala
+// tagliata» — usa questa misura.
+// ⚠️ È dove comincia la zona «Bancone» (lo controlla una prova in
+// tests/unita/sala-misure.test.js).
+export const DISEGNO_LARGHEZZA_CM = 1150;
+
 /**
  * Quanto si rimpicciolisce il disegno della sala rispetto alla regola dei
  * tocchi (1,05 cm reali per il tavolo più piccolo).
@@ -223,13 +237,15 @@ export const TOCCO_TAVOLO_CM = 1.05;
 export const LARGHEZZA_MINIMA_IN_PIEDI =
   (SALA_PROFONDITA_CM / 90) * TOCCO_TAVOLO_CM * RIDUZIONE_DISEGNO;
 export const LARGHEZZA_MINIMA_SDRAIATA =
-  (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM * RIDUZIONE_DISEGNO;
+  (DISEGNO_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM * RIDUZIONE_DISEGNO;
 
 // ⚠️ E DA QUI IN POI SONO DUE NUMERI DIVERSI, che prima erano lo stesso.
 // «Quanto piccolo può diventare il disegno» e «quando la sala sta male
 // sdraiata» sono due domande: se la soglia del verso si rimpicciolisse
 // insieme al disegno, un tablet in verticale smetterebbe di girare la sala.
-export const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM;
+// Dal 12/11 si misura sul foglio ritagliato: la sala sdraiata è più corta,
+// quindi resta sdraiata anche su schermi più stretti di prima.
+export const SOGLIA_IN_PIEDI_CM_REALI = (DISEGNO_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM;
 
 /**
  * La pianta in piedi entra in una schermata larga `puntiUtili`, con questa
@@ -266,7 +282,7 @@ export const BERSAGLIO_PROVATO_CM = 0.53;
  * larghezza, la subisce** — e questa funzione è il prezzo, in chiaro.
  */
 export function bersaglioTavoloCm(puntiUtili, pxcm, verticale = true) {
-  const lato = verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM;
+  const lato = verticale ? SALA_PROFONDITA_CM : DISEGNO_LARGHEZZA_CM;
   return (puntiUtili * 90) / lato / pxcm;
 }
 
@@ -331,7 +347,9 @@ export function sagomeFuoriDalDisegno(sagome = []) {
     const m = misureSagoma(d);
     const destra = (d.x ?? 0) + m.larghezza;
     const fondo = (d.y ?? 0) + m.profondita;
-    if (destra > SALA_LARGHEZZA_CM || fondo > SALA_PROFONDITA_CM || (d.x ?? 0) < 0 || (d.y ?? 0) < 0) {
+    // ⚠️ Il foglio finisce a DISEGNO_LARGHEZZA_CM (12/11), non al muro di
+    // fondo della sala vera: oltre, una sagoma non si vede più.
+    if (destra > DISEGNO_LARGHEZZA_CM || fondo > SALA_PROFONDITA_CM || (d.x ?? 0) < 0 || (d.y ?? 0) < 0) {
       fuori.push({ label: d.label, destra, fondo });
     }
   }
@@ -539,40 +557,23 @@ export const ZONE_FONDALE = [
   { nome: "Cucina", x: 1350, y: 510, larghezza: 640, profondita: 440, servizio: true },
 ];
 
-// I MURI INTERNI della pianta nuova, come rettangoli pieni (asse e spessore
-// presi dal file di Sweet Home 3D, porte già tolte). Il perimetro non è
-// qui: lo disegna la schermata come contorno della sala, con il varco
-// dell'uscita (`USCITA_FONDALE`).
-// ⚠️ Solo disegno: i muri non fermano un tavolo trascinato. A tenere i
+// 🔴 DEI MURI INTERNI RESTA SOLO IL PILASTRO (12/11/2026, pianta ritagliata
+// sulla sala). Fino a oggi qui c'erano i venti muri del file di Sweet Home
+// 3D (bagni, servizi, cucina, i quattro pezzi del muro di spina): Alessio
+// li ha tolti dal disegno tutti tranne il pezzo di spina fra T2 e T10, che
+// in sala si vede e fa da riferimento. L'elenco completo sta nel commit
+// 2247fbc4, se un giorno servisse di nuovo.
+// ⚠️ Solo disegno: il pilastro non ferma un tavolo trascinato. A tenere i
 // mobili fuori da bagni, cucina e servizi sono le zone `vietata` qui sopra.
-export const MURI_FONDALE = [
-  // Il muro di spina, in quattro pezzi: fra un pezzo e l'altro si passa.
-  { x: 0, y: 437, larghezza: 227, profondita: 77 },
-  { x: 580, y: 437, larghezza: 212, profondita: 77 },
-  { x: 1155, y: 437, larghezza: 200, profondita: 77 },
-  { x: 1741, y: 437, larghezza: 249, profondita: 77 },
-  // Bagni (porta del primo bagno fra y 176 e 266)
-  { x: 226, y: 0, larghezza: 24, profondita: 176 },
-  { x: 226, y: 266, larghezza: 24, profondita: 188 },
-  { x: 0, y: 270, larghezza: 236, profondita: 8 },
-  { x: 0, y: 132, larghezza: 353, profondita: 8 },
-  { x: 348, y: 135, larghezza: 10, profondita: 378 },
-  // Fra bancone e servizi (porta fra y 2 e 92)
-  { x: 1348, y: 92, larghezza: 8, profondita: 352 },
-  // Lavaggio e bagno del personale (porte a x 1476-1576 e y 302-382)
-  { x: 1353, y: 437, larghezza: 123, profondita: 8 },
-  { x: 1576, y: 437, larghezza: 171, profondita: 8 },
-  { x: 1815, y: 0, larghezza: 8, profondita: 302 },
-  { x: 1815, y: 382, larghezza: 8, profondita: 59 },
-  { x: 1819, y: 119, larghezza: 171, profondita: 8 },
-  { x: 1960, y: 0, larghezza: 30, profondita: 441 },
-  // Cucina: la parete della feritoia verso la sala (porta fra y 514 e 604)
-  { x: 1155, y: 604, larghezza: 10, profondita: 346 },
-  // Cucina e dispensa (porte fra y 517-597 e 871-951)
-  { x: 1741, y: 597, larghezza: 15, profondita: 274 },
-  { x: 1753, y: 728, larghezza: 214, profondita: 15 },
-  { x: 1964, y: 513, larghezza: 25, profondita: 437 },
-];
+export const PILASTRO_FONDALE = { x: 580, y: 437, larghezza: 212, profondita: 77 };
+
+// La stanza in basso a sinistra (i bagni) resta solo come CONTORNO: una
+// linea di muro sui due lati che danno sulla sala, l'interno bianco come il
+// pavimento. Le misure sono quelle esterne dei muri di prima (il muro dei
+// bagni finiva a x 358, il muro di spina a y 514); l'angolo è (0, 0).
+// ⚠️ Dentro, dal 12/11, ci stanno i riquadri delle Comande
+// (`ZONE_DEI_RIQUADRI_COMANDE`): è vietata ai mobili, quindi resta vuota.
+export const STANZA_IN_BASSO_FONDALE = { larghezza: 358, profondita: 514 };
 
 // L'uscita sul muro di sinistra, in cima alla scala: il contorno della
 // sala si interrompe qui.
@@ -613,6 +614,17 @@ export const ZONE_DEL_PANNELLO = ["Servizi", "Cucina"];
 // pollice** di chi tiene il tablet. Il bancone sta in fondo a destra, che è
 // dove il dito arriva senza spostare la presa.
 export const ZONE_DEL_BANCO = ["Bancone"];
+
+// 🔴 DAL 12/11/2026 LE COMANDE NON USANO PIÙ NÉ IL BANCONE NÉ CUCINA E
+// SERVIZI: la pianta è ritagliata sulla sala e quelle zone stanno fuori dal
+// foglio (`DISEGNO_LARGHEZZA_CM`). Decisione di Alessio: il nome di chi ha
+// prenotato e i gesti del conto vanno **impilati nella stanza bianca in
+// basso a sinistra** (i bagni), che è vietata ai mobili e quindi sempre
+// vuota. È più piccola dello spazio di prima: se il contenuto non ci sta,
+// il riquadro scorre al suo interno.
+// ⚠️ Il Calendario resta su `ZONE_DEL_PANNELLO`, che adesso cade fuori dal
+// foglio: il suo modulo torna sotto la pianta (`pannelloNelDisegno`).
+export const ZONE_DEI_RIQUADRI_COMANDE = ["Bagni"];
 
 /** Il rettangolo che le zone scelte formano, o null se non lo formano. */
 // ⚠️ `quali` e' un parametro dal 21/08: la stessa geometria serve a due
@@ -700,6 +712,28 @@ export function pannelloNellaPianta(zone = [], sagome = [], quali = ZONE_DEL_PAN
   return tocca ? null : r;
 }
 
+/**
+ * Il pannello sta DENTRO IL FOGLIO? Se no, null — e chi chiama lo mette
+ * sotto la pianta, come quando un tavolo occupa la sua zona.
+ *
+ * 🔴 NATA COL RITAGLIO DEL 12/11/2026: la zona di un pannello può stare
+ * nella sala vera ma fuori dal disegno (cucina e servizi, il bancone). Un
+ * pannello posizionato in percentuale fuori dal foglio finirebbe fuori
+ * dalla pianta, sopra il resto della pagina — e la schermata, credendolo
+ * dentro, non disegnerebbe il modulo sotto: sparirebbe e basta.
+ * ⚠️ Sta fuori da `pannelloNellaPianta` apposta: quella risponde sulla
+ * geometria della sala, questa sul foglio.
+ */
+export function pannelloNelDisegno(riquadro) {
+  if (!riquadro) return null;
+  const dentro =
+    riquadro.x >= 0 &&
+    riquadro.y >= 0 &&
+    riquadro.x + riquadro.larghezza <= DISEGNO_LARGHEZZA_CM &&
+    riquadro.y + riquadro.profondita <= SALA_PROFONDITA_CM;
+  return dentro ? riquadro : null;
+}
+
 // =====================================================================
 // IL PANNELLO SI ALLARGA NELLO SPAZIO CHE C'È DAVVERO (24/08/2026)
 // =====================================================================
@@ -732,6 +766,10 @@ export function pannelloNellaPianta(zone = [], sagome = [], quali = ZONE_DEL_PAN
 // il pannello finirebbe appiccicato al tavolo sotto e i due si leggerebbero
 // come una cosa sola.
 
+// ⚠️ DAL 12/11/2026 NESSUNA SCHERMATA LO USA: il bancone sta fuori dalla
+// pianta ritagliata. La regola resta, con le sue prove, perché è geometria
+// della sala e non del foglio: se il bancone tornasse nel disegno, basta
+// richiamarla.
 /** Quanto un pannello può crescere verso i mobili senza toccarne nessuno. */
 export function pannelloAllargato(zone = [], sagome = [], quali = ZONE_DEL_BANCO, varcoCm = 10) {
   const r = pannelloNellaPianta(zone, sagome, quali);
