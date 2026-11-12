@@ -5,6 +5,8 @@ import { formatEUR } from "../../lib/constants";
 import { segnaConVoce } from "../../lib/api/spuntaInvestimento";
 import { ScegliVoce } from "../../components/SceltaVoce";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import DividiSpesa from "../../components/DividiSpesa";
+import { chiaveOrigine, descriviParte, nomeDellaFattura, pagamentiDaDividere, partiPerOrigine } from "../../lib/calcoli/dividiSpesa";
 import Didascalia from "../../components/Didascalia";
 import {
   ALIQUOTE,
@@ -45,6 +47,10 @@ import {
 //    collegate stanno nella riga «da assegnare». Se lo speso non si legge,
 //    o non torna col «Costo del progetto», la pagina lo dice: niente speso
 //    a zero che si leggerebbe «non ho speso niente».
+// 🔴 DIVIDI SU PIÙ VOCI (12/11): una spesa va su più voci, ognuna con la sua
+//    cifra, e si salva solo divisa tutta (DividiSpesa, dividi_spesa nel
+//    database). Acconto e saldo di una fattura divisa si dividono a mano:
+//    stanno in «Pagamenti da dividere» finché non li dividi.
 // ⚠️ IL «RISPARMIO» NON C'È ANCORA: serve sapere che le rate sono chiuse,
 //    e arriva con le rate nello scadenziario (parte 7).
 //
@@ -82,20 +88,37 @@ const bottonePrimario =
 //    · dopo «Assegna» la riga sparisce: il cursore va al titolo della lista
 //      (o della pagina, se la lista è finita) e si dice cosa è successo;
 //    · un doppio tocco fa una chiamata sola.
-function RigaDaAssegnare({ spesa, bloccata, blocco, onAssegnata, onDetto }) {
+//
+// 12/11/2026: accanto a «Metti su una voce» c'è «Dividi su più voci»
+// (modello approvato l'11/11). Il modulo si apre con le parti che la spesa
+// ha già, perché la divisione le sostituisce tutte.
+function RigaDaAssegnare({ spesa, esistenti = [], bloccata, blocco, onAssegnata, onDetto }) {
   const [aperta, setAperta] = useState(false);
+  const [dividendo, setDividendo] = useState(false);
   const [voce, setVoce] = useState({ voceId: "", rataId: "" });
   const [lavoro, setLavoro] = useState(false);
   const [errore, setErrore] = useState("");
   const apri = useRef(null);
+  const apriDividi = useRef(null);
   const modulo = useRef(null);
   const inCorso = useRef(false);
   const nome = nomeDellaSpesa(spesa);
 
-  // Se intanto si apre una voce, il modulo si chiude.
+  // Se intanto si apre una voce, il modulo si chiude (non a metà di un salvataggio).
   useEffect(() => {
-    if (bloccata && !inCorso.current) setAperta(false);
-  }, [bloccata]);
+    if (bloccata && !inCorso.current && !blocco.current) {
+      setAperta(false);
+      setDividendo(false);
+    }
+  }, [bloccata, blocco]);
+
+  const diviso = async (frase) => {
+    onDetto(frase);
+    await onAssegnata();
+    requestAnimationFrame(() =>
+      (document.getElementById("titolo-da-assegnare") ?? document.querySelector("h1"))?.focus()
+    );
+  };
 
   // Aprendo, il cursore va al menu delle voci appena compare.
   useEffect(() => {
@@ -156,20 +179,44 @@ function RigaDaAssegnare({ spesa, bloccata, blocco, onAssegnata, onDetto }) {
             {formatEUR(spesa.resto)}
             {Number(spesa.assegnato) > 0 && <span className="text-b58-charcoal-soft"> di {formatEUR(spesa.importo)}</span>}
           </span>
-          {!aperta && (
-            <button
-              ref={apri}
-              type="button"
-              className={bottone}
-              disabled={bloccata}
-              aria-label={`Metti su una voce: ${nome}`}
-              onClick={() => setAperta(true)}
-            >
-              Metti su una voce
-            </button>
+          {!aperta && !dividendo && (
+            <>
+              <button
+                ref={apri}
+                type="button"
+                className={bottone}
+                disabled={bloccata}
+                aria-label={`Metti su una voce: ${nome}`}
+                onClick={() => setAperta(true)}
+              >
+                Metti su una voce
+              </button>
+              <button
+                ref={apriDividi}
+                type="button"
+                className={bottone}
+                disabled={bloccata}
+                aria-label={`Dividi su più voci: ${nome}`}
+                onClick={() => setDividendo(true)}
+              >
+                Dividi su più voci
+              </button>
+            </>
           )}
         </span>
       </div>
+      {dividendo && (
+        <DividiSpesa
+          spesa={{ fonte: spesa.fonte, id: spesa.id, nome, importo: spesa.importo }}
+          esistenti={esistenti}
+          blocco={blocco}
+          onFatto={diviso}
+          onAnnulla={() => {
+            setDividendo(false);
+            requestAnimationFrame(() => apriDividi.current?.focus());
+          }}
+        />
+      )}
       {aperta && (
         <div
           ref={modulo}
@@ -213,6 +260,66 @@ function RigaDaAssegnare({ spesa, bloccata, blocco, onAssegnata, onDetto }) {
   );
 }
 
+// ---------------------------------------------------------------------
+// UN PAGAMENTO DI UNA FATTURA DIVISA, DA DIVIDERE A MANO (12/11/2026)
+// ---------------------------------------------------------------------
+// 🔴 Scelta di Alessio dell'11/11: acconto e saldo di una fattura divisa
+//    si dividono a mano, non in proporzione. Il pagamento eredita intanto i
+//    collegamenti in ordine (così lo speso non sparisce), segnati «da
+//    dividere»: qui si dice, finché non lo dividi.
+function RigaDaDividere({ spesa, parti, bloccata, blocco, nomeVoce, onDiviso, onDetto }) {
+  const [dividendo, setDividendo] = useState(false);
+  const apri = useRef(null);
+  useEffect(() => {
+    if (bloccata && !blocco.current) setDividendo(false);
+  }, [bloccata, blocco]);
+  const ora = parti.map((p) => `${formatEUR(p.importo_attribuito)} su ${nomeVoce(p.voce_id)}`).join(", ");
+  return (
+    <li data-prova="pagamento-da-dividere" className="py-2">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <span className="min-w-0">
+          <span className="block text-b58-charcoal">{spesa.nome}</span>
+          <span className="block testo-sala text-b58-ambra-dark-testo">
+            Pagamento di una fattura divisa: dividilo tu. Per ora: {ora}.
+          </span>
+        </span>
+        <span className="flex items-baseline gap-3">
+          <span className="text-b58-charcoal">{formatEUR(spesa.importo)}</span>
+          {!dividendo && (
+            <button
+              ref={apri}
+              type="button"
+              className={bottone}
+              disabled={bloccata}
+              aria-label={`Dividi: ${spesa.nome}`}
+              onClick={() => setDividendo(true)}
+            >
+              Dividi
+            </button>
+          )}
+        </span>
+      </div>
+      {dividendo && (
+        <DividiSpesa
+          spesa={spesa}
+          esistenti={parti}
+          blocco={blocco}
+          onFatto={async (frase) => {
+            onDetto(frase);
+            await onDiviso();
+            requestAnimationFrame(() =>
+              (document.getElementById("titolo-da-dividere") ?? document.querySelector("h1"))?.focus()
+            );
+          }}
+          onAnnulla={() => {
+            setDividendo(false);
+            requestAnimationFrame(() => apri.current?.focus());
+          }}
+        />
+      )}
+    </li>
+  );
+}
 
 function voceVuota(gruppo) {
   return { gruppo, descrizione: "", importo_ivato: "", aliquota_iva: 22, stato: "stimato", dilazione: "nessuna", nota: "" };
@@ -452,7 +559,12 @@ function RiquadriVoce({ voce, conto, figlie = [] }) {
  *    quelle segnate «investimento» con qualcosa ancora da assegnare, e
  *    quanta parte va su questa voce. I controlli veri li fa il database.
  */
-function CollegamentiVoce({ voce, rate, collegamenti, spese, daAssegnare, meseApertura, onCambiato, blocco }) {
+//
+// 12/11/2026: ogni documento collegato dice quanta parte è su questa voce
+// («4.500,00 € di 7.200,00 €») e, se la spesa sta anche altrove, dove è il
+// resto. «Dividi» lo divide (o ridivide) su più voci.
+function CollegamentiVoce({ voce, rate, collegamenti, spese, daAssegnare, meseApertura, onCambiato, blocco, perOrigine, nomeVoce, onDetto }) {
+  const [dividendo, setDividendo] = useState(null); // il collegamento da cui si divide
   const [sceltaScritta, setScelta] = useState("");
   const [importo, setImporto] = useState("");
   const [rata, setRata] = useState("");
@@ -472,7 +584,15 @@ function CollegamentiVoce({ voce, rate, collegamenti, spese, daAssegnare, meseAp
   function nomeDelCollegamento(c) {
     if (c.cash_movement_id) return nomeDellaSpesa(perId.get(`prima_nota:${c.cash_movement_id}`) ?? { fonte: "prima_nota" });
     if (c.anticipazione_id) return nomeDellaSpesa(perId.get(`anticipazione:${c.anticipazione_id}`) ?? { fonte: "anticipazione" });
-    return "Fattura da pagare";
+    return nomeDellaFattura(c.fattura);
+  }
+
+  /** La spesa intera dietro un collegamento: per dire «di quanto» e per dividerla. */
+  function spesaDelCollegamento(c) {
+    const chiave = chiaveOrigine(c);
+    const [fonte, id] = chiave.split(":");
+    const importo = fonte === "fattura" ? c.fattura?.amount : perId.get(chiave)?.importo;
+    return { fonte, id, chiave, nome: nomeDelCollegamento(c), importo: importo ?? null };
   }
 
   async function gesto(fn) {
@@ -518,26 +638,65 @@ function CollegamentiVoce({ voce, rate, collegamenti, spese, daAssegnare, meseAp
 
   return (
     <section data-prova="collegamenti" aria-label={`Spese collegate a ${voce.descrizione}`} className="mt-3 rounded-xl ring-1 ring-b58-charcoal/15 p-4 space-y-3">
-      <h3 className="font-display text-b58-charcoal">Spese collegate</h3>
+      <h3 id={`titolo-coll-${voce.id}`} tabIndex={-1} className="font-display text-b58-charcoal focus:outline-none">Spese collegate</h3>
       {collegamenti.length === 0 ? (
         <p className="testo-sala text-b58-charcoal-soft">Nessuna spesa collegata a questa voce.</p>
       ) : (
         <ul className="divide-y divide-b58-charcoal/10">
-          {collegamenti.map((c) => (
-            <li key={c.id} data-prova="collegamento" className="py-2 flex items-center justify-between gap-3 flex-wrap">
-              <span className="min-w-0 text-b58-charcoal">
-                {nomeDelCollegamento(c)}
-                {c.rata_id && etichettaRata(c.rata_id) && <span className="text-b58-charcoal-soft"> · rata di {etichettaRata(c.rata_id)}</span>}
-              </span>
-              <span className="flex items-center gap-3">
-                <span className="text-b58-charcoal">{formatEUR(c.importo_attribuito)}</span>
-                {/* Togliere si disfa ricollegando: niente conferma (ConfermaDistruttiva, punto 2). */}
-                <button type="button" className={bottone} disabled={lavoro} onClick={() => gesto(() => scollegaSpesa(c.id))}>
-                  Togli<span className="sr-only"> {nomeDelCollegamento(c)}</span>
-                </button>
-              </span>
-            </li>
-          ))}
+          {collegamenti.map((c) => {
+            const s = spesaDelCollegamento(c);
+            const parti = perOrigine.get(s.chiave) ?? [c];
+            const detto = descriviParte(c, parti, s.importo, nomeVoce);
+            return (
+              <li key={c.id} data-prova="collegamento" className="py-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <span className="min-w-0 text-b58-charcoal">
+                    {s.nome}
+                    {c.rata_id && etichettaRata(c.rata_id) && <span className="text-b58-charcoal-soft"> · rata di {etichettaRata(c.rata_id)}</span>}
+                    {c.da_dividere && (
+                      <span data-prova="da-dividere" className="block testo-sala text-b58-ambra-dark-testo">
+                        Pagamento di una fattura divisa: dividilo tu.
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex items-center gap-3 flex-wrap">
+                    <span data-prova="parte-collegata" className="text-b58-charcoal text-right">
+                      {detto.cifra}
+                      {detto.divisa && <span className="block testo-sala text-b58-charcoal-soft">{detto.divisa}</span>}
+                    </span>
+                    {s.importo !== null && dividendo !== c.id && (
+                      <button id={`dividi-${c.id}`} type="button" className={bottone} disabled={lavoro || dividendo !== null} onClick={() => setDividendo(c.id)}>
+                        Dividi<span className="sr-only"> {s.nome}</span>
+                      </button>
+                    )}
+                    {/* Togliere si disfa ricollegando: niente conferma (ConfermaDistruttiva, punto 2). */}
+                    <button type="button" className={bottone} disabled={lavoro || dividendo !== null} onClick={() => gesto(() => scollegaSpesa(c.id))}>
+                      Togli<span className="sr-only"> {s.nome}</span>
+                    </button>
+                  </span>
+                </div>
+                {dividendo === c.id && (
+                  <DividiSpesa
+                    spesa={s}
+                    esistenti={parti}
+                    blocco={occupato}
+                    onFatto={async (frase) => {
+                      onDetto(frase);
+                      await onCambiato();
+                      setDividendo(null);
+                      // La riga può sparire (la spesa non è più su questa voce):
+                      // il cursore va al titolo delle spese collegate.
+                      requestAnimationFrame(() => document.getElementById(`titolo-coll-${voce.id}`)?.focus());
+                    }}
+                    onAnnulla={() => {
+                      setDividendo(null);
+                      requestAnimationFrame(() => document.getElementById(`dividi-${c.id}`)?.focus());
+                    }}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -705,6 +864,17 @@ export default function PianoInvestimento() {
     for (const c of letturaSpeso?.collegamenti ?? []) m.set(c.voce_id, [...(m.get(c.voce_id) ?? []), c]);
     return m;
   }, [letturaSpeso]);
+  // 12/11: le parti di ogni spesa (una spesa divisa sta su più voci), e i
+  // pagamenti di fatture divise ancora da dividere a mano.
+  const perOrigine = useMemo(() => partiPerOrigine(letturaSpeso?.collegamenti), [letturaSpeso]);
+  const daDividere = useMemo(() => {
+    const spese = new Map((letturaSpeso?.spese ?? []).map((s) => [`${s.fonte}:${s.id}`, s]));
+    return pagamentiDaDividere(letturaSpeso?.collegamenti).map((p) => {
+      const s = spese.get(p.chiave);
+      const importo = s ? Number(s.importo) : p.parti.reduce((t, c) => t + Number(c.importo_attribuito), 0);
+      return { ...p, spesa: { fonte: p.fonte, id: p.id, nome: nomeDellaSpesa(s ?? { fonte: p.fonte }), importo } };
+    });
+  }, [letturaSpeso]);
 
   const ratePerVoce = useMemo(() => {
     const m = new Map();
@@ -713,6 +883,16 @@ export default function PianoInvestimento() {
   }, [piano]);
   const vive = useMemo(() => (piano?.voci ?? []).filter((v) => !v.archiviata_il), [piano]);
   const archiviate = useMemo(() => (piano?.voci ?? []).filter((v) => v.archiviata_il), [piano]);
+  // Il nome di una voce come si legge altrove: la sottovoce è «Madre › Sottovoce».
+  const nomeVoce = useMemo(() => {
+    const perId = new Map((piano?.voci ?? []).map((v) => [v.id, v]));
+    return (id) => {
+      const v = perId.get(id);
+      if (!v) return "una voce che non c'è più";
+      const madre = v.madre_id ? perId.get(v.madre_id) : null;
+      return madre ? `${madre.descrizione} › ${v.descrizione}` : v.descrizione;
+    };
+  }, [piano]);
   const totali = useMemo(
     () => totaliDelPiano(vive.map((v) => ({ ...v, speso: conti?.perVoce.get(v.id)?.speso ?? 0, impegnato: conti?.perVoce.get(v.id)?.impegnato ?? 0 }))),
     [vive, conti]
@@ -786,6 +966,9 @@ export default function PianoInvestimento() {
             meseApertura={piano.meseApertura}
             onCambiato={rileggiSpeso}
             blocco={bloccoVoce}
+            perOrigine={perOrigine}
+            nomeVoce={nomeVoce}
+            onDetto={setDetto}
           />
         )}
       </li>
@@ -1000,6 +1183,31 @@ export default function PianoInvestimento() {
           })}
 
           <p role="status" aria-live="polite" className="sr-only">{detto}</p>
+          {conti && daDividere.length > 0 && (
+            <section data-prova="da-dividere" className="rounded-xl bg-b58-ambra/10 ring-1 ring-b58-ambra/30 p-4 sm:p-6">
+              <h2 id="titolo-da-dividere" tabIndex={-1} className="font-display testo-sala-grande text-b58-charcoal mb-1 focus:outline-none">
+                Pagamenti da dividere
+              </h2>
+              <p className="testo-sala text-b58-charcoal-soft mb-3">
+                Pagamenti di fatture divise su più voci. Intanto contano sulle voci in ordine, fino al pagamento; dividili tu,
+                come hai deciso per acconto e saldo.
+              </p>
+              <ul className="divide-y divide-b58-charcoal/10">
+                {daDividere.map((p) => (
+                  <RigaDaDividere
+                    key={p.chiave}
+                    spesa={p.spesa}
+                    parti={p.parti}
+                    bloccata={inModifica}
+                    blocco={bloccoVoce}
+                    nomeVoce={nomeVoce}
+                    onDiviso={rileggiSpeso}
+                    onDetto={setDetto}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
           {conti && conti.daAssegnare.righe.length > 0 && (
             <section data-prova="da-assegnare" className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 sm:p-6">
               <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
@@ -1007,11 +1215,19 @@ export default function PianoInvestimento() {
                 <span className="testo-sala text-b58-charcoal-soft">{formatEUR(conti.daAssegnare.totale)}</span>
               </div>
               <p className="testo-sala text-b58-charcoal-soft mb-3">
-                Spese già pagate e segnate «investimento», che il piano non sa ancora su quale voce mettere. Con «Metti su una voce» la voce le conta come spese, e il piano ti dice se sfori o risparmi.
+                Spese già pagate e segnate «investimento», che il piano non sa ancora su quale voce mettere. Con «Metti su una voce» la voce le conta come spese, e il piano ti dice se sfori o risparmi. Se una spesa va su più voci (una fattura con dentro il forno e le sedie), usa «Dividi su più voci».
               </p>
               <ul className="divide-y divide-b58-charcoal/10">
                 {conti.daAssegnare.righe.map((s) => (
-                  <RigaDaAssegnare key={`${s.fonte}:${s.id}`} spesa={s} bloccata={inModifica} blocco={bloccoVoce} onAssegnata={rileggiSpeso} onDetto={setDetto} />
+                  <RigaDaAssegnare
+                    key={`${s.fonte}:${s.id}`}
+                    spesa={s}
+                    esistenti={perOrigine.get(`${s.fonte}:${s.id}`) ?? []}
+                    bloccata={inModifica}
+                    blocco={bloccoVoce}
+                    onAssegnata={rileggiSpeso}
+                    onDetto={setDetto}
+                  />
                 ))}
               </ul>
             </section>

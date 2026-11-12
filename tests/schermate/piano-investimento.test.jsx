@@ -20,6 +20,8 @@ const finto = vi.hoisted(() => ({
   collegate: [],
   scollegate: [],
   collegaRifiuta: null,
+  divise: [],
+  dividiRifiuta: null,
 }));
 
 vi.mock("../../src/lib/api/pianoInvestimento", () => ({
@@ -45,6 +47,10 @@ vi.mock("../../src/lib/api/pianoInvestimento", () => ({
   }),
   scollegaSpesa: vi.fn(async (id) => {
     finto.scollegate.push(id);
+  }),
+  dividiSpesa: vi.fn(async (d) => {
+    finto.divise.push(d);
+    if (finto.dividiRifiuta) throw new Error(finto.dividiRifiuta);
   }),
   cambiaApertura: vi.fn(async (m) => {
     finto.aperture.push(m);
@@ -147,7 +153,10 @@ function spesoDiProva() {
     ],
     collegamenti: [
       { id: "c1", voce_id: "cappa", rata_id: "r1", cash_movement_id: "m1", anticipazione_id: null, supplier_invoice_id: null, importo_attribuito: 10000 },
-      { id: "c2", voce_id: "cappa", rata_id: null, cash_movement_id: null, anticipazione_id: null, supplier_invoice_id: "f1", importo_attribuito: 7000 },
+      {
+        id: "c2", voce_id: "cappa", rata_id: null, cash_movement_id: null, anticipazione_id: null, supplier_invoice_id: "f1", importo_attribuito: 7000,
+        fattura: { id: "f1", amount: 7000, invoice_number: "14", invoice_date: "2026-10-10", status: "da_pagare", supplier: { name: "San Cataldo" } },
+      },
       { id: "c3", voce_id: "pedana", rata_id: null, cash_movement_id: null, anticipazione_id: "a1", supplier_invoice_id: null, importo_attribuito: 2500 },
       { id: "c4", voce_id: "affitto", rata_id: null, cash_movement_id: "m3", anticipazione_id: null, supplier_invoice_id: null, importo_attribuito: 300 },
     ],
@@ -186,6 +195,8 @@ beforeEach(() => {
   finto.collegate = [];
   finto.scollegate = [];
   finto.collegaRifiuta = null;
+  finto.divise = [];
+  finto.dividiRifiuta = null;
 });
 
 describe("il piano dell'investimento: cosa si vede", () => {
@@ -526,7 +537,7 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
     });
     const righe = [...pannello.querySelectorAll('[data-prova="collegamento"]')].map((r) => r.textContent);
     expect(righe[0]).toMatch(/02\/10\/2026 · Acconto cappa.*rata di Acconto.*10\.000,00/);
-    expect(righe[1]).toMatch(/Fattura da pagare.*7\.000,00/);
+    expect(righe[1]).toMatch(/Fattura n\. 14 · 10\/10\/2026 · San Cataldo · da pagare.*7\.000,00/);
   });
 
   async function pannelloDellaCappa(container) {
@@ -584,7 +595,7 @@ describe("il piano dell'investimento: lo speso (parte 5)", () => {
   it("«Togli» toglie il collegamento giusto", async () => {
     const { container } = monta();
     const pannello = await pannelloDellaCappa(container);
-    fireEvent.click(within(pannello).getByRole("button", { name: /Togli.*Fattura da pagare/ }));
+    fireEvent.click(within(pannello).getByRole("button", { name: /Togli.*Fattura n\. 14/ }));
     await waitFor(() => expect(finto.scollegate).toEqual(["c2"]));
   });
 });
@@ -685,5 +696,158 @@ describe("il piano dell'investimento: le sottovoci (12/11/2026)", () => {
     const { container } = monta();
     await waitFor(() => expect(gruppo(container, "A")).not.toBeNull());
     expect(within(gruppo(container, "A")).getByRole("button", { name: /Dividi in sottovoci/ })).toBeTruthy();
+  });
+});
+
+// 🔴 12/11/2026, «Dividi su più voci» (modello approvato da Alessio l'11/11):
+//    una spesa su più voci, ognuna con la sua cifra; si salva solo divisa
+//    tutta. Acconto e saldo di una fattura divisa si dividono a mano.
+describe("il piano dell'investimento: dividi su più voci (12/11/2026)", () => {
+  // Il trasporto (1.200 €, niente di assegnato) è la prima riga da assegnare.
+  async function apriDividi(container, quale = 0) {
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[quale];
+    fireEvent.click(within(riga).getByRole("button", { name: /Dividi su più voci/ }));
+    const modulo = await waitFor(() => {
+      const m = riga.querySelector('[data-prova="dividi-spesa"]');
+      expect(m).not.toBeNull();
+      expect(within(m).queryAllByLabelText(/Dove va/).length).toBeGreaterThan(0);
+      return m;
+    });
+    return { riga, modulo };
+  }
+  const scrivi = (modulo, i, voceId, cifra) => {
+    fireEvent.change(within(modulo).getAllByLabelText(/Dove va/)[i], { target: { value: voceId } });
+    fireEvent.change(within(modulo).getAllByLabelText(/Quanto/)[i], { target: { value: cifra } });
+  };
+  const esito = (modulo) => modulo.querySelector('[data-prova="esito-divisione"]').textContent;
+  const salva = (modulo) => within(modulo).getByRole("button", { name: "Salva la divisione" });
+
+  it("si apre accanto a «Metti su una voce», con due righe e il cursore sulla prima", async () => {
+    const { container } = monta();
+    const { modulo } = await apriDividi(container);
+    expect(within(modulo).getAllByLabelText(/Dove va/).length).toBe(2);
+    await waitFor(() => expect(document.activeElement).toBe(within(modulo).getAllByLabelText(/Dove va/)[0]));
+    expect(esito(modulo)).toMatch(/Restano da dividere 1\.200,00/);
+    expect(salva(modulo).disabled).toBe(true);
+  });
+
+  it("«Salva la divisione» si accende solo a resto zero, e manda le parti", async () => {
+    const { container } = monta();
+    const { modulo } = await apriDividi(container);
+    scrivi(modulo, 0, "cappa", "1.000");
+    scrivi(modulo, 1, "pedana", "100");
+    expect(esito(modulo)).toMatch(/Restano da dividere 100,00/);
+    expect(salva(modulo).disabled).toBe(true);
+    scrivi(modulo, 1, "pedana", "300");
+    expect(esito(modulo)).toMatch(/Hai diviso 100,00\s€ in più della spesa/);
+    expect(salva(modulo).disabled).toBe(true);
+    scrivi(modulo, 1, "pedana", "200");
+    expect(esito(modulo)).toMatch(/✓ Divisa tutta: restano 0,00/);
+    expect(salva(modulo).disabled).toBe(false);
+    fireEvent.click(salva(modulo));
+    await waitFor(() => expect(finto.divise.length).toBe(1));
+    expect(finto.divise[0]).toEqual({
+      fonte: "prima_nota",
+      id: "m2",
+      parti: [
+        { voceId: "cappa", rataId: "", importo: 1000 },
+        { voceId: "pedana", rataId: "", importo: 200 },
+      ],
+    });
+  });
+
+  it("«+ Aggiungi un'altra voce» aggiunge una riga e ci porta il cursore; la stessa voce due volte si dice", async () => {
+    const { container } = monta();
+    const { modulo } = await apriDividi(container);
+    fireEvent.click(within(modulo).getByRole("button", { name: /Aggiungi un'altra voce/ }));
+    const menu = within(modulo).getAllByLabelText(/Dove va/);
+    expect(menu.length).toBe(3);
+    await waitFor(() => expect(document.activeElement).toBe(menu[2]));
+    scrivi(modulo, 0, "cappa", "600");
+    scrivi(modulo, 1, "cappa", "600");
+    expect(modulo.querySelector('[data-prova="errori-divisione"]').textContent).toMatch(/Riga 2: questa voce c'è già/);
+    expect(salva(modulo).disabled).toBe(true);
+  });
+
+  it("il rifiuto del database si legge dentro il modulo, e le righe restano", async () => {
+    finto.dividiRifiuta = "«Cappa aspirazione» è archiviata: riprendila prima, oppure scegli un'altra voce.";
+    const { container } = monta();
+    const { modulo } = await apriDividi(container);
+    scrivi(modulo, 0, "cappa", "1200");
+    fireEvent.click(salva(modulo));
+    expect((await within(modulo).findByRole("alert")).textContent).toMatch(/Non ho diviso la spesa: «Cappa aspirazione» è archiviata/);
+    expect(within(modulo).getAllByLabelText(/Quanto/)[0].value).toBe("1200");
+  });
+
+  it("una spesa già in parte assegnata si apre con la parte che ha, e il resto da mettere", async () => {
+    // Le piastrelle: 800 €, 300 già sull'affitto.
+    const { container } = monta();
+    const { modulo } = await apriDividi(container, 1);
+    const cifre = within(modulo).getAllByLabelText(/Quanto/).map((i) => i.value);
+    expect(cifre).toEqual(["300", "500"]);
+    expect(within(modulo).getAllByLabelText(/Dove va/)[0].value).toBe("affitto");
+    // L'affitto non è fra le voci che si scelgono (qui la lista finta ha solo
+    // cappa e pedana): lo dice subito, e non si salva.
+    expect(modulo.querySelector('[data-prova="errori-divisione"]').textContent).toMatch(/Riga 1: questa voce non si sceglie più/);
+    expect(salva(modulo).disabled).toBe(true);
+  });
+
+  it("nella voce aperta, una fattura divisa dice la sua parte e dov'è il resto", async () => {
+    finto.speso.collegamenti[1].importo_attribuito = 4500;
+    finto.speso.collegamenti.push({
+      id: "c5", voce_id: "pedana", rata_id: null, cash_movement_id: null, anticipazione_id: null, supplier_invoice_id: "f1", importo_attribuito: 2500,
+      fattura: finto.speso.collegamenti[1].fattura,
+    });
+    const { container } = monta();
+    await apriVoce(container, "B");
+    const pannello = await waitFor(() => {
+      const p = container.querySelector('[data-prova="collegamenti"]');
+      expect(p).not.toBeNull();
+      return p;
+    });
+    const fattura = [...pannello.querySelectorAll('[data-prova="collegamento"]')][1];
+    expect(fattura.textContent).toMatch(/4\.500,00\s€ di 7\.000,00\s€.*divisa: il resto è su Pedana rialzata cucina/);
+    // «Dividi» apre il modulo con le due parti che ci sono.
+    fireEvent.click(within(fattura).getByRole("button", { name: /Dividi.*Fattura n\. 14/ }));
+    const modulo = await waitFor(() => {
+      const m = fattura.querySelector('[data-prova="dividi-spesa"]');
+      expect(m).not.toBeNull();
+      expect(within(m).queryAllByLabelText(/Quanto/).length).toBe(2);
+      return m;
+    });
+    expect(within(modulo).getAllByLabelText(/Quanto/).map((i) => i.value)).toEqual(["4500", "2500"]);
+    expect(esito(modulo)).toMatch(/✓ Divisa tutta/);
+    fireEvent.click(salva(modulo));
+    await waitFor(() => expect(finto.divise.length).toBe(1));
+    expect(finto.divise[0]).toMatchObject({ fonte: "fattura", id: "f1" });
+  });
+
+  it("il pagamento di una fattura divisa si mostra «da dividere», con il suo «Dividi»", async () => {
+    finto.speso.collegamenti[0].da_dividere = true;
+    const { container } = monta();
+    const sezione = await waitFor(() => {
+      const s = container.querySelector('[data-prova="da-dividere"]');
+      expect(s).not.toBeNull();
+      return s;
+    });
+    const riga = sezione.querySelector('[data-prova="pagamento-da-dividere"]');
+    expect(riga.textContent).toMatch(/Pagamento di una fattura divisa: dividilo tu\. Per ora: 10\.000,00\s€ su Cappa aspirazione/);
+    fireEvent.click(within(riga).getByRole("button", { name: /Dividi: .*Acconto cappa/ }));
+    const modulo = await waitFor(() => {
+      const m = riga.querySelector('[data-prova="dividi-spesa"]');
+      expect(m).not.toBeNull();
+      expect(within(m).queryAllByLabelText(/Quanto/).length).toBe(2);
+      return m;
+    });
+    expect(within(modulo).getAllByLabelText(/Quanto/)[0].value).toBe("10000");
+  });
+
+  it("mentre una voce è aperta in «Modifica», «Dividi su più voci» è spento", async () => {
+    const { container } = monta();
+    await waitFor(() => expect(container.querySelectorAll('[data-prova="spesa-da-assegnare"]').length).toBe(2));
+    await apriVoce(container, "B");
+    const riga = container.querySelectorAll('[data-prova="spesa-da-assegnare"]')[0];
+    expect(within(riga).getByRole("button", { name: /Dividi su più voci/ }).disabled).toBe(true);
   });
 });
