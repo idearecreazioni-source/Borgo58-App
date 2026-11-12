@@ -241,7 +241,13 @@ describe("I coperti dentro il tavolo", () => {
     // volte non è «l'ultimo vince», è un errore di Postgres.
     // ⚠️ x e y stanno fra 0 e 5000 per vincolo: sparpagliare troppo non è
     // «più sicuro», è un salvataggio che fallisce.
-    await metti([...quadrati, ...lunghi].map((t, i) => [t.id, 2000 + i * 300, 2000]));
+    // 🔴 È successo il 12/11: con la sala nuova i tavoli sono 12 e non 9, e
+    // a passi da 300 l'ultimo finiva a 5300. Il passo è 200 (più largo del
+    // tavolo più lungo, 160), e il controllo qui sotto lo dice prima del
+    // database se un giorno i tavoli diventano troppi anche così.
+    const sparsi = [...quadrati, ...lunghi].map((t, i) => [t.id, 1000 + i * 200, 2000]);
+    expect(Math.max(...sparsi.map(([, x]) => x)) + LL).toBeLessThanOrEqual(5000);
+    await metti(sparsi);
     await metti([
       [quadrati[0].id, 0, 1000],
       [lunghi[0].id, LQ, 1000],
