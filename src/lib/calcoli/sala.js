@@ -575,6 +575,52 @@ export const PILASTRO_FONDALE = { x: 580, y: 437, larghezza: 212, profondita: 77
 // (`ZONE_DEI_RIQUADRI_COMANDE`): è vietata ai mobili, quindi resta vuota.
 export const STANZA_IN_BASSO_FONDALE = { larghezza: 358, profondita: 514 };
 
+// Lo spessore del bordo di una sagoma, in unità del disegno. Il bordo è
+// centrato sul lato: metà sta FUORI dal rettangolo, e conta quando si
+// decide quanto vicino a un muro una sagoma può arrivare.
+export const BORDO_SAGOMA = 5;
+
+// 🔴 LA LINEA DEL MURO STA DENTRO LA STANZA (13/11/2026). Il 12/11 era
+// centrata sullo spigolo esterno (x 358, y 514): con 10 cm di spessore
+// sbordava di 5 cm verso la sala, e T7 — a x 360, appoggiato al muro vero —
+// ci finiva sopra anche in misura vera. Adesso la linea sta dentro la
+// stanza e lascia verso la sala mezzo bordo di sagoma d'aria: il suo lato
+// esterno è a 355,5 e 511,5. Così un tavolo appoggiato al muro vero si
+// vede appoggiato, non sopra.
+export const SPESSORE_MURO_STANZA_CM = 10;
+export const LINEA_STANZA_FONDALE = {
+  larghezza: STANZA_IN_BASSO_FONDALE.larghezza - BORDO_SAGOMA / 2,
+  profondita: STANZA_IN_BASSO_FONDALE.profondita - BORDO_SAGOMA / 2,
+};
+
+// 🔴 LE COSE DEL FONDALE CHE UNA SAGOMA DISEGNATA NON DEVE COPRIRE
+// (13/11/2026, Alessio dal telefono: «i tavoli sbordano»). T2 copriva il
+// pilastro e T7 la linea del muro della stanza: non stavano lì davvero — in
+// misura vera T2 è a 7 cm dal pilastro e T7 appoggiato al muro — ma il
+// disegno li fa crescere di qualche millimetro per il dito
+// (`INGRANDIMENTO_MM`). Verso queste cose `sagomaDisegnata` cresce solo
+// nello spazio che c'è, e il fondale resta visibile.
+// ⚠️ Solo disegno, come il pilastro: il trascinamento non le guarda. Quindi
+// un tavolo che Alessio mettesse ATTACCATO o sopra il pilastro si vedrebbe
+// attaccato o sopra: la regola toglie la crescita finta, non sposta il vero.
+export const OSTACOLI_FONDALE = [
+  PILASTRO_FONDALE,
+  // la linea del muro della stanza, lato verso i tavoli in alto (x)
+  {
+    x: LINEA_STANZA_FONDALE.larghezza - SPESSORE_MURO_STANZA_CM,
+    y: 0,
+    larghezza: SPESSORE_MURO_STANZA_CM,
+    profondita: LINEA_STANZA_FONDALE.profondita,
+  },
+  // e lato verso destra (y)
+  {
+    x: 0,
+    y: LINEA_STANZA_FONDALE.profondita - SPESSORE_MURO_STANZA_CM,
+    larghezza: LINEA_STANZA_FONDALE.larghezza,
+    profondita: SPESSORE_MURO_STANZA_CM,
+  },
+];
+
 // L'uscita sul muro di sinistra, in cima alla scala: il contorno della
 // sala si interrompe qui.
 export const USCITA_FONDALE = { daY: 654, aY: 814 };
@@ -1002,10 +1048,32 @@ export const VARCO_MINIMO_MM = 0.5;
  * @param crescita quanto crescerebbe il lato se fosse sola
  * @param sala    { larghezza, profondita }
  * @param varcoMinimo quanto spazio deve restare fra due sagome separate
+ * @param ostacoli cose del fondale da non coprire (`OSTACOLI_FONDALE`)
  */
-export function sagomaDisegnata(sagoma, crescita, sala, vicini = [], varcoMinimo = 0) {
+export function sagomaDisegnata(sagoma, crescita, sala, vicini = [], varcoMinimo = 0, ostacoli = []) {
   const { x, y, larghezza, profondita } = sagoma;
   const meta = Math.max(0, crescita) / 2;
+  // 🔴 VERSO IL FONDALE SI CRESCE IN UN ALTRO MODO (13/11/2026). Un vicino
+  // cresce anche lui, quindi gli si lascia metà dello spazio; un pilastro o
+  // un muro no, quindi la sagoma può prendersi tutto lo spazio che c'è —
+  // meno il varco e meno la metà del suo bordo, che sta fuori dal
+  // rettangolo. Se è già attaccata (T7 al muro), da quella parte non cresce.
+  // ⚠️ La fila e la colonna si guardano sulla sagoma GIÀ CRESCIUTA
+  // nell'altro verso: altrimenti un angolo potrebbe entrare di sbieco in
+  // un ostacolo che la sagoma vera non ha né di fianco né davanti.
+  const margine = varcoMinimo + BORDO_SAGOMA / 2;
+  const versoIlFondale = (prendiVarco, siGuardano) => {
+    let libero = meta;
+    for (const o of ostacoli) {
+      if (!siGuardano(o)) continue;
+      const varco = prendiVarco(o);
+      if (varco < 0) continue;
+      libero = Math.min(libero, Math.max(0, varco - margine));
+    }
+    return libero;
+  };
+  const inFilaLarga = (o) => o.y < y + profondita + meta && o.y + o.profondita > y - meta;
+  const inColonnaLarga = (o) => o.x < x + larghezza + meta && o.x + o.larghezza > x - meta;
   // Quanto si può crescere verso un lato, guardando chi c'è di là.
   const versoIlLato = (prendiVarco, siGuardano) => {
     let libero = meta;
@@ -1034,10 +1102,14 @@ export function sagomaDisegnata(sagoma, crescita, sala, vicini = [], varcoMinimo
   };
   const inFila = (v) => v.y < y + profondita && v.y + v.profondita > y;
   const inColonna = (v) => v.x < x + larghezza && v.x + v.larghezza > x;
-  const sinistra = versoIlLato((v) => x - (v.x + v.larghezza), inFila);
-  const destra = versoIlLato((v) => v.x - (x + larghezza), inFila);
-  const sopra = versoIlLato((v) => y - (v.y + v.profondita), inColonna);
-  const sotto = versoIlLato((v) => v.y - (y + profondita), inColonna);
+  const aSinistra = (v) => x - (v.x + v.larghezza);
+  const aDestra = (v) => v.x - (x + larghezza);
+  const diSopra = (v) => y - (v.y + v.profondita);
+  const diSotto = (v) => v.y - (y + profondita);
+  const sinistra = Math.min(versoIlLato(aSinistra, inFila), versoIlFondale(aSinistra, inFilaLarga));
+  const destra = Math.min(versoIlLato(aDestra, inFila), versoIlFondale(aDestra, inFilaLarga));
+  const sopra = Math.min(versoIlLato(diSopra, inColonna), versoIlFondale(diSopra, inColonnaLarga));
+  const sotto = Math.min(versoIlLato(diSotto, inColonna), versoIlFondale(diSotto, inColonnaLarga));
   const x1 = Math.max(0, x - sinistra);
   const y1 = Math.max(0, y - sopra);
   const x2 = Math.min(sala.larghezza, x + larghezza + destra);

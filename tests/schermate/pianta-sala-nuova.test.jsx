@@ -6,6 +6,8 @@ import {
   PILASTRO_FONDALE,
   SALA_PROFONDITA_CM,
   STANZA_IN_BASSO_FONDALE,
+  SPESSORE_MURO_STANZA_CM,
+  LINEA_STANZA_FONDALE,
   USCITA_FONDALE,
   ZONE_FONDALE,
 } from "../../src/lib/calcoli/sala";
@@ -127,9 +129,16 @@ describe("la pianta nuova sullo schermo", () => {
     // La stanza in basso a sinistra è solo una linea, senza riempimento.
     const stanza = container.querySelector("[data-stanza]");
     expect(stanza.getAttribute("fill")).toBe("none");
-    expect(stanza.getAttribute("d")).toBe(
-      `M ${STANZA_IN_BASSO_FONDALE.larghezza} 0 V ${STANZA_IN_BASSO_FONDALE.profondita} H 0`
-    );
+    // 🔴 Dal 13/11 la linea sta DENTRO la stanza: il suo lato verso la sala
+    // (centro + mezzo spessore) resta prima dello spigolo vero, 358 e 514,
+    // così T7 appoggiato al muro non ci finisce sopra.
+    const [, cx, cy] = stanza.getAttribute("d").match(/^M ([\d.]+) 0 V ([\d.]+) H 0$/);
+    const mezzo = SPESSORE_MURO_STANZA_CM / 2;
+    expect(Number(cx) + mezzo).toBeLessThan(STANZA_IN_BASSO_FONDALE.larghezza);
+    expect(Number(cy) + mezzo).toBeLessThan(STANZA_IN_BASSO_FONDALE.profondita);
+    // e coincide con la fascia che i tavoli disegnati non devono coprire
+    expect(Number(cx) + mezzo).toBe(LINEA_STANZA_FONDALE.larghezza);
+    expect(Number(cy) + mezzo).toBe(LINEA_STANZA_FONDALE.profondita);
     // Nessun rettangolo del fondale grande come una zona: le zone non si
     // disegnano più (prima ce n'era uno per zona, colorato).
     for (const z of ZONE_FONDALE) {
