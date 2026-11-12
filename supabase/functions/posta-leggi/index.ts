@@ -40,6 +40,7 @@ import { unzipSync } from "npm:fflate@0.8.2";
 import { firmaCorretta } from "../_shared/uguali.ts";
 import {
   allegatoDaTacere,
+  correggiSenzaFattura,
   daAprireComeXml,
   eRicevutaPec,
   etichettaCasella,
@@ -223,6 +224,15 @@ propone il gestionale da solo, con una riga sua letta dai campi del file. Tu
 NON proporre di registrarla, né con "da_fare_a_mano" né in altro modo: sarebbe
 un doppione. Puoi proporre "carico_magazzino" se elenca merce, come per
 qualunque fattura.
+⚠️ SOLO SE IL FILE C'È. Senza un allegato .xml o .xml.p7m che leggi qui sopra
+come «fattura elettronica», NESSUNO registra la fattura: non scrivere MAI che
+il gestionale la registrerà da solo, né che verrà registrata o importata
+automaticamente, e non usare "nessuna" per una fattura senza il file.
+L'AVVISO DI ARUBA («Hai ricevuto una nuova fattura elettronica», da
+noreply@fatturazioneelettronica.aruba.it) NON porta la fattura: il file resta
+su Aruba → Fatture ricevute. Proponi "da_fare_a_mano": «Scarica l'XML da Aruba
+→ Fatture ricevute e caricalo in Fatture Fornitori», e metti in "dati"
+fornitore ("controparte"), "numero", "data" e "importo" letti dall'avviso.
 NON consigliare MAI programmi esterni (lettori di firma digitale, CAdES,
 software per il .p7m): il gestionale apre da sé questi file, e un consiglio
 del genere manda Alessio a cercare una cosa che non gli serve.
@@ -455,8 +465,14 @@ async function allegatoPerIlModello(a: {
  *
  * Se anche l'avviso fallisce non si fa altro: la nota resta scritta sulla
  * mail, che è il posto dove la si cerca comunque.
+ *
+ * Senza `categoria` è un guasto («QUALCOSA NON VA»); con «da_fare» è una
+ * cosa da fare a mano (13/11/2026, la fattura da scaricare da Aruba).
  */
-async function avvisa(messaggio: string) {
+async function avvisa(
+  messaggio: string,
+  { tipo = "posta_letta_a_meta", categoria }: { tipo?: string; categoria?: string } = {},
+) {
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/notify-telegram-reservation`, {
       method: "POST",
@@ -467,7 +483,7 @@ async function avvisa(messaggio: string) {
       },
       body: JSON.stringify({
         type: "allarme",
-        allarme: { tipo: "posta_letta_a_meta", messaggio },
+        allarme: categoria ? { tipo, categoria, messaggio } : { tipo, messaggio },
       }),
     });
   } catch {
@@ -708,6 +724,9 @@ async function leggiLaPosta() {
   // non uno per mail: venti avvisi di fila si smettono di leggere, ed è
   // esattamente quando serve leggerli.
   const saltati: string[] = [];
+  // Le fatture da scaricare a mano da Aruba (13/11/2026): anche loro un
+  // messaggio solo a fine giro, separato dai guasti — non è un guasto.
+  const daFare: string[] = [];
 
   for (const m of messaggi) {
     try {
@@ -1063,6 +1082,35 @@ async function leggiLaPosta() {
           };
         });
 
+      // 🔴 SENZA UNA FATTURA LEGGIBILE, NESSUNA PROMESSA (13/11/2026). L'avviso
+      //    di Aruba «Hai ricevuto una nuova fattura elettronica» arriva SENZA
+      //    il file: MEMO aveva scritto «il gestionale la registrerà da solo» e
+      //    l'aveva messa fra le «Niente da fare». Qui il codice decide, non il
+      //    modello (vedi `correggiSenzaFattura`): l'avviso diventa «Scarica
+      //    da Aruba la fattura…», e su ogni altra mail senza fattura le frasi
+      //    che promettono una registrazione automatica si tolgono.
+      //    Con una fattura letta (`fattureLette`) non cambia niente.
+      // I dati che il modello ha letto, per riempire quelli che l'avviso non
+      // dice nella forma attesa. Si convalidano in `correggiSenzaFattura`.
+      const datiDelModello = ((Array.isArray(p.azioni) ? p.azioni : []) as Record<string, unknown>[])
+        .map((a) => (a?.dati ?? {}) as Record<string, unknown>)
+        .find((d) => d?.controparte || d?.numero || d?.importo) ?? {};
+      const corretta = correggiSenzaFattura({
+        mittente: testa.mittente ?? m.mittente ?? null,
+        oggetto: testa.oggetto ?? m.oggetto ?? null,
+        testo: m.testo ?? null,
+        azioni,
+        sintesi: p.sintesi,
+        fattureLette: fattureLette.length,
+        suggeriti: {
+          fornitore: datiDelModello.controparte,
+          numero: datiDelModello.numero,
+          data: datiDelModello.data,
+          importo: datiDelModello.importo,
+        },
+      });
+      azioni.splice(0, azioni.length, ...corretta.azioni.map((a) => ({ ...a, posta_id: m.id })));
+
       // Le fatture elettroniche: la proposta la costruisce il codice
       // dall'XML (08/11/2026). Il modello non può proporre
       // `registra_fattura` (non è in TIPI_AZIONE): numero, importi e
@@ -1119,12 +1167,17 @@ async function leggiLaPosta() {
         const scritte = await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
         if (!scritte.ok) throw new Error(`proposte non scritte (${scritte.status})`);
       }
+      // Una fattura da scaricare da Aruba si dice anche sul telefono: se
+      // nessuno apre la Posta, nessuno la registra. Solo quando la proposta
+      // nasce adesso: una mail riletta non squilla due volte. Si aggiunge
+      // all'elenco solo dopo che la mail è passata fra le proposte, qui sotto.
+      const squilla = Boolean(corretta.avvisoAruba && azioni.length && !ciSonoGia);
 
       const lettura = await db(`posta_ricevuta?id=eq.${m.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           stato: "proposta",
-          proposta_sintesi: typeof p.sintesi === "string" ? p.sintesi.slice(0, 300) : null,
+          proposta_sintesi: corretta.sintesi ? corretta.sintesi.slice(0, 300) : null,
           proposta_modello: modello,
           // ⚠️ La somma resta per le righe vecchie che la portano gia', ma
           // i due numeri si conservano SEPARATI: un token di domanda e uno
@@ -1143,6 +1196,7 @@ async function leggiLaPosta() {
       // con le proposte già scritte (vedi `ciSonoGia` qui sopra).
       if (!lettura.ok) throw new Error(`la mail non è passata fra le proposte (${lettura.status})`);
       letti++;
+      if (squilla) daFare.push(String(corretta.avvisoAruba?.descrizione ?? ""));
       if (scartati.length) {
         saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${scartati.join("; ")}`);
       }
@@ -1192,6 +1246,15 @@ async function leggiLaPosta() {
       "Li trovi in Archivio Documenti → Posta in arrivo: il documento c'è comunque, l'ho solo letto meno bene.",
     ].filter(Boolean);
     await avvisa(righe.join("\n\n"));
+  }
+
+  // Le fatture da scaricare da Aruba: un messaggio a parte, sotto «DA FARE»
+  // e non sotto il triangolo dei guasti (vedi notify-telegram-reservation).
+  if (daFare.length) {
+    await avvisa(
+      `${daFare.join("\n\n")}\n\nLa trovi in Archivio Documenti → Posta in arrivo, fra le «Da decidere».`,
+      { tipo: "posta_fattura_da_scaricare", categoria: "da_fare" },
+    );
   }
 
 }

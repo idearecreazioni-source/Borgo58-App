@@ -189,6 +189,13 @@ function formatAlarmMessage(allarme: Record<string, unknown>): string {
     return `🔐 SICUREZZA — ${messaggio}`;
   }
 
+  // Una cosa da fare a mano trovata nella Posta (13/11/2026): la fattura che
+  // Aruba annuncia senza mandare il file. Non è un guasto: il gestionale
+  // funziona e dice che tocca ad Alessio. Il testo lo scrive posta-leggi.
+  if (categoria === "da_fare") {
+    return ["📥 DA FARE", "", messaggio].join("\n");
+  }
+
   if (categoria === "rincaro") {
     return [
       "💶 RINCARO",
