@@ -50,6 +50,10 @@ import {
   ORDER_PAYMENT_METHODS,
   ESITI_RIGA_LISTA,
   FONDI_ANTICIPO,
+  MODALITA_PAGAMENTO_FATTURA,
+  NATURE_IVA,
+  SOCIO_UNICO,
+  STATI_FATTURA_EMESSA,
   PAYMENT_METHODS,
   PEST_CONTROL_TYPES,
   LINEE_PREVISIONE,
@@ -152,6 +156,11 @@ export const SPECCHIATI = [
   { costante: "ESITI_RIGA_LISTA", valori: ESITI_RIGA_LISTA, tabella: "shopping_list_items", colonna: "esito" },
   // «Ho pagato io», in Cassa e in Fatture (13/11/2026): con che soldi.
   { costante: "FONDI_ANTICIPO", valori: FONDI_ANTICIPO, tabella: "anticipazioni_socio", colonna: "fondi" },
+  // Le fatture ai clienti (13/11/2026, migrazione 20261113000002).
+  { costante: "STATI_FATTURA_EMESSA", valori: STATI_FATTURA_EMESSA, tabella: "fatture_emesse", colonna: "stato" },
+  { costante: "MODALITA_PAGAMENTO_FATTURA", valori: MODALITA_PAGAMENTO_FATTURA, tabella: "fatture_emesse", colonna: "modalita_pagamento" },
+  { costante: "NATURE_IVA", valori: NATURE_IVA, tabella: "fatture_emesse_righe", colonna: "natura" },
+  { costante: "SOCIO_UNICO", valori: SOCIO_UNICO, tabella: "entities", colonna: "socio_unico" },
   { costante: "CLEANING_FREQUENCIES", valori: CLEANING_FREQUENCIES, tabella: "haccp_cleaning_tasks", colonna: "frequency" },
   { costante: "PEST_CONTROL_TYPES", valori: PEST_CONTROL_TYPES, tabella: "haccp_pest_control_logs", colonna: "type" },
   { costante: "NC_CATEGORIES", valori: NC_CATEGORIES, tabella: "haccp_non_conformities", colonna: "category" },
