@@ -1,6 +1,6 @@
 # Le fatture ai clienti hanno un archivio (13/11/2026) — pezzo 1 di 5
 
-Commit sotto questa consegna: `3c3d53f4` (il lavoro è in `24a39749`; `3c3d53f4` rigenera l'indice dei rovesciamenti). Migrazione `20261113000002_le_fatture_ai_clienti_hanno_un_archivio`.
+Commit sotto questa consegna: `ecf52b55` (il lavoro è in `24a39749`; poi `3c3d53f4` rigenera l'indice dei rovesciamenti e `ecf52b55` aggiunge la dichiarazione per la rete dei portieri). Migrazione `20261113000002_le_fatture_ai_clienti_hanno_un_archivio`.
 
 Piano approvato da Alessio il 13/11/2026 («Sì, approvo»): work emette le fatture ai clienti e le spedisce dalla PEC borgo58@pec.it allo SDI. Abbonamento Aruba FE Base, quindi niente invio da programmi. Emette solo la S.r.l.s. Nel 2026 non ci saranno fatture: la prima sarà la 1/2027.
 
@@ -79,3 +79,8 @@ Nessuna: questo pezzo non ne ha. La pagina «Fatture ai clienti» arriva nel pez
 ## Rilascio
 1. **Prova**: fatto.
 2. **work**: la migrazione si applica **solo col sì di Alessio**. Tocca solo tabelle nuove e colonne facoltative, e nessuna funzione online va reinstallata.
+
+## Dopo i Controlli
+- `tests/app/migrazioni-senza-portieri.test.js` ha segnalato «chiama emetti_fattura() al primo livello senza impostare i claims». È un **falso allarme**: il nome compare solo nel testo del `comment on function fatture_emesse_guardia()`, che contiene un «;», e la depurazione dei commenti si ferma lì.
+- Ho aggiunto la riga `-- rete-portieri: 20261113000002 chiama emetti_fattura — …`, la forma dichiarata dalla rete.
+- ⚠️ **La migrazione era già applicata su Prova.** La modifica è **solo un commento SQL**: niente cambia nel database. Per questo non ho scritto una migrazione nuova e non ho rilanciato `prova:migra`.
