@@ -20,6 +20,8 @@ const { finto, spie } = vi.hoisted(() => ({
     salvaBozzaFattura: null,
     salvaDatiSocieta: null,
     salvaClienteFattura: null,
+    spedisciFattura: null,
+    sbloccaInvioFattura: null,
   },
 }));
 
@@ -29,7 +31,9 @@ vi.mock("../../src/lib/api/fattureEmesse", () => ({
   salvaBozzaFattura: (...a) => spie.salvaBozzaFattura(...a),
   salvaClienteFattura: (...a) => spie.salvaClienteFattura(...a),
   eliminaBozzaFattura: vi.fn(async () => {}),
-  emettiFattura: vi.fn(),
+  spedisciFattura: (...a) => spie.spedisciFattura(...a),
+  sbloccaInvioFattura: (...a) => spie.sbloccaInvioFattura(...a),
+  provaLaPec: vi.fn(async () => ({ simulato: true, messaggio: "Qui siamo su Prova o a casa: la PEC non si usa." })),
 }));
 vi.mock("../../src/lib/api/entities", () => ({
   getEntities: vi.fn(async () => ({ srls: finto.srls })),
@@ -56,6 +60,7 @@ beforeEach(() => {
   spie.salvaBozzaFattura = vi.fn(async () => "f-nuova");
   spie.salvaDatiSocieta = vi.fn(async () => ({}));
   spie.salvaClienteFattura = vi.fn(async (c) => ({ id: "c2", ...c }));
+  spie.spedisciFattura = vi.fn(async () => ({ numero: "1/2027", nome_file: "IT01234567897_00001.xml", destinatario: "sdi01@pec.fatturapa.it", simulato: true }));
 });
 
 describe("Fatture ai clienti", () => {
@@ -95,10 +100,67 @@ describe("Fatture ai clienti", () => {
     );
   });
 
-  it("niente «Emetti» in questo pezzo: il numero lo prende quando parte", async () => {
+  it("«Emetti e manda»: chiede conferma, salva quello che si vede, poi manda; su Prova dice che non parte davvero (pezzo 3)", async () => {
     apri();
     fireEvent.click(await screen.findByRole("button", { name: "+ Nuova fattura" }));
-    expect(screen.queryByRole("button", { name: /Emetti/ })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "c1" } });
+    fireEvent.change(screen.getByLabelText("Cosa"), { target: { value: "Cena" } });
+    fireEvent.change(screen.getByLabelText(/^Prezzo/), { target: { value: "55" } });
+    fireEvent.click(screen.getByRole("button", { name: "Emetti e manda" }));
+    expect(spie.salvaBozzaFattura).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Sì, emetti e manda" }));
+    await waitFor(() => expect(spie.spedisciFattura).toHaveBeenCalledWith("f-nuova"));
+    expect(spie.salvaBozzaFattura).toHaveBeenCalledTimes(1);
+    expect(spie.salvaBozzaFattura.mock.invocationCallOrder[0]).toBeLessThan(spie.spedisciFattura.mock.invocationCallOrder[0]);
+    expect((await screen.findByText(/Fattura 1\/2027 pronta/)).textContent).toMatch(/PROVA: qui non parte davvero/);
+  });
+
+  it("se la spedizione non riesce, la bozza si chiude, la lista si rilegge e l'errore resta in cima (revisione 13/11)", async () => {
+    spie.spedisciFattura = vi.fn(async () => {
+      throw new Error("La fattura 1/2027 ha il suo numero ma NON è partita: la PEC non risponde.");
+    });
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: "+ Nuova fattura" }));
+    fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "c1" } });
+    fireEvent.change(screen.getByLabelText("Cosa"), { target: { value: "Cena" } });
+    fireEvent.change(screen.getByLabelText(/^Prezzo/), { target: { value: "55" } });
+    fireEvent.click(screen.getByRole("button", { name: "Emetti e manda" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, emetti e manda" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/NON è partita/);
+    expect(screen.queryByText("Nuova fattura")).toBeNull();
+  });
+
+  it("un invio rimasto a metà: si dice se è nella posta inviata, e si sblocca", async () => {
+    spie.sbloccaInvioFattura = vi.fn(async () => null);
+    finto.fatture = [{
+      id: "f8", numero: 2, anno: 2027, data: "2027-01-18", stato: "da_inviare", totale: 50, prezzi_ivati: true,
+      cliente: { id: "c1", denominazione: "Ditta Esempio srl" }, righe: [],
+      invii: [{ id: "i1", stato: "in_partenza", nome_file: "IT01234567897_0000A.xml", creato_il: "2027-01-18T10:00:00Z" }],
+    }];
+    apri();
+    expect((await screen.findByText(/si è fermato a metà/)).textContent).toMatch(/IT01234567897_0000A\.xml/);
+    expect(screen.queryByRole("button", { name: "Manda" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Non c'è" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, non c'è" }));
+    await waitFor(() => expect(spie.sbloccaInvioFattura).toHaveBeenCalledWith("i1", false));
+    expect(await screen.findByText(/ora puoi premere «Manda»/)).toBeTruthy();
+  });
+
+  it("una fattura «da inviare» ha «Manda», che la fa ripartire", async () => {
+    finto.fatture = [{
+      id: "f9", numero: 3, anno: 2027, data: "2027-01-20", stato: "da_inviare", totale: 80, prezzi_ivati: true,
+      cliente: { id: "c1", denominazione: "Ditta Esempio srl" }, righe: [],
+    }];
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: "Manda" }));
+    await waitFor(() => expect(spie.spedisciFattura).toHaveBeenCalledWith("f9"));
+    expect(await screen.findByText(/Fattura 1\/2027 pronta/)).toBeTruthy();
+  });
+
+  it("«Prova la PEC» dice com'è andata", async () => {
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: "Prova la PEC" }));
+    expect(await screen.findByText("Qui siamo su Prova o a casa: la PEC non si usa.")).toBeTruthy();
   });
 
   it("l'errore del database si legge accanto al pulsante", async () => {

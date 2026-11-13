@@ -184,6 +184,17 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261104000005",
     perche: "chiamata dal ponte del mini-PC: scrive com'è andato il controllo regolare delle stampanti",
   },
+  // ⚠️ La spedizione delle fatture ai clienti (13/11/2026, pezzo 3): le
+  //    chiama la funzione online `fattura-spedisci`, che custodisce la
+  //    password della PEC. La schermata chiama la funzione, non loro.
+  prepara_invio_fattura: {
+    versione: "20261113000005",
+    perche: "chiamata da fattura-spedisci: numera la bozza e apre l'invio col progressivo nuovo",
+  },
+  chiudi_invio_fattura: {
+    versione: "20261113000005",
+    perche: "chiamata da fattura-spedisci: com'è andato l'invio dalla PEC",
+  },
 };
 
 /**

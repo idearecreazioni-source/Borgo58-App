@@ -181,6 +181,9 @@ const OPERAZIONI = new Set([
   // sue righe, sostituite insieme. A meta' resterebbe una fattura con le
   // righe di prima, o senza righe.
   "salva_bozza_fattura",
+  // Un invio di fattura rimasto a metà, sbloccato dal titolare dopo aver
+  // guardato la posta inviata della PEC (13/11/2026): invio e fattura insieme.
+  "sblocca_invio_fattura",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",

@@ -1,14 +1,14 @@
 // Le fatture ai clienti (13/11/2026) — l'archivio nel database.
 //
-// Pezzo 1 di 5 del piano approvato da Alessio il 13/11: qui solo leggere,
-// salvare il cliente e far uscire una bozza col suo numero. La pagina, il
-// file XML e la spedizione dalla PEC arrivano nei pezzi successivi.
+// Pezzi 1-3 del piano approvato da Alessio il 13/11: leggere, salvare il
+// cliente e la bozza, emettere e mandare dalla PEC.
 //
 // ⚠️ Il numero NON si scrive mai da qui: lo dà `emetti_fattura()` nel
 // database, sotto lucchetto, quando la fattura esce dalla bozza.
 
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { chiamaFunzione } from "../chiamaFunzione";
 
 export async function listClientiFattura({ soloAttivi = true } = {}) {
   let q = supabase.from("clienti_fattura").select("*").order("denominazione").order("cognome");
@@ -31,7 +31,10 @@ export async function salvaClienteFattura(cliente) {
 export async function listFattureEmesse({ anno } = {}) {
   let q = supabase
     .from("fatture_emesse")
-    .select("*, cliente:clienti_fattura(id, denominazione, nome, cognome), righe:fatture_emesse_righe(*)")
+    .select(
+      "*, cliente:clienti_fattura(id, denominazione, nome, cognome), righe:fatture_emesse_righe(*), " +
+        "invii:fatture_emesse_invii(id, stato, nome_file, creato_il)"
+    )
     .order("data", { ascending: false })
     .order("numero", { ascending: false, nullsFirst: true });
   if (anno) q = q.eq("anno", anno);
@@ -40,11 +43,34 @@ export async function listFattureEmesse({ anno } = {}) {
   return data;
 }
 
-/** Fa uscire la bozza: il database le dà il numero e congela i totali. */
-export async function emettiFattura(fatturaId) {
-  const { data, error } = await supabase.rpc("emetti_fattura", { p_fattura: fatturaId });
-  if (error) throw error;
-  return data;
+/**
+ * Emette e manda (pezzo 3, 13/11/2026): la funzione `fattura-spedisci` dà
+ * il numero alla bozza e la spedisce dalla PEC allo SdI. Una «da inviare»
+ * (un invio non riuscito) o una «scartata» corretta ripartono con lo stesso
+ * numero. ⚠️ Il numero NON si dà da qui con emetti_fattura: una fattura
+ * numerata e non spedita resterebbe a metà senza che nessuno la mandi.
+ * Su Prova e a casa l'invio è simulato, e il risultato lo dice (`simulato`).
+ * @returns {Promise<{numero: string, nome_file: string, destinatario: string, simulato: boolean}>}
+ */
+export async function spedisciFattura(fatturaId) {
+  const data = await chiamaFunzione("fattura-spedisci", { fattura_id: fatturaId }, "mandare la fattura");
+  return data?.risultato ?? null;
+}
+
+/**
+ * Un invio rimasto «in partenza» (la PEC si è interrotta dopo aver preso il
+ * messaggio, o la funzione si è fermata): il titolare ha guardato nella
+ * posta inviata della PEC e dice se c'è. Due tabelle (l'invio e la
+ * fattura): passa dal corridoio.
+ */
+export async function sbloccaInvioFattura(invioId, partito) {
+  return eseguiOperazione("sblocca_invio_fattura", { p_invio: invioId, p_partito: partito });
+}
+
+/** Prova utente e password della PEC, senza mandare niente. */
+export async function provaLaPec() {
+  const data = await chiamaFunzione("fattura-spedisci", { verifica_pec: true }, "provare la PEC");
+  return data?.risultato ?? null;
 }
 
 /**
