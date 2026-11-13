@@ -40,3 +40,36 @@ export async function getEntities() {
   cacheScadeIl = Date.now() + DURATA_CACHE_MS;
   return cache;
 }
+
+// I dati della S.r.l.s. che una fattura pretende (13/11/2026, fatture ai
+// clienti): ragione sociale, P.IVA, sede, REA, capitale, socio unico, PEC,
+// IBAN. Scrittura diretta su una tabella sola (la RLS la apre al solo
+// titolare); dopo, la cache si svuota così ogni pagina rilegge i dati nuovi.
+const CAMPI_SOCIETA = [
+  "legal_name",
+  "vat_number",
+  "tax_code",
+  "sede_indirizzo",
+  "sede_cap",
+  "sede_comune",
+  "sede_provincia",
+  "rea_ufficio",
+  "rea_numero",
+  "capitale_sociale",
+  "socio_unico",
+  "pec",
+  "iban",
+];
+
+export async function salvaDatiSocieta(id, dati) {
+  const campi = {};
+  for (const k of CAMPI_SOCIETA) {
+    if (!(k in dati)) continue;
+    const v = typeof dati[k] === "string" ? dati[k].trim() : dati[k];
+    campi[k] = v === "" ? null : v;
+  }
+  const { data, error } = await supabase.from("entities").update(campi).eq("id", id).select().single();
+  cache = null;
+  if (error) throw error;
+  return data;
+}
