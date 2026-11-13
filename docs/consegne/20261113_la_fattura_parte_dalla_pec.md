@@ -1,6 +1,6 @@
 # La fattura ai clienti parte dalla PEC verso lo SdI (13/11/2026) — pezzo 3 di 5
 
-Commit sotto questa consegna: `64961c34`. Migrazione `20261113000005_la_fattura_parte_dalla_pec`. Funzione nuova `fattura-spedisci`; `operazioni-atomiche` ha la voce nuova `sblocca_invio_fattura`.
+Commit sotto questa consegna: `515da4a6` (il lavoro è in `64961c34`; `515da4a6` dichiara gli esiti dell'invio fra le eccezioni dei vocabolari). Migrazione `20261113000005_la_fattura_parte_dalla_pec`. Funzione nuova `fattura-spedisci`; `operazioni-atomiche` ha la voce nuova `sblocca_invio_fattura`.
 
 Piano approvato da Alessio il 13/11 (PIANO_fatture_emesse_13-11.md). Via al pezzo 3 dato da Alessio («Si parti»). Turno di Prova dato dalla chat madre.
 
@@ -81,3 +81,7 @@ Niente di nuovo. Il rovesciamento della decisione del 14/08 (Fatture in Cloud) �
 3. Approve and deploy.
 4. **Alessio** mette nei Secrets di Supabase (work) `PEC_UTENTE` (borgo58@pec.it) e `PEC_PASSWORD`: io non la vedo mai. Poi preme «Prova la PEC».
 5. Prima fattura vera solo dopo le risposte di Laura (aliquote, scontrino e fattura, regime RF01). Le ricevute dello SdI le leggerà il pezzo 4.
+
+## Dopo i Controlli (13/11)
+- La rete dei vocabolari ha preso `chiudi_invio_fattura(p_esito)`, che accetta partito, simulato e fallito: sono tre dei quattro stati degli invii. Il quarto, «in partenza», è quello di un invio aperto. Dichiarata in `GUARDIE_ESENTI` con la sua ragione.
+- Nello stesso giro sono fallite 11 prove di banca, note di credito e deducibilità, che questo lavoro non tocca. Il database rispondeva «nessun conto corrente registrato», ma su Prova il conto della S.r.l.s. c'è (è attivo dal 25/08). La #389, alle 16:14, le aveva passate tutte. Il giro si rifà con questa correzione.
