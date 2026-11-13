@@ -337,6 +337,11 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // sulla spesa che si divide (come segna_investimento) e sostituisce i
       // suoi collegamenti al piano.
       "20261112000003_dividi_su_piu_voci.sql",
+      // L'anticipo eredita senza direzione (13/11/2026): NON e' fiscale,
+      // corregge il trigger che passa la spunta dalla fattura al pagamento
+      // (chiedeva `new.direction` anche agli anticipi) e la legge solo
+      // dentro la propria verifica annullata.
+      "20261113000001_l_anticipo_eredita_senza_direzione.sql",
     ]);
   });
 
