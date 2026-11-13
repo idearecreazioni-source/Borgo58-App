@@ -627,3 +627,336 @@ export function etichettaCasella(casella) {
   // Object.hasOwn: «constructor@…» non deve pescare nel prototipo.
   return Object.hasOwn(NOMI_CASELLE, locale) ? NOMI_CASELLE[locale] : `${locale}@`;
 }
+
+// --- l'avviso di Aruba senza la fattura (13/11/2026) -------------------------
+//
+// 🔴 Il 13/11 è arrivata da `noreply@fatturazioneelettronica.aruba.it` la mail
+//    «Hai ricevuto una nuova fattura elettronica» (Fabio Lorito, n. 1992/2026,
+//    235,00 €) SENZA il file della fattura: il file resta nel pannello di
+//    Aruba, «Fatture ricevute». MEMO ha scritto «il gestionale la registrerà
+//    da solo» e l'ha messa fra le «Niente da fare». Era falso: senza un XML
+//    (o un .p7m) allegato nessuno registra niente, e la fattura si perdeva.
+//
+// La regola è nel CODICE, non solo nelle istruzioni del modello: un avviso di
+// Aruba senza fattura leggibile produce SEMPRE la stessa cosa da fare, con i
+// dati letti dall'avviso. Le PEC dello SdI con l'xml.p7m («Invio File …») non
+// passano di qui: la loro fattura si legge, e la proposta resta quella di
+// `proposteDaFattura`.
+
+/** Il dominio da cui Aruba manda gli avvisi della fatturazione elettronica. */
+const DOMINIO_ARUBA_FE = "@fatturazioneelettronica.aruba.it";
+
+/** L'indirizzo vero di un mittente: quello fra `<…>` se c'è, altrimenti tutto. */
+function soloIndirizzo(mittente) {
+  const s = String(mittente ?? "").trim();
+  const tra = s.match(/<([^<>]*)>\s*$/);
+  return (tra ? tra[1] : s).trim().toLowerCase();
+}
+
+/**
+ * È l'avviso di Aruba di una fattura RICEVUTA? Mittente del dominio della
+ * fatturazione elettronica di Aruba (l'indirizzo fra `<…>`, non il nome
+ * davanti, che lo scrive chi manda) e oggetto «Hai ricevuto una nuova
+ * fattura…», anche con «Fwd:» davanti.
+ *
+ * ⚠️ Chiunque può scrivere quel mittente: per questo l'avviso produce solo
+ *    una cosa da fare a mano («scaricala da Aruba»), mai un bottone che
+ *    registra. Il peggio che può fare una mail finta è farti aprire Aruba.
+ *
+ * @param {{mittente?: string|null, oggetto?: string|null}} mail
+ * @returns {boolean}
+ */
+export function eAvvisoArubaFattura({ mittente = null, oggetto = null } = {}) {
+  if (!soloIndirizzo(mittente).endsWith(DOMINIO_ARUBA_FE)) return false;
+  // ⚠️ «Hai ricevuto … fattura» o «fattura ricevuta», non un «ricevut…»
+  //    qualunque: «Ricevuta di consegna della fattura n. 12» (una fattura
+  //    EMESSA da noi) non è un avviso di fattura da scaricare (revisione ECC).
+  return /\bhai\s+ricevuto\b.*\bfattur[ae]\b|\bfattur[ae]\b(?:\s+\S+){0,2}\s+ricevut[ae]\b/i.test(
+    oggettoPulito(oggetto ?? ""),
+  );
+}
+
+/** Una data scritta all'italiana (o già AAAA-MM-GG) → «AAAA-MM-GG»; null se non è una data vera. */
+function dataIso(v) {
+  const s = String(v ?? "").trim();
+  let g, m, a;
+  let r = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (r) [, a, m, g] = r;
+  else {
+    r = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b/);
+    if (!r) return null;
+    [, g, m, a] = r;
+  }
+  const iso = `${a}-${String(m).padStart(2, "0")}-${String(g).padStart(2, "0")}`;
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== iso ? null : iso;
+}
+
+/** «1.235,00 €», «€ 235,00», «235.00», «EUR 235» → numero; null se non c'è un importo. */
+function importoDa(v) {
+  if (typeof v === "number") return Number.isFinite(v) && v > 0 ? v : null;
+  const r = String(v ?? "").match(/(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)/);
+  if (!r) return null;
+  let t = r[1];
+  // «1.235,00» e «235,00»: la virgola è dei decimali, i punti delle migliaia.
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  // «1.235» (punto delle migliaia, senza decimali) resta 1235.
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Un numero di fattura: un pezzo solo, con almeno una cifra. */
+function numeroDa(v) {
+  const r = String(v ?? "").trim().match(/^[^\s,;]+/);
+  const t = r ? r[0].replace(/[.:]+$/, "") : "";
+  return /\d/.test(t) && t.length <= 40 ? t : null;
+}
+
+/** Un nome di fornitore: una riga, senza punteggiatura in coda, non troppo lungo. */
+function nomeDa(v) {
+  const t = String(v ?? "").replace(/\s+/g, " ").trim().replace(/[.,;:]+$/, "");
+  // Un indirizzo email non è un fornitore («Mittente: noreply@…»).
+  if (t.includes("@")) return null;
+  return t.length >= 2 && t.length <= 120 ? t : null;
+}
+
+// Le etichette dell'avviso. Dopo l'etichetta: due punti, una tabulazione o un
+// a capo (la tabella dell'HTML, ridotta a testo). Lo spazio semplice non
+// basta per il fornitore e per «numero»/«data» da soli: «Mittente della
+// mail» non è un fornitore, «numero verde» non è un numero di fattura.
+const SEP = String.raw`[ \t]*(?::|\t|\r?\n)[ \t]*(?:\r?\n[ \t]*)?`;
+const SEP_LARGO = String.raw`[ \t]*(?::|\t|\r?\n|[ \t])[ \t]*(?:\r?\n[ \t]*)?`;
+const ETICHETTE = {
+  fornitore: [
+    String.raw`(?:fornitore|cedente(?:\s*/\s*prestatore)?|emittente|mittente|ragione sociale|denominazione)` + SEP,
+  ],
+  numero: [String.raw`(?:numero|n\.?|nr\.?|n°)\s*(?:della\s+)?(?:fattura|documento)` + SEP_LARGO, "numero" + SEP],
+  data: [String.raw`data\s+(?:della\s+|di\s+)?(?:fattura|documento|emissione)` + SEP_LARGO, "data" + SEP],
+  importo: [String.raw`(?:importo|totale)(?:\s+(?:totale|documento|fattura))?` + SEP_LARGO],
+};
+
+/** Il valore dopo la prima etichetta che lo porta valido. */
+function campo(testo, etichette, valida) {
+  for (const e of etichette) {
+    const re = new RegExp(String.raw`(?:^|[\s>|])` + e + String.raw`([^\r\n]*)`, "gi");
+    for (const m of testo.matchAll(re)) {
+      const v = valida(m[1]);
+      if (v != null) return v;
+    }
+  }
+  return null;
+}
+
+/**
+ * I dati della fattura scritti nell'avviso di Aruba: fornitore, numero, data
+ * e importo, ognuno null se non c'è. Si leggono le righe «Etichetta: valore»
+ * e, se mancano, la frase («fattura n. 1992/2026 del 12/11/2026»).
+ *
+ * ⚠️ Non si indovina: un campo che non si trova resta null, e la cosa da fare
+ *    lo dice senza («la fattura di Fabio Lorito», senza numero).
+ *
+ * @param {string|null} testo il testo della mail
+ * @returns {{fornitore: string|null, numero: string|null, data: string|null, importo: number|null}}
+ */
+export function datiAvvisoAruba(testo) {
+  const t = String(testo ?? "").slice(0, 20000);
+  const fornitore =
+    campo(t, ETICHETTE.fornitore, nomeDa) ??
+    nomeDa(t.match(/(?:emessa da|inviata da|da parte di|dal fornitore|dal cedente)[ \t]*:?[ \t]*([^\n.,;]{2,120})/i)?.[1]);
+  const numero =
+    campo(t, ETICHETTE.numero, numeroDa) ??
+    numeroDa(t.match(/fattura(?:\s+elettronica)?\s+(?:n\.?|nr\.?|n°|numero)\s*([^\s,;]+)/i)?.[1]);
+  const data =
+    campo(t, ETICHETTE.data, dataIso) ??
+    dataIso(t.match(/fattura[^\n]{0,80}?\bdel\s+(\d{1,2}[/.-]\d{1,2}[/.-]\d{4}|\d{4}-\d{2}-\d{2})/i)?.[1]);
+  // Il valore deve COMINCIARE con l'importo (o con «€»/«EUR»): «Totale
+  // imponibile: 200,00» non è il totale della fattura.
+  const importo = campo(t, ETICHETTE.importo, (v) =>
+    /^\s*(?:€|eur(?:o)?\b)?\s*\d/i.test(v) ? importoDa(v) : null,
+  );
+  return { fornitore, numero, data, importo };
+}
+
+/** «2026-11-12» → «12/11/2026». */
+const giornoItaliano = (iso) => (iso ? iso.split("-").reverse().join("/") : null);
+const euro = (n) =>
+  n == null ? null : `${n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+/**
+ * La cosa da fare per un avviso di Aruba senza la fattura allegata: scaricare
+ * l'XML da Aruba e caricarlo nelle Fatture Fornitori. È un «da fare a mano»
+ * («Segnatelo»): la mail resta fra le «Da decidere» finché Alessio non
+ * conferma o rifiuta.
+ *
+ * @param {{fornitore?: unknown, numero?: unknown, data?: unknown, importo?: unknown}} [dati]
+ * @returns {{tipo: string, titolo: string, descrizione: string, perche: string, parametri: Record<string, unknown>}}
+ */
+export function propostaFatturaDaScaricare(dati = {}) {
+  const fornitore = nomeDa(dati?.fornitore);
+  const numero = numeroDa(dati?.numero);
+  const data = dataIso(dati?.data);
+  const importo = importoDa(dati?.importo);
+  const quale = `la fattura${numero ? ` n. ${numero}` : ""}${fornitore ? ` di ${fornitore}` : ""}`;
+  const dettagli = [data ? `del ${giornoItaliano(data)}` : null, euro(importo)].filter(Boolean);
+  const titolo = `Scarica da Aruba ${quale}`.slice(0, 200);
+  const scheda = `${quale.charAt(0).toUpperCase()}${quale.slice(1)}${dettagli.length ? ` (${dettagli.join(", ")})` : ""}`;
+  return {
+    tipo: "da_fare_a_mano",
+    titolo,
+    descrizione:
+      `${scheda}: è arrivato solo l'avviso di Aruba, senza il file. Il gestionale NON la registra da solo: ` +
+      `scarica l'XML da Aruba → Fatture ricevute e caricalo in Fatture Fornitori → «Carica una fattura elettronica».`,
+    perche:
+      "Aruba avvisa che la fattura è arrivata ma non manda il file: finché l'XML non è caricato, la fattura non è registrata da nessuna parte. I dati sono quelli scritti nell'avviso.",
+    parametri: {
+      titolo,
+      data: null,
+      passi: [
+        `Apri Aruba → Fatturazione elettronica → Fatture ricevute e scarica l'XML di ${quale}`,
+        "Caricalo in Fatture Fornitori → «Carica una fattura elettronica»",
+      ],
+      avviso_aruba: true,
+      fornitore,
+      numero,
+      data_fattura: data,
+      importo,
+    },
+  };
+}
+
+// Una frase che promette una registrazione che nessuno farà: «il gestionale
+// la registrerà da solo», «verrà registrata automaticamente», «la
+// registrazione la propone il gestionale». Si cerca dentro una frase sola.
+const PROMESSA = [
+  /\b(?:registr|import)\w*\b[^.;!?\n]{0,80}\b(?:da\s+sol[oaie]|automaticamente|in\s+automatico|da\s+s[ée])(?![\p{L}])/iu,
+  /\b(?:da\s+sol[oaie]|automaticamente|in\s+automatico)\b[^.;!?\n]{0,80}\b(?:registr|import)\w*/i,
+  /\bregistrazione\b[^.;!?\n]{0,60}\bpropone\s+il\s+gestionale\b/i,
+  /\bgestionale\b[^.;!?\n]{0,40}\b(?:la|le|lo|li)\s+registrer/i,
+];
+// «Non si registra da sola» è vero, e resta. Il «non» deve stare ATTACCATO
+// al verbo: «Non c'è il file: verrà registrata automaticamente» promette lo
+// stesso (revisione ECC).
+const NEGATA = /\bnon\s+(?:(?:si|la|le|lo|li|viene|verrà|sarà|è)\s+){0,2}(?:registr|import)\w*/i;
+
+/** La frase promette una registrazione automatica? */
+export function promettePerSe(frase) {
+  const f = String(frase ?? "");
+  return PROMESSA.some((r) => r.test(f)) && !NEGATA.test(f);
+}
+
+/** Il testo senza le frasi che promettono una registrazione automatica. */
+export function senzaPromesse(testo) {
+  // Un punto chiude la frase solo se dopo c'è uno spazio o la fine, e non
+  // dopo «n.»/«nr.»: «n. 1992/2026» e «235.00» restano nella loro frase.
+  const frasi =
+    String(testo ?? "").match(/(?:\b(?:n|nr)\.\s*|\.(?=\S)|[^.;!?\n])+[.;!?]*\s*|[.;!?]+\s*|\n+/gi) ?? [];
+  return frasi
+    .filter((f) => !promettePerSe(f))
+    .join("")
+    .trim();
+}
+
+/**
+ * Corregge le proposte DEL MODELLO quando nella mail non c'è una fattura
+ * leggibile (nessun XML/p7m che si apra come fattura elettronica).
+ *
+ * 1. Avviso di Aruba di una fattura ricevuta → le proposte del modello si
+ *    buttano (tranne l'archiviazione di un allegato vero) e resta la cosa da
+ *    fare costruita qui (`propostaFatturaDaScaricare`), con i dati
+ *    dell'avviso; quelli che non ci sono si prendono dal modello
+ *    (`suggeriti`), se li ha letti.
+ * 2. Qualunque altra mail CHE PARLA DI FATTURE → le frasi che promettono una registrazione
+ *    automatica si tolgono; un «nessuna» che la prometteva diventa un «da
+ *    fare a mano» che dice di controllare, così la mail non finisce fra le
+ *    «Niente da fare» con una bugia sopra.
+ *
+ * Con una fattura letta (`fattureLette` > 0) non si tocca niente: la
+ * proposta la costruisce già il codice dal file, e una frase del modello
+ * sulla registrazione è vera.
+ *
+ * @param {{
+ *   mittente?: string|null, oggetto?: string|null, testo?: string|null,
+ *   azioni?: Array<Record<string, any>>, sintesi?: unknown,
+ *   fattureLette?: number,
+ *   suggeriti?: {fornitore?: unknown, numero?: unknown, data?: unknown, importo?: unknown},
+ * }} entrata
+ * @returns {{azioni: Array<Record<string, any>>, sintesi: string|null, avvisoAruba: Record<string, any>|null}}
+ */
+export function correggiSenzaFattura({
+  mittente = null,
+  oggetto = null,
+  testo = null,
+  azioni = [],
+  sintesi = null,
+  fattureLette = 0,
+  suggeriti = {},
+} = {}) {
+  const sint = typeof sintesi === "string" ? sintesi : null;
+  if (fattureLette > 0) return { azioni, sintesi: sint, avvisoAruba: null };
+
+  if (eAvvisoArubaFattura({ mittente, oggetto })) {
+    const letti = datiAvvisoAruba(testo);
+    const s = suggeriti ?? {};
+    const proposta = propostaFatturaDaScaricare({
+      fornitore: letti.fornitore ?? nomeDa(s.fornitore),
+      numero: letti.numero ?? numeroDa(s.numero),
+      data: letti.data ?? dataIso(s.data),
+      importo: letti.importo ?? importoDa(s.importo),
+    });
+    const p = proposta.parametri;
+    const quale = `Fattura${p.numero ? ` n. ${p.numero}` : ""}${p.fornitore ? ` di ${p.fornitore}` : ""}`;
+    // Un allegato vero accanto all'avviso (un PDF di cortesia) si archivia lo
+    // stesso; tutto il resto del modello si butta (revisione ECC).
+    const daTenere = (azioni ?? []).filter((a) => a?.tipo === "archivia_documento" && a?.parametri?.allegato_id);
+    return {
+      azioni: [proposta, ...daTenere],
+      sintesi: `${quale}: avviso di Aruba senza il file, da scaricare e caricare a mano.`.slice(0, 300),
+      avvisoAruba: proposta,
+    };
+  }
+
+  // ⚠️ Solo se si parla di FATTURE: «il movimento verrà registrato
+  //    automaticamente in prima nota» su un avviso della banca è vero, e la
+  //    mail deve restare com'è (revisione ECC del 13/11).
+  const testi = [oggetto, sint, ...(azioni ?? []).flatMap((a) => [a?.titolo, a?.descrizione, a?.perche])];
+  if (!testi.some((t) => /fattur/i.test(String(t ?? "")))) return { azioni, sintesi: sint, avvisoAruba: null };
+
+  const corrette = [];
+  for (const a of azioni ?? []) {
+    const promette = [a?.titolo, a?.descrizione, a?.perche].some(promettePerSe);
+    if (!promette) {
+      corrette.push(a);
+      continue;
+    }
+    if (a?.tipo === "nessuna") {
+      const titolo = "Controlla se c'è una fattura da caricare";
+      corrette.push({
+        ...a,
+        tipo: "da_fare_a_mano",
+        titolo,
+        descrizione:
+          "In questa mail non c'è il file di una fattura elettronica, quindi il gestionale non registra niente da solo. " +
+          "Se c'è una fattura, scarica l'XML e caricalo in Fatture Fornitori → «Carica una fattura elettronica».",
+        perche: senzaPromesse(a?.perche) || null,
+        parametri: {
+          ...(a?.parametri ?? {}),
+          titolo,
+          passi: ["Se è una fattura, scarica l'XML e caricalo in Fatture Fornitori"],
+        },
+      });
+      continue;
+    }
+    corrette.push({
+      ...a,
+      titolo: senzaPromesse(a?.titolo) || "Da controllare",
+      descrizione: senzaPromesse(a?.descrizione) || senzaPromesse(a?.titolo) || null,
+      perche: senzaPromesse(a?.perche) || null,
+    });
+  }
+  return {
+    azioni: corrette,
+    sintesi: sint == null ? null : senzaPromesse(sint) || "Nessun file di fattura allegato.",
+    avvisoAruba: null,
+  };
+}

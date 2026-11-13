@@ -49,6 +49,7 @@ import {
   ORDER_DESTINATIONS,
   ORDER_PAYMENT_METHODS,
   ESITI_RIGA_LISTA,
+  FONDI_ANTICIPO,
   PAYMENT_METHODS,
   PEST_CONTROL_TYPES,
   LINEE_PREVISIONE,
@@ -149,6 +150,8 @@ export const SPECCHIATI = [
   },
   { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "shopping_list_items", colonna: "payment_method" },
   { costante: "ESITI_RIGA_LISTA", valori: ESITI_RIGA_LISTA, tabella: "shopping_list_items", colonna: "esito" },
+  // «Ho pagato io», in Cassa e in Fatture (13/11/2026): con che soldi.
+  { costante: "FONDI_ANTICIPO", valori: FONDI_ANTICIPO, tabella: "anticipazioni_socio", colonna: "fondi" },
   { costante: "CLEANING_FREQUENCIES", valori: CLEANING_FREQUENCIES, tabella: "haccp_cleaning_tasks", colonna: "frequency" },
   { costante: "PEST_CONTROL_TYPES", valori: PEST_CONTROL_TYPES, tabella: "haccp_pest_control_logs", colonna: "type" },
   { costante: "NC_CATEGORIES", valori: NC_CATEGORIES, tabella: "haccp_non_conformities", colonna: "category" },

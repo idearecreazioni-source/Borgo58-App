@@ -35,8 +35,55 @@ export function avvisoImportoAnticipo(importo, fattura) {
   if (!fattura) return null;
   const nota = Number(importo);
   if (!importo || !Number.isFinite(nota)) return null;
-  const dovuto = Number(fattura.da_pagare ?? fattura.amount);
-  if (!Number.isFinite(dovuto)) return null;
+  const dovuto = importoDaAnticipare(fattura);
+  if (dovuto === null) return null;
   if (Math.round(nota * 100) === Math.round(dovuto * 100)) return null;
   return "Per segnare la fattura pagata con l'anticipo la nota deve valere quanto resta da pagare.";
+}
+
+// ---------------------------------------------------------------------
+// «HO PAGATO IO» DA FATTURE FORNITORI — 13/11/2026
+// ---------------------------------------------------------------------
+// Richiesta di Alessio (Fabio Lorito 1992/2026, 235 €, pagata coi suoi
+// contanti): nel menu «Come paghi» una scelta «Ho pagato io» che fa
+// ESATTAMENTE quello del riquadro «Ho pagato io» in /cassa/personale.
+// ⚠️ UNA LOGICA SOLA: si salva con la stessa `createAnticipazione` →
+//    `registra_anticipazione` (anticipo collegato, fattura «pagata
+//    (anticipo)», cassa ferma, debito verso di lui). Qui c'è solo il modo di
+//    riempirne i campi partendo da una fattura.
+
+/**
+ * Il valore che la scelta «Ho pagato io» ha nel menu «Come paghi».
+ * ⚠️ NON è un `payment_method` e non sta in PAYMENT_METHODS: il database la
+ *    scrive «anticipo» da solo (`registra_anticipazione`), e una fattura
+ *    segnata così senza una nota dietro risulterebbe pagata da nessuno.
+ */
+export const SCELTA_HO_PAGATO_IO = "ho_pagato_io";
+
+/** Quanto deve valere l'anticipo per pagare questa fattura: quello che resta da pagare. */
+export function importoDaAnticipare(fattura) {
+  if (!fattura) return null;
+  const dovuto = Number(fattura.da_pagare ?? fattura.amount);
+  return Number.isFinite(dovuto) ? dovuto : null;
+}
+
+/**
+ * I campi per `createAnticipazione` quando l'anticipo nasce dalla fattura.
+ * Stessa forma del modulo di /cassa/personale: la società è quella della
+ * fattura, l'importo è quello che resta da pagare, la spunta «investimento»
+ * nasce spenta (se la fattura è segnata, la passa il database da solo).
+ */
+export function anticipoDallaFattura(fattura, { pagataIl, tagId, fondi = "contanti", nota = "" } = {}) {
+  const importo = importoDaAnticipare(fattura);
+  return {
+    entityId: fattura.entity_id,
+    importo: importo === null ? "" : String(importo),
+    pagataIl,
+    tagId,
+    fondi,
+    supplierInvoiceId: fattura.id,
+    documento: "",
+    nota,
+    eInvestimento: false,
+  };
 }
