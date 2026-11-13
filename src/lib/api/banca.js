@@ -54,6 +54,28 @@ export async function proposteMovimentoBanca(movimentoId) {
   return data ?? [];
 }
 
+/**
+ * Un'entrata della banca incassa una fattura ai clienti (13/11/2026): scrive
+ * l'incasso in prima nota e lo abbina. Tre tabelle: dal corridoio.
+ */
+export async function incassaFatturaDaMovimentoBanca(movimentoId, fatturaId) {
+  return eseguiOperazione("incassa_fattura_da_movimento_banca", {
+    p_movimento: movimentoId,
+    p_fattura: fatturaId,
+  });
+}
+
+/**
+ * Dopo il caricamento dell'estratto conto (13/11/2026, deciso da Alessio:
+ * «si riconciliano in automatico quando carico l'estratto conto»): le
+ * entrate con UNA sola fattura ai clienti possibile e un indizio nel testo
+ * si incassano da sole. Il resto resta proposto.
+ * @returns {Promise<{incassate: number, elenco: {fattura: string, importo: number, data: string}[]}>}
+ */
+export async function incassaDaSoliBonifici() {
+  return eseguiOperazione("incassa_da_soli_bonifici", {});
+}
+
 export async function pagaFatturaDaMovimentoBanca(movimentoId, fatturaId) {
   return eseguiOperazione("paga_fattura_da_movimento_banca", {
     p_movimento: movimentoId,

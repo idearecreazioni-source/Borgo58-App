@@ -4,6 +4,8 @@ import {
   abbinaMovimentoBanca,
   caricaMovimentiBanca,
   ignoraMovimentoBanca,
+  incassaDaSoliBonifici,
+  incassaFatturaDaMovimentoBanca,
   listMovimentiBanca,
   pagaFatturaDaMovimentoBanca,
   proposteMovimentoBanca,
@@ -184,11 +186,27 @@ export default function MovimentiBanca() {
           }
         }
       }
+      const incassate = righe.length ? await incassaDaSoli() : null;
       await ricarica();
+      setCaricamento({ righe, errori, inCorso: false, incassate });
+      return;
     } catch (e) {
       errori.push(e.message);
     }
     setCaricamento({ righe, errori, inCorso: false });
+  };
+
+  // Le fatture ai clienti incassate da sole dai bonifici appena caricati
+  // (13/11/2026). Un guasto qui non ferma il caricamento: si dice, e le
+  // proposte restano fra i movimenti da abbinare.
+  // ⚠️ Il suo errore NON va fra quelli del caricamento, che direbbero «non
+  //    ho caricato niente»: i movimenti sono entrati, è l'abbinamento che no.
+  const incassaDaSoli = async () => {
+    try {
+      return await incassaDaSoliBonifici();
+    } catch (e) {
+      return { errore: `Abbinamento delle fatture ai clienti non riuscito: ${e.message}. I bonifici restano fra quelli da abbinare.` };
+    }
   };
 
   // ⚠️ Mentre il CSV parte, la casella del file è spenta (`inviando`): un
@@ -199,7 +217,8 @@ export default function MovimentiBanca() {
       const nome = csv.nome;
       const r = await caricaMovimentiBanca(iban, nome, daMandare);
       setCsv(null);
-      setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false });
+      const incassate = await incassaDaSoli();
+      setCaricamento({ righe: [{ nome, ...r }], errori: [], inCorso: false, incassate });
       await ricarica().catch((e) => setErrore(e.message));
     } finally {
       setInviando(false);
@@ -258,6 +277,27 @@ export default function MovimentiBanca() {
               {r.gia_presenti > 0 && `, ${r.gia_presenti} già caricati prima`}.
             </p>
           ))}
+          {caricamento.incassate?.incassate > 0 && (
+            <div className="text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2" role="status" data-prova="incassate-da-sole">
+              <p className="font-medium">
+                {caricamento.incassate.incassate === 1
+                  ? "Una fattura ai clienti incassata da sola:"
+                  : `${caricamento.incassate.incassate} fatture ai clienti incassate da sole:`}
+              </p>
+              <ul className="list-disc pl-5">
+                {caricamento.incassate.elenco.map((x, i) => (
+                  <li key={i}>
+                    {x.fattura} · {formatEUR(Number(x.importo))}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {caricamento.incassate?.errore && (
+            <p role="alert" className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
+              {caricamento.incassate.errore}
+            </p>
+          )}
           {caricamento.errori.length > 0 && (
             <div role="alert" className="text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2">
               <p className="font-medium">Non ho caricato niente:</p>
@@ -617,12 +657,18 @@ function Abbina({ m, occupato, esegui }) {
                     esegui(() =>
                       p.genere === "fattura"
                         ? pagaFatturaDaMovimentoBanca(m.id, p.rif_id)
-                        : abbinaMovimentoBanca(m.id, p.rif_id),
+                        : p.genere === "fattura_emessa"
+                          ? incassaFatturaDaMovimentoBanca(m.id, p.rif_id)
+                          : abbinaMovimentoBanca(m.id, p.rif_id),
                     )
                   }
                   className={bottonePieno}
                 >
-                  {p.genere === "fattura" ? "Paga questa fattura" : "È questo movimento"}
+                  {p.genere === "fattura"
+                    ? "Paga questa fattura"
+                    : p.genere === "fattura_emessa"
+                      ? "Incassa questa fattura"
+                      : "È questo movimento"}
                 </button>
               </li>
             ))}
