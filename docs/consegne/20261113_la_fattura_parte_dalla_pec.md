@@ -1,6 +1,6 @@
 # La fattura ai clienti parte dalla PEC verso lo SdI (13/11/2026) — pezzo 3 di 5
 
-Commit sotto questa consegna: `515da4a6` (il lavoro è in `64961c34`; `515da4a6` dichiara gli esiti dell'invio fra le eccezioni dei vocabolari). Migrazione `20261113000005_la_fattura_parte_dalla_pec`. Funzione nuova `fattura-spedisci`; `operazioni-atomiche` ha la voce nuova `sblocca_invio_fattura`.
+Commit sotto questa consegna: `c81c014a`. Il lavoro è in `64961c34`; `515da4a6` dichiara gli esiti dell'invio fra le eccezioni dei vocabolari; `c81c014a` corregge l'aiuto delle prove (vedi «Dopo i Controlli»). Migrazione `20261113000005_la_fattura_parte_dalla_pec`. Funzione nuova `fattura-spedisci`; `operazioni-atomiche` ha la voce nuova `sblocca_invio_fattura`.
 
 Piano approvato da Alessio il 13/11 (PIANO_fatture_emesse_13-11.md). Via al pezzo 3 dato da Alessio («Si parti»). Turno di Prova dato dalla chat madre.
 
@@ -84,4 +84,9 @@ Niente di nuovo. Il rovesciamento della decisione del 14/08 (Fatture in Cloud) �
 
 ## Dopo i Controlli (13/11)
 - La rete dei vocabolari ha preso `chiudi_invio_fattura(p_esito)`, che accetta partito, simulato e fallito: sono tre dei quattro stati degli invii. Il quarto, «in partenza», è quello di un invio aperto. Dichiarata in `GUARDIE_ESENTI` con la sua ragione.
-- Nello stesso giro sono fallite 11 prove di banca, note di credito e deducibilità, che questo lavoro non tocca. Il database rispondeva «nessun conto corrente registrato», ma su Prova il conto della S.r.l.s. c'è (è attivo dal 25/08). La #389, alle 16:14, le aveva passate tutte. Il giro si rifà con questa correzione.
+- **Le prove di banca rosse.** Nello stesso giro sono fallite 11 prove di banca, note di credito e deducibilità, che questo lavoro non tocca, e al secondo giro si sono ripetute uguali.
+  - **La causa**: `primaEntita()` in `tests/app/aiuto.js` sceglieva «la prima entità creata». La S.r.l.s. e l'azienda agricola però hanno lo **stesso `created_at`**, perché sono nate nella stessa istruzione del 30/07. A parità di data il database restituisce le righe nell'ordine in cui le trova sul disco.
+  - Durante la prova dal vivo ho salvato e poi rimesso a posto i dati della S.r.l.s. su Prova. La riga aggiornata è finita in fondo, e «la prima» è diventata l'azienda agricola, che non ha il conto corrente.
+  - **La correzione**: le prove chiedono la S.r.l.s. per tipo.
+  - Era un difetto delle prove già presente: il salvataggio l'ha solo fatto venire fuori. Sarebbe uscito anche il giorno in cui qualcuno avesse salvato i dati della società su Prova.
+- La rete delle funzioni senza schermata ha risposto che `prepara_invio_fattura` e `chiudi_invio_fattura` hanno una porta: conta anche il codice delle funzioni online. Le ho tolte da `tests/app/orfane.js`, con una nota.
