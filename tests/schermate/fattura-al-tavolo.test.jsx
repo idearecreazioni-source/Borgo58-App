@@ -1,4 +1,5 @@
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // =====================================================================
@@ -27,7 +28,9 @@ vi.mock("../../src/lib/supabase", () => ({
   supabasePubblico: {},
 }));
 
-const spie = vi.hoisted(() => ({ fiscalizza: [], documento: [], chiusure: [] }));
+const spie = vi.hoisted(() => ({ fiscalizza: [], documento: [], chiusure: [], titolare: true }));
+
+vi.mock("../../src/context/AuthContext", () => ({ useAuth: () => ({ isTitolare: spie.titolare }) }));
 
 // ⚠️ `orderTotals` NON si finge: e' il calcolo vero del conto, ed e' lo
 //    stesso che alimenta preconto e chiusura. Una copia inventata qui
@@ -70,9 +73,11 @@ const conto = {
   items: [{ id: "i1", quantity: 1, unit_price: 40, recipe: { name: "Sugo di cozze" } }],
 };
 
-function apri() {
+function apri(onDone = () => {}) {
   return render(
-    <CloseOrderModal order={conto} copertoPrice={0} onClose={() => {}} onDone={() => {}} />,
+    <MemoryRouter>
+      <CloseOrderModal order={conto} copertoPrice={0} onClose={() => {}} onDone={onDone} />
+    </MemoryRouter>,
   );
 }
 
@@ -88,7 +93,42 @@ beforeEach(() => {
   spie.fiscalizza = [];
   spie.documento = [];
   spie.chiusure = [];
+  spie.titolare = true;
   vi.clearAllMocks();
+});
+
+describe("la fattura SUBITO, dalla chiusura del conto (13/11/2026, chiesto da Alessio)", () => {
+  it("il titolare: «Prepara la fattura ora» porta alla fattura già compilata del conto", async () => {
+    const fatto = vi.fn();
+    apri(fatto);
+    await waitFor(() => expect(spunta()).toBeTruthy());
+    fireEvent.click(spunta());
+    fireEvent.click(pulsante("Paga contante"));
+    const link = await screen.findByRole("link", { name: "Prepara la fattura ora" });
+    expect(link.getAttribute("href")).toBe("/fatture-clienti?ordine=o1");
+    expect(spie.fiscalizza.length).toBe(0);
+    // «Più tardi» chiude e basta: il conto resta «fattura promessa» in Cassa.
+    fireEvent.click(pulsante("Più tardi"));
+    expect(fatto).toHaveBeenCalledTimes(1);
+  });
+
+  it("lo staff: nessun pulsante verso una pagina chiusa, ma cosa fare detto chiaro", async () => {
+    spie.titolare = false;
+    apri();
+    await waitFor(() => expect(spunta()).toBeTruthy());
+    fireEvent.click(spunta());
+    fireEvent.click(pulsante("Paga contante"));
+    expect(await screen.findByText(/La fattura la prepara il titolare/)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Prepara la fattura ora" })).toBeNull();
+  });
+
+  it("senza la spunta non compare niente della fattura", async () => {
+    apri();
+    await waitFor(() => expect(spunta()).toBeTruthy());
+    fireEvent.click(pulsante("Paga contante"));
+    await waitFor(() => expect(spie.fiscalizza.length).toBe(1));
+    expect(screen.queryByText(/il cliente vuole fattura/)).toBeNull();
+  });
 });
 
 describe("🔴 lo stesso incasso non si documenta due volte", () => {
