@@ -212,6 +212,10 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
       "Caparra ricevuta",
       "Differenza di cassa in meno",
       "Differenza di cassa in più",
+      // L'incasso di una fattura ai clienti (13/11/2026, 20261113000007): di
+      // sistema perché il ricavo di quella fattura lo conta la fattura stessa
+      // (pezzo 5b), non la prima nota — sennò due volte.
+      "Incasso fattura",
       // 🔴 Le due dei prestiti (29/08/2026): un finanziamento non e' un
       // ricavo e restituirlo non e' un costo, e a tenerli fuori dai
       // riepiloghi e' proprio l'essere «di sistema».

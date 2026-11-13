@@ -32,6 +32,8 @@ import {
   listFattureEmesse,
   salvaBozzaFattura,
   salvaClienteFattura,
+  annullaIncassoFattura,
+  incassaFatturaAMano,
   sbloccaInvioFattura,
   spedisciFattura,
   provaLaPec,
@@ -692,6 +694,32 @@ function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi,
   );
 }
 
+// I soldi di una fattura uscita (pezzo 5a, 13/11/2026), detti in una riga.
+function incassoDi(f) {
+  if (f.order_id) return "Pagata al tavolo: l'incasso è quello del conto.";
+  const inc = (f.incasso ?? [])[0];
+  if (inc) {
+    return `Incassata il ${formatDate(inc.movement_date)} · ${inc.mezzo === "cassa" ? "in cassa" : "in banca"}`;
+  }
+  if (f.modalita_pagamento === "MP05" || f.modalita_pagamento === "MP02") {
+    return "Da incassare: quando carichi l'estratto conto il bonifico si abbina da solo (se porta il numero della fattura) o te lo propone.";
+  }
+  if (["inviata", "consegnata", "messa_a_disposizione"].includes(f.stato)) {
+    return "Da incassare: l'incasso non si è scritto da solo. Se l'hai preso, premi «Segna incassata».";
+  }
+  return "Da incassare: l'incasso si scrive da solo quando parte.";
+}
+
+/** Le fatture partite, senza tavolo e senza incasso: si possono segnare incassate a mano. */
+function daIncassareAMano(f) {
+  return (
+    f.numero != null &&
+    !f.order_id &&
+    (f.incasso ?? []).length === 0 &&
+    ["inviata", "consegnata", "messa_a_disposizione"].includes(f.stato)
+  );
+}
+
 // ---------------------------------------------------------------------
 // LA PAGINA
 // ---------------------------------------------------------------------
@@ -767,6 +795,37 @@ export default function FattureClientiHome() {
   }
 
   // Un invio rimasto a metà: il titolare ha guardato nella posta inviata.
+  // Disfare un incasso abbinato per sbaglio (pezzo 5a): il bonifico torna
+  // fra i movimenti della banca da abbinare.
+  async function annullaIncasso(fatturaId) {
+    setError("");
+    setEsitoInvio(null);
+    try {
+      await annullaIncassoFattura(fatturaId);
+      setEsitoInvio("Incasso annullato: il bonifico è tornato fra i movimenti della banca da abbinare.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      await leggiFatture().catch((e) => setError((m) => `${m ? `${m} ` : ""}La lista non si è riletta: ${e.message}`));
+    }
+  }
+
+  // L'incasso a mano (pezzo 5a): per quando non si è scritto da solo.
+  async function incassaAMano(f) {
+    setError("");
+    setEsitoInvio(null);
+    try {
+      await incassaFatturaAMano(f.id, null);
+      setEsitoInvio(
+        `Fattura ${numeroFattura(f)} segnata incassata oggi, ${f.modalita_pagamento === "MP01" ? "in cassa" : "in banca"}.`
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      await leggiFatture().catch((e) => setError((m) => `${m ? `${m} ` : ""}La lista non si è riletta: ${e.message}`));
+    }
+  }
+
   async function sblocca(invioId, partito) {
     setError("");
     setEsitoInvio(null);
@@ -905,7 +964,30 @@ export default function FattureClientiHome() {
                             {f.esito_note}
                           </span>
                         )}
+                        {/* I soldi (pezzo 5a). */}
+                        {f.numero != null && (
+                          <span className="block text-b58-charcoal-soft" data-prova="incasso-fattura">
+                            {incassoDi(f)}
+                          </span>
+                        )}
                       </span>
+                      {daIncassareAMano(f) && (
+                        <ConfermaDistruttiva
+                          etichetta="Segna incassata"
+                          domanda={`La fattura ${numeroFattura(f)} è stata pagata? Si scrive l'entrata di oggi ${f.modalita_pagamento === "MP01" ? "in cassa" : "in banca"}.`}
+                          etichettaConferma="Sì, incassata"
+                          onConferma={() => incassaAMano(f)}
+                          attributi={{ "data-prova": "incassa-a-mano" }}
+                        />
+                      )}
+                      {(f.incasso ?? []).length > 0 && (
+                        <ConfermaDistruttiva
+                          etichetta="Annulla l'incasso"
+                          domanda={`Annullare l'incasso della fattura ${numeroFattura(f)}? Se veniva da un bonifico, il bonifico torna da abbinare.`}
+                          etichettaConferma="Sì, annulla"
+                          onConferma={() => annullaIncasso(f.id)}
+                        />
+                      )}
                       {modificabile && (
                         <button type="button" onClick={() => setAperta(f.id)} className={bottoneSecondario}>
                           Apri

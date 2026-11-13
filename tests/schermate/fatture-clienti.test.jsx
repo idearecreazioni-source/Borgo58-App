@@ -22,6 +22,7 @@ const { finto, spie } = vi.hoisted(() => ({
     salvaClienteFattura: null,
     spedisciFattura: null,
     sbloccaInvioFattura: null,
+    incassaFatturaAMano: null,
   },
 }));
 
@@ -33,6 +34,8 @@ vi.mock("../../src/lib/api/fattureEmesse", () => ({
   eliminaBozzaFattura: vi.fn(async () => {}),
   spedisciFattura: (...a) => spie.spedisciFattura(...a),
   sbloccaInvioFattura: (...a) => spie.sbloccaInvioFattura(...a),
+  incassaFatturaAMano: (...a) => spie.incassaFatturaAMano(...a),
+  annullaIncassoFattura: vi.fn(),
   provaLaPec: vi.fn(async () => ({ simulato: true, messaggio: "Qui siamo su Prova o a casa: la PEC non si usa." })),
 }));
 vi.mock("../../src/lib/api/entities", () => ({
@@ -170,6 +173,29 @@ describe("Fatture ai clienti", () => {
     const motivo = await screen.findByText((_, el) => el?.getAttribute("data-prova") === "motivo-scarto");
     expect(motivo.textContent).toMatch(/00305/);
     expect(screen.getByRole("button", { name: "Rimanda allo SdI" })).toBeTruthy();
+  });
+
+  it("i soldi delle fatture uscite: al tavolo, incassata, da incassare a mano (pezzo 5a)", async () => {
+    spie.incassaFatturaAMano = vi.fn(async () => ({}));
+    const base = { anno: 2027, data: "2027-01-20", stato: "consegnata", totale: 80, prezzi_ivati: true, righe: [],
+      cliente: { id: "c1", denominazione: "Ditta Esempio srl" } };
+    finto.fatture = [
+      { ...base, id: "t1", numero: 1, order_id: "o1", modalita_pagamento: "MP08" },
+      { ...base, id: "t2", numero: 2, modalita_pagamento: "MP05",
+        incasso: [{ id: "m1", movement_date: "2027-01-22", mezzo: "banca" }] },
+      { ...base, id: "t3", numero: 3, modalita_pagamento: "MP01", incasso: [] },
+    ];
+    apri();
+    const righe = await screen.findAllByText((_, el) => el?.getAttribute("data-prova") === "incasso-fattura");
+    expect(righe.map((r) => r.textContent)).toEqual([
+      "Pagata al tavolo: l'incasso è quello del conto.",
+      "Incassata il 22 gen 2027 · in banca",
+      "Da incassare: l'incasso non si è scritto da solo. Se l'hai preso, premi «Segna incassata».",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Segna incassata" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, incassata" }));
+    await waitFor(() => expect(spie.incassaFatturaAMano).toHaveBeenCalledWith("t3", null));
+    expect(await screen.findByText(/segnata incassata oggi, in cassa/)).toBeTruthy();
   });
 
   it("«Prova la PEC» dice com'è andata", async () => {

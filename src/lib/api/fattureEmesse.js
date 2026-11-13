@@ -33,7 +33,8 @@ export async function listFattureEmesse({ anno } = {}) {
     .from("fatture_emesse")
     .select(
       "*, cliente:clienti_fattura(id, denominazione, nome, cognome), righe:fatture_emesse_righe(*), " +
-        "invii:fatture_emesse_invii(id, stato, nome_file, creato_il)"
+        "invii:fatture_emesse_invii(id, stato, nome_file, creato_il), " +
+        "incasso:cash_movements(id, movement_date, mezzo)"
     )
     .order("data", { ascending: false })
     .order("numero", { ascending: false, nullsFirst: true });
@@ -65,6 +66,16 @@ export async function spedisciFattura(fatturaId) {
  */
 export async function sbloccaInvioFattura(invioId, partito) {
   return eseguiOperazione("sblocca_invio_fattura", { p_invio: invioId, p_partito: partito });
+}
+
+/** Segna incassata a mano una fattura senza tavolo: contanti in cassa, il resto in banca. */
+export async function incassaFatturaAMano(fatturaId, data) {
+  return eseguiOperazione("incassa_fattura_a_mano", { p_fattura: fatturaId, p_data: data ?? null });
+}
+
+/** Disfa l'incasso di una fattura ai clienti: il bonifico torna da abbinare. */
+export async function annullaIncassoFattura(fatturaId) {
+  return eseguiOperazione("annulla_incasso_fattura", { p_fattura: fatturaId });
 }
 
 /** Prova utente e password della PEC, senza mandare niente. */
