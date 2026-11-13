@@ -66,6 +66,13 @@ function cifra(v) {
   return Number(s);
 }
 
+/** Una cifra salvata, scritta come la scrive Alessio: 27.5 → «27,50», quantità 1.5 → «1,5». */
+function scrittaPerCampo(n, { prezzo = false } = {}) {
+  const x = Number(n);
+  if (n === "" || n == null || Number.isNaN(x)) return n ?? "";
+  return (prezzo ? x.toFixed(2) : String(x)).replace(".", ",");
+}
+
 const RIGA_VUOTA = { descrizione: "", quantita: 1, prezzo_unitario: "", aliquota_iva: 10, natura: "" };
 const CLIENTE_VUOTO = {
   denominazione: "",
@@ -280,7 +287,12 @@ function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAt
     fattura?.righe?.length
       ? [...fattura.righe]
           .sort((a, b) => a.posizione - b.posizione)
-          .map((r) => ({ ...r, natura: r.natura ?? "" }))
+          .map((r) => ({
+            ...r,
+            quantita: scrittaPerCampo(r.quantita),
+            prezzo_unitario: scrittaPerCampo(r.prezzo_unitario, { prezzo: true }),
+            natura: r.natura ?? "",
+          }))
       : [{ ...RIGA_VUOTA }]
   );
   const [nuovoCliente, setNuovoCliente] = useState(false);

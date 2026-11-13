@@ -135,7 +135,7 @@ describe("Fatture ai clienti", () => {
     };
     apri("/fatture-clienti?ordine=o1");
     expect(await screen.findByDisplayValue("Tagliatelle")).toBeTruthy();
-    expect(screen.getByDisplayValue("19.5")).toBeTruthy();
+    expect(screen.getByDisplayValue("19,50")).toBeTruthy();
     expect(screen.getByDisplayValue("Coperto")).toBeTruthy();
     expect(screen.queryByDisplayValue("Tolto")).toBeNull();
     const totali = screen.getByText("Totale").closest("dl");
