@@ -369,6 +369,17 @@ export const PAYMENT_METHODS = [
 // vincolo sul database e questo elenco vengono confrontati da
 // `tests/app/vocabolari.test.js`.
 
+// Con che soldi ha pagato Alessio quando paga lui per conto della società
+// («Ho pagato io»): i SUOI, mai quelli di Borgo 58.
+// ⚠️ Un elenco solo dal 13/11/2026: lo scelgono «Ho pagato io» in
+// /cassa/personale e «Come paghi → Ho pagato io» in Fatture fornitori, e le
+// due schermate non devono poter dire due cose diverse. Specchio del vincolo
+// su `anticipazioni_socio.fondi` (rete dei vocabolari).
+export const FONDI_ANTICIPO = [
+  { value: "contanti", label: "contanti miei" },
+  { value: "conto_personale", label: "il mio conto" },
+];
+
 // Com'è finita una riga della lista della spesa. ⚠️ «Non presa» non c'è, e
 // non è una dimenticanza: quella riga viene cancellata, quindi non lascia
 // un esito da conservare.

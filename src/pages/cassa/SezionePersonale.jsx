@@ -16,7 +16,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
-import { avvisoImportoAnticipo } from "../../lib/calcoli/fatturaAnticipo";
+import { avvisoImportoAnticipo, importoDaAnticipare } from "../../lib/calcoli/fatturaAnticipo";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -24,6 +24,12 @@ import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { doveEntraLaSpesa } from "../../lib/calcoli/investimento";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { ScegliVoce, SpuntaConVoce } from "../../components/SceltaVoce";
+import {
+  AvvisoContoPersonale,
+  ErroreDelGesto,
+  FraseAnticipoPagaFattura,
+  SceltaFondi,
+} from "../../components/HoPagatoIo";
 
 // La sezione personale del titolare (Blocco 7).
 //
@@ -74,6 +80,9 @@ export default function SezionePersonale() {
   const [voceNuova, setVoceNuova] = useState({ voceId: "", rataId: "" });
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
+  // 🔴 L'ERRORE DI «HO PAGATO IO» STA SOTTO IL PULSANTE (13/11/2026): in cima
+  //    alla pagina Alessio non l'ha visto, ed era lontano dal gesto.
+  const [erroreRegistra, setErroreRegistra] = useState("");
   // L'avviso sul riferimento compare solo DOPO aver premuto Registra senza
   // riferimento e senza fattura: a modulo vuoto non deve rimproverare nessuno.
   const [avvisoRif, setAvvisoRif] = useState(false);
@@ -121,6 +130,8 @@ export default function SezionePersonale() {
 
   useEffect(() => {
     if (!entityId) return;
+    // Un errore di «Ho pagato io» era della società di prima.
+    setErroreRegistra("");
     setLoading(true);
     ricarica()
       .catch((e) => setError(e.message))
@@ -148,7 +159,7 @@ export default function SezionePersonale() {
   const registra = async (senzaAvviso = false) => {
     if (!form.importo || !form.tagId) return;
     if (form.eInvestimento && !voceNuova.voceId) {
-      setError("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
+      setErroreRegistra("Hai segnato «investimento»: scegli anche la voce del piano a cui va questa spesa.");
       return;
     }
     if (!senzaAvviso && !form.documento.trim() && !form.supplierInvoiceId) {
@@ -157,7 +168,7 @@ export default function SezionePersonale() {
     }
     setAvvisoRif(false);
     setSaving(true);
-    setError("");
+    setErroreRegistra("");
     try {
       await createAnticipazione({ ...form, entityId, voce: form.eInvestimento ? voceNuova : null });
       setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
@@ -166,7 +177,7 @@ export default function SezionePersonale() {
     } catch (e) {
       // La nota è scritta ma senza la spunta: il modulo si svuota (se no la
       // si registrerebbe due volte) e l'errore dice di rimetterla dalla riga.
-      setError(e.message);
+      setErroreRegistra(e.message);
       if (e.notaScritta) {
         setForm({ ...formaVuotaOggi(), tagId: form.tagId, pagataIl: form.pagataIl });
         setVoceNuova({ voceId: "", rataId: "" });
@@ -405,25 +416,18 @@ export default function SezionePersonale() {
                     </select>
                   </div>
                   <div className="cella-larga">
-                    <label className={labelClass}>Con che soldi</label>
-                    <select
-                      value={form.fondi}
-                      onChange={(e) => setForm((f) => ({ ...f, fondi: e.target.value }))}
+                    <label className={labelClass} htmlFor="ho-pagato-io-fondi">Con che soldi</label>
+                    {/* Lo stesso menu di «Come paghi → Ho pagato io» in Fatture (13/11). */}
+                    <SceltaFondi
+                      id="ho-pagato-io-fondi"
+                      valore={form.fondi}
+                      onCambia={(fondi) => setForm((f) => ({ ...f, fondi }))}
                       className={inputClass}
-                    >
-                      <option value="contanti">contanti miei</option>
-                      <option value="conto_personale">il mio conto</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
-                {form.fondi === "conto_personale" && (
-                  <p className="testo-sala text-b58-charcoal-soft bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
-                    Pagando dal tuo conto, nei registri la spesa risulta pagata da un conto che non è
-                    della società: questa nota <strong>entrerà da sola</strong> fra quelle da dire alla
-                    commercialista.
-                  </p>
-                )}
+                <AvvisoContoPersonale fondi={form.fondi} className="mb-3" />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
@@ -453,7 +457,7 @@ export default function SezionePersonale() {
                         setForm((f) => ({
                           ...f,
                           supplierInvoiceId: e.target.value,
-                          importo: scelta && !f.importo ? String(scelta.da_pagare ?? scelta.amount) : f.importo,
+                          importo: scelta && !f.importo ? String(importoDaAnticipare(scelta)) : f.importo,
                         }));
                       }}
                       className={inputClass}
@@ -478,12 +482,7 @@ export default function SezionePersonale() {
                         debito verso di te resta qui, e la cassa non si
                         muove. Se la cifra non coincide, il database
                         rifiuta: meglio dirlo prima. */}
-                    {form.supplierInvoiceId && (
-                      <p className="testo-sala text-b58-charcoal-soft mt-1" data-prova="anticipo-paga-fattura">
-                        La fattura risulterà <strong>pagata (anticipo)</strong> e uscirà dalle scadenze;
-                        la cassa non si muove e il debito verso di te resta qui.
-                      </p>
-                    )}
+                    {form.supplierInvoiceId && <FraseAnticipoPagaFattura className="mt-1" />}
                     {avvisoImportoAnticipo(
                       form.importo,
                       fattureAperte.find((x) => x.id === form.supplierInvoiceId)
@@ -628,6 +627,7 @@ export default function SezionePersonale() {
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
                 </div>
+                <ErroreDelGesto messaggio={erroreRegistra} className="mt-2" />
 
                 <div className="flex gap-2 mt-4 pt-3 border-t border-b58-charcoal/10">
                   <input

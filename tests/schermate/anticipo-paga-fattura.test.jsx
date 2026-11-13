@@ -13,8 +13,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const SRLS = { id: "id-srls", entity_type: "srls", name: "Borgo 58" };
 const TAG = { id: "t1", etichetta: "Fornitore urgente", attivo: true };
 
-const finto = vi.hoisted(() => ({ daPagare: [], pagate: [] }));
-const spie = vi.hoisted(() => ({ creaNota: null, annulla: null }));
+const finto = vi.hoisted(() => ({ daPagare: [], pagate: [], rompiDopoLaNota: false, rotto: false }));
+const spie = vi.hoisted(() => ({ creaNota: null, annulla: null, erroreNota: null, pagate: 0 }));
 
 const FATTURA_ARUBA = {
   id: "f1",
@@ -38,7 +38,10 @@ vi.mock("../../src/lib/api/entities", () => ({
 }));
 
 vi.mock("../../src/lib/api/supplierInvoices", () => ({
-  listSupplierInvoices: vi.fn(async () => finto.daPagare),
+  listSupplierInvoices: vi.fn(async () => {
+    if (finto.rotto) throw new Error("connessione persa");
+    return finto.daPagare;
+  }),
   ultimeFatturePagate: vi.fn(async () => ({ righe: finto.pagate, quante: finto.pagate.length })),
   annullaPagamentoFattura: vi.fn(async (id) => {
     spie.annulla = id;
@@ -50,7 +53,10 @@ vi.mock("../../src/lib/api/supplierInvoices", () => ({
   creditiPerFattura: vi.fn(async () => []),
   deleteSupplierInvoice: vi.fn(async () => ({})),
   eliminaNotaCredito: vi.fn(async () => ({})),
-  markInvoicePaid: vi.fn(async () => ({})),
+  markInvoicePaid: vi.fn(async () => {
+    spie.pagate += 1;
+    return {};
+  }),
   registraNotaCredito: vi.fn(async () => ({})),
   updateSupplierInvoice: vi.fn(async () => ({})),
 }));
@@ -61,7 +67,9 @@ vi.mock("../../src/lib/api/suppliers", () => ({ listSuppliers: vi.fn(async () =>
 vi.mock("../../src/lib/api/anticipazioni", () => ({
   annullaPareggioAnticipazione: vi.fn(async () => ({})),
   createAnticipazione: vi.fn(async (p) => {
+    if (spie.erroreNota) throw new Error(spie.erroreNota);
     spie.creaNota = p;
+    if (finto.rompiDopoLaNota) finto.rotto = true;
     return { id: "nuova" };
   }),
   createTagAnticipazione: vi.fn(async () => TAG),
@@ -92,8 +100,12 @@ vi.mock("../../src/lib/supabase", () => ({
 beforeEach(() => {
   finto.daPagare = [];
   finto.pagate = [];
+  finto.rompiDopoLaNota = false;
+  finto.rotto = false;
   spie.creaNota = null;
   spie.annulla = null;
+  spie.erroreNota = null;
+  spie.pagate = 0;
   vi.clearAllMocks();
 });
 
@@ -194,5 +206,131 @@ describe("Anticipo da rimborsarmi · collegare una fattura", () => {
     await waitFor(() => expect(spie.creaNota).toBeTruthy());
     expect(spie.creaNota.supplierInvoiceId).toBe("f1");
     expect(Number(spie.creaNota.importo)).toBe(1.22);
+  });
+});
+
+// =====================================================================
+// «HO PAGATO IO» DAL MENU «COME PAGHI» — 13/11/2026
+// =====================================================================
+// Richiesta di Alessio (Fabio Lorito 1992/2026, 235 €, contanti suoi): la
+// scelta fa ESATTAMENTE quello del riquadro in /cassa/personale, cioè
+// consegna la fattura alla STESSA funzione che salva l'anticipo — e non
+// passa mai da «Segna pagata» (che scriverebbe un'uscita di cassa).
+describe("Fatture fornitori · Come paghi → Ho pagato io", () => {
+  const scegliHoPagatoIo = async (container) => {
+    fireEvent.click(screen.getByRole("button", { name: "Segna pagata" }));
+    const menu = await waitFor(() => {
+      const m = [...container.querySelectorAll("select")].find((s) =>
+        [...s.options].some((o) => o.value === "ho_pagato_io")
+      );
+      expect(m).toBeTruthy();
+      return m;
+    });
+    fireEvent.change(menu, { target: { value: "ho_pagato_io" } });
+    await waitFor(() => expect(container.querySelector('[data-prova="ho-pagato-io-fattura"]')).toBeTruthy());
+  };
+
+  it("propone quanto resta da pagare, dice cosa succede, e niente «Usciranno»", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    const { container } = await apriFatture();
+    await scegliHoPagatoIo(container);
+    const riquadro = container.querySelector('[data-prova="ho-pagato-io-fattura"]');
+    expect(riquadro.textContent).toMatch(/1,22/);
+    expect(container.querySelector('[data-prova="anticipo-paga-fattura"]').textContent).toMatch(/pagata \(anticipo\)/);
+    expect(screen.queryByText(/Usciranno/)).toBeNull();
+    expect(screen.getByRole("button", { name: /Registra «Ho pagato io»/ })).toBeTruthy();
+  });
+
+  it("col mio conto compare lo stesso avviso del riquadro in Cassa", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    const { container } = await apriFatture();
+    await scegliHoPagatoIo(container);
+    expect(container.querySelector('[data-prova="avviso-conto-personale"]')).toBeNull();
+    fireEvent.change(container.querySelector('[data-prova="scelta-fondi"]'), { target: { value: "conto_personale" } });
+    await waitFor(() =>
+      expect(container.querySelector('[data-prova="avviso-conto-personale"]').textContent).toMatch(/commercialista/)
+    );
+  });
+
+  it("🔴 salva con la funzione degli anticipi, la fattura scelta e il motivo — mai «Segna pagata»", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    const { container } = await apriFatture();
+    await scegliHoPagatoIo(container);
+    fireEvent.change(container.querySelector('[data-prova="scelta-fondi"]'), { target: { value: "conto_personale" } });
+    fireEvent.click(screen.getByRole("button", { name: /Registra «Ho pagato io»/ }));
+    await waitFor(() => expect(spie.creaNota).toBeTruthy());
+    expect(spie.creaNota).toMatchObject({
+      entityId: "id-srls",
+      supplierInvoiceId: "f1",
+      tagId: "t1",
+      fondi: "conto_personale",
+      eInvestimento: false,
+    });
+    expect(Number(spie.creaNota.importo)).toBe(1.22);
+    expect(spie.pagate).toBe(0);
+  });
+
+  it("🔴 il rifiuto compare sotto il pulsante, non in cima alla pagina", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    spie.erroreNota = "La fattura vale 1,22 € da pagare e la nota 5,00 €";
+    const { container } = await apriFatture();
+    await scegliHoPagatoIo(container);
+    fireEvent.click(screen.getByRole("button", { name: /Registra «Ho pagato io»/ }));
+    const errore = await waitFor(() => {
+      const e = container.querySelector('[data-prova="errore-ho-pagato-io"]');
+      expect(e).toBeTruthy();
+      return e;
+    });
+    expect(errore.textContent).toMatch(/1,22/);
+    expect(errore.getAttribute("role")).toBe("alert");
+    // Nello stesso pannello del pulsante, e una volta sola.
+    const pulsante = screen.getByRole("button", { name: /Registra «Ho pagato io»/ });
+    expect(pulsante.closest("div.mt-3").contains(errore)).toBe(true);
+    expect(screen.getAllByText(/La fattura vale 1,22/)).toHaveLength(1);
+  });
+
+  it("🔴 salvato ma l'elenco non si aggiorna: dice che è registrato, e il pannello si chiude", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    finto.rompiDopoLaNota = true;
+    const { container } = await apriFatture();
+    await scegliHoPagatoIo(container);
+    fireEvent.click(screen.getByRole("button", { name: /Registra «Ho pagato io»/ }));
+    await waitFor(() => expect(screen.getByText(/è registrato, ma non riesco ad aggiornare l'elenco/)).toBeTruthy());
+    expect(screen.getByRole("status").textContent).toMatch(/pagata \(anticipo\)/);
+    expect(screen.queryByRole("button", { name: /Registra «Ho pagato io»/ })).toBeNull();
+    expect(container.querySelector('[data-prova="errore-ho-pagato-io"]')).toBeNull();
+  });
+
+  it("la tasca non offre «Ho pagato io»: non anticipa niente per nessuno", async () => {
+    finto.daPagare = [{ ...FATTURA_ARUBA, entity_id: "id-tasca" }];
+    const { container } = await apriFatture();
+    fireEvent.click(screen.getByRole("button", { name: "Segna pagata" }));
+    await waitFor(() => expect(screen.getByText("Come paghi")).toBeTruthy());
+    const opzioni = [...container.querySelectorAll("option")].map((o) => o.value);
+    expect(opzioni).toContain("bonifico");
+    expect(opzioni).not.toContain("ho_pagato_io");
+  });
+});
+
+describe("Ho messo di tasca mia · il rifiuto di «Ho pagato io» sta sotto il pulsante", () => {
+  it("🔴 l'errore del salvataggio compare sotto «Registra», non in cima", async () => {
+    finto.daPagare = [FATTURA_ARUBA];
+    spie.erroreNota = "record \"new\" has no field \"direction\"";
+    const { container } = await apriAnticipi();
+    const menu = [...container.querySelectorAll("select")].find((s) =>
+      [...s.options].some((o) => o.value === "f1")
+    );
+    fireEvent.change(menu, { target: { value: "f1" } });
+    fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
+    const errore = await waitFor(() => {
+      const e = container.querySelector('[data-prova="errore-ho-pagato-io"]');
+      expect(e).toBeTruthy();
+      return e;
+    });
+    expect(errore.textContent).toMatch(/direction/);
+    // Subito dopo la riga del pulsante, e una volta sola.
+    const pulsante = screen.getByRole("button", { name: /Registra/ });
+    expect(pulsante.parentElement.nextElementSibling).toBe(errore);
+    expect(screen.getAllByText(/direction/)).toHaveLength(1);
   });
 });

@@ -21,11 +21,24 @@ import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import { documentiCollegabili, senzaSocieta } from "../../lib/calcoli/documentiCollegabili";
-import { eFatturaPagataConAnticipo, etichettaPagamento } from "../../lib/calcoli/fatturaAnticipo";
+import {
+  SCELTA_HO_PAGATO_IO,
+  anticipoDallaFattura,
+  eFatturaPagataConAnticipo,
+  etichettaPagamento,
+  importoDaAnticipare,
+} from "../../lib/calcoli/fatturaAnticipo";
+import { createAnticipazione, listTagAnticipazioni } from "../../lib/api/anticipazioni";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import FormNotaCredito from "../../components/FormNotaCredito";
 import { SpuntaConVoce } from "../../components/SceltaVoce";
+import {
+  AvvisoContoPersonale,
+  ErroreDelGesto,
+  FraseAnticipoPagaFattura,
+  SceltaFondi,
+} from "../../components/HoPagatoIo";
 
 const emptyForm = {
   entity_id: "",
@@ -127,6 +140,19 @@ export default function FattureFornitoriHome() {
   const [creditiFattura, setCreditiFattura] = useState([]);
   const [noteScelte, setNoteScelte] = useState([]);
   const [anteprima, setAnteprima] = useState(null);
+  // 🔴 «HO PAGATO IO» DAL MENU «COME PAGHI» (13/11/2026, richiesta di
+  //    Alessio: Fabio Lorito 1992/2026, 235 €, pagata coi suoi contanti).
+  //    Fa ESATTAMENTE quello del riquadro «Ho pagato io» in /cassa/personale:
+  //    stessa funzione (`createAnticipazione` → `registra_anticipazione`),
+  //    stesse regole (importo = quanto resta da pagare, un motivo, l'avviso
+  //    del conto personale). La fattura diventa «pagata (anticipo)», la cassa
+  //    non si muove, il debito verso di lui resta in Cassa.
+  // ⚠️ I motivi si chiedono solo quando si sceglie «Ho pagato io»: chi paga
+  //    con un bonifico non ha bisogno di leggerli. `null` = non ancora letti.
+  const [motivi, setMotivi] = useState(null);
+  const [motivoId, setMotivoId] = useState("");
+  const [fondi, setFondi] = useState("contanti");
+  const hoPagatoIo = paymentMethod === SCELTA_HO_PAGATO_IO;
 
   // ⚠️ Il modulo «Nuova fattura» nasce CHIUSO (piccolezza del collaudo,
   // 17/08): occupava il posto più visibile della schermata pur essendo il
@@ -264,6 +290,7 @@ export default function FattureFornitoriHome() {
   const apriPagamento = async (inv) => {
     setPayingId(inv.id);
     setPaymentMethod("bonifico");
+    setFondi("contanti");
     setDataUscita(oggiLocale());
     setRiferimento("");
     setNoteScelte([]);
@@ -274,7 +301,22 @@ export default function FattureFornitoriHome() {
     try {
       await ricaricaAnteprima(inv.id, () => []);
     } catch (e) {
-      setErroreRiga({ id: inv.id, messaggio: e.message });
+      setErroreRiga({ id: inv.id, messaggio: e.message, dove: "pagamento" });
+    }
+  };
+
+  // Scegliere «Ho pagato io» legge i motivi (una volta sola): senza un
+  // motivo la nota non si scrive, come in /cassa/personale.
+  const cambiaComePaghi = async (invId, valore) => {
+    setPaymentMethod(valore);
+    setErroreRiga(null);
+    if (valore !== SCELTA_HO_PAGATO_IO || motivi !== null) return;
+    try {
+      const letti = await listTagAnticipazioni({ soloAttivi: true });
+      setMotivi(letti);
+      setMotivoId((m) => m || letti[0]?.id || "");
+    } catch (e) {
+      setErroreRiga({ id: invId, messaggio: `Non riesco a leggere i motivi: ${e.message} Per riprovare scegli un altro modo e poi di nuovo «Ho pagato io».`, dove: "pagamento" });
     }
   };
 
@@ -298,7 +340,8 @@ export default function FattureFornitoriHome() {
         scelte.includes(notaId) ? scelte.filter((x) => x !== notaId) : [...scelte, notaId]
       );
     } catch (e) {
-      setError(e.message);
+      // Nel pannello del pagamento, sotto il pulsante (revisione del 13/11).
+      setErroreRiga({ id: invId, messaggio: e.message, dove: "pagamento" });
     }
   };
 
@@ -307,6 +350,24 @@ export default function FattureFornitoriHome() {
     setError("");
     try {
       setErroreRiga(null);
+      if (hoPagatoIo) {
+        const inv = daPagare.find((r) => r.id === id);
+        if (!inv) throw new Error("La fattura non è più fra quelle da pagare: ricarica la pagina.");
+        await createAnticipazione(anticipoDallaFattura(inv, { pagataIl: dataUscita, tagId: motivoId, fondi }));
+        // ⚠️ DA QUI L'ANTICIPO È SCRITTO (revisione ecc del 13/11): se poi la
+        //    ricarica fallisce, l'errore non deve finire nel pannello — si
+        //    leggerebbe «non è andata» e si registrerebbe una seconda volta.
+        setPayingId(null);
+        setAvviso(
+          `Registrato «Ho pagato io»: la fattura di ${inv.supplier?.name ?? "fornitore"} è pagata (anticipo) e la società ti deve ${formatEUR(importoDaAnticipare(inv))}. Lo trovi in Cassa → Ho messo di tasca mia.`
+        );
+        try {
+          await ricarica();
+        } catch (e) {
+          setError(`«Ho pagato io» è registrato, ma non riesco ad aggiornare l'elenco: ricarica la pagina. (${e.message})`);
+        }
+        return;
+      }
       await markInvoicePaid(id, {
         paymentMethod,
         dataUscita,
@@ -316,7 +377,8 @@ export default function FattureFornitoriHome() {
       setPayingId(null);
       await ricarica();
     } catch (e) {
-      setErroreRiga({ id, messaggio: e.message });
+      // 🔴 Accanto al pulsante, dentro il pannello del pagamento (13/11).
+      setErroreRiga({ id, messaggio: e.message, dove: "pagamento" });
     } finally {
       setPaying(false);
     }
@@ -660,7 +722,10 @@ export default function FattureFornitoriHome() {
       )}
 
       {avviso && (
-        <p className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-3">
+        <p
+          role="status"
+          className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-3"
+        >
           <span>{avviso}</span>
           <button
             type="button"
@@ -1037,7 +1102,7 @@ export default function FattureFornitoriHome() {
                   </div>
 
                   {/* Il rifiuto accanto al gesto: vedi `erroreRiga`. */}
-                  {erroreRiga?.id === inv.id && (
+                  {erroreRiga?.id === inv.id && erroreRiga.dove !== "pagamento" && (
                     <p className="mt-2 testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded px-2 py-1.5">
                       {erroreRiga.messaggio}
                     </p>
@@ -1090,30 +1155,68 @@ export default function FattureFornitoriHome() {
                     <div className="mt-3 pt-3 border-t border-b58-charcoal/10">
                       <div className="flex flex-wrap gap-2 items-end">
                         <div className="w-36">
-                          <label className={labelClass}>Come paghi</label>
+                          <label className={labelClass} htmlFor={`come-paghi-${inv.id}`}>Come paghi</label>
                           <select
+                            id={`come-paghi-${inv.id}`}
                             value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            onChange={(e) => cambiaComePaghi(inv.id, e.target.value)}
                             className={inputClass}
                           >
                             {PAYMENT_METHODS.map((p) => (
                               <option key={p.value} value={p.value}>{p.label}</option>
                             ))}
+                            {/* ⚠️ Fuori da PAYMENT_METHODS, apposta: non è un
+                                modo di pagare della società ma i soldi di
+                                Alessio, e il database scrive «anticipo» da
+                                solo. Solo per le società: la tasca non anticipa. */}
+                            {(inv.entity_id === entities?.srls?.id || inv.entity_id === entities?.agricola?.id) && (
+                              <option value={SCELTA_HO_PAGATO_IO}>Ho pagato io</option>
+                            )}
                           </select>
                         </div>
+                        {hoPagatoIo && (
+                          <>
+                            <div className="w-44">
+                              <label className={labelClass} htmlFor={`fondi-${inv.id}`}>Con che soldi</label>
+                              <SceltaFondi
+                                id={`fondi-${inv.id}`}
+                                valore={fondi}
+                                onCambia={setFondi}
+                                className={inputClass}
+                              />
+                            </div>
+                            {motivi?.length > 0 && (
+                              <div className="w-48">
+                                <label className={labelClass} htmlFor={`motivo-${inv.id}`}>Motivo</label>
+                                <select
+                                  id={`motivo-${inv.id}`}
+                                  value={motivoId}
+                                  onChange={(e) => setMotivoId(e.target.value)}
+                                  className={inputClass}
+                                >
+                                  {motivi.map((t) => (
+                                    <option key={t.id} value={t.id}>{t.etichetta}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </>
+                        )}
                         {/* ⚠️ Il giorno in cui i soldi ESCONO, non quello in
                             cui registri (17/08). Con un assegno a 30 giorni
                             le due date sono diverse, e prima la cassa
                             scendeva un mese prima del dovuto. */}
                         <div>
-                          <label className={labelClass}>Quando escono i soldi</label>
+                          <label className={labelClass}>{hoPagatoIo ? "Quando hai pagato" : "Quando escono i soldi"}</label>
                           <input
                             type="date"
                             value={dataUscita}
+                            max={hoPagatoIo ? oggiLocale() : undefined}
                             onChange={(e) => setDataUscita(e.target.value)}
                             className={`${inputClass} campo-data`}
                           />
                         </div>
+                        {!hoPagatoIo && (
                         <div className="w-44">
                           <label className={labelClass}>
                             {paymentMethod === "assegno" ? "N. assegno" : "Riferimento"}
@@ -1125,15 +1228,50 @@ export default function FattureFornitoriHome() {
                             className={inputClass}
                           />
                         </div>
+                        )}
                         <button
                           type="button"
-                          disabled={paying || !dataUscita}
+                          disabled={
+                            paying ||
+                            !dataUscita ||
+                            (hoPagatoIo && (!motivoId || !(importoDaAnticipare(inv) > 0) || dataUscita > oggiLocale()))
+                          }
                           onClick={() => handlePay(inv.id)}
                           className="tocco-bottone come-campo rounded-lg bg-b58-azione text-b58-sul-colore testo-sala px-4  disabled:opacity-60"
                         >
-                          {paying ? "Confermo…" : "Conferma pagamento"}
+                          {paying ? "Confermo…" : hoPagatoIo ? "Registra «Ho pagato io»" : "Conferma pagamento"}
                         </button>
                       </div>
+
+                      {/* 🔴 Il rifiuto del pagamento QUI, sotto il pulsante (13/11). */}
+                      <ErroreDelGesto
+                        messaggio={erroreRiga?.id === inv.id && erroreRiga.dove === "pagamento" ? erroreRiga.messaggio : ""}
+                        className="mt-2"
+                      />
+
+                      {hoPagatoIo && (
+                        <div data-prova="ho-pagato-io-fattura" className="mt-2 space-y-2">
+                          <p className="testo-sala text-b58-charcoal">
+                            Hai pagato tu <strong>{formatEUR(importoDaAnticipare(inv))}</strong>, quanto resta
+                            da pagare di questa fattura: la società te li deve.
+                          </p>
+                          <FraseAnticipoPagaFattura />
+                          <AvvisoContoPersonale fondi={fondi} />
+                          {dataUscita > oggiLocale() && (
+                            <p className="testo-sala text-b58-terracotta-dark-testo" data-prova="ho-pagato-io-data-futura">
+                              Hai pagato tu: la data non può essere nel futuro.
+                            </p>
+                          )}
+                          {/* Senza un motivo la nota non si scrive: i motivi li
+                              crei in Cassa, come le causali. */}
+                          {motivi?.length === 0 && (
+                            <p className="testo-sala text-b58-terracotta-dark-testo" data-prova="ho-pagato-io-senza-motivi">
+                              Prima serve almeno un <strong>motivo</strong>: crealo in{" "}
+                              <Link to="/cassa/personale" className="underline">Cassa → Ho messo di tasca mia</Link>.
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {/* I CREDITI PROPOSTI. ⚠️ Il numero accanto a ogni
                           nota e quello del netto arrivano dal database:
@@ -1141,7 +1279,11 @@ export default function FattureFornitoriHome() {
                           applicano per 40 in tutto, e una somma fatta qui
                           direbbe 60 — cioè mentirebbe proprio mentre uno
                           guarda prima di confermare. */}
-                      {creditiFattura.length > 0 && (
+                      {/* ⚠️ Con «Ho pagato io» i crediti non si usano: l'anticipo
+                          vale quanto resta da pagare, e il credito resta lì per
+                          la prossima fattura. Anche «Usciranno …» non vale: dalla
+                          cassa non esce niente. */}
+                      {!hoPagatoIo && creditiFattura.length > 0 && (
                         <div className="mt-3 bg-b58-sage/15 rounded-lg p-3">
                           <p className="testo-sala text-b58-charcoal mb-1.5">
                             Hai un credito con {inv.supplier.name}: lo usi su questa fattura?
@@ -1163,7 +1305,7 @@ export default function FattureFornitoriHome() {
                         </div>
                       )}
 
-                      {anteprima && (
+                      {!hoPagatoIo && anteprima && (
                         <p className="testo-sala text-b58-charcoal mt-2">
                           Usciranno <strong>{formatEUR(anteprima.netto)}</strong>
                           {Number(anteprima.gia_scalato) > 0 && (
@@ -1190,7 +1332,7 @@ export default function FattureFornitoriHome() {
                           acconto, dopo è un assegno postdatato. Dirlo qui
                           serve a distinguere il caso voluto dal giorno
                           digitato male. */}
-                      {dataUscita > oggiLocale() && (
+                      {!hoPagatoIo && dataUscita > oggiLocale() && (
                         <p className="testo-sala text-b58-charcoal-soft mt-2">
                           I soldi escono il {formatDate(dataUscita)}: fino a quel giorno l&apos;uscita
                           resta in prima nota e <strong>non abbassa il saldo</strong> — la trovi fra le
