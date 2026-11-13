@@ -1,6 +1,6 @@
 # Le fatture ai clienti hanno un archivio (13/11/2026) — pezzo 1 di 5
 
-Commit sotto questa consegna: `24a39749`. Migrazione `20261113000002_le_fatture_ai_clienti_hanno_un_archivio`.
+Commit sotto questa consegna: `3c3d53f4` (il lavoro è in `24a39749`; `3c3d53f4` rigenera l'indice dei rovesciamenti). Migrazione `20261113000002_le_fatture_ai_clienti_hanno_un_archivio`.
 
 Piano approvato da Alessio il 13/11/2026 («Sì, approvo»): work emette le fatture ai clienti e le spedisce dalla PEC borgo58@pec.it allo SDI. Abbonamento Aruba FE Base, quindi niente invio da programmi. Emette solo la S.r.l.s. Nel 2026 non ci saranno fatture: la prima sarà la 1/2027.
 
