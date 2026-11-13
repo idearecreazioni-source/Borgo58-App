@@ -157,6 +157,21 @@ describe("Fatture ai clienti", () => {
     expect(await screen.findByText(/Fattura 1\/2027 pronta/)).toBeTruthy();
   });
 
+  it("una fattura scartata dallo SdI dice perché, nell'elenco e quando la apri (pezzo 4)", async () => {
+    finto.fatture = [{
+      id: "f7", numero: 4, anno: 2027, data: "2027-01-19", stato: "scartata", totale: 30, prezzi_ivati: true,
+      cliente_id: "c1", cliente: { id: "c1", denominazione: "Ditta Esempio srl" },
+      righe: [{ posizione: 1, descrizione: "Pranzo", quantita: 1, prezzo_unitario: 30, aliquota_iva: 10 }],
+      esito_note: "Scartata dallo SdI: 00305 IdCodice non valido. Correggila e premi «Rimanda allo SdI»: il numero resta lo stesso.",
+    }];
+    apri();
+    expect((await screen.findByText(/00305 IdCodice non valido/)).textContent).toMatch(/Rimanda allo SdI/);
+    fireEvent.click(screen.getByRole("button", { name: "Apri" }));
+    const motivo = await screen.findByText((_, el) => el?.getAttribute("data-prova") === "motivo-scarto");
+    expect(motivo.textContent).toMatch(/00305/);
+    expect(screen.getByRole("button", { name: "Rimanda allo SdI" })).toBeTruthy();
+  });
+
   it("«Prova la PEC» dice com'è andata", async () => {
     apri();
     fireEvent.click(await screen.findByRole("button", { name: "Prova la PEC" }));

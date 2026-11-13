@@ -444,9 +444,16 @@ function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi,
       <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">
         {uscita ? `Fattura ${numeroFattura(fattura)} — correzione dopo lo scarto` : fattura?.id ? "Bozza di fattura" : "Nuova fattura"}
       </h2>
-      <p className="testo-sala text-b58-charcoal-soft mb-4">
-        È una bozza: puoi cambiarla quante volte vuoi. Il numero lo prende quando la mandi («Emetti e manda»).
-      </p>
+      {uscita ? (
+        // Perché lo SdI l'ha scartata (pezzo 4): gli errori, come li ha scritti lo SdI.
+        <p className="testo-sala text-b58-charcoal bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4" data-prova="motivo-scarto">
+          {fattura?.esito_note || "Lo SdI l'ha scartata. Correggila e rimandala: il numero resta lo stesso."}
+        </p>
+      ) : (
+        <p className="testo-sala text-b58-charcoal-soft mb-4">
+          È una bozza: puoi cambiarla quante volte vuoi. Il numero lo prende quando la mandi («Emetti e manda»).
+        </p>
+      )}
 
       <div className="riga-campi">
         <div className="cella-larga">
@@ -892,6 +899,12 @@ export default function FattureClientiHome() {
                           {" "}· {formatDate(f.data)} · {nomeCliente(f.cliente)} · {formatEUR(t)} ·{" "}
                           {labelFor(STATI_FATTURA_EMESSA, f.stato)}
                         </span>
+                        {/* La risposta dello SdI (pezzo 4): perché è scartata, o che è nel cassetto fiscale. */}
+                        {(f.stato === "scartata" || f.stato === "messa_a_disposizione") && f.esito_note && (
+                          <span className="block text-b58-charcoal-soft" data-prova="esito-sdi">
+                            {f.esito_note}
+                          </span>
+                        )}
                       </span>
                       {modificabile && (
                         <button type="button" onClick={() => setAperta(f.id)} className={bottoneSecondario}>
