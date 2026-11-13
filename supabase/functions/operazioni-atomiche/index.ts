@@ -184,6 +184,12 @@ const OPERAZIONI = new Set([
   // Un invio di fattura rimasto a metà, sbloccato dal titolare dopo aver
   // guardato la posta inviata della PEC (13/11/2026): invio e fattura insieme.
   "sblocca_invio_fattura",
+  // La fattura e i conti (13/11/2026, pezzo 5a): l'incasso di una fattura ai
+  // clienti tocca la fattura, la prima nota e il movimento della banca.
+  "incassa_fattura_da_movimento_banca",
+  "incassa_da_soli_bonifici",
+  "annulla_incasso_fattura",
+  "incassa_fattura_a_mano",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",
