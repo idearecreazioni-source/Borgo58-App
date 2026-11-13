@@ -32,6 +32,9 @@ import {
   listFattureEmesse,
   salvaBozzaFattura,
   salvaClienteFattura,
+  sbloccaInvioFattura,
+  spedisciFattura,
+  provaLaPec,
 } from "../../lib/api/fattureEmesse";
 import { getEntities, salvaDatiSocieta } from "../../lib/api/entities";
 import { getOrder, getServiceSettings } from "../../lib/api/orders";
@@ -274,7 +277,7 @@ function ClienteNuovo({ onSalvato, onAnnulla }) {
 // ---------------------------------------------------------------------
 // LA BOZZA
 // ---------------------------------------------------------------------
-function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi, totaleAtteso }) {
+function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi, onPartita, onNonPartita, totaleAtteso }) {
   const [testata, setTestata] = useState(() => ({
     cliente_id: fattura?.cliente_id ?? "",
     data: fattura?.data ?? oggiLocale(),
@@ -392,6 +395,40 @@ function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi,
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  // EMETTI E MANDA (pezzo 3). Prima si salva quello che c'è sullo schermo
+  // (così parte esattamente quello che si vede), poi la funzione numera e
+  // spedisce. Un errore resta accanto al pulsante.
+  async function emettiEManda() {
+    setErrore("");
+    try {
+      const pulite = righe.map((r) => ({
+        descrizione: r.descrizione,
+        quantita: cifra(r.quantita),
+        prezzo_unitario: cifra(r.prezzo_unitario),
+        aliquota_iva: Number(r.aliquota_iva),
+        natura: Number(r.aliquota_iva) === 0 ? r.natura || null : null,
+      }));
+      if (pulite.some((r) => Number.isNaN(r.prezzo_unitario) || Number.isNaN(r.quantita))) {
+        throw new Error("Una riga ha il prezzo o la quantità che non sono cifre.");
+      }
+      const id = await salvaBozzaFattura(fattura?.id ?? null, testata, pulite);
+      let esito;
+      try {
+        esito = await spedisciFattura(id);
+      } catch (e) {
+        // ⚠️ Salvata (e forse già numerata): la bozza sullo schermo non è più
+        //    quella vera. Si chiude, la lista si rilegge e l'errore resta in
+        //    cima — sennò un secondo «Emetti e manda» creerebbe una bozza
+        //    doppia (revisione del 13/11).
+        await onNonPartita(e.message);
+        return;
+      }
+      await onPartita(esito);
+    } catch (e) {
+      setErrore(e.message);
+    }
+  }
+
   async function butta() {
     try {
       await eliminaBozzaFattura(fattura.id);
@@ -408,7 +445,7 @@ function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi,
         {uscita ? `Fattura ${numeroFattura(fattura)} — correzione dopo lo scarto` : fattura?.id ? "Bozza di fattura" : "Nuova fattura"}
       </h2>
       <p className="testo-sala text-b58-charcoal-soft mb-4">
-        È una bozza: puoi cambiarla quante volte vuoi. Il numero lo prende quando parte (arriva col prossimo pezzo).
+        È una bozza: puoi cambiarla quante volte vuoi. Il numero lo prende quando la mandi («Emetti e manda»).
       </p>
 
       <div className="riga-campi">
@@ -601,6 +638,17 @@ function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi,
           {salvo ? "Salvo…" : "Salva la bozza"}
         </button>
         <button type="button" onClick={onChiudi} className={bottoneSecondario}>Chiudi</button>
+        <ConfermaDistruttiva
+          etichetta={uscita ? "Rimanda allo SdI" : "Emetti e manda"}
+          domanda={
+            uscita
+              ? `Rimandare la fattura ${numeroFattura(fattura)} corretta allo SdI, dalla PEC?`
+              : "Emettere la fattura e mandarla allo SdI dalla PEC? Prende il numero e non si potrà più cancellare."
+          }
+          etichettaConferma={uscita ? "Sì, rimandala" : "Sì, emetti e manda"}
+          onConferma={emettiEManda}
+          attributi={{ "data-prova": "emetti-e-manda" }}
+        />
         <button type="button" onClick={scaricaFileDiProva} className={bottoneSecondario} data-prova="file-di-prova">
           Scarica il file di prova
         </button>
@@ -649,6 +697,8 @@ export default function FattureClientiHome() {
   const [daConto, setDaConto] = useState(null); // { fattura, totale }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [esitoInvio, setEsitoInvio] = useState(null); // la frase dopo una spedizione
+  const [mandando, setMandando] = useState(null); // id della «da inviare» che sta ripartendo
 
   async function leggiFatture() {
     setFatture(await listFattureEmesse());
@@ -688,6 +738,75 @@ export default function FattureClientiHome() {
 
   const fatturaAperta = aperta && aperta !== "nuova" ? fatture.find((f) => f.id === aperta) : null;
 
+  function fraseInvio(esito) {
+    if (!esito) return "Fatto.";
+    return esito.simulato
+      ? `Fattura ${esito.numero} pronta (${esito.nome_file}). PROVA: qui non parte davvero, nessuna mail allo SdI.`
+      : `Fattura ${esito.numero} partita dalla PEC verso lo SdI (${esito.nome_file}). La risposta dello SdI arriva nella PEC.`;
+  }
+
+  async function partita(esito) {
+    setError("");
+    setEsitoInvio(fraseInvio(esito));
+    await leggiFatture();
+    chiudi();
+  }
+
+  async function nonPartita(messaggio) {
+    setEsitoInvio(null);
+    setError(messaggio);
+    await leggiFatture().catch((e) => setError((m) => `${m ? `${m} ` : ""}La lista non si è riletta: ${e.message}`));
+    chiudi();
+  }
+
+  // Un invio rimasto a metà: il titolare ha guardato nella posta inviata.
+  async function sblocca(invioId, partito) {
+    setError("");
+    setEsitoInvio(null);
+    try {
+      await sbloccaInvioFattura(invioId, partito);
+      setEsitoInvio(
+        partito
+          ? "Segnata come partita. La risposta dello SdI arriva nella PEC."
+          : "Segnata come non partita: ora puoi premere «Manda»."
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      await leggiFatture().catch((e) => setError((m) => `${m ? `${m} ` : ""}La lista non si è riletta: ${e.message}`));
+    }
+  }
+
+  // Una «da inviare» è numerata ma non è partita (la PEC non ha risposto):
+  // riparte con lo stesso numero.
+  async function rimanda(id) {
+    setMandando(id);
+    setError("");
+    setEsitoInvio(null);
+    try {
+      setEsitoInvio(fraseInvio(await spedisciFattura(id)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setMandando(null);
+      await leggiFatture().catch((e) => setError((m) => `${m ? `${m} ` : ""}La lista non si è riletta: ${e.message}`));
+    }
+  }
+
+  const [pecInProva, setPecInProva] = useState(false);
+  async function provaPec() {
+    setPecInProva(true);
+    setError("");
+    setEsitoInvio(null);
+    try {
+      setEsitoInvio((await provaLaPec())?.messaggio ?? "La PEC risponde.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPecInProva(false);
+    }
+  }
+
   function chiudi() {
     setAperta(null);
     setDaConto(null);
@@ -702,15 +821,21 @@ export default function FattureClientiHome() {
       <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mb-1">
         Fatture ai clienti{" "}
         <Didascalia>
-          Le fatture che Borgo 58 fa ai clienti che la chiedono. Qui prepari la bozza; dal prossimo aggiornamento
-          partirà dalla PEC verso l&apos;Agenzia, e la risposta (consegnata o scartata) la leggerà MEMO.
+          Le fatture che Borgo 58 fa ai clienti che la chiedono. Prepari la bozza e la mandi: parte dalla PEC verso
+          l&apos;Agenzia. La risposta (consegnata o scartata) la leggerà MEMO, col prossimo aggiornamento.
         </Didascalia>
       </h1>
-      <p className="testo-sala text-b58-charcoal-soft mb-6">Prepari la fattura qui. L&apos;invio arriva nel prossimo pezzo.</p>
+      <p className="testo-sala text-b58-charcoal-soft mb-6">Prepari la fattura e la mandi da qui, dalla PEC di Borgo 58.</p>
 
       {error && (
         <p role="alert" className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
+        </p>
+      )}
+
+      {esitoInvio && (
+        <p role="status" className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4" data-prova="esito-invio">
+          {esitoInvio}
         </p>
       )}
 
@@ -735,6 +860,8 @@ export default function FattureClientiHome() {
                 setDaConto(null);
               }}
               onChiudi={chiudi}
+              onPartita={partita}
+              onNonPartita={nonPartita}
             />
           ) : (
             <button type="button" onClick={() => setAperta("nuova")} className={`${bottonePrimario} mb-6`}>
@@ -750,6 +877,8 @@ export default function FattureClientiHome() {
               <ul className="divide-y divide-b58-charcoal/10" data-prova="elenco-fatture">
                 {fatture.map((f) => {
                   const modificabile = f.stato === "bozza" || f.stato === "scartata";
+                  // Un invio rimasto «in partenza»: forse è partito, forse no.
+                  const fermo = (f.invii ?? []).find((i) => i.stato === "in_partenza");
                   // Una scartata corretta ha righe nuove: il totale congelato è quello vecchio.
                   const t =
                     modificabile || f.totale == null
@@ -769,11 +898,55 @@ export default function FattureClientiHome() {
                           Apri
                         </button>
                       )}
+                      {fermo && (
+                        <div className="w-full testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2" data-prova="invio-fermo">
+                          <p>
+                            L&apos;invio del file {fermo.nome_file} si è fermato a metà: potrebbe essere partito. Guarda
+                            nella <strong>posta inviata</strong> della PEC (borgo58@pec.it) e dimmi:
+                          </p>
+                          <div className="flex flex-wrap gap-3 mt-2">
+                            <ConfermaDistruttiva
+                              etichetta="C'è: è partita"
+                              domanda={`Il file ${fermo.nome_file} è nella posta inviata della PEC?`}
+                              etichettaConferma="Sì, c'è"
+                              onConferma={() => sblocca(fermo.id, true)}
+                            />
+                            <ConfermaDistruttiva
+                              etichetta="Non c'è"
+                              domanda={`Il file ${fermo.nome_file} NON è nella posta inviata? Poi potrai rimandarla.`}
+                              etichettaConferma="Sì, non c'è"
+                              onConferma={() => sblocca(fermo.id, false)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {f.stato === "da_inviare" && !fermo && (
+                        <button
+                          type="button"
+                          onClick={() => rimanda(f.id)}
+                          disabled={mandando != null}
+                          className={bottonePrimario}
+                          data-prova="rimanda-fattura"
+                        >
+                          {mandando === f.id ? "Mando…" : "Manda"}
+                        </button>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             )}
+          </section>
+
+          <section className={card}>
+            <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">La PEC per lo SdI</h2>
+            <p className="testo-sala text-b58-charcoal-soft mb-3">
+              Le fatture partono dalla PEC di Borgo 58. Dopo aver messo utente e password nei Secrets di Supabase, prova
+              qui che funzionino: non parte niente.
+            </p>
+            <button type="button" onClick={provaPec} disabled={pecInProva} className={bottoneSecondario} data-prova="prova-pec">
+              {pecInProva ? "Provo…" : "Prova la PEC"}
+            </button>
           </section>
         </>
       )}

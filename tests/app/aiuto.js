@@ -314,15 +314,27 @@ export async function almenoUnaRiga(titolare, tabella, riga) {
   };
 }
 
-/** L'entità S.r.l.s.: la prima creata. Serve a ogni riga economica. */
+/**
+ * L'entità S.r.l.s. Serve a ogni riga economica.
+ *
+ * 🔴 SI CHIEDE PER TIPO, NON «LA PRIMA CREATA» (13/11/2026). La S.r.l.s. e
+ *    l'azienda agricola sono nate nella stessa istruzione (20260730000001):
+ *    hanno lo STESSO `created_at`, al microsecondo. Ordinare per data
+ *    lasciava decidere al database, che a parità restituisce le righe
+ *    nell'ordine in cui le trova sul disco — e una riga aggiornata si sposta
+ *    in fondo. Il 13/11 basta aver salvato i dati della società (Fatture ai
+ *    clienti) perché «la prima» diventasse l'azienda agricola, senza conto
+ *    corrente: undici prove di banca rosse, nessuna con un difetto vero.
+ */
 export async function primaEntita(titolare) {
   const { data, error } = await titolare
     .from("entities")
     .select("id")
+    .eq("entity_type", "srls")
     .order("created_at")
     .limit(1)
     .single();
-  if (error) throw new Error(`Nessuna entità nel database: ${error.message}`);
+  if (error) throw new Error(`Nessuna S.r.l.s. nel database: ${error.message}`);
   return data.id;
 }
 

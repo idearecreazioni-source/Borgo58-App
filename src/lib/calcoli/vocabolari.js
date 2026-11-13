@@ -299,6 +299,12 @@ export const GUARDIE_ESENTI = [
       "non è una guardia ma un ramo: nomina i due tipi di MEMO che parlano di una voce del piano che c'è già (piano_collega, piano_voce_aggiorna), un sottoinsieme apposta dei tipi di tipi_azione_vocale. Il terzo, piano_voce_nuova, la voce non ce l'ha ancora. La funzione la chiama solo voce_risolvi_dati, per quei tre tipi (08/11/2026, 20261108000003)",
   },
   {
+    funzione: "chiudi_invio_fattura",
+    parametro: "p_esito",
+    perche:
+      "chiude un invio di fattura ai clienti: partito, simulato o fallito sono tre dei quattro stati di fatture_emesse_invii_stato_check. Il quarto, «in_partenza», è lo stato di un invio APERTO, che lo scrive solo prepara_invio_fattura: chiuderlo «in partenza» non vorrebbe dire niente (13/11/2026, 20261113000005)",
+  },
+  {
     funzione: "dividi_spesa",
     parametro: "p_fonte",
     perche:

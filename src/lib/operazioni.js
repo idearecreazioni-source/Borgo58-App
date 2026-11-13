@@ -32,6 +32,7 @@ const IN_ITALIANO = {
   collega_ingrediente_ricetta: "collegare l'ingrediente",
   dividi_spesa: "dividere la spesa sulle voci",
   salva_bozza_fattura: "salvare la fattura",
+  sblocca_invio_fattura: "sbloccare l'invio della fattura",
 };
 
 const comeSiChiama = (operazione) =>
