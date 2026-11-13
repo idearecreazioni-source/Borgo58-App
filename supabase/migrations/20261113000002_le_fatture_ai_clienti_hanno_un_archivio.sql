@@ -356,6 +356,7 @@ $fn$;
 comment on function fatture_emesse_guardia() is
   'Una fattura nasce bozza; numerata non si cancella e non cambia numero, data o società; da fuori (authenticated) non si numera né si tocca dopo l''uscita, salvo cliente, causale e pagamento dopo uno scarto. Il numero lo dà solo emetti_fattura (13/11/2026).';
 
+-- rete-portieri: 20261113000002 chiama emetti_fattura — il nome compare solo nel testo del commento qui sopra (che contiene un «;» e la rete lo legge come codice); le chiamate vere sono nel blocco di verifica, che imposta i claims prima.
 drop trigger if exists fatture_emesse_guardia on fatture_emesse;
 create trigger fatture_emesse_guardia
   before insert or update or delete on fatture_emesse
