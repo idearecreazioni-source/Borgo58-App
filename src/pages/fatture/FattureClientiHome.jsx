@@ -41,6 +41,7 @@ import {
   numeroFattura,
   righeDalConto,
   totaliFattura,
+  xmlFattura,
 } from "../../lib/calcoli/fattureEmesse";
 import Didascalia from "../../components/Didascalia";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
@@ -273,7 +274,7 @@ function ClienteNuovo({ onSalvato, onAnnulla }) {
 // ---------------------------------------------------------------------
 // LA BOZZA
 // ---------------------------------------------------------------------
-function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAtteso }) {
+function Bozza({ fattura, clienti, societa, onClienteNuovo, onSalvata, onChiudi, totaleAtteso }) {
   const [testata, setTestata] = useState(() => ({
     cliente_id: fattura?.cliente_id ?? "",
     data: fattura?.data ?? oggiLocale(),
@@ -298,6 +299,12 @@ function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAt
   const [nuovoCliente, setNuovoCliente] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [errore, setErrore] = useState("");
+  // L'esito dell'ultimo «Scarica il file di prova», legato a righe e testata
+  // di quel momento: se cambi qualcosa dopo, l'esito vecchio sparisce.
+  const [esitoFile, setEsitoFile] = useState(null); // null | { righe, testata, problemi: string[] }
+  const problemiFile =
+    esitoFile && esitoFile.righe === righe && esitoFile.testata === testata ? esitoFile.problemi : null;
+  const setProblemiFile = (problemi) => setEsitoFile({ righe, testata, problemi });
 
   const uscita = fattura?.numero != null;
   // ⚠️ La virgola è il decimale di Alessio («27,50»): senza questa
@@ -348,6 +355,41 @@ function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAt
     } finally {
       setSalvo(false);
     }
+  }
+
+  // Il file di prova: lo stesso XML che partirà, fatto con quello che si
+  // vede adesso sullo schermo, col numero «BOZZA» al posto di quello vero.
+  // Serve a vedere PRIMA cosa manca (dati della società, del cliente, un
+  // carattere che lo SdI non accetta) e a farlo guardare a Laura.
+  function scaricaFileDiProva() {
+    const righeFile = righe.map((r, i) => ({
+      posizione: i + 1,
+      descrizione: r.descrizione,
+      quantita: cifra(r.quantita),
+      prezzo_unitario: cifra(r.prezzo_unitario),
+      aliquota_iva: Number(r.aliquota_iva),
+      natura: Number(r.aliquota_iva) === 0 ? r.natura || null : null,
+    }));
+    if (righeFile.some((r) => Number.isNaN(r.prezzo_unitario) || Number.isNaN(r.quantita))) {
+      setProblemiFile(["Una riga ha il prezzo o la quantità che non sono cifre."]);
+      return;
+    }
+    const { xml, nomeFile, errori } = xmlFattura({
+      societa,
+      cliente: clienti.find((c) => c.id === testata.cliente_id) ?? null,
+      fattura: { ...testata, numero: null, totale: null },
+      righe: righeFile,
+      progressivo: "BOZZA",
+      numero: "BOZZA",
+    });
+    setProblemiFile(errori);
+    if (!xml) return;
+    const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeFile;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async function butta() {
@@ -559,6 +601,13 @@ function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAt
           {salvo ? "Salvo…" : "Salva la bozza"}
         </button>
         <button type="button" onClick={onChiudi} className={bottoneSecondario}>Chiudi</button>
+        <button type="button" onClick={scaricaFileDiProva} className={bottoneSecondario} data-prova="file-di-prova">
+          Scarica il file di prova
+        </button>
+        <Didascalia>
+          È il file della fattura elettronica come partirà verso l&apos;Agenzia, con «BOZZA» al posto del numero. Non
+          parte niente: serve a vedere se manca qualcosa e a farlo controllare a Laura.
+        </Didascalia>
         {fattura?.id && !uscita && (
           <ConfermaDistruttiva
             etichetta="Butta la bozza"
@@ -569,6 +618,21 @@ function Bozza({ fattura, clienti, onClienteNuovo, onSalvata, onChiudi, totaleAt
         )}
       </div>
       <ErroreDelGesto messaggio={errore} className="mt-2" />
+      {problemiFile?.length > 0 && (
+        <div role="alert" className="testo-sala text-b58-terracotta-dark-testo bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3" data-prova="problemi-file">
+          <p className="font-medium">Il file non si può fare ancora:</p>
+          <ul className="list-disc pl-5">
+            {problemiFile.map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {problemiFile?.length === 0 && (
+        <p role="status" className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mt-3">
+          File di prova scaricato: i dati per la fattura elettronica ci sono tutti.
+        </p>
+      )}
     </section>
   );
 }
@@ -663,6 +727,7 @@ export default function FattureClientiHome() {
               fattura={aperta === "nuova" ? daConto?.fattura ?? null : fatturaAperta}
               totaleAtteso={aperta === "nuova" ? daConto?.totale ?? null : null}
               clienti={clienti}
+              societa={societa}
               onClienteNuovo={leggiClienti}
               onSalvata={async (id) => {
                 await leggiFatture();

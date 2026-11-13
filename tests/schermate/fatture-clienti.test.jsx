@@ -11,7 +11,7 @@ const { finto, spie } = vi.hoisted(() => ({
   finto: {
     fatture: [],
     clienti: [
-      { id: "c1", denominazione: "Ditta Esempio srl", partita_iva: "01234567890", attivo: true },
+      { id: "c1", denominazione: "Ditta Esempio srl", partita_iva: "01234567897", attivo: true },
     ],
     srls: { id: "e1", entity_type: "srls", legal_name: "Esempio S.r.l.s.", vat_number: null },
     ordine: null,
@@ -63,13 +63,13 @@ describe("Fatture ai clienti", () => {
     apri();
     const scheda = await screen.findByText(/Per fare una fattura mancano: partita IVA/);
     expect(scheda).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Partita IVA"), { target: { value: "01234567890" } });
+    fireEvent.change(screen.getByLabelText("Partita IVA"), { target: { value: "01234567897" } });
     fireEvent.change(screen.getByLabelText("Provincia"), { target: { value: "sa" } });
     fireEvent.click(screen.getByRole("button", { name: "Salva i dati" }));
     await waitFor(() =>
       expect(spie.salvaDatiSocieta).toHaveBeenCalledWith(
         "e1",
-        expect.objectContaining({ vat_number: "01234567890", sede_provincia: "SA" })
+        expect.objectContaining({ vat_number: "01234567897", sede_provincia: "SA" })
       )
     );
   });
@@ -142,5 +142,57 @@ describe("Fatture ai clienti", () => {
     // 24 + 19,50 + 4 = 47,50: uguale al conto, nessun avviso.
     expect(within(totali).getByText(/47,50/)).toBeTruthy();
     expect(screen.queryByText(/Il conto del tavolo era/)).toBeNull();
+  });
+it("il file di prova: prima dice cosa manca, poi si scarica col numero BOZZA (pezzo 2b)", async () => {
+    apri();
+    fireEvent.click(await screen.findByRole("button", { name: "+ Nuova fattura" }));
+    fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "c1" } });
+    fireEvent.change(screen.getByLabelText("Cosa"), { target: { value: "Cena" } });
+    fireEvent.change(screen.getByLabelText(/^Prezzo/), { target: { value: "55" } });
+    fireEvent.click(screen.getByRole("button", { name: "Scarica il file di prova" }));
+    const problemi = await screen.findByText("Il file non si può fare ancora:");
+    expect(problemi.closest("[role=alert]").textContent).toMatch(/partita IVA sono 11 cifre/);
+  });
+
+  it("con tutti i dati il file di prova si scarica", async () => {
+    const prima = { srls: finto.srls, clienti: finto.clienti };
+    finto.srls = {
+      id: "e1", entity_type: "srls", legal_name: "Esempio S.r.l.s.", vat_number: "01234567897",
+      vat_regime: "ordinario", sede_indirizzo: "Via Esempio 1", sede_cap: "84043", sede_comune: "Agropoli",
+      sede_provincia: "SA", sede_nazione: "IT", iban: "IT60X0542811101000000123456",
+    };
+    finto.clienti = [{
+      id: "c1", denominazione: "Ditta Esempio srl", partita_iva: "01234567897", indirizzo: "Via Due 2",
+      cap: "80100", comune: "Napoli", provincia: "NA", nazione: "IT", attivo: true,
+    }];
+    const blobs = [];
+    const originale = { crea: URL.createObjectURL, togli: URL.revokeObjectURL };
+    URL.createObjectURL = vi.fn((b) => (blobs.push(b), "blob:prova"));
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    try {
+      apri();
+      fireEvent.click(await screen.findByRole("button", { name: "+ Nuova fattura" }));
+      fireEvent.change(screen.getByLabelText("Cliente"), { target: { value: "c1" } });
+      fireEvent.change(screen.getByLabelText("Cosa"), { target: { value: "Cena" } });
+      fireEvent.change(screen.getByLabelText(/^Prezzo/), { target: { value: "55" } });
+      fireEvent.click(screen.getByRole("button", { name: "Scarica il file di prova" }));
+      expect(await screen.findByText(/File di prova scaricato/)).toBeTruthy();
+      expect(click).toHaveBeenCalledTimes(1);
+      // il Blob di jsdom non ha .text(): si legge come nel browser vecchio
+      const xml = await new Promise((fatto) => {
+        const lettore = new FileReader();
+        lettore.onload = () => fatto(lettore.result);
+        lettore.readAsText(blobs[0]);
+      });
+      expect(xml).toContain("<Numero>BOZZA</Numero>");
+      expect(xml).toContain("<ImportoTotaleDocumento>55.00</ImportoTotaleDocumento>");
+    } finally {
+      click.mockRestore();
+      URL.createObjectURL = originale.crea;
+      URL.revokeObjectURL = originale.togli;
+      finto.srls = prima.srls;
+      finto.clienti = prima.clienti;
+    }
   });
 });
