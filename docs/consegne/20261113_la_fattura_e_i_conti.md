@@ -1,6 +1,6 @@
 # La fattura e i conti (13/11/2026) — pezzo 5a di 5
 
-Commit sotto questa consegna: `4f7f1dd9`. Migrazione `20261113000007_la_fattura_e_i_conti`. `operazioni-atomiche` ha quattro voci nuove.
+Commit sotto questa consegna: `bd63e4c8` (il lavoro è in `4f7f1dd9`; `bd63e4c8` dichiara «Incasso fattura» fra le causali di sistema nella prova della tesoreria). Migrazione `20261113000007_la_fattura_e_i_conti`. `operazioni-atomiche` ha quattro voci nuove.
 
 Piano approvato da Alessio il 13/11 («sì, approvo»), dopo due sue correzioni:
 - «la fattura non deve essere promessa: si può emettere al momento» (il giro dalla chiusura del conto è il pezzo 5b);
@@ -82,6 +82,9 @@ Corretti:
 - `tests/schermate/banca-csv.test.jsx`: dopo il caricamento le fatture si incassano da sole e la pagina lo dice; se l'abbinamento non riesce, il caricamento resta fatto e lo dice.
 - `tests/schermate/fatture-clienti.test.jsx` (13): i soldi delle fatture uscite («al tavolo», «incassata», «Segna incassata»).
 - Le prove di schermata della banca sanno le due funzioni nuove.
+
+## Dopo i Controlli (13/11)
+- La prova della tesoreria elenca per nome le causali «di sistema»: «Incasso fattura» va dichiarata lì. È di sistema apposta, perché il ricavo di quella fattura lo conta la fattura stessa (pezzo 5b) e non la prima nota. Altrimenti si conterebbe due volte.
 
 ## Cosa abbiamo rovesciato
 Niente di nuovo. Il rovesciamento della decisione del 14/08 (Fatture in Cloud) è già dichiarato con il pezzo 1, voce 110.
