@@ -1,6 +1,6 @@
 # La pagina «Fatture ai clienti» e la bozza che si salva intera (13/11/2026) — pezzo 2a di 5
 
-Commit sotto questa consegna: `905df1bc`. Il lavoro è in `bbee49f3`; `905df1bc` fa rileggere i prezzi con la virgola. Migrazione `20261113000003_la_bozza_della_fattura_si_salva_intera`.
+Commit sotto questa consegna: `9138b84f`. Il lavoro è in `bbee49f3`; `905df1bc` fa rileggere i prezzi con la virgola; `9138b84f` porta la data italiana. Migrazioni `20261113000003_la_bozza_della_fattura_si_salva_intera` e `20261113000004_la_data_della_fattura_e_quella_italiana`.
 
 Piano approvato da Alessio il 13/11 (PIANO_fatture_emesse_13-11.md). Via al pezzo 2 dato da Alessio («Sì parti»). Il pezzo 2 è diviso in due: **2a** è la pagina con la bozza, **2b** sarà il file XML con lo schema ufficiale.
 
@@ -79,3 +79,9 @@ Niente di nuovo. Il rovesciamento della decisione del 14/08 (Fatture in Cloud) �
    - la migrazione `20261113000003` (con la `20261113000002`, se non è ancora lì);
    - **`npm run funzione -- operazioni-atomiche --conferma`**, altrimenti «Salva la bozza» risponde che l'operazione non esiste;
    - Approve and deploy.
+
+## Dopo i Controlli: la data a Greenwich (migrazione 20261113000004)
+- La rete `funzioni_con_data_utc()` ha preso un difetto vero: `salva_bozza_fattura()` metteva la data di oggi con `current_date`, che è l'orario di Greenwich. Fra mezzanotte e l'una (le due d'estate) una bozza senza data sarebbe nata **con la data di ieri**. Lo stesso valeva per il default della colonna `fatture_emesse.data`, nato con la `20261113000002`.
+- La correzione usa `oggi_a_roma()`, come il resto del gestionale. Il corpo è ripreso dalla `20261113000003` con questo solo cambio, e anche il default della colonna è passato a `oggi_a_roma()`. La `20261113000003` **non si riscrive**, perché era già applicata su Prova.
+- La verifica controlla tre cose: nessuna funzione delle fatture è nella rete, una bozza senza data nasce con la data italiana, il default è giusto.
+- Su Prova: prima a secco, poi `prova:migra` (482). Al rilascio su work entrano tutte e tre le migrazioni: 000002, 000003 e 000004.
