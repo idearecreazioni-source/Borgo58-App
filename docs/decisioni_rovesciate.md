@@ -166,8 +166,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 107 | 25/10/2026 | la scheda della ricetta si apre già coi campi da scrivere |
 | 108 | 25/10/2026 | gli allergeni di una ricetta si leggono solo dai prodotti del magazzino |
 | 109 | 27/10/2026 | la spesa spicciola si scrive diretta, senza corridoio |
+| 110 | 13/11/2026 | le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore |
 
-⚠️ **Righe: 110.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 111.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
