@@ -204,6 +204,9 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
         //    solo se nel gestionale c'è un registratore acceso. Senza, o se
         //    la domanda non arriva, la chiusura resta quella di sempre e la
         //    sala non si ferma.
+        // SILENZIO MOTIVATO: è quello detto qui sopra — senza risposta del
+        // registratore la chiusura resta quella di sempre, e il conto senza
+        // scontrino si fa notare da solo fra i «da fiscalizzare» in Cassa.
         const s = await statoScontrino(order.id).catch(() => null);
         if (s?.registratore) {
           setBusy(false);
