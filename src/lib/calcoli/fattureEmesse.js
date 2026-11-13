@@ -11,6 +11,9 @@
 // fattura ne porterebbe un altro: la prova `fatture-emesse.test.js` le tiene
 // allineate sui casi del database.
 
+import { orderTotals } from "./conto";
+import { nomeRiga, supplementoRiga } from "./righeComanda";
+
 // ⚠️ I CONTI SI FANNO IN INTERI, non in virgola mobile (revisione del
 //    13/11). Il database conta in decimale esatto; 1,5 × 1,15 in virgola
 //    mobile fa 1,7249999…, e il centesimo andrebbe giù dove il database lo
@@ -51,10 +54,11 @@ export function imponibileRiga(riga) {
 /**
  * Il riepilogo per aliquota e i totali di una fattura.
  * @param {{quantita?: number, prezzo_unitario: number, aliquota_iva?: number, natura?: string|null}[]} righe
+ * @param {{prezziIvati?: boolean}} [opzioni] prezzi IVA inclusa (il ristorante): l'IVA si scorpora
  * @returns {{riepilogo: {aliquota: number, natura: string|null, imponibile: number, imposta: number}[],
  *            imponibile: number, imposta: number, totale: number}}
  */
-export function totaliFattura(righe = []) {
+export function totaliFattura(righe = [], { prezziIvati = false } = {}) {
   const gruppi = new Map();
   for (const r of righe) {
     const aliquota = Number(r.aliquota_iva ?? 10);
@@ -65,13 +69,23 @@ export function totaliFattura(righe = []) {
     gruppi.set(chiave, g);
   }
   const riepilogo = [...gruppi.values()]
-    .map((g) => ({
-      aliquota: g.aliquota,
-      natura: g.natura,
-      cent: g.cent,
-      // aliquota in punti: per 22, 10, 5, 4 è un intero, e cent × punti / 100 è esatto.
-      centImposta: divisoArrotondato(g.cent * scalato(g.aliquota, 2), 10000),
-    }))
+    .map((g) => {
+      const centesimiDiPunto = scalato(g.aliquota, 2); // 10 → 1000
+      if (prezziIvati) {
+        // IVA INCLUSA (migrazione 20261113000003): la somma delle righe è il
+        // lordo; imponibile = round(lordo × 100 / (100 + aliquota), 2), e
+        // l'imposta è quello che resta — così i due tornano al lordo.
+        const imponibile = divisoArrotondato(g.cent * 10000, 10000 + centesimiDiPunto);
+        return { aliquota: g.aliquota, natura: g.natura, cent: imponibile, centImposta: g.cent - imponibile };
+      }
+      return {
+        aliquota: g.aliquota,
+        natura: g.natura,
+        cent: g.cent,
+        // aliquota in punti: per 22, 10, 5, 4 è un intero, e cent × punti / 100 è esatto.
+        centImposta: divisoArrotondato(g.cent * centesimiDiPunto, 10000),
+      };
+    })
     .sort((a, b) => b.aliquota - a.aliquota);
   const centImponibile = riepilogo.reduce((s, g) => s + g.cent, 0);
   const centImposta = riepilogo.reduce((s, g) => s + g.centImposta, 0);
@@ -106,3 +120,32 @@ export function datiSocietaMancanti(entity) {
   if (vuoto(entity?.sede_provincia)) manca.push("provincia");
   return manca;
 }
+
+/** Il nome del cliente come si legge: la ragione sociale, o nome e cognome. */
+export function nomeCliente(c) {
+  if (!c) return "";
+  return c.denominazione || [c.nome, c.cognome].filter(Boolean).join(" ");
+}
+
+/** Le righe della fattura dal conto di un tavolo: piatti (col supplemento) e coperto, IVA inclusa. */
+export function righeDalConto(order, copertoPrice) {
+  const t = orderTotals(order, copertoPrice);
+  const righe = t.items.map((i) => ({
+    descrizione: nomeRiga(i) || "Piatto",
+    quantita: Number(i.quantity),
+    prezzo_unitario: alCentesimo(Number(i.unit_price) + supplementoRiga(i)),
+    aliquota_iva: 10,
+    natura: "",
+  }));
+  if (t.coperti > 0 && t.copertoUnitPrice > 0) {
+    righe.push({
+      descrizione: "Coperto",
+      quantita: t.coperti,
+      prezzo_unitario: t.copertoUnitPrice,
+      aliquota_iva: 10,
+      natura: "",
+    });
+  }
+  return { righe, totale: t.total };
+}
+

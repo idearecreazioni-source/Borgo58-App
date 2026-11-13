@@ -177,6 +177,10 @@ const OPERAZIONI = new Set([
   // tutti i suoi collegamenti, sostituiti insieme. A meta' resterebbe una
   // spesa divisa per metà, che sembra giusta e non lo è.
   "dividi_spesa",
+  // La bozza di una fattura ai clienti (13/11/2026): la testata E tutte le
+  // sue righe, sostituite insieme. A meta' resterebbe una fattura con le
+  // righe di prima, o senza righe.
+  "salva_bozza_fattura",
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",

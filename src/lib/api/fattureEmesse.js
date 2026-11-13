@@ -8,6 +8,7 @@
 // database, sotto lucchetto, quando la fattura esce dalla bozza.
 
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 export async function listClientiFattura({ soloAttivi = true } = {}) {
   let q = supabase.from("clienti_fattura").select("*").order("denominazione").order("cognome");
@@ -44,4 +45,23 @@ export async function emettiFattura(fatturaId) {
   const { data, error } = await supabase.rpc("emetti_fattura", { p_fattura: fatturaId });
   if (error) throw error;
   return data;
+}
+
+/**
+ * Salva la bozza con tutte le righe, tutto o niente: due tabelle, quindi
+ * passa dal corridoio (operazioni-atomiche → salva_bozza_fattura).
+ * Senza id ne crea una nuova; con l'id la riscrive (bozza o scartata).
+ */
+export async function salvaBozzaFattura(id, testata, righe) {
+  return eseguiOperazione("salva_bozza_fattura", {
+    p_fattura_id: id ?? null,
+    p_testata: testata,
+    p_righe: righe,
+  });
+}
+
+/** Butta una bozza (le righe vanno con lei). Una fattura numerata il database la rifiuta. */
+export async function eliminaBozzaFattura(id) {
+  const { error } = await supabase.from("fatture_emesse").delete().eq("id", id).eq("stato", "bozza");
+  if (error) throw error;
 }

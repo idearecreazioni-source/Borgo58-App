@@ -70,6 +70,7 @@ const ManualeCompleto = lazy(() => import("./pages/haccp/ManualeCompleto"));
 const RaccoltaPropria = lazy(() => import("./pages/haccp/RaccoltaPropria"));
 const StampaAdempimenti = lazy(() => import("./pages/agenda/StampaAdempimenti"));
 const FattureFornitoriHome = lazy(() => import("./pages/fatture/FattureFornitoriHome"));
+const FattureClientiHome = lazy(() => import("./pages/fatture/FattureClientiHome"));
 const CassaHome = lazy(() => import("./pages/cassa/CassaHome"));
 const PrimaNota = lazy(() => import("./pages/cassa/PrimaNota"));
 const ScontiOmaggi = lazy(() => import("./pages/cassa/ScontiOmaggi"));
@@ -317,6 +318,7 @@ function AppRoutes() {
 
         {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
         <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />
+        <Route path="/fatture-clienti" element={<RequireTitolare><FattureClientiHome /></RequireTitolare>} />
         <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><Suspense fallback={<Caricamento />}><ImportaFatturaElettronica /></Suspense></RequireTitolare>} />
 
         {/* Cassa, Banca e Prima Nota (solo titolare — §3.5) */}

@@ -87,3 +87,25 @@ describe("i conti della fattura ai clienti", () => {
     ).toEqual([]);
   });
 });
+
+describe("i prezzi IVA inclusa, come al ristorante (20261113000003)", () => {
+  it("lo stesso caso della migrazione: 100 al 10% + 122 al 22% = 190,91 + 31,09 = 222", () => {
+    const t = totaliFattura(
+      [
+        { quantita: 4, prezzo_unitario: 25, aliquota_iva: 10 },
+        { quantita: 1, prezzo_unitario: 122, aliquota_iva: 22 },
+      ],
+      { prezziIvati: true }
+    );
+    expect(t.imponibile).toBe(190.91);
+    expect(t.imposta).toBe(31.09);
+    expect(t.totale).toBe(222);
+  });
+
+  it("il totale della fattura è sempre quello pagato, al centesimo", () => {
+    for (const lordo of [0.01, 0.05, 1, 9.99, 33.33, 57.5, 1234.56]) {
+      const t = totaliFattura([{ prezzo_unitario: lordo, aliquota_iva: 10 }], { prezziIvati: true });
+      expect(t.totale).toBe(lordo);
+    }
+  });
+});
