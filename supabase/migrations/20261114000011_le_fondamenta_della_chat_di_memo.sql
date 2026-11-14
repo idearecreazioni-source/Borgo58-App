@@ -49,7 +49,8 @@ create table if not exists memo_messaggi (
   modello         text,
   token_ingresso  integer not null default 0,
   token_uscita    integer not null default 0,
-  costo_euro      numeric(10,5) not null default 0,
+  -- Vuoto = costo non conosciuto (mai zero inventato): come consumi_ai().
+  costo_euro      numeric(10,5),
   stato           text not null default 'in_corso',
   creato_il       timestamptz not null default now(),
   constraint memo_messaggio_ruolo_noto

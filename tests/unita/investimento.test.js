@@ -342,6 +342,10 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // (chiedeva `new.direction` anche agli anticipi) e la legge solo
       // dentro la propria verifica annullata.
       "20261113000001_l_anticipo_eredita_senza_direzione.sql",
+      // Le rate si propongono (14/11/2026): NON e' fiscale, nella propria
+      // verifica annullata segna una fattura come investimento per provare
+      // che una rata gia' coperta non cambia.
+      "20261114000010_le_rate_si_propongono.sql",
     ]);
   });
 

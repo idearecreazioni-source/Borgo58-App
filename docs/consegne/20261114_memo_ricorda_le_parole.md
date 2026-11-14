@@ -38,3 +38,19 @@ Migrazione `20261114000001_memo_ricorda_le_parole`. Nessun commit creato, come r
 ## Richieste di Alessio
 
 La prova MEMO del 13/11 è chiusa da questa consegna. Non c'è una riga distinta da aggiornare in `docs/RICHIESTE.md`.
+
+## Dopo la rilettura di Claude, la revisione ECC e Prova (14/11, Chat operativa ECC 2)
+Il codice di questa PR è stato scritto da **ChatGPT (Codex)** e **rivisto da Claude**: prima dalla chat madre, poi da `ecc:database-reviewer` sulla migrazione.
+
+- **Confronto col database vivo, fatto in sola lettura su Prova e su work**: `azioni_della_dettatura`, `appunti_da_approvare` e `correggi_elemento_appunto` hanno **corpi identici fra Prova e work**, e la migrazione parte dal testo giusto: cambia solo la colonna `corretta_il` e le parole dette. `scrivi_dettatura` si patcha dal corpo vivo e si ferma se non combacia.
+- **Prova a secco su Prova**: passata. Poi `prova:migra`: 489 migrazioni. `ascolta-voce` è installata su Prova.
+- **Revisione ECC**: nessun difetto bloccante. L'ordine fra migrazione ed `ascolta-voce` non conta: se esce prima l'edge function, il vecchio `scrivi_dettatura` ignora la chiave nuova; se esce dopo, `parole_dette` resta vuoto e «Correggi» ripiega sul testo intero.
+- **Limiti, detti**:
+  1. Un secondo giro della stessa migrazione si ferma con un errore chiaro (`parole_dette` già presente) invece di non fare niente. Sul percorso normale non conta, perché il programma salta le migrazioni già registrate.
+  2. Le righe corrette **prima** di questa migrazione hanno «Corretto a mano.» ma `corretta_il` vuoto: continuano a mostrare «Non ero sicuro» finché non si correggono di nuovo.
+  3. ChatGPT ha tolto dai corpi delle funzioni due commenti esplicativi (SPEC-0013, 08/09/2026, e «stessa fonte dell'elenco gemello»). Il funzionamento non cambia. Non si riscrivono in una migrazione già applicata su Prova: se si vogliono rimettere, serve una piccola migrazione a parte.
+  4. La verifica non prova il ritorno a `d.testo` quando `ascolta-voce` non è ancora rilasciato, né che `scrivi_dettatura` sia ancora chiusa ad `anon`.
+- Il pulsante «← Torna in …» dopo il riscontro è tolto **apposta**: restava il solo in cima alla pagina (vedi sopra).
+
+## Rilascio su work
+Solo col sì scritto di Alessio: la migrazione `20261114000001` e la funzione `ascolta-voce` (`npm run funzione -- ascolta-voce --conferma`, nell'ordine che si vuole), poi Approve.
