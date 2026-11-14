@@ -209,6 +209,18 @@ export default function ChiusuraAnnuale() {
                 <Valore v={misure.food_cost} />
               </dd>
             </div>
+            {/* Gli eventi (fatture senza tavolo) stanno a parte dai ricavi di sala (14/11/2026). */}
+            {Number(misure.eventi_quanti) > 0 && (
+              <div>
+                <dt className="testo-sala text-b58-charcoal-soft">Eventi fatturati ({misure.eventi_quanti})</dt>
+                <dd data-prova="eventi" className="testo-sala-grande text-b58-charcoal">
+                  <Valore v={misure.ricavi_eventi} />
+                </dd>
+                <dd className="testo-sala text-b58-charcoal-soft">
+                  di cui IVA <Valore v={misure.imposta_eventi} />. Non sono nei ricavi incassati qui sopra.
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="testo-sala text-b58-charcoal-soft">Costi fissi</dt>
               <dd className="testo-sala-grande text-b58-charcoal">
@@ -351,6 +363,9 @@ export default function ChiusuraAnnuale() {
                 <p className="testo-sala text-b58-charcoal-soft mt-1">
                   Ricavi <Valore v={r.ricavi} /> · coperti <Valore v={r.coperti} euro={false} /> ·
                   food cost <Valore v={r.food_cost} /> · fissi <Valore v={r.fissi} />
+                  {r.ricavi_eventi != null && Number(r.eventi_quanti) > 0 && (
+                    <> · eventi <Valore v={r.ricavi_eventi} /></>
+                  )}
                 </p>
 
                 {chiusuraConAvviso(r) ? (
