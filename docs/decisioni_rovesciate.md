@@ -166,8 +166,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 107 | 25/10/2026 | la scheda della ricetta si apre già coi campi da scrivere |
 | 108 | 25/10/2026 | gli allergeni di una ricetta si leggono solo dai prodotti del magazzino |
 | 109 | 27/10/2026 | la spesa spicciola si scrive diretta, senza corridoio |
+| 110 | 13/11/2026 | le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore |
 
-⚠️ **Righe: 110.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 111.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3933,3 +3934,25 @@ quando questa sezione è stata scritta.
    detta da chiudere — e due scritture separate lasciavano la riga detta
    in sospeso dopo essere stata scritta: la stessa cosa due volte in lista.
    Il prezzo è un giro in più dal corridoio, solo per le cose dette.
+
+## 110 · 13/11/2026 — «le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore»
+
+1. **Cosa era stato deciso e quando.** Il 14/08/2026 (mandato cumulativo,
+   Blocco 4): «L'app prepara i dati, Fatture in Cloud emette e trasmette
+   allo SDI». Ripetuto nel mandato del registratore (20/08).
+
+2. **La ragione di allora.** Non costruire da sé il formato della fattura
+   elettronica e il dialogo con lo SDI: un servizio esterno li fa già.
+
+3. **Cosa si decide adesso** (Alessio, 13/11/2026, piano
+   PIANO_fatture_emesse_13-11.md approvato). work costruisce il file della
+   fattura e lo spedisce dalla PEC borgo58@pec.it allo SDI. Pezzo 1 di 5:
+   l'archivio (20261113000002).
+
+4. **Perché la ragione di allora non vale più.** Fatture in Cloud non è mai
+   stato attivato, e l'Aruba FE che Alessio ha (abbonamento Base) non
+   accetta invii da programmi: l'unico canale gratis e già collegato a work
+   è la PEC, sulla quale arrivano anche le risposte dello SDI. **La ragione
+   resta vera nel merito**, e questo è il prezzo: il file lo controlliamo noi
+   con lo schema ufficiale prima di ogni invio, e la prima fattura vera si
+   spedisce insieme ad Alessio.

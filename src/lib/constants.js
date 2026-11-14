@@ -796,3 +796,60 @@ export const traGiorniLocale = (giorni, d = new Date()) => {
   data.setDate(data.getDate() + giorni);
   return dataLocale(data);
 };
+
+// =====================================================================
+// LE FATTURE AI CLIENTI (13/11/2026) — specchi dei vincoli della
+// migrazione 20261113000002, iscritti in src/lib/calcoli/vocabolari.js.
+// =====================================================================
+
+// A che punto è una fattura emessa. Il numero arriva con «Emetti».
+export const STATI_FATTURA_EMESSA = [
+  { value: "bozza", label: "bozza" },
+  { value: "da_inviare", label: "da inviare" },
+  { value: "inviata", label: "inviata, in attesa dello SDI" },
+  { value: "consegnata", label: "consegnata" },
+  { value: "messa_a_disposizione", label: "messa a disposizione" },
+  { value: "scartata", label: "scartata dallo SDI" },
+];
+
+// Come paga il cliente: i codici ufficiali della fattura elettronica.
+export const MODALITA_PAGAMENTO_FATTURA = [
+  { value: "MP01", label: "contanti" },
+  { value: "MP02", label: "assegno" },
+  { value: "MP05", label: "bonifico" },
+  { value: "MP08", label: "carta" },
+];
+
+// L'IVA di una riga, in punti. 10 di partenza per la somministrazione.
+export const ALIQUOTE_IVA_FATTURA = [22, 10, 5, 4, 0];
+
+// Perché una riga è senza IVA: l'elenco ufficiale (tabella «Natura»).
+export const NATURE_IVA = [
+  { value: "N1", label: "N1 · esclusa (art. 15)" },
+  { value: "N2.1", label: "N2.1 · non soggetta (artt. 7-7septies)" },
+  { value: "N2.2", label: "N2.2 · non soggetta, altri casi" },
+  { value: "N3.1", label: "N3.1 · non imponibile, esportazione" },
+  { value: "N3.2", label: "N3.2 · non imponibile, cessione intracomunitaria" },
+  { value: "N3.3", label: "N3.3 · non imponibile, verso San Marino" },
+  { value: "N3.4", label: "N3.4 · non imponibile, assimilata all'esportazione" },
+  { value: "N3.5", label: "N3.5 · non imponibile, dichiarazione d'intento" },
+  { value: "N3.6", label: "N3.6 · non imponibile, altri casi" },
+  { value: "N4", label: "N4 · esente" },
+  { value: "N5", label: "N5 · regime del margine" },
+  { value: "N6.1", label: "N6.1 · inversione contabile, rottami" },
+  { value: "N6.2", label: "N6.2 · inversione contabile, oro e argento" },
+  { value: "N6.3", label: "N6.3 · inversione contabile, subappalto edile" },
+  { value: "N6.4", label: "N6.4 · inversione contabile, fabbricati" },
+  { value: "N6.5", label: "N6.5 · inversione contabile, telefoni cellulari" },
+  { value: "N6.6", label: "N6.6 · inversione contabile, prodotti elettronici" },
+  { value: "N6.7", label: "N6.7 · inversione contabile, settore edile" },
+  { value: "N6.8", label: "N6.8 · inversione contabile, settore energetico" },
+  { value: "N6.9", label: "N6.9 · inversione contabile, altri casi" },
+  { value: "N7", label: "N7 · IVA assolta in altro Stato UE" },
+];
+
+// La società ha un socio solo o più soci (dato del registro imprese).
+export const SOCIO_UNICO = [
+  { value: "SU", label: "socio unico" },
+  { value: "SM", label: "più soci" },
+];

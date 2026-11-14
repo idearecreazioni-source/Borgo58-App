@@ -309,6 +309,16 @@ export default function Scontrinato() {
                         >
                           Scontrino fatto
                         </button>
+                        {/* La bozza della fattura parte dal conto (13/11/2026,
+                            fatture ai clienti): piatti e coperto già scritti. */}
+                        {c.stato === "fattura_da_emettere" && (
+                          <Link
+                            to={`/fatture-clienti?ordine=${c.order_id}`}
+                            className="tocco-campo inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5"
+                          >
+                            Prepara la fattura
+                          </Link>
+                        )}
                         {c.stato !== "fattura_da_emettere" && (
                           <button
                             disabled={inCorso === c.order_id}

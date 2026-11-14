@@ -39,6 +39,18 @@ export const MODULES = [
     // niente staffVisible: accesso solo titolare, esplicito nel brief
   },
   {
+    // Le fatture che Borgo 58 fa ai clienti (13/11/2026): bozza qui, invio
+    // dalla PEC allo SDI dal pezzo 3 del piano.
+    id: "fatture-clienti",
+    number: 3,
+    name: "Fatture ai clienti",
+    description: "Le fatture ai clienti che la chiedono: bozza, invio dalla PEC, risposta dello SDI.",
+    phase: 1,
+    icon: "receipt",
+    route: "/fatture-clienti",
+    // niente staffVisible: solo titolare, come le fatture fornitori
+  },
+  {
     id: "magazzino",
     number: 4,
     name: "Magazzino",

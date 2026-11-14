@@ -48,9 +48,11 @@ import {
   proposteDaFattura,
   senzaArchiviareLeGiaRegistrate,
   testaDellaMail,
+  mittenteReale,
   vieneDalloSdi,
   xmlPerIlModello,
 } from "../_shared/pec.js";
+import { eNomeRicevutaSdi, esitoDellaRicevuta, leggiRicevutaSdi } from "../_shared/ricevuteSdi.js";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -491,6 +493,104 @@ async function avvisa(
   }
 }
 
+// ---------------------------------------------------------------------
+// LE RICEVUTE DELLO SDI PER LE FATTURE AI CLIENTI (13/11/2026, pezzo 4)
+// ---------------------------------------------------------------------
+// Dopo che una fattura parte dalla PEC, lo SdI risponde: consegnata,
+// messa a disposizione, scartata. Sono documenti strutturati e si leggono
+// SENZA modello (`_shared/ricevuteSdi.js`): niente spesa, niente lettura
+// sbagliata, e la fattura cambia stato da sola.
+//
+// ⚠️ Solo se la mail viene DAVVERO dallo SdI (`vieneDalloSdi`, la busta del
+//    gestore): una ricevuta finta mandata da chiunque non deve poter
+//    segnare «consegnata» una fattura.
+// ⚠️ Solo se OGNI file che non è della busta è una ricevuta che si legge ed
+//    è di una fattura nostra: altrimenti la mail va letta come sempre, e
+//    niente si perde. Restituisce null in quel caso.
+
+type RicevutaLetta = {
+  nomeFile: string;
+  tipo: string;
+  frase: string;
+  scartata: boolean;
+  doppio: boolean;
+  daFare: string | null;
+};
+
+// ⚠️ Se l'archivio non risponde si SOLLEVA (revisione del 13/11): la mail
+//    resta da leggere e si riprova al giro dopo. Restituire null la
+//    manderebbe al modello, e uno scarto perderebbe il suo effetto.
+async function scaricaAllegato(percorso: string): Promise<Uint8Array | null> {
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${percorso}`, {
+    headers: { apikey: SERVICE_ROLE!, Authorization: `Bearer ${SERVICE_ROLE}` },
+  });
+  if (!r.ok) throw new Error(`ricevuta dello SdI non scaricata dall'archivio (${r.status})`);
+  const byte = new Uint8Array(await r.arrayBuffer());
+  return byte.byteLength > MAX_BYTE_PER_ALLEGATO ? null : byte;
+}
+
+/** Una data ISO dello SdI, oppure null (il database userà l'ora di adesso). */
+function quandoValido(s: string | null): string | null {
+  if (!s || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return null;
+  return Number.isNaN(Date.parse(s)) ? null : s;
+}
+
+async function registraRicevuteSdi(
+  // deno-lint-ignore no-explicit-any
+  m: any,
+  allegati: { file_name?: string; storage_path?: string }[],
+): Promise<RicevutaLetta[] | null> {
+  const lette = [];
+  for (const a of allegati) {
+    if (!a.storage_path) throw new Error(`ricevuta dello SdI ${a.file_name} non salvata nell'archivio`);
+    const byte = await scaricaAllegato(a.storage_path);
+    const r = byte ? leggiRicevutaSdi(byte) : null;
+    if (!r) return null;
+    lette.push(r);
+  }
+  const sdi = mittenteReale(m.testo, m.mittente_busta);
+  const fatte: RicevutaLetta[] = [];
+  for (const r of lette) {
+    const esito = esitoDellaRicevuta(r)!;
+    const risposta = await db("rpc/registra_ricevuta_sdi", {
+      method: "POST",
+      body: JSON.stringify({
+        p_nome_file: r.nomeFile,
+        p_tipo: r.tipo,
+        p_identificativo: r.identificativoSdi,
+        // Una data che non si legge non deve bloccare la mail: si tiene l'ora di adesso.
+        p_quando: quandoValido(r.consegna ?? r.ricezione),
+        p_nota: esito.nota,
+        p_mittente_sdi: sdi,
+        p_posta_id: m.id,
+      }),
+    });
+    if (!risposta.ok) throw new Error(`ricevuta dello SdI non registrata (${risposta.status}): ${await risposta.text()}`);
+    const dato = await risposta.json();
+    // Un file che non è nostro: la mail si legge come sempre.
+    if (!dato?.trovata) return null;
+    const numero = dato.numero ? `${dato.numero}/${dato.anno}` : r.nomeFile;
+    const conta = dato.conta === true;
+    fatte.push({
+      nomeFile: r.nomeFile,
+      tipo: r.tipo,
+      scartata: conta && r.tipo === "NS",
+      doppio: dato.doppio === true,
+      frase: dato.gia_vista
+        ? `Fattura ${numero}: ricevuta ${r.tipo} dello SdI già registrata.`
+        : `Fattura ${numero}: ${esito.nota}${conta ? "" : " (ricevuta di un invio precedente: la fattura non cambia)"}`,
+      // `conta` vale anche per una ricevuta già vista: una mail riletta dopo
+      // un guasto a metà rifà l'avviso invece di perderlo.
+      daFare: dato.doppio
+        ? `Fattura ${numero}: lo SdI ha risposto a un invio che era segnato «non partito» (${r.nomeFile}), ma intanto è ripartita: POSSIBILE DOPPIONE. Chiedi a Laura se serve una nota di credito.`
+        : conta && (r.tipo === "NS" || r.tipo === "MC")
+          ? `Fattura ${numero}: ${esito.nota}`
+          : null,
+    });
+  }
+  return fatte;
+}
+
 /** Il modello a volte incornicia il JSON: si prende quello che c'è fra le graffe. */
 function leggiJson(testo: string): Record<string, unknown> | null {
   const inizio = testo.indexOf("{");
@@ -755,6 +855,40 @@ async function leggiLaPosta() {
         });
         if (!chiusa.ok) throw new Error(`ricevuta PEC non chiusa (${chiusa.status})`);
         continue;
+      }
+
+      // Le risposte dello SdI alle fatture ai clienti (pezzo 4): senza
+      // modello, se viene davvero dallo SdI e tutto quello che porta è una
+      // ricevuta nostra. Vedi `registraRicevuteSdi`.
+      const ricevuteSdi = tutti.filter((a: { file_name?: string }) => !allegatoDaTacere(a.file_name ?? ""));
+      if (
+        ricevuteSdi.length > 0 &&
+        ricevuteSdi.every((a: { file_name?: string }) => eNomeRicevutaSdi(a.file_name ?? "")) &&
+        vieneDalloSdi({ mittenteBusta: m.mittente_busta, testo: m.testo, allegati: tutti })
+      ) {
+        const fatte = await registraRicevuteSdi(m, ricevuteSdi);
+        if (fatte) {
+          const chiusa = await db(`posta_ricevuta?id=eq.${m.id}&stato=eq.da_leggere`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              stato: "scartata",
+              lettura_note: "Risposta dello SdI, registrata sulla fattura senza modello: " +
+                fatte.map((x) => x.frase).join(" "),
+            }),
+          });
+          if (!chiusa.ok) throw new Error(`risposta dello SdI non chiusa (${chiusa.status})`);
+          for (const x of fatte) {
+            if (x.daFare) {
+              await avvisa(x.daFare, {
+                tipo: x.doppio
+                  ? "fattura_forse_doppia"
+                  : x.scartata ? "fattura_scartata_dallo_sdi" : "fattura_messa_a_disposizione",
+                categoria: "da_fare",
+              });
+            }
+          }
+          continue;
+        }
       }
 
       // I documenti veri vanno letti, non nominati: su una fattura il

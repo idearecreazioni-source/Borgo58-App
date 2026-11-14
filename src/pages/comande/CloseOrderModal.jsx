@@ -20,6 +20,7 @@ import { fiscalizzaConto } from "../../lib/fiscalizzazione";
 import { setDocumentoFiscale } from "../../lib/api/orders";
 import { statoScontrino } from "../../lib/api/stampanti";
 import ScontrinoDelConto from "./ScontrinoDelConto";
+import FatturaDelConto from "./FatturaDelConto";
 import { serataCorrente } from "../../lib/giornataOperativa";
 import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
@@ -136,10 +137,16 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   // SALA**: chi chiude il conto davanti al cliente doveva ricordarselo e
   // andarlo a segnare dopo, da un'altra schermata.
   //
-  // ⚠️ NON SI EMETTE E NON SI TRASMETTE NIENTE: al tavolo esce il preconto,
-  //    e questo resta uno **stato interno**. La fattura la fa Alessio da
-  //    Fatture in Cloud, e quando c'e' si chiude da Cassa col suo numero.
+  // ⚠️ QUI NON SI EMETTE NIENTE: al tavolo esce il preconto, e il conto
+  //    resta «fattura promessa». Dal 13/11/2026 la fattura si fa nel
+  //    gestionale (Fatture ai clienti, che la manda allo SdI dalla PEC) e,
+  //    su richiesta di Alessio, SUBITO: chiuso il conto compare «Prepara la
+  //    fattura ora» (`FatturaDelConto`, solo per il titolare). Quando la
+  //    fattura prende il numero, il conto diventa da solo «fattura fatta»
+  //    (migrazione 20261113000007). Prima la faceva da Fatture in Cloud.
   const [vuoleFattura, setVuoleFattura] = useState(false);
+  // Chiuso con «vuole fattura»: si mostra la fattura da preparare subito.
+  const [daFatturare, setDaFatturare] = useState(false);
 
   const run = async (fn, { fiscalizza = true } = {}) => {
     setBusy(true);
@@ -187,12 +194,19 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
           // fattura si segna e si chiude. Fermare la sala per marcare uno
           // stato interno sarebbe la sala bloccata davanti al cliente.
         }).catch(() => {});
+        // Il conto è chiuso: ora la fattura, subito (13/11/2026).
+        setBusy(false);
+        setDaFatturare(true);
+        return;
       } else {
         await fiscalizzaConto(order, { serata });
         // 🔴 LO SCONTRINO FISCALE DAL REGISTRATORE (04/11/2026, collaudo):
         //    solo se nel gestionale c'è un registratore acceso. Senza, o se
         //    la domanda non arriva, la chiusura resta quella di sempre e la
         //    sala non si ferma.
+        // SILENZIO MOTIVATO: è quello detto qui sopra — senza risposta del
+        // registratore la chiusura resta quella di sempre, e il conto senza
+        // scontrino si fa notare da solo fra i «da fiscalizzare» in Cassa.
         const s = await statoScontrino(order.id).catch(() => null);
         if (s?.registratore) {
           setBusy(false);
@@ -313,6 +327,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   };
 
   if (chiuso) return <ScontrinoDelConto order={order} onFatto={onDone} />;
+  if (daFatturare) return <FatturaDelConto order={order} onFatto={onDone} />;
 
   return (
     <div
