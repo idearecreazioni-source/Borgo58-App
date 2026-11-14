@@ -25,3 +25,7 @@ Confrontare sul database vivo le funzioni riusate elencate in testa alla
 migrazione e provare una risposta del Piano contro il totale della sua
 schermata. La migrazione contiene una verifica annullata; non è stata
 eseguita qui perché questa consegna non tocca database remoti.
+
+## Revisione (Claude, 14/11)
+
+Codice di ChatGPT, rivisto da Claude e provato davvero su Prova (funzione `memo-chat` installata e chiamata: staff rifiutato, domanda del titolare risposta con riferimenti e costo 0,02 €). Dalla revisione del database, corretti: conteggi e totali su TUTTE le righe (non sulle prime 50) e fatture da pagare per prime (migrazione `20261114000015`); risposta provvisoria non più data per finale, cronologia che non parte da una risposta di MEMO, nome dello strumento controllato (funzione). Restano da fare, non urgenti: costo registrato anche se la funzione si interrompe (`try/finally`), messaggi `in_corso` appesi, campi liberi tagliati a 300 caratteri, ricerca con `%` e `_` letterali.
