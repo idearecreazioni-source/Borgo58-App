@@ -75,6 +75,14 @@ describe("il riquadro di una risposta", () => {
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
+  it("porta nella chat la domanda che MEMO voce non sa ancora fare", () => {
+    const chiediNellaChat = vi.fn();
+    mostra(componiRisposta({ chiede: null, soggetto: "carbonara" }, {}), { onChiediNellaChat: chiediNellaChat });
+    expect(screen.queryByText(/Per ora so rispondere/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Chiedimelo nella chat →" }));
+    expect(chiediNellaChat).toHaveBeenCalledTimes(1);
+  });
+
   it("con più candidati i pulsanti ci sono, e non scrivono: RICHIEDONO", () => {
     const scelto = vi.fn();
     mostra(

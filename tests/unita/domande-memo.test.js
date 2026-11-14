@@ -810,13 +810,13 @@ describe("«quando scade …?» — e la cosa che scade può stare in due posti"
 
 // =====================================================================
 describe("una domanda che non è fra le nove", () => {
-  it("🔴 NON viene ricondotta alla più vicina: si dichiara e si elencano le nove", () => {
+  it("🔴 NON viene ricondotta alla più vicina: si dichiara e lascia spazio alla chat", () => {
     // ⚠️ È il difetto del 06/09 — la spesa spicciola diventata lista della
     //    spesa — spostato dai comandi alle domande. Qui ricondurre non
     //    produrrebbe un appunto da buttare: produrrebbe una risposta falsa.
     const r = componiRisposta({ chiede: null, soggetto: "carbonara" }, {});
     expect(r.stato).toBe("non_so_farlo");
-    expect(r.righe).toHaveLength(Object.keys(DOMANDE_CHE_SO).length);
+    expect(r.righe).toHaveLength(0);
   });
 
   it("e un `chiede` inventato non entra da un'altra porta", () => {
@@ -825,13 +825,13 @@ describe("una domanda che non è fra le nove", () => {
     );
   });
 
-  it("🔴 l'elenco delle nove NON si taglia, a differenza di tutti gli altri", () => {
+  it("🔴 non conserva l'elenco chiuso: la chat può ricevere qualunque domanda", () => {
     // ⚠️ È l'unica eccezione al taglio, e ha la sua ragione: le altre
     //    risposte elencano DATI, e il resto si va a leggere nella sua
     //    schermata. Queste sono *cosa MEMO sa fare*: mostrarne sei su nove
     //    nasconderebbe tre cose senza nessun posto dove trovarle.
     const r = componiRisposta({ chiede: null }, {});
-    expect(r.righe.length).toBeGreaterThan(RIGHE_MOSTRATE);
+    expect(r.righe).toHaveLength(0);
     expect(r.troppe).toBe(0);
   });
 

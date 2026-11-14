@@ -41,3 +41,19 @@ export function partiDellaRisposta(testo, riferimenti = []) {
   if (brevi.length) dove = brevi.map((rif) => `[${rif}]`).join(", ");
   return { testo: corpo, dove, controllalo };
 }
+
+export function titoloDellaConversazione(conversazione) {
+  const titolo = String(conversazione?.titolo ?? "").replace(/\s+/g, " ").trim();
+  const primaDomanda = [...(conversazione?.memo_messaggi ?? [])]
+    .filter((messaggio) => messaggio?.ruolo === "alessio")
+    .sort((a, b) => String(a.creato_il ?? "").localeCompare(String(b.creato_il ?? "")))[0]?.testo;
+  const sorgente = titolo || String(primaDomanda ?? "").replace(/\s+/g, " ").trim();
+  if (!sorgente) return "Conversazione senza domanda";
+  return sorgente.length > 72 ? `${sorgente.slice(0, 71).trimEnd()}…` : sorgente;
+}
+
+export function dataDellaConversazione(data) {
+  const quando = new Date(data);
+  if (Number.isNaN(quando.getTime())) return "data non disponibile";
+  return new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(quando);
+}
