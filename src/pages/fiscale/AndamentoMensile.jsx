@@ -403,6 +403,15 @@ export default function AndamentoMensile() {
                 <p className="text-b58-charcoal"><Valore v={misure?.food_cost} /></p>
               </div>
             </div>
+            {/* Gli eventi (le fatture senza tavolo) stanno a parte: non fanno parte dell'incassato di sala,
+                né dello scontrino medio (deciso da Alessio il 14/11/2026). */}
+            {Number(misure?.eventi_quanti) > 0 && (
+              <p className="testo-sala text-b58-charcoal-soft mt-3" data-prova="ricavi-eventi">
+                Eventi fatturati questo mese ({misure.eventi_quanti}):{" "}
+                <span className="text-b58-charcoal"><Valore v={misure.ricavi_eventi} /></span>. Si contano a parte: non
+                entrano nell&apos;incassato di sala né nello scontrino medio.
+              </p>
+            )}
           </div>
 
           {/* --- Il piano sovrapposto ai numeri veri --- */}
