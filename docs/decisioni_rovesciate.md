@@ -168,8 +168,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 109 | 27/10/2026 | la spesa spicciola si scrive diretta, senza corridoio |
 | 110 | 13/11/2026 | le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore |
 | 111 | 14/11/2026 | il pezzo detto a MEMO non si scrive nel database |
+| 112 | 14/11/2026 | quando il previsto cambia, le rate si sistemano a mano |
 
-⚠️ **Righe: 112.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 113.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3979,3 +3980,22 @@ quando questa sezione è stata scritta.
    di MEMO proprio nel punto in cui serve distinguere dall'originale. Il
    prezzo è una colonna in più per ogni azione detta, anche se non verrà mai
    corretta.
+
+## 112 · 14/11/2026 — «quando il previsto cambia, le rate si sistemano a mano»
+
+1. **Cosa era stato deciso e quando.** L'11/11/2026,
+   `20261111000003` faceva dire a MEMO che le rate non tornavano più con il
+   previsto nuovo e di sistemarle da «Modifica» nella pagina del piano.
+
+2. **La ragione di allora.** Il gestionale non aveva una regola approvata per
+   decidere da solo né gli importi né i mesi delle rate nuove.
+
+3. **Cosa si decide adesso** (Alessio, risposte del 13/11). MEMO propone una
+   seconda azione già compilata: stessi mesi e stesso numero, importi in
+   proporzione, arrotondati al centesimo, con l'ultima rata che prende la
+   differenza. Le rate già anche solo in parte coperte restano intatte.
+
+4. **Perché la ragione di allora non vale più.** Alessio ha scelto la regola
+   sui mesi e il principio che MEMO intuisce e propone ciò che serve. Il
+   prezzo è che MEMO non forza il caso incompatibile: se il previsto nuovo è
+   sotto le rate già coperte, dice perché non propone niente.

@@ -148,6 +148,10 @@ describe("M12 · RIFIUTI_CHIAVE coincide con i messaggi della funzione SQL", () 
     expect(prefissi.length).toBeGreaterThanOrEqual(4);
   });
 
+  // Legge tutte le migrazioni due volte per trovare le ultime definizioni:
+  // col repository completo, su Windows può superare i 5 secondi predefiniti
+  // pur avendo già finito il controllo. Il limite più largo non cambia cosa
+  // prova né nasconde un rifiuto mancante.
   it("ogni prefisso compare fra i messaggi di voce_apri_sessione (o del suo freno)", () => {
     const apri = ultima("create or replace function voce_apri_sessione");
     const freno = ultima("create or replace function voce_limite_dettature");
@@ -161,5 +165,5 @@ describe("M12 · RIFIUTI_CHIAVE coincide con i messaggi della funzione SQL", () 
     // In SQL l'apostrofo si raddoppia.
     const sql = (corpo + "\n" + freno.t).replace(/''/g, "'");
     for (const p of prefissi) expect(sql, `«${p}» non è nella funzione SQL`).toContain(p);
-  });
+  }, 15_000);
 });

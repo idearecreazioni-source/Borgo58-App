@@ -23,4 +23,22 @@ describe("i dettagli dell'appunto in parole", () => {
       datiInChiaro({ stato: "confermato", prima_stato: "stimato", nota: "nuova", prima_nota: "vecchia" }),
     ).toBe("stato: da stimato a confermato · nota: da vecchia a nuova");
   });
+
+  it("le rate proposte dicono prima e dopo, senza gli identificativi", () => {
+    const riga = datiInChiaro({
+      voce_id: "voce-da-non-mostrare",
+      voce_nome: "A · Forno",
+      previsto: 9800,
+      rate: [
+        { rata_id: "rata-0", mese_rel: 0, prima: 3000, dopo: 3266.67 },
+        { rata_id: "rata-1", mese_rel: 1, prima: 3000, dopo: 3266.67 },
+        { rata_id: "rata-2", mese_rel: 2, prima: 3000, dopo: 3266.66 },
+      ],
+    });
+    expect(riga).toBe(
+      "voce del piano: A · Forno · Rate: 3.266,67 € + 3.266,67 € + 3.266,66 € (prima 3 × 3.000 €) · " +
+      "acconto: 3.000 € → 3.266,67 €; mese 1: 3.000 € → 3.266,67 €; mese 2: 3.000 € → 3.266,66 €"
+    );
+    expect(riga).not.toMatch(/voce-da-non-mostrare|rata-0|mese rel|previsto/);
+  });
 });
