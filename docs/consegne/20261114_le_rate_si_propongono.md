@@ -39,3 +39,7 @@ Migrazione `20261114000010_le_rate_si_propongono`. Nessun commit creato, come ri
 1. Confrontare prima i corpi vivi indicati nell'intestazione della migrazione, in particolare `voce_risolvi_piano`, `fai_piano_memo` e `scrivi_dettatura`.
 2. Applicare `20261114000010_le_rate_si_propongono` dopo la PR 1 (`20261114000001`).
 3. Non serve reinstallare funzioni online: la seconda azione viene costruita dal database mentre registra l'appunto.
+
+## Revisione (Claude, 14/11)
+
+Codice scritto da ChatGPT, rivisto da Claude. Corretti prima della consegna: le ancore di `scrivi_dettatura` (rientro del testo vivo), un cast nella verifica e la fattura di prova segnata come investimento. Provata a secco e applicata su Prova (490 migrazioni). Da fare in una migrazione a parte (trovati da `ecc:database-reviewer`): rata a zero o negativa se il resto è di pochi centesimi; la seconda azione nasce anche se la prima ha un «manca».
