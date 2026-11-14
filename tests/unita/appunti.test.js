@@ -19,7 +19,7 @@ import {
 
 describe("i dati concreti che verrebbero scritti", () => {
   it("si leggono in chiaro, non riassunti", () => {
-    expect(datiInChiaro({ verso: "uscita", importo: 30 })).toBe("verso: uscita · importo: 30");
+    expect(datiInChiaro({ verso: "uscita", importo: 30 })).toBe("verso: uscita · importo: 30 €");
   });
 
   it("🔴 lo ZERO si scrive, il vuoto no", () => {
@@ -202,9 +202,9 @@ describe("le proposte del piano dell'investimento si leggono (08/11/2026)", () =
     expect(t).not.toMatch(/1111|2222|prima_nota/);
   });
 
-  it("l'aggiornamento dice com'era prima", () => {
+  it("l'aggiornamento dice da quanto a quanto", () => {
     const t = datiInChiaro({ voce_nome: "A · Forno", stato: "confermato", prima_stato: "stimato", prima_previsto: 9000 });
-    expect(t).toContain("adesso è: stimato");
-    expect(t).toContain("previsto adesso (euro): 9000");
+    expect(t).toContain("stato: da stimato a confermato");
+    expect(t).not.toMatch(/adesso è|previsto adesso/);
   });
 });

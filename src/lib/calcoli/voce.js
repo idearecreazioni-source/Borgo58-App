@@ -194,6 +194,7 @@ export function daQuantoAspetta(giorni) {
  */
 export function perchéAspetta(azione) {
   if (azione?.errore) return azione.errore;
+  if (azione?.corretta_il) return "L'hai corretta tu: se va bene, di' sì.";
   if (azione?.motivo) return azione.motivo;
   if (azione?.natura === "creazione") {
     return "Questa la guardi sempre tu prima che venga scritta.";

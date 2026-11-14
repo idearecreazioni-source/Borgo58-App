@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { campiCorreggibili, datiCorretti, numeroScritto } from "../../src/lib/calcoli/appunti.js";
+import { perchéAspetta } from "../../src/lib/calcoli/voce.js";
 
 // 🔴 «CORREGGI» SUGLI APPUNTI DI MEMO — 12/11/2026, richiesta di Alessio
 //    dalla prova sul piano: se MEMO capisce male un pezzo, si cambia quel
@@ -100,5 +101,13 @@ describe("Correggi: i casi trovati dalla revisione (ecc:react-reviewer, 12/11)",
     const [gruppo, iva] = campiCorreggibili({ gruppo: "b", aliquota_iva: 7 });
     expect(gruppo.scelte[0].valore).toBe("b");
     expect(iva.scelte[0].valore).toBe("7");
+  });
+});
+
+describe("dopo «Correggi»", () => {
+  it("dice che l'ha corretta il titolare, non che MEMO non era sicuro", () => {
+    expect(perchéAspetta({ corretta_il: "2026-11-14T10:00:00Z", motivo: null })).toBe(
+      "L'hai corretta tu: se va bene, di' sì.",
+    );
   });
 });

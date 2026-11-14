@@ -60,6 +60,11 @@ const DI_SERVIZIO = new Set([
   "voce_id",
   "spesa_id",
   "spesa_fonte",
+  // Il valore di prima serve a comporre «da … a …», non è un dato da
+  // scrivere un'altra volta.
+  "prima_stato",
+  "prima_previsto",
+  "prima_nota",
 ]);
 
 /**
@@ -121,10 +126,7 @@ const ETICHETTE = {
   // Il piano dell'investimento (08/11/2026).
   voce_nome: "voce del piano",
   spesa_nome: "spesa",
-  aliquota_iva: "IVA (%)",
-  prima_stato: "adesso è",
-  prima_previsto: "previsto adesso (euro)",
-  prima_nota: "nota adesso",
+  aliquota_iva: "IVA",
   // 11/11/2026: le rate che non tornano più col previsto nuovo.
   avviso_rate: "attenzione",
 };
@@ -143,6 +145,25 @@ function inChiaro(v) {
   return v;
 }
 
+function euro(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return inChiaro(String(v));
+  return `${new Intl.NumberFormat("it-IT", {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+    useGrouping: "always",
+  }).format(n)} €`;
+}
+
+function valoreDaCambiare(dati, chiave, prima, etichetta) {
+  if (!(prima in dati) || !(chiave in dati)) return null;
+  const da = valore(dati[prima]);
+  const a = valore(dati[chiave]);
+  if (da === null || a === null) return null;
+  const scrivi = chiave === "importo" ? euro : inChiaro;
+  return `${etichetta}: da ${scrivi(da)} a ${scrivi(a)}`;
+}
+
 /**
  * I dati concreti di un elemento, in una riga leggibile.
  *
@@ -153,11 +174,27 @@ function inChiaro(v) {
 export function datiInChiaro(dati) {
   if (!dati || typeof dati !== "object" || Array.isArray(dati)) return "";
   const pezzi = [];
+  const cambi = new Map([
+    ["importo", valoreDaCambiare(dati, "importo", "prima_previsto", "previsto")],
+    ["stato", valoreDaCambiare(dati, "stato", "prima_stato", "stato")],
+    ["nota", valoreDaCambiare(dati, "nota", "prima_nota", "nota")],
+  ]);
   for (const [chiave, grezzo] of Object.entries(dati)) {
+    if (cambi.get(chiave)) {
+      pezzi.push(cambi.get(chiave));
+      continue;
+    }
+
     if (DI_SERVIZIO.has(chiave)) continue;
     const v = valore(grezzo);
     if (v === null) continue;
-    pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
+    if (chiave === "aliquota_iva") {
+      pezzi.push(`${ETICHETTE[chiave]} ${v}%`);
+    } else if (chiave === "importo") {
+      pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${euro(v)}`);
+    } else {
+      pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
+    }
   }
   return pezzi.join(" · ");
 }
