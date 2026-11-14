@@ -408,8 +408,11 @@ export default function AndamentoMensile() {
             {Number(misure?.eventi_quanti) > 0 && (
               <p className="testo-sala text-b58-charcoal-soft mt-3" data-prova="ricavi-eventi">
                 Eventi fatturati questo mese ({misure.eventi_quanti}):{" "}
-                <span className="text-b58-charcoal"><Valore v={misure.ricavi_eventi} /></span>. Si contano a parte: non
-                entrano nell&apos;incassato di sala né nello scontrino medio.
+                <span className="text-b58-charcoal"><Valore v={misure.ricavi_eventi} /></span>
+                {Number(misure.imposta_eventi) > 0 && (
+                  <> (di cui IVA <Valore v={misure.imposta_eventi} />)</>
+                )}
+                . Si contano a parte: non entrano nell&apos;incassato di sala né nello scontrino medio.
               </p>
             )}
           </div>
