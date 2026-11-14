@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import Caricamento from "./Caricamento";
@@ -13,17 +13,34 @@ import RipresaBozza from "./RipresaBozza";
 import AvvisoAggiornamento from "./AvvisoAggiornamento";
 import StrisciaApparecchi from "./StrisciaApparecchi";
 import ApriMemo from "./ApriMemo";
+import ApriChatMemo from "./ApriChatMemo";
+import PannelloChatMemo from "./PannelloChatMemo";
 import { PulsanteSegnala, RiquadroSegnala } from "./Segnala";
 import { useSegnala } from "./useSegnala";
 import { percorsoComande } from "../lib/schermo";
 import { avvisoAccesso } from "../lib/calcoli/avvisoAccesso";
+import { contestoDellaChat } from "../lib/calcoli/chatMemo";
+import { MODULES } from "../data/modules";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   // Esc chiude il menu sul telefono come la «Chiudi menu» (27/10/2026).
   useChiudiConEsc(mobileOpen, () => setMobileOpen(false));
   const segnala = useSegnala();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+  const [chatAperta, setChatAperta] = useState(false);
+  const [contestoChat, setContestoChat] = useState(null);
+  const ultimoApriChat = useRef(null);
+  const apriChat = () => {
+    ultimoApriChat.current = document.activeElement;
+    setContestoChat(contestoDellaChat(location, MODULES));
+    setChatAperta(true);
+  };
+  const chiudiChat = () => {
+    setChatAperta(false);
+    window.setTimeout(() => ultimoApriChat.current?.focus?.(), 0);
+  };
   // Sulla Dashboard il ritorno alla Dashboard non serve.
   const inCasa = pathname === "/" || pathname === "/dashboard";
   // Le Comande sono una postazione touch a sé (§3.2.1 del brief): le
@@ -238,6 +255,7 @@ export default function Layout() {
           <div className="flex items-center" style={{ gap: "calc(var(--pxcm) * 0.3)" }}>
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
             <ApriMemo />
+            <ApriChatMemo allAprire={apriChat} />
             <button
               aria-label="Apri menu"
               onClick={() => setMobileOpen(true)}
@@ -280,7 +298,8 @@ export default function Layout() {
               testata non c'è, quindi sta qui in alto a destra. Il riquadro
               si apre sopra la schermata e non la copre: chi segnala sta
               guardando proprio il difetto. */}
-          <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
+          <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end gap-2 -mt-2 mb-2">
+            <ApriChatMemo allAprire={apriChat} />
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
           </div>
           {/* ⚠️ `data-fuori-dalla-foto` (28/10/2026): il riquadro si apre
@@ -321,6 +340,7 @@ export default function Layout() {
           </PezzoMancante>
         </main>
       </div>
+      {chatAperta && contestoChat && <PannelloChatMemo contesto={contestoChat} alChiudere={chiudiChat} />}
     </div>
   );
 }
