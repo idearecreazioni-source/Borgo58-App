@@ -169,8 +169,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 110 | 13/11/2026 | le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore |
 | 111 | 14/11/2026 | il pezzo detto a MEMO non si scrive nel database |
 | 112 | 14/11/2026 | quando il previsto cambia, le rate si sistemano a mano |
+| 113 | 14/11/2026 | MEMO risponde soltanto a un elenco chiuso di domande |
 
-⚠️ **Righe: 113.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 114.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3999,3 +4000,23 @@ quando questa sezione è stata scritta.
    sui mesi e il principio che MEMO intuisce e propone ciò che serve. Il
    prezzo è che MEMO non forza il caso incompatibile: se il previsto nuovo è
    sotto le rate già coperte, dice perché non propone niente.
+
+## 113 · 14/11/2026 — «MEMO risponde soltanto a un elenco chiuso di domande»
+
+1. **Cosa era stato deciso e quando.** Il 07/09/2026 le domande di MEMO
+   venivano riconosciute fra 26 forme note e composte da regole locali.
+
+2. **La ragione di allora.** Una domanda libera non aveva ancora strumenti
+   sicuri da cui leggere: farla rispondere avrebbe dato al modello spazio per
+   inventare numeri o per leggere più del necessario.
+
+3. **Cosa si decide adesso.** MEMO può capire domande libere, ma legge solo
+   tramite cinque strumenti limitati e di sola lettura (Piano, Cassa,
+   Fatture fornitori, Agenda e Magazzino). Le 26 domande esistenti restano
+   in funzione. Somme e differenze passano da `calcola`; ogni risposta dice
+   dove l'ha letto e segnala «controllalo» se trova un numero senza fonte.
+
+4. **Perché la ragione di allora non vale più.** Gli strumenti mettono il
+   confine che prima era dato dall'elenco chiuso, senza chiedere al modello
+   SQL o accesso diretto. Il prezzo è che MEMO dice «non lo so» quando quei
+   cinque ambiti non bastano, invece di fingere una risposta.
