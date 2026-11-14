@@ -340,7 +340,7 @@ export default function Layout() {
           </PezzoMancante>
         </main>
       </div>
-      {chatAperta && contestoChat && <PannelloChatMemo contesto={contestoChat} alChiudere={chiudiChat} />}
+      {contestoChat && <PannelloChatMemo contesto={contestoChat} alChiudere={chiudiChat} aperto={chatAperta} />}
     </div>
   );
 }

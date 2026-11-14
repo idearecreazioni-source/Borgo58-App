@@ -35,7 +35,7 @@ function Risposta({ messaggio }) {
   );
 }
 
-export default function PannelloChatMemo({ contesto, alChiudere }) {
+export default function PannelloChatMemo({ contesto, alChiudere, aperto = true }) {
   const [testo, setTesto] = useState("");
   const [conversazioneId, setConversazioneId] = useState(null);
   const [messaggi, setMessaggi] = useState([]);
@@ -43,10 +43,14 @@ export default function PannelloChatMemo({ contesto, alChiudere }) {
   const [errore, setErrore] = useState("");
   const inputRef = useRef(null);
   const pannelloRef = useRef(null);
+  // Blocco sincrono contro il doppio invio: lo stato React arriva dopo il secondo clic.
+  const invioInCorso = useRef(false);
 
+  // Il pannello resta montato anche da chiuso: cosi' una risposta gia' pagata e la
+  // conversazione non si perdono se Alessio lo chiude mentre MEMO sta rispondendo.
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (aperto && !inCorso) inputRef.current?.focus();
+  }, [aperto, inCorso]);
 
   const chiudi = () => alChiudere?.();
   const trattieniIlFuoco = (event) => {
@@ -66,7 +70,8 @@ export default function PannelloChatMemo({ contesto, alChiudere }) {
   const invia = async (event) => {
     event.preventDefault();
     const domanda = testo.trim();
-    if (!domanda || inCorso) return;
+    if (!domanda || inCorso || invioInCorso.current) return;
+    invioInCorso.current = true;
     setTesto("");
     setErrore("");
     setInCorso(true);
@@ -75,21 +80,24 @@ export default function PannelloChatMemo({ contesto, alChiudere }) {
       const esito = await mandaMessaggioAMemo({ testo: domanda, conversazioneId, contesto });
       if (esito.esito === "tetto") {
         setConversazioneId(esito.conversazione_id ?? conversazioneId);
-        setMessaggi((prima) => [...prima, { tipo: "tetto", testo: esito.messaggio }]);
+        setMessaggi((prima) => [...prima, { tipo: "tetto", testo: esito.messaggio || "Il tetto della chat e' stato raggiunto." }]);
         return;
       }
       setConversazioneId(esito.conversazione_id);
       setMessaggi((prima) => [...prima, { tipo: esito.esito, risposta: esito.risposta, riferimenti: esito.riferimenti }]);
     } catch (e) {
+      // La domanda torna nel campo: si puo' riprovare senza riscriverla.
+      setTesto(domanda);
+      if (e.conversazioneId) setConversazioneId(e.conversazioneId);
       setErrore(e.message || "Non riesco a parlare con MEMO in questo momento. Riprova tra poco.");
     } finally {
+      invioInCorso.current = false;
       setInCorso(false);
-      inputRef.current?.focus();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end bg-b58-velo/40 print:hidden" role="presentation">
+    <div hidden={!aperto} className="fixed inset-0 z-[60] flex justify-end bg-b58-velo/40 print:hidden" role="presentation">
       <section
         ref={pannelloRef}
         role="dialog"
@@ -144,7 +152,8 @@ export default function PannelloChatMemo({ contesto, alChiudere }) {
             placeholder="Scrivi la domanda…"
             rows={2}
             maxLength={2000}
-            disabled={inCorso}
+            readOnly={inCorso}
+            aria-busy={inCorso}
             className="w-full resize-none rounded-lg border border-b58-charcoal/20 bg-b58-cream px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-azione disabled:opacity-60"
           />
           <div className="mt-2 flex items-center justify-between gap-3">

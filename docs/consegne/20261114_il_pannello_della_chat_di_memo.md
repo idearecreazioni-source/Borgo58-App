@@ -48,3 +48,7 @@ stata cambiata la funzione online.
 Nessun rovesciamento: la voce resta separata dalla chat, come previsto dal
 piano Jarvis. Il contesto del modulo vale soltanto per la chat e non cambia
 il significato della dettatura.
+
+## Revisione (Claude, 14/11)
+
+Codice di ChatGPT, rivisto da Claude (revisione React). Corretti: il pannello resta montato anche da chiuso, così una risposta già pagata e la conversazione non si perdono; il campo non si disabilita più (resta `readOnly`) e il fuoco torna sul testo a fine risposta; la domanda torna nel campo se la richiesta fallisce e l'id della conversazione si conserva; blocco sincrono contro il doppio invio; frase di ripiego per il tetto. Restano da fare, non urgenti: annunci dello screen reader meno ripetitivi, scorrimento in fondo alla nuova risposta, pagina sotto non scorrevole.

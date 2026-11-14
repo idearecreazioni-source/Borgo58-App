@@ -63,4 +63,27 @@ describe("il pannello della chat di MEMO", () => {
     fireEvent.click(screen.getByRole("button", { name: "Chiudi" }));
     expect(chiudi).toHaveBeenCalledTimes(2);
   });
+
+  it("dopo un errore la domanda torna nel campo e si puo' riprovare", async () => {
+    finte.manda.mockRejectedValue(Object.assign(new Error("Rete caduta."), { conversazioneId: "c-9" }));
+    render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} />);
+    const campo = screen.getByLabelText("Scrivi a MEMO");
+    fireEvent.change(campo, { target: { value: "Quanto ho in cassa?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    expect(screen.getByRole("alert").textContent).toContain("Rete caduta.");
+    expect(campo.value).toBe("Quanto ho in cassa?");
+    finte.manda.mockResolvedValue({ esito: "fatto", conversazione_id: "c-9", risposta: "Fatto.", riferimenti: [] });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    expect(finte.manda).toHaveBeenLastCalledWith({ testo: "Quanto ho in cassa?", conversazioneId: "c-9", contesto });
+  });
+
+  it("chiuso e riaperto non perde la conversazione", async () => {
+    finte.manda.mockResolvedValue({ esito: "fatto", conversazione_id: "c-2", risposta: "Hai 10 euro.", riferimenti: [] });
+    const { rerender } = render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    fireEvent.change(screen.getByLabelText("Scrivi a MEMO"), { target: { value: "Quanto?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    rerender(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto={false} />);
+    rerender(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    expect(screen.getByText("Hai 10 euro.")).toBeTruthy();
+  });
 });
