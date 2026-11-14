@@ -22,6 +22,8 @@
 -- rete-portieri: 20261114000010 chiama fai_piano_memo — il nome sta solo nel testo del ramo incollato in fai_azione_dettata ed eseguito come definizione; la chiamata vera è nella verifica coi claims del titolare
 -- rete-portieri: 20261114000010 chiama voce_risolvi_piano — il nome sta solo nel testo del ramo incollato in voce_risolvi_dati ed eseguito come definizione; la chiamata vera è nella verifica coi claims del titolare
 --
+-- rete-guardie: voce_risolvi_piano — l'avviso vecchio «le rate fanno X euro» (chiamata a euro) si toglie apposta: ora MEMO propone le rate già ricalcolate, e dice il motivo quando non può
+--
 -- Idempotente, con verifica finale annullata (zero residui).
 -- =====================================================================
 
