@@ -164,6 +164,10 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261010000003",
     perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
   },
+  memo_limite_messaggi: {
+    versione: "20261114000011",
+    perche: "chat di MEMO, PR 4-5: il motore chiede il freno prima di inviare il messaggio al modello",
+  },
   // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
   //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
   //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
