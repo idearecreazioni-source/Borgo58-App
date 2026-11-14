@@ -168,6 +168,26 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261114000011",
     perche: "chat di MEMO, PR 4-5: il motore chiede il freno prima di inviare il messaggio al modello",
   },
+  memo_leggi_piano: {
+    versione: "20261114000012",
+    perche: "chat di MEMO, PR 4-5: il motore legge il piano con una funzione limitata",
+  },
+  memo_leggi_cassa: {
+    versione: "20261114000012",
+    perche: "chat di MEMO, PR 4-5: il motore legge la cassa con una funzione limitata",
+  },
+  memo_leggi_fatture_fornitori: {
+    versione: "20261114000012",
+    perche: "chat di MEMO, PR 4-5: il motore legge le fatture fornitori con una funzione limitata",
+  },
+  memo_leggi_agenda: {
+    versione: "20261114000012",
+    perche: "chat di MEMO, PR 4-5: il motore legge l'agenda con una funzione limitata",
+  },
+  memo_leggi_magazzino: {
+    versione: "20261114000012",
+    perche: "chat di MEMO, PR 4-5: il motore legge il magazzino con una funzione limitata",
+  },
   // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
   //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
   //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
