@@ -46,10 +46,22 @@ function risposta(status: number, corpo: unknown) {
 const errore = (status: number, codice: string, messaggio: string) =>
   risposta(status, { errore: { codice, messaggio } });
 
+// ⚠️ SPAZI E «A CAPO» AI BORDI SI TOLGONO (14/11/2026): la casella dei
+//    Secrets accetta più righe, e un Invio o uno spazio incollato in fondo
+//    diventano parte della password — che il server rifiuta. Una password
+//    di Aruba non comincia né finisce con uno spazio.
+function pulito(v: string | undefined) {
+  return String(v ?? "").trim();
+}
+
 function configurazionePec() {
+  const grezzaU = Deno.env.get("PEC_UTENTE") ?? "";
+  const grezzaP = Deno.env.get("PEC_PASSWORD") ?? "";
   return {
-    utente: Deno.env.get("PEC_UTENTE") ?? "",
-    password: Deno.env.get("PEC_PASSWORD") ?? "",
+    utente: pulito(grezzaU),
+    password: pulito(grezzaP),
+    // Se qualcosa ai bordi c'era, si dice (mai cosa).
+    ripuliti: pulito(grezzaU) !== grezzaU || pulito(grezzaP) !== grezzaP,
     host: Deno.env.get("PEC_SMTP_HOST") || "smtps.pec.aruba.it",
     porta: Number(Deno.env.get("PEC_SMTP_PORTA") || 465),
   };
@@ -97,10 +109,18 @@ Deno.serve(async (req) => {
     let tubo;
     try {
       tubo = await apriTubo(pec.host, pec.porta);
-      await dialogoSmtp(tubo, { utente: pec.utente, password: pec.password });
-      return risposta(200, { risultato: { simulato: false, messaggio: `La PEC ${pec.utente} risponde e accetta utente e password.` } });
+      const { diagnosi } = await dialogoSmtp(tubo, { utente: pec.utente, password: pec.password });
+      return risposta(200, {
+        risultato: {
+          simulato: false,
+          messaggio: `La PEC ${pec.utente} risponde e accetta utente e password (accesso ${diagnosi.provati.split(", ").at(-1)}).` +
+            (pec.ripuliti ? " Nei Secrets c'erano spazi o «a capo» ai bordi: li ho tolti io." : ""),
+          diagnosi,
+        },
+      });
     } catch (e) {
-      return errore(502, "pec", (e as Error).message);
+      return errore(502, "pec", (e as Error).message +
+        (pec.ripuliti ? " (Nei Secrets c'erano spazi o «a capo» ai bordi: li ho già tolti prima di provare.)" : ""));
     } finally {
       tubo?.chiudi();
     }

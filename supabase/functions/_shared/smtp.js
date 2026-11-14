@@ -131,7 +131,7 @@ function conPuntiRaddoppiati(messaggio) {
  *          scrivi: (testo: string) => Promise<void>}} conn
  * @param {{utente: string, password: string, nomeHost?: string,
  *          da?: string, a?: string, messaggio?: string}} p
- * @returns {Promise<{accettato: string|null}>} la frase con cui il server ha preso il messaggio
+ * @returns {Promise<{accettato: string|null, diagnosi: object}>} la frase con cui il server ha preso il messaggio, e cosa si è visto all'accesso
  */
 export async function dialogoSmtp(conn, { utente, password, nomeHost = "borgo58.it", da, a, messaggio }) {
   const manda = (riga) => conn.scrivi(riga + CRLF);
@@ -139,16 +139,48 @@ export async function dialogoSmtp(conn, { utente, password, nomeHost = "borgo58.
   await manda(`EHLO ${nomeHost}`);
   const ehlo = pretendi(await conn.leggiRisposta(), [250], "ehlo");
   const auth = ehlo.righe.find((r) => /^AUTH[ =]/i.test(r)) ?? "";
-  if (/\bPLAIN\b/i.test(auth) || !/\bLOGIN\b/i.test(auth)) {
+  const haPlain = /\bPLAIN\b/i.test(auth);
+  const haLogin = /\bLOGIN\b/i.test(auth);
+  const provati = [];
+  const conPlain = async () => {
+    provati.push("PLAIN");
     await manda(`AUTH PLAIN ${base64Utf8(`\u0000${utente}\u0000${password}`, { righe: false })}`);
-    pretendi(await conn.leggiRisposta(), [235], "auth");
-  } else {
+    return conn.leggiRisposta();
+  };
+  const conLogin = async () => {
+    provati.push("LOGIN");
     await manda("AUTH LOGIN");
-    pretendi(await conn.leggiRisposta(), [334], "auth");
+    let r = await conn.leggiRisposta();
+    if (r.codice !== 334) return r;
     await manda(base64Utf8(utente, { righe: false }));
-    pretendi(await conn.leggiRisposta(), [334], "auth");
+    r = await conn.leggiRisposta();
+    if (r.codice !== 334) return r;
     await manda(base64Utf8(password, { righe: false }));
-    pretendi(await conn.leggiRisposta(), [235], "auth");
+    return conn.leggiRisposta();
+  };
+  // ⚠️ SE «PLAIN» È RIFIUTATO, SI RIPROVA CON «LOGIN» (14/11/2026): il primo
+  //    «Prova la PEC» su work ha avuto 535 con utente e password giusti. Sono
+  //    i due modi standard; alcuni server ne accettano davvero uno solo.
+  let esito = haPlain || !haLogin ? await conPlain() : await conLogin();
+  if ((esito.codice === 535 || esito.codice === 534) && provati[0] === "PLAIN" && (haLogin || !auth)) {
+    esito = await conLogin();
+  }
+  // Cosa si è visto, per capire un rifiuto SENZA mai la password: solo
+  // quanti caratteri sono.
+  const diagnosi = {
+    offerti: auth.replace(/^AUTH[ =]/i, "").trim() || "nessuno dichiarato",
+    provati: provati.join(", "),
+    caratteriUtente: [...String(utente)].length,
+    caratteriPassword: [...String(password)].length,
+  };
+  try {
+    pretendi(esito, [235], "auth");
+  } catch (e) {
+    e.diagnosi = diagnosi;
+    e.message +=
+      ` Il server accetta: ${diagnosi.offerti}. Provati: ${diagnosi.provati}.` +
+      ` Utente di ${diagnosi.caratteriUtente} caratteri, password di ${diagnosi.caratteriPassword}.`;
+    throw e;
   }
 
   let accettato = null;
@@ -182,5 +214,5 @@ export async function dialogoSmtp(conn, { utente, password, nomeHost = "borgo58.
   } catch {
     // il server può chiudere prima di rispondere: va bene così
   }
-  return { accettato };
+  return { accettato, diagnosi };
 }
