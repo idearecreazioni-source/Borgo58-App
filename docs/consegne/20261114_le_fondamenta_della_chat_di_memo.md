@@ -39,3 +39,9 @@ La verifica si presenta come utente autentico, non come proprietaria del databas
 ## Scelta da confermare
 
 Nel repository non c'era un prezzo per `claude-opus-5`, pur essendo gia' usato da Archivio e Posta. Ho scelto il valore prudenziale 15/75 euro per milione di token in/out, esplicitamente marcato nella riga del listino come **da confermare con la prima fattura**.
+
+## Revisione (Claude, 14/11)
+
+Codice di ChatGPT, rivisto da Claude. Ritocco: `memo_messaggi.costo_euro` ora può restare vuoto (costo non conosciuto), come chiede la PR 4. Corpi vivi di `consumi_ai`, `fonti_ai_scoperte` e il vincolo `dettatura_provenienza_nota` confrontati: uguali su Prova e work. Applicata su Prova (492).
+
+Dalla revisione del database, da decidere (migrazione a parte, prima della PR 5): (1) i messaggi senza modello contano come «costo non noto»; (2) il titolare può modificare/cancellare lo storico dei costi (policy `for all`); (3) il tetto di 1 € per messaggio rifiuta una riga di spesa già fatta; (4) il freno orario non è atomico; (5) il freno conta per `creata_da` e passa un utente libero; (7) mancano indici su `dettatura_id` e `creato_il`.
