@@ -37,7 +37,7 @@ await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 
 describe("gli appunti vocali", () => {
   let titolare;
-  const miei = { dettature: [], appunti: [], azioni: [], tasks: [], lista: [] };
+  const miei = { dettature: [], appunti: [], azioni: [], tasks: [], lista: [], vociPiano: [] };
 
   /** Detta come farebbe la funzione online, e segna cio' che nasce. */
   async function detta(testo, azioni) {
@@ -103,6 +103,10 @@ describe("gli appunti vocali", () => {
     }
     if (miei.lista.length) await titolare.from("shopping_list_items").delete().in("id", miei.lista);
     if (miei.tasks.length) await titolare.from("tasks").delete().in("id", miei.tasks);
+    if (miei.vociPiano.length) {
+      await titolare.from("piano_rate").delete().in("voce_id", miei.vociPiano);
+      await titolare.from("piano_voci").delete().in("id", miei.vociPiano);
+    }
     if (miei.azioni.length) await titolare.from("azioni_dettate").delete().in("id", miei.azioni);
     if (miei.appunti.length) await titolare.from("appunti_vocali").delete().in("id", miei.appunti);
     if (miei.dettature.length) await titolare.from("dettature").delete().in("id", miei.dettature);
@@ -246,6 +250,34 @@ describe("gli appunti vocali", () => {
     // Appena creato: eta' zero, ma il campo c'e' e si legge.
     expect(mio.aperto_da_giorni).toBe(0);
     expect(typeof mio.aperto_da_ore).toBe("number");
+  });
+
+  it("cambiando il previsto con rate, MEMO propone una seconda riga già compilata nello stesso appunto", async () => {
+    const { data: voce, error: erroreVoce } = await titolare
+      .from("piano_voci")
+      .insert({ gruppo: "D", descrizione: `${NOME} rate`, importo_ivato: 9000, aliquota_iva: 22, stato: "stimato" })
+      .select("id")
+      .single();
+    if (erroreVoce) throw erroreVoce;
+    miei.vociPiano.push(voce.id);
+    const { error: erroreRate } = await titolare.from("piano_rate").insert([
+      { voce_id: voce.id, mese_rel: 0, importo: 3000 },
+      { voce_id: voce.id, mese_rel: 1, importo: 3000 },
+      { voce_id: voce.id, mese_rel: 2, importo: 3000 },
+    ]);
+    if (erroreRate) throw erroreRate;
+
+    const righe = await detta("previsto con rate", [
+      elemento("piano_voce_aggiorna", { dati: { voce_id: voce.id, importo: 9800 } }),
+    ]);
+    const propostaRate = righe.find((r) => r.tipo === "piano_rate_ricalcola");
+    const propostaVoce = righe.find((r) => r.tipo === "piano_voce_aggiorna");
+
+    expect(righe).toHaveLength(2);
+    expect(propostaRate?.appunto_id).toBe(propostaVoce?.appunto_id);
+    expect(propostaRate?.dati.rate).toHaveLength(3);
+    expect(propostaRate.dati.rate.reduce((somma, r) => somma + Number(r.dopo), 0)).toBe(9800);
+    expect(propostaRate.dati.rate.map((r) => r.mese_rel)).toEqual([0, 1, 2]);
   });
 
   it("🔴 niente si chiude da se': un appunto resta aperto finche' non lo chiude Alessio", async () => {

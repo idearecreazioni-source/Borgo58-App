@@ -65,6 +65,9 @@ const DI_SERVIZIO = new Set([
   "prima_stato",
   "prima_previsto",
   "prima_nota",
+  // Le rate proposte (14/11/2026) hanno la loro riga leggibile sotto:
+  // l'array con gli identificativi resta impalcatura, non una firma tecnica.
+  "rate_ricalcolate",
 ]);
 
 /**
@@ -164,6 +167,32 @@ function valoreDaCambiare(dati, chiave, prima, etichetta) {
   return `${etichetta}: da ${scrivi(da)} a ${scrivi(a)}`;
 }
 
+function serieDiRate(rate, chiave) {
+  const importi = rate.map((r) => Number(r?.[chiave]));
+  if (importi.some((n) => !Number.isFinite(n))) return null;
+  if (importi.every((n) => n === importi[0])) return `${importi.length} × ${euro(importi[0])}`;
+  return importi.map(euro).join(" + ");
+}
+
+/** La proposta delle rate è una riga sola, leggibile senza identificativi. */
+function rateInChiaro(dati) {
+  const rate = Array.isArray(dati?.rate) ? dati.rate : null;
+  if (!rate?.length) return null;
+  const dopo = serieDiRate(rate, "dopo");
+  const prima = serieDiRate(rate, "prima");
+  if (!dopo || !prima) return null;
+  const dettagli = rate.map((r) => {
+    const mese = Number(r?.mese_rel);
+    const etichetta = mese === 0 ? "acconto" : Number.isInteger(mese) && mese > 0 ? `mese ${mese}` : null;
+    const da = Number(r?.prima);
+    const a = Number(r?.dopo);
+    if (!etichetta || !Number.isFinite(da) || !Number.isFinite(a)) return null;
+    return `${etichetta}: ${euro(da)} → ${euro(a)}`;
+  });
+  if (dettagli.some((r) => r === null)) return null;
+  return `Rate: ${dopo} (prima ${prima}) · ${dettagli.join("; ")}`;
+}
+
 /**
  * I dati concreti di un elemento, in una riga leggibile.
  *
@@ -179,13 +208,14 @@ export function datiInChiaro(dati) {
     ["stato", valoreDaCambiare(dati, "stato", "prima_stato", "stato")],
     ["nota", valoreDaCambiare(dati, "nota", "prima_nota", "nota")],
   ]);
+  const rate = rateInChiaro(dati);
   for (const [chiave, grezzo] of Object.entries(dati)) {
     if (cambi.get(chiave)) {
       pezzi.push(cambi.get(chiave));
       continue;
     }
 
-    if (DI_SERVIZIO.has(chiave)) continue;
+    if (DI_SERVIZIO.has(chiave) || (rate && (chiave === "rate" || chiave === "previsto"))) continue;
     const v = valore(grezzo);
     if (v === null) continue;
     if (chiave === "aliquota_iva") {
@@ -196,6 +226,7 @@ export function datiInChiaro(dati) {
       pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
     }
   }
+  if (rate) pezzi.push(rate);
   return pezzi.join(" · ");
 }
 
@@ -424,7 +455,12 @@ export function nonDistinguibili(elemento) {
 // ⚠️ La porta del database SOSTITUISCE i dati, non li unisce: si rimanda
 //    sempre l'oggetto intero, con i campi di servizio dentro.
 
-const SOLO_USCITA = ["voce_nome", "spesa_nome", "prima_stato", "prima_previsto", "prima_nota", "avviso_rate"];
+const SOLO_USCITA = [
+  "voce_nome", "spesa_nome", "prima_stato", "prima_previsto", "prima_nota", "avviso_rate",
+  // Il database le ricalcola usando la voce aggiornata: rimandare quelle
+  // vecchie dopo «Correggi» farebbe sembrare approvabile una proposta stantia.
+  "rate_ricalcolate", "rate", "previsto",
+];
 // I numeri di catalogo («la voce 3») valgono solo nell'elenco del momento.
 const NUMERI_DI_CATALOGO = new Set(["voce", "spesa", "prodotto", "frigorifero", "pulizia"]);
 const STATI_PIANO = ["stimato", "preventivato", "confermato"];
