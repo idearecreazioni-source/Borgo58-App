@@ -715,9 +715,15 @@ Deno.serve(async (req) => {
       frase: typeof a?.frase === "string" ? a.frase : "",
       // ⚠️ IL PEZZO DI FRASE PASSA DI QUI (11/09/2026): senza, la rete
       //    dell'Agenda non avrebbe niente con cui separare le cose dette
-      //    insieme, e ogni frase mista resterebbe tutta da chiarire. Non
-      //    si scrive nel database: serve solo a decidere, qui.
+      //    insieme, e ogni frase mista resterebbe tutta da chiarire.
       pezzo: typeof a?.pezzo === "string" ? a.pezzo : null,
+      // 14/11/2026: dopo una correzione la firma deve ricordare le parole
+      // dette, non il riassunto del modello. Se il modello non è sicuro il
+      // pezzo non è affidabile: resta per intero la dettatura.
+      parole_dette:
+        a?.sicuro === true && typeof a?.pezzo === "string" && a.pezzo.trim() !== ""
+          ? a.pezzo.trim()
+          : testo,
       alternative: alternative.length > 0 ? alternative : null,
       // 🔴 LA RIGA DI PRIMA CHE QUESTA PRENDE IL POSTO DI (25/10/2026): la
       //    legge `voce_sostituisci_azioni()` e la annulla, nella stessa

@@ -60,7 +60,7 @@ describe("gli appunti vocali", () => {
 
     const { data: righe } = await titolare
       .from("azioni_dettate")
-      .select("id, appunto_id, tipo, stato, sicuro, dati")
+      .select("id, appunto_id, tipo, stato, sicuro, dati, parole_dette, corretta_il")
       .eq("dettatura_id", dettaturaId);
     for (const r of righe ?? []) {
       miei.azioni.push(r.id);
@@ -308,10 +308,11 @@ describe("gli appunti vocali", () => {
     expect(dopo).toBe(prima);
   });
 
-  it.skipIf(!CORRIDOIO)("correggere un elemento lascia l'appunto aperto e non scrive niente", async () => {
+  it.skipIf(!CORRIDOIO)("correggere un elemento lascia l'appunto aperto, ricorda le parole e non scrive niente", async () => {
     const righe = await detta("da correggere", [
       elemento("movimento_cassa", {
         sicuro: false,
+        parole_dette: `${NOME} ho speso dieci euro per il pane`,
         dati: { verso: "uscita", importo: 10, descrizione: NOME },
       }),
     ]);
@@ -329,14 +330,35 @@ describe("gli appunti vocali", () => {
 
     const { data: riga } = await titolare
       .from("azioni_dettate")
-      .select("dati, stato, frase")
+      .select("dati, stato, frase, parole_dette, corretta_il")
       .eq("id", righe[0].id)
       .single();
     expect(Number(riga.dati.importo)).toBe(25);
     // 🔴 Correggere non e' approvare: la riga resta da guardare.
     expect(riga.stato).toBe("in_attesa");
-    // 12/11/2026: la frase dice che vale quello scritto sotto.
-    expect(riga.frase).toMatch(/^Corretto a mano\. Avevi detto: «/);
+    // 14/11/2026: ricorda le parole dette, non il riassunto del modello.
+    expect(riga.parole_dette).toBe(`${NOME} ho speso dieci euro per il pane`);
+    expect(riga.frase).toBe(`Corretto a mano. Avevi detto: «${riga.parole_dette}»`);
+    expect(riga.corretta_il).not.toBeNull();
+
+    // Una seconda correzione cambia i dati, non aggiunge una seconda firma.
+    const { error: seconda } = await titolare.functions.invoke("operazioni-atomiche", {
+      body: {
+        operazione: "correggi_elemento_appunto",
+        parametri: {
+          p_id: righe[0].id,
+          p_dati: { verso: "uscita", importo: 30, descrizione: NOME },
+        },
+      },
+    });
+    expect(seconda).toBeNull();
+    const { data: dopoSeconda } = await titolare
+      .from("azioni_dettate")
+      .select("dati, frase")
+      .eq("id", righe[0].id)
+      .single();
+    expect(Number(dopoSeconda.dati.importo)).toBe(30);
+    expect(dopoSeconda.frase).toBe(riga.frase);
 
     const { data: appunto } = await titolare
       .from("appunti_vocali")

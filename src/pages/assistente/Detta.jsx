@@ -837,26 +837,10 @@ export default function Detta() {
         </div>
       )}
 
-      {/* 🔴 FINITO, SI TORNA CON UN TOCCO — 11/09/2026. Non da solo: il
-          riscontro ALLA FINE è una decisione di Alessio del 25/08, e
-          tornare indietro in automatico lo farebbe sparire proprio quando
-          c'è da leggerlo.
-          ⚠️ E si dice che gli appunti restano: tornare non è approvare, e
-          chi torna nel modulo non deve credere di aver già scritto. */}
-      {ritorno && (riscontro || risposta) && !ascolto && (
-        <div className="mt-4">
-          <Link
-            to={ritorno.da}
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-inverso px-4 testo-sala text-white hover:bg-b58-inverso-soft"
-          >
-            ← {ritorno.frase}
-          </Link>
-          {riscontro?.daGuardare?.length > 0 && (
-            <p className="testo-sala mt-1 text-b58-charcoal-soft">
-              Gli appunti restano da approvare: li ritrovi qui e in Dashboard.
-            </p>
-          )}
-        </div>
+      {riscontro?.daGuardare?.length > 0 && (
+        <p className="testo-sala mt-4 text-b58-charcoal-soft">
+          Gli appunti restano da approvare: li ritrovi qui e in Dashboard.
+        </p>
       )}
 
       {/* ------------------------------------------------------------

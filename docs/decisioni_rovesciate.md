@@ -167,8 +167,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 108 | 25/10/2026 | gli allergeni di una ricetta si leggono solo dai prodotti del magazzino |
 | 109 | 27/10/2026 | la spesa spicciola si scrive diretta, senza corridoio |
 | 110 | 13/11/2026 | le fatture emesse le spedisce Fatture in Cloud: non si costruisce un emettitore |
+| 111 | 14/11/2026 | il pezzo detto a MEMO non si scrive nel database |
 
-⚠️ **Righe: 111.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 112.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3956,3 +3957,25 @@ quando questa sezione è stata scritta.
    resta vera nel merito**, e questo è il prezzo: il file lo controlliamo noi
    con lo schema ufficiale prima di ogni invio, e la prima fattura vera si
    spedisce insieme ad Alessio.
+
+## 111 · 14/11/2026 — «il pezzo detto a MEMO non si scrive nel database»
+
+1. **Cosa era stato deciso e quando.** L'11/09/2026, nel passaggio delle
+   azioni da `ascolta-voce` al database, il `pezzo` della frase restava nella
+   funzione: serviva a distinguere le cose di Agenda dette insieme, ma non
+   veniva conservato.
+
+2. **La ragione di allora.** Era un dato tecnico di passaggio, utile per
+   decidere e non per scrivere il gesto finale. Tenerlo fuori evitava di
+   aggiungere una traccia che nessuna schermata leggeva.
+
+3. **Cosa si decide adesso** (prova di MEMO del 13/11). Le parole dette per
+   ciascuna azione si conservano in `azioni_dettate.parole_dette`: il pezzo
+   quando MEMO è sicuro, altrimenti la dettatura intera. Dopo «Correggi», la
+   firma ricorda quelle parole, non la frase riassunta dal modello.
+
+4. **Perché la ragione di allora non vale più.** La correzione ha reso quel
+   pezzo visibile: senza conservarlo, «Avevi detto» racconta l'interpretazione
+   di MEMO proprio nel punto in cui serve distinguere dall'originale. Il
+   prezzo è una colonna in più per ogni azione detta, anche se non verrà mai
+   corretta.

@@ -235,8 +235,8 @@ describe("🔴 annullare e concludere: si torna, e niente viene scritto", () => 
 
     await waitFor(() => expect(screen.getByText(/Gli appunti restano da approvare/)).toBeTruthy());
     const ritorni = screen.getAllByRole("link", { name: "← Torna in Cassa, Banca e Prima Nota" });
-    expect(ritorni).toHaveLength(2); // in cima e sotto il riscontro
-    await tocca(ritorni[1]);
+    expect(ritorni).toHaveLength(1); // il ritorno sta in cima alla pagina, non sotto il riscontro
+    await tocca(ritorni[0]);
 
     expect(dove()).toBe("Prima nota — /cassa/prima-nota?dal=2026-09-01");
     // 🔴 Nessun doppio salvataggio: una dettatura, zero approvazioni.

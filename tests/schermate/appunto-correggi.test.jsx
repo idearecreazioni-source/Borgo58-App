@@ -26,6 +26,7 @@ const APPUNTO = {
       motivo: null,
       alternative: [],
       stato: "in_attesa",
+      corretta_il: "2026-11-14T10:00:00Z",
       domanda: null,
       scelte: [],
       percorso: null,
@@ -53,6 +54,11 @@ const mostra = (props = {}) => {
 };
 
 describe("Correggi su un appunto", () => {
+  it("dopo la correzione dice che vale la rilettura del titolare", () => {
+    mostra();
+    expect(screen.getByText("L'hai corretta tu: se va bene, di' sì.")).toBeTruthy();
+  });
+
   it("cambia il gruppo e manda i dati interi, senza approvare", async () => {
     const { onCorreggi, onApprova } = mostra();
     fireEvent.click(screen.getByRole("button", { name: /Correggi/ }));
