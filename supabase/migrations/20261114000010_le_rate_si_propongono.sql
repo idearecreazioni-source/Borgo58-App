@@ -416,7 +416,7 @@ revoke all on function fai_azione_dettata(text, jsonb) from public, anon, authen
 do $scrivi_rate$
 declare
   v_def text := replace(pg_get_functiondef('public.scrivi_dettatura(uuid,text,text,jsonb,text,text,integer,integer,text)'::regprocedure), E'\r', '');
-  v_ancora text := E'    insert into azioni_dettate (dettatura_id, progressivo, tipo, dati, sicuro,\n                                frase, parole_dette, motivo, stato, alternative, destinazione_libera)\n    values (v_dettatura, v_i, v_tipo, v_dati, v_sicuro,\n            v_frase, v_parole_dette, v_motivo, ''in_attesa'', v_alt, v_libera);';
+  v_ancora text := E'      insert into azioni_dettate (dettatura_id, progressivo, tipo, dati, sicuro,\n                                  frase, parole_dette, motivo, stato, alternative, destinazione_libera)\n      values (v_dettatura, v_i, v_tipo, v_dati, v_sicuro,\n              v_frase, v_parole_dette, v_motivo, ''in_attesa'', v_alt, v_libera);';
   v_nuovo text;
 begin
   if v_def like '%v_appunto_rate%' then return; end if;
@@ -514,7 +514,7 @@ begin
     perform approva_appunto(v_app);
     if (select importo_ivato from piano_voci where id = v_voce) <> 9800
        or (select sum(importo) from piano_rate where voce_id = v_voce) <> 9800
-       or (select array_agg(mese_rel order by mese_rel) from piano_rate where voce_id = v_voce) <> array[0,1,2] then
+       or (select array_agg(mese_rel::integer order by mese_rel) from piano_rate where voce_id = v_voce) <> array[0,1,2] then
       raise exception 'VERIFICA (3): dopo il sì, previsto, somma o mesi non tornano.';
     end if;
 
@@ -524,8 +524,8 @@ begin
     insert into piano_rate (voce_id, mese_rel, importo) values (v_voce_senza, 0, 300), (v_voce_senza, 1, 300), (v_voce_senza, 2, 300);
     -- Il collegamento della verifica della previsione distingue la rata già coperta.
     insert into suppliers (entity_id, name) values (v_srls, 'ZZ fornitore rata già pagata') returning id into v_forn;
-    insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, due_date, amount)
-    values (v_srls, v_forn, 'ZZ-RATE-PAGATE', current_date, current_date, 300) returning id into v_fat;
+    insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, due_date, amount, e_investimento)
+    values (v_srls, v_forn, 'ZZ-RATE-PAGATE', current_date, current_date, 300, true) returning id into v_fat;
     insert into piano_collegamenti (voce_id, rata_id, supplier_invoice_id, importo_attribuito)
     select v_voce_senza, r.id, v_fat, 300
       from piano_rate r
