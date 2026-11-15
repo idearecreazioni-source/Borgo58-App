@@ -86,7 +86,7 @@ const strumentiBase = [
       type: "object",
       properties: {
         operazione: { type: "string", enum: ["somma", "differenza", "prodotto", "divisione"] },
-        numeri: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 12 },
+        numeri: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 500 },
       },
       required: ["operazione", "numeri"], additionalProperties: false,
     },
@@ -111,7 +111,7 @@ function costoStimato(tokenIngresso: number, tokenUscita: number, prezzo: Riga |
 }
 function calcola(input: Riga) {
   const numeri = Array.isArray(input.numeri) ? input.numeri.map(Number) : [];
-  if (!numeri.length || numeri.length > 12 || numeri.some((n) => !Number.isFinite(n))) throw new Error("I numeri del calcolo non sono validi.");
+  if (!numeri.length || numeri.length > 500 || numeri.some((n) => !Number.isFinite(n))) throw new Error("I numeri del calcolo non sono validi.");
   let valore = numeri[0];
   if (input.operazione === "somma") valore = numeri.reduce((a, n) => a + n, 0);
   else if (input.operazione === "differenza") valore = numeri.slice(1).reduce((a, n) => a - n, valore);
@@ -296,6 +296,8 @@ Deno.serve(async (req) => {
       for (const richiesta of richieste) {
         strumentiUsati += 1;
         let risultato: unknown;
+        let erroreStrumento: string | null = null;
+        try {
         if (richiesta.name === "calcola") risultato = calcola(richiesta.input ?? {});
         else if (richiesta.name === "leggi_contenuto_documento" && documentiLetti >= 1) {
           // Un sì vale per un documento solo: per un altro serve un altro sì.
@@ -353,18 +355,27 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
             riga_id: undefined,
           }));
         }
-        if (Array.isArray(risultato) && risultato.length && typeof (risultato[0] as Riga).conteggio !== "undefined") {
+        } catch (e) {
+          // Un errore di UNO strumento (numeri non validi, divisione per zero, lettura fallita) non deve far
+          // perdere tutta la risposta: lo si dice al modello, che puo' correggere o spiegare. Resta nei registri.
+          erroreStrumento = (e as Error).message || "errore dello strumento";
+          console.error("memo-chat: errore dello strumento", richiesta.name, erroreStrumento);
+          risultato = { errore: erroreStrumento };
+        }
+        if (erroreStrumento) {
+          nomiStrumenti.push({ nome: richiesta.name ?? "strumento", errore: erroreStrumento });
+        } else if (Array.isArray(risultato) && risultato.length && typeof (risultato[0] as Riga).conteggio !== "undefined") {
           const prima = risultato[0] as Riga;
           nomiStrumenti.push({ nome: richiesta.name ?? "strumento", cerca: typeof richiesta.input?.cerca === "string" ? richiesta.input.cerca : null, righe: risultato.length, conteggio: prima.conteggio, totale: prima.totale });
         } else {
           nomiStrumenti.push(richiesta.name ?? "strumento");
         }
         risultati.push(risultato);
-        esitiStrumenti.push({ type: "tool_result", tool_use_id: richiesta.id, content: JSON.stringify(risultato) });
+        esitiStrumenti.push({ type: "tool_result", tool_use_id: richiesta.id, content: JSON.stringify(risultato), ...(erroreStrumento ? { is_error: true } : {}) });
       }
       cronologia.push({ role: "assistant", content: blocchi as never }, { role: "user", content: esitiStrumenti as never });
     }
-  } catch { stato = "errore"; rispostaFinale = "Non riesco a leggere i dati in questo momento. Riprova tra poco."; }
+  } catch (e) { console.error("memo-chat: errore", (e as Error)?.message ?? e); stato = "errore"; rispostaFinale = "Non riesco a leggere i dati in questo momento. Riprova tra poco."; }
 
   if (stato === "fatto" && !concluso) {
     stato = "interrotto";

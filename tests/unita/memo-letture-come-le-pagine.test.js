@@ -43,3 +43,12 @@ describe("le letture di MEMO dicono quello che dicono le pagine (15/11/2026)", (
     expect(MOTORE).toContain("Non ha un totale");
   });
 });
+
+describe("un errore di uno strumento non butta via la risposta (15/11/2026)", () => {
+  it("il calcolo accetta più di 12 numeri e l'errore torna al modello", () => {
+    expect(MOTORE).toContain("maxItems: 500");
+    expect(MOTORE).toContain("numeri.length > 500");
+    expect(MOTORE).toContain("is_error: true");
+    expect(MOTORE).toContain("console.error(\"memo-chat: errore dello strumento\"");
+  });
+});
