@@ -138,3 +138,65 @@ describe("fatture fornitori: MEMO = pagina", () => {
     expect(righe[0].dati.societa).toBeTruthy();
   }, 120000);
 });
+
+describe("cassa: MEMO = pagina", () => {
+  it("conteggio e totale valgono per soggetto: Borgo 58 e la tasca non si mescolano", async () => {
+    const { data: soggetti } = await titolare.from("entities").select("id, entity_type").in("entity_type", ["srls", "tasca"]);
+    const srls = soggetti.find((e) => e.entity_type === "srls")?.id;
+    const tasca = soggetti.find((e) => e.entity_type === "tasca")?.id;
+    expect(srls && tasca, "servono Borgo 58 e la tasca").toBeTruthy();
+    const oggi = new Date().toISOString().slice(0, 10);
+    const movimento = async (entity_id, direction, amount, nota) => {
+      const { data, error } = await titolare
+        .from("cash_movements")
+        .insert({ entity_id, direction, amount, movement_date: oggi, mezzo: "cassa", business_purpose: `${MARCA} ${nota}` })
+        .select("id")
+        .single();
+      expect(error, `non sono riuscito a creare il movimento ${nota}`).toBeNull();
+      return mie.segna("cash_movements", data.id);
+    };
+    await movimento(srls, "entrata", 100, "srls entrata");
+    await movimento(srls, "uscita", 30, "srls uscita");
+    await movimento(tasca, "uscita", 20, "tasca uscita");
+
+    const righe = await leggiMemo("memo_leggi_cassa", `${MARCA} `);
+    expect(righe.length).toBe(3);
+    const perSoggetto = new Map();
+    for (const r of righe) perSoggetto.set(r.dati.soggetto, { conteggio: r.conteggio, totale: Number(r.totale) });
+    expect(perSoggetto.size).toBe(2);
+    expect(perSoggetto.get("Borgo 58")).toEqual({ conteggio: 2, totale: 70 });
+    expect(perSoggetto.get("La tasca di Alessio")).toEqual({ conteggio: 1, totale: -20 });
+  }, 120000);
+});
+
+// La banca si carica solo da file (`carica_movimenti_banca`) e le sue righe non si cancellano dal client:
+// il suo caso (un ignorato, un abbinato, un da abbinare) sta nella verifica transazionale della migrazione.
+
+describe("HACCP: MEMO = pagina", () => {
+  it("una non conformità aperta e vecchia viene prima di più di 50 temperature recenti", async () => {
+    const { data: attrezzatura, error: eA } = await titolare
+      .from("haccp_equipment")
+      .insert({ name: `${MARCA} frigo` })
+      .select("id")
+      .single();
+    expect(eA, "non sono riuscito a creare l'attrezzatura").toBeNull();
+    mie.segna("haccp_equipment", attrezzatura.id);
+    const { data: nc, error: eNc } = await titolare
+      .from("haccp_non_conformities")
+      .insert({ category: "temperatura", description: `${MARCA} non conformita aperta`, detected_at: "2020-01-01T10:00:00Z" })
+      .select("id")
+      .single();
+    expect(eNc, "non sono riuscito a creare la non conformità").toBeNull();
+    mie.segna("haccp_non_conformities", nc.id);
+    const temperature = Array.from({ length: 55 }, () => ({ equipment_id: attrezzatura.id, recorded_temp_c: 3 }));
+    const { data: inserite, error: eT } = await titolare.from("haccp_temperature_logs").insert(temperature).select("id");
+    expect(eT, "non sono riuscito a creare le temperature").toBeNull();
+    for (const t of inserite) mie.segna("haccp_temperature_logs", t.id);
+
+    const righe = await leggiMemo("memo_leggi_haccp", MARCA);
+    expect(righe[0].conteggio).toBeGreaterThanOrEqual(56);
+    expect(righe[0].dati.registro).toBe("non conformita"); // la vecchia aperta viene prima delle recenti
+    expect(righe[0].dati.risolta).toBe(false);
+    expect(Number(righe[0].totale)).toBe(0); // un conteggio non è un totale
+  }, 120000);
+});
