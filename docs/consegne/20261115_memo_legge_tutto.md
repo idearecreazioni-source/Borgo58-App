@@ -63,3 +63,7 @@ residui. Le nuove funzioni senza schermata sono dichiarate nelle reti di
 - HACCP e' un unico strumento per temperatura, non conformita', ricevimento,
   pulizie e disinfestazione, cosi' una domanda libera non deve conoscere il
   nome del registro.
+
+## Revisione (Claude, 15/11)
+
+Codice di ChatGPT, rivisto da Claude. Provata su Prova (migrazioni `20261115000010` e `20261115000011`, 497; `memo-chat` e `documento-leggi` installate; quattro domande vere con risposta). Corretti prima della PR: conteggi e totali su tutte le righe (non sulle prime 50); colonna `totale` ambigua nelle fatture ai clienti (la funzione non girava); prenotazioni senza telefono, email e note (resta «ha_note») e con le future per prime; totale delle fatture senza bozze e scartate; costo piatti senza totale; un «sì» apre un solo documento, il testo è tagliato a 40.000 caratteri e racchiuso come non fidato; il «sì» vale solo se breve; `solo_lettura` vale solo se vero (`=== true`). `documento-leggi` resta identica senza il flag. Restano non urgenti: la spesa della lettura del documento (modello di `documento-leggi`) non entra in `costo_euro`; ricerca con `%` e `_` letterali; HACCP cerca anche nei nomi dei campi; banca: saldo per riga e movimenti ignorati nel totale.

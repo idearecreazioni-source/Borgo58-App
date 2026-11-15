@@ -21,7 +21,7 @@ describe("MEMO legge tutto", () => {
     expect(MOTORE).toContain("consensoPerDocumento");
     expect(MOTORE).toContain("leggi_contenuto_documento");
     expect(MOTORE).toContain("solo_lettura: true");
-    expect(LETTORE_DOCUMENTI).toContain("if (corpo.solo_lettura)");
-    expect(LETTORE_DOCUMENTI).toMatch(/if \(corpo\.solo_lettura\)[\s\S]*?return new Response[\s\S]*?const \{ error: salvaError \}/);
+    expect(LETTORE_DOCUMENTI).toContain("if (corpo.solo_lettura === true)");
+    expect(LETTORE_DOCUMENTI).toMatch(/if \(corpo\.solo_lettura === true\)[\s\S]*?return new Response[\s\S]*?const \{ error: salvaError \}/);
   });
 });
