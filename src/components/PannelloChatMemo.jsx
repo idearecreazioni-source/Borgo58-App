@@ -4,6 +4,16 @@ import { dataDellaConversazione, partiDellaRisposta, titoloDellaConversazione } 
 import { leggiConversazioniMemo, leggiMessaggiDellaConversazione } from "../lib/api/conversazioniMemo";
 import { componiDettato, creaRiconoscitore, fraseDelMicrofono, riconoscitoreDisponibile } from "../lib/calcoli/voce";
 
+// Il grassetto scritto come **testo** si mostra in grassetto vero. Nessun HTML:
+// solo pezzi di testo, quindi un documento ostile non puo' inserire altro.
+function conGrassetto(testo) {
+  return String(testo ?? "").split(/(\*\*[^*\n]+\*\*)/g).map((pezzo, i) =>
+    pezzo.startsWith("**") && pezzo.endsWith("**") && pezzo.length > 4
+      ? <strong key={i}>{pezzo.slice(2, -2)}</strong>
+      : pezzo
+  );
+}
+
 const PASSI = [
   "Sto capendo la domanda…",
   "Sto cercando i dati giusti…",
@@ -24,7 +34,7 @@ function Risposta({ messaggio }) {
   const { testo, dove, controllalo } = partiDellaRisposta(messaggio.risposta, messaggio.riferimenti);
   return (
     <article className="rounded-xl bg-b58-cream-dark px-3 py-3 text-b58-charcoal">
-      <p className="whitespace-pre-wrap testo-sala">{testo}</p>
+      <p className="whitespace-pre-wrap testo-sala">{conGrassetto(testo)}</p>
       <p className="mt-3 testo-sala text-b58-charcoal-soft">
         <strong>Dove l'ho letto:</strong> {dove || "nessuna riga del gestionale."}
       </p>
