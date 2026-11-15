@@ -19,4 +19,7 @@ La verifica della migrazione crea una madre con due sottovoci e controlla 2 righ
 Prenotazioni (annullate e passate), «sotto soglia» del magazzino (regola dei prodotti non tenuti), costo piatti senza prezzo di vendita, fatture ai clienti senza «incassata», conteggio per registro in HACCP.
 
 ## Su work
-Migrazione `20261115000013`; funzione `memo-chat`. Copia prima.
+Migrazioni `20261115000013` e `20261115000014` (ritocchi HACCP dopo la rilettura del revisore); funzione `memo-chat`. Copia prima.
+
+## Rilettura del revisore (Fable 5.2)
+Ha riletto la correzione: i cinque difetti gravi sono corretti. Ritocchi fatti (migrazione `20261115000014`): HACCP senza totale e con il ricevimento merci non conforme fra le righe prioritarie; descrizione delle fatture fornitori che dice che il conteggio comprende anche le pagate. Ancora da completare: prove «MEMO = pagina» con dati per cassa a due soggetti, banca con un ignorato e ordine HACCP.
