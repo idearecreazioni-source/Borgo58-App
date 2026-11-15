@@ -37,7 +37,7 @@ await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 
 describe("gli appunti vocali", () => {
   let titolare;
-  const miei = { dettature: [], appunti: [], azioni: [], tasks: [], lista: [] };
+  const miei = { dettature: [], appunti: [], azioni: [], tasks: [], lista: [], vociPiano: [] };
 
   /** Detta come farebbe la funzione online, e segna cio' che nasce. */
   async function detta(testo, azioni) {
@@ -60,7 +60,7 @@ describe("gli appunti vocali", () => {
 
     const { data: righe } = await titolare
       .from("azioni_dettate")
-      .select("id, appunto_id, tipo, stato, sicuro, dati")
+      .select("id, appunto_id, tipo, stato, sicuro, dati, parole_dette, corretta_il")
       .eq("dettatura_id", dettaturaId);
     for (const r of righe ?? []) {
       miei.azioni.push(r.id);
@@ -103,6 +103,10 @@ describe("gli appunti vocali", () => {
     }
     if (miei.lista.length) await titolare.from("shopping_list_items").delete().in("id", miei.lista);
     if (miei.tasks.length) await titolare.from("tasks").delete().in("id", miei.tasks);
+    if (miei.vociPiano.length) {
+      await titolare.from("piano_rate").delete().in("voce_id", miei.vociPiano);
+      await titolare.from("piano_voci").delete().in("id", miei.vociPiano);
+    }
     if (miei.azioni.length) await titolare.from("azioni_dettate").delete().in("id", miei.azioni);
     if (miei.appunti.length) await titolare.from("appunti_vocali").delete().in("id", miei.appunti);
     if (miei.dettature.length) await titolare.from("dettature").delete().in("id", miei.dettature);
@@ -248,6 +252,34 @@ describe("gli appunti vocali", () => {
     expect(typeof mio.aperto_da_ore).toBe("number");
   });
 
+  it("cambiando il previsto con rate, MEMO propone una seconda riga già compilata nello stesso appunto", async () => {
+    const { data: voce, error: erroreVoce } = await titolare
+      .from("piano_voci")
+      .insert({ gruppo: "D", descrizione: `${NOME} rate`, importo_ivato: 9000, aliquota_iva: 22, stato: "stimato" })
+      .select("id")
+      .single();
+    if (erroreVoce) throw erroreVoce;
+    miei.vociPiano.push(voce.id);
+    const { error: erroreRate } = await titolare.from("piano_rate").insert([
+      { voce_id: voce.id, mese_rel: 0, importo: 3000 },
+      { voce_id: voce.id, mese_rel: 1, importo: 3000 },
+      { voce_id: voce.id, mese_rel: 2, importo: 3000 },
+    ]);
+    if (erroreRate) throw erroreRate;
+
+    const righe = await detta("previsto con rate", [
+      elemento("piano_voce_aggiorna", { dati: { voce_id: voce.id, importo: 9800 } }),
+    ]);
+    const propostaRate = righe.find((r) => r.tipo === "piano_rate_ricalcola");
+    const propostaVoce = righe.find((r) => r.tipo === "piano_voce_aggiorna");
+
+    expect(righe).toHaveLength(2);
+    expect(propostaRate?.appunto_id).toBe(propostaVoce?.appunto_id);
+    expect(propostaRate?.dati.rate).toHaveLength(3);
+    expect(propostaRate.dati.rate.reduce((somma, r) => somma + Number(r.dopo), 0)).toBe(9800);
+    expect(propostaRate.dati.rate.map((r) => r.mese_rel)).toEqual([0, 1, 2]);
+  });
+
   it("🔴 niente si chiude da se': un appunto resta aperto finche' non lo chiude Alessio", async () => {
     const righe = await detta("resta aperto", [
       elemento("lista_spesa", { dati: { nome_libero: `${NOME} sale` } }),
@@ -308,10 +340,11 @@ describe("gli appunti vocali", () => {
     expect(dopo).toBe(prima);
   });
 
-  it.skipIf(!CORRIDOIO)("correggere un elemento lascia l'appunto aperto e non scrive niente", async () => {
+  it.skipIf(!CORRIDOIO)("correggere un elemento lascia l'appunto aperto, ricorda le parole e non scrive niente", async () => {
     const righe = await detta("da correggere", [
       elemento("movimento_cassa", {
         sicuro: false,
+        parole_dette: `${NOME} ho speso dieci euro per il pane`,
         dati: { verso: "uscita", importo: 10, descrizione: NOME },
       }),
     ]);
@@ -329,14 +362,35 @@ describe("gli appunti vocali", () => {
 
     const { data: riga } = await titolare
       .from("azioni_dettate")
-      .select("dati, stato, frase")
+      .select("dati, stato, frase, parole_dette, corretta_il")
       .eq("id", righe[0].id)
       .single();
     expect(Number(riga.dati.importo)).toBe(25);
     // 🔴 Correggere non e' approvare: la riga resta da guardare.
     expect(riga.stato).toBe("in_attesa");
-    // 12/11/2026: la frase dice che vale quello scritto sotto.
-    expect(riga.frase).toMatch(/^Corretto a mano\. Avevi detto: «/);
+    // 14/11/2026: ricorda le parole dette, non il riassunto del modello.
+    expect(riga.parole_dette).toBe(`${NOME} ho speso dieci euro per il pane`);
+    expect(riga.frase).toBe(`Corretto a mano. Avevi detto: «${riga.parole_dette}»`);
+    expect(riga.corretta_il).not.toBeNull();
+
+    // Una seconda correzione cambia i dati, non aggiunge una seconda firma.
+    const { error: seconda } = await titolare.functions.invoke("operazioni-atomiche", {
+      body: {
+        operazione: "correggi_elemento_appunto",
+        parametri: {
+          p_id: righe[0].id,
+          p_dati: { verso: "uscita", importo: 30, descrizione: NOME },
+        },
+      },
+    });
+    expect(seconda).toBeNull();
+    const { data: dopoSeconda } = await titolare
+      .from("azioni_dettate")
+      .select("dati, frase")
+      .eq("id", righe[0].id)
+      .single();
+    expect(Number(dopoSeconda.dati.importo)).toBe(30);
+    expect(dopoSeconda.frase).toBe(riga.frase);
 
     const { data: appunto } = await titolare
       .from("appunti_vocali")

@@ -60,6 +60,14 @@ const DI_SERVIZIO = new Set([
   "voce_id",
   "spesa_id",
   "spesa_fonte",
+  // Il valore di prima serve a comporre «da … a …», non è un dato da
+  // scrivere un'altra volta.
+  "prima_stato",
+  "prima_previsto",
+  "prima_nota",
+  // Le rate proposte (14/11/2026) hanno la loro riga leggibile sotto:
+  // l'array con gli identificativi resta impalcatura, non una firma tecnica.
+  "rate_ricalcolate",
 ]);
 
 /**
@@ -121,10 +129,7 @@ const ETICHETTE = {
   // Il piano dell'investimento (08/11/2026).
   voce_nome: "voce del piano",
   spesa_nome: "spesa",
-  aliquota_iva: "IVA (%)",
-  prima_stato: "adesso è",
-  prima_previsto: "previsto adesso (euro)",
-  prima_nota: "nota adesso",
+  aliquota_iva: "IVA",
   // 11/11/2026: le rate che non tornano più col previsto nuovo.
   avviso_rate: "attenzione",
 };
@@ -143,6 +148,51 @@ function inChiaro(v) {
   return v;
 }
 
+function euro(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return inChiaro(String(v));
+  return `${new Intl.NumberFormat("it-IT", {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+    useGrouping: "always",
+  }).format(n)} €`;
+}
+
+function valoreDaCambiare(dati, chiave, prima, etichetta) {
+  if (!(prima in dati) || !(chiave in dati)) return null;
+  const da = valore(dati[prima]);
+  const a = valore(dati[chiave]);
+  if (da === null || a === null) return null;
+  const scrivi = chiave === "importo" ? euro : inChiaro;
+  return `${etichetta}: da ${scrivi(da)} a ${scrivi(a)}`;
+}
+
+function serieDiRate(rate, chiave) {
+  const importi = rate.map((r) => Number(r?.[chiave]));
+  if (importi.some((n) => !Number.isFinite(n))) return null;
+  if (importi.every((n) => n === importi[0])) return `${importi.length} × ${euro(importi[0])}`;
+  return importi.map(euro).join(" + ");
+}
+
+/** La proposta delle rate è una riga sola, leggibile senza identificativi. */
+function rateInChiaro(dati) {
+  const rate = Array.isArray(dati?.rate) ? dati.rate : null;
+  if (!rate?.length) return null;
+  const dopo = serieDiRate(rate, "dopo");
+  const prima = serieDiRate(rate, "prima");
+  if (!dopo || !prima) return null;
+  const dettagli = rate.map((r) => {
+    const mese = Number(r?.mese_rel);
+    const etichetta = mese === 0 ? "acconto" : Number.isInteger(mese) && mese > 0 ? `mese ${mese}` : null;
+    const da = Number(r?.prima);
+    const a = Number(r?.dopo);
+    if (!etichetta || !Number.isFinite(da) || !Number.isFinite(a)) return null;
+    return `${etichetta}: ${euro(da)} → ${euro(a)}`;
+  });
+  if (dettagli.some((r) => r === null)) return null;
+  return `Rate: ${dopo} (prima ${prima}) · ${dettagli.join("; ")}`;
+}
+
 /**
  * I dati concreti di un elemento, in una riga leggibile.
  *
@@ -153,12 +203,30 @@ function inChiaro(v) {
 export function datiInChiaro(dati) {
   if (!dati || typeof dati !== "object" || Array.isArray(dati)) return "";
   const pezzi = [];
+  const cambi = new Map([
+    ["importo", valoreDaCambiare(dati, "importo", "prima_previsto", "previsto")],
+    ["stato", valoreDaCambiare(dati, "stato", "prima_stato", "stato")],
+    ["nota", valoreDaCambiare(dati, "nota", "prima_nota", "nota")],
+  ]);
+  const rate = rateInChiaro(dati);
   for (const [chiave, grezzo] of Object.entries(dati)) {
-    if (DI_SERVIZIO.has(chiave)) continue;
+    if (cambi.get(chiave)) {
+      pezzi.push(cambi.get(chiave));
+      continue;
+    }
+
+    if (DI_SERVIZIO.has(chiave) || (rate && (chiave === "rate" || chiave === "previsto"))) continue;
     const v = valore(grezzo);
     if (v === null) continue;
-    pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
+    if (chiave === "aliquota_iva") {
+      pezzi.push(`${ETICHETTE[chiave]} ${v}%`);
+    } else if (chiave === "importo") {
+      pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${euro(v)}`);
+    } else {
+      pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
+    }
   }
+  if (rate) pezzi.push(rate);
   return pezzi.join(" · ");
 }
 
@@ -387,7 +455,12 @@ export function nonDistinguibili(elemento) {
 // ⚠️ La porta del database SOSTITUISCE i dati, non li unisce: si rimanda
 //    sempre l'oggetto intero, con i campi di servizio dentro.
 
-const SOLO_USCITA = ["voce_nome", "spesa_nome", "prima_stato", "prima_previsto", "prima_nota", "avviso_rate"];
+const SOLO_USCITA = [
+  "voce_nome", "spesa_nome", "prima_stato", "prima_previsto", "prima_nota", "avviso_rate",
+  // Il database le ricalcola usando la voce aggiornata: rimandare quelle
+  // vecchie dopo «Correggi» farebbe sembrare approvabile una proposta stantia.
+  "rate_ricalcolate", "rate", "previsto",
+];
 // I numeri di catalogo («la voce 3») valgono solo nell'elenco del momento.
 const NUMERI_DI_CATALOGO = new Set(["voce", "spesa", "prodotto", "frigorifero", "pulizia"]);
 const STATI_PIANO = ["stimato", "preventivato", "confermato"];

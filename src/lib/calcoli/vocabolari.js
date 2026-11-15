@@ -296,7 +296,7 @@ export const GUARDIE_ESENTI = [
     funzione: "voce_risolvi_piano",
     parametro: "p_tipo",
     perche:
-      "non è una guardia ma un ramo: nomina i due tipi di MEMO che parlano di una voce del piano che c'è già (piano_collega, piano_voce_aggiorna), un sottoinsieme apposta dei tipi di tipi_azione_vocale. Il terzo, piano_voce_nuova, la voce non ce l'ha ancora. La funzione la chiama solo voce_risolvi_dati, per quei tre tipi (08/11/2026, 20261108000003)",
+      "non è una guardia ma un ramo: nomina i tipi di MEMO che parlano di una voce del piano che c'è già (piano_collega, piano_voce_aggiorna, piano_rate_ricalcola), un sottoinsieme apposta dei tipi di tipi_azione_vocale. Piano_voce_nuova la voce non ce l'ha ancora. La funzione la chiama solo voce_risolvi_dati, per questi tipi (08/11/2026; rate proposte 14/11/2026)",
   },
   {
     funzione: "chiudi_invio_fattura",

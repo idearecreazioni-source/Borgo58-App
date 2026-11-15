@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
     return errore(403, "ruolo", "Solo il titolare può leggere i documenti dell'Archivio");
   }
 
-  let corpo: { documento_id?: string; rileggi?: boolean; file?: string; nome_file?: string };
+  let corpo: { documento_id?: string; rileggi?: boolean; solo_lettura?: boolean; file?: string; nome_file?: string };
   try {
     corpo = await req.json();
   } catch {
@@ -453,7 +453,10 @@ Deno.serve(async (req) => {
   if (doc.testo && doc.testo.length > 0 && !corpo.rileggi) {
     return new Response(
       JSON.stringify({
-        risultato: { gia_letto: true, caratteri: doc.testo.length, come: "già in archivio" },
+        risultato: {
+          gia_letto: true, caratteri: doc.testo.length, come: "già in archivio",
+          ...(corpo.solo_lettura === true ? { testo: doc.testo, troncato: false } : {}),
+        },
       }),
       { status: 200, headers: { ...CORS, "Content-Type": "application/json" } }
     );
@@ -488,6 +491,17 @@ Deno.serve(async (req) => {
   const { testo, come, token, troncato } = letto;
 
   if (!testo) return errore(502, "lettura", "Non è uscito niente di leggibile da questo file.");
+
+  // MEMO deve poter leggere un documento dopo il sì esplicito senza
+  // modificare l'Archivio: questa strada restituisce il testo e finisce qui.
+  if (corpo.solo_lettura === true) {
+    return new Response(
+      JSON.stringify({
+        risultato: { gia_letto: false, testo, caratteri: testo.length, come, troncato, token },
+      }),
+      { status: 200, headers: { ...CORS, "Content-Type": "application/json" } }
+    );
+  }
 
   const { error: salvaError } = await supabase
     .from("documents")
