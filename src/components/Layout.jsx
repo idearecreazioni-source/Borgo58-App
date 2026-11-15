@@ -37,7 +37,8 @@ export default function Layout() {
   const apriChat = (testo = "") => {
     ultimoApriChat.current = document.activeElement;
     setContestoChat(contestoDellaChat(location, MODULES));
-    setTestoInizialeChat(String(testo ?? "").trim());
+    // Dal pulsante arriva l'evento del clic, non un testo: si accetta solo una stringa vera.
+    setTestoInizialeChat(typeof testo === "string" ? testo.trim() : "");
     setChatAperta(true);
   };
   const chiudiChat = () => {
@@ -344,7 +345,7 @@ export default function Layout() {
           </PezzoMancante>
         </main>
       </div>
-      {chatAperta && contestoChat && <PannelloChatMemo contesto={contestoChat} testoIniziale={testoInizialeChat} alChiudere={chiudiChat} />}
+      {contestoChat && <PannelloChatMemo contesto={contestoChat} testoIniziale={testoInizialeChat} alChiudere={chiudiChat} aperto={chatAperta} />}
     </div>
     </FornitoreChatMemo>
   );

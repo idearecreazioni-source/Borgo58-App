@@ -120,4 +120,44 @@ describe("il pannello della chat di MEMO", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
     expect(finte.manda).toHaveBeenCalledWith({ testo: "E quest'anno?", conversazioneId: "c-vecchia", contesto });
   });
+
+  it("dopo un errore la domanda torna nel campo e si puo' riprovare", async () => {
+    finte.manda.mockRejectedValue(Object.assign(new Error("Rete caduta."), { conversazioneId: "c-9" }));
+    render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} />);
+    const campo = screen.getByLabelText("Scrivi a MEMO");
+    fireEvent.change(campo, { target: { value: "Quanto ho in cassa?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    expect(screen.getByRole("alert").textContent).toContain("Rete caduta.");
+    expect(campo.value).toBe("Quanto ho in cassa?");
+    finte.manda.mockResolvedValue({ esito: "fatto", conversazione_id: "c-9", risposta: "Fatto.", riferimenti: [] });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    expect(finte.manda).toHaveBeenLastCalledWith({ testo: "Quanto ho in cassa?", conversazioneId: "c-9", contesto });
+  });
+
+  it("chiuso e riaperto non perde la conversazione", async () => {
+    finte.manda.mockResolvedValue({ esito: "fatto", conversazione_id: "c-2", risposta: "Hai 10 euro.", riferimenti: [] });
+    const { rerender } = render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    fireEvent.change(screen.getByLabelText("Scrivi a MEMO"), { target: { value: "Quanto?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    rerender(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto={false} />);
+    rerender(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    expect(screen.getByText("Hai 10 euro.")).toBeTruthy();
+  });
+
+  it("chiudendo il pannello il microfono si spegne e la frase detta resta nel campo", () => {
+    let riconoscitore;
+    class RiconoscitoreFinto {
+      constructor() { riconoscitore = this; }
+      start = vi.fn();
+      stop = vi.fn();
+    }
+    window.SpeechRecognition = RiconoscitoreFinto;
+    const { rerender } = render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    fireEvent.click(screen.getByRole("button", { name: "Parla" }));
+    act(() => riconoscitore.onresult({ resultIndex: 0, results: [{ 0: { transcript: "Quanto ho in cassa" }, isFinal: true }] }));
+    rerender(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto={false} />);
+    expect(riconoscitore.stop).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Scrivi a MEMO", { hidden: true }).value).toBe("Quanto ho in cassa");
+    delete window.SpeechRecognition;
+  });
 });

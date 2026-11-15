@@ -40,3 +40,7 @@ Apple Watch e' stata cambiata.
 Il titolo derivato non viene salvato: e' una presentazione della prima
 domanda gia' conservata nel database. Evita una scrittura aggiuntiva e resta
 vero anche per le conversazioni create prima che esistesse il titolo.
+
+## Revisione (Claude, 15/11)
+
+Codice di ChatGPT, rivisto da Claude (revisione React). Corretti: il pulsante «Chat» non riempie più il campo con «[object Object]» (arrivava l'evento del clic invece di un testo); il microfono si spegne quando il pannello si chiude; la frase detta si conserva anche se il browser la consegna dopo «Ferma» o se c'è un errore; «Nuova» e la riapertura di una conversazione non partono mentre MEMO risponde. Il microfono non è provabile qui: da provare a mano su iPhone/Chrome. Restano non urgenti: testo iniziale uguale due volte, accessibilità del pulsante Parla/Ferma, pulsante nascosto dove SpeechRecognition manca.
