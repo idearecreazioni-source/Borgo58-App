@@ -21,6 +21,8 @@ const COSTO_MASSIMO = 0.25;
 const CARATTERI_MASSIMI = 2000;
 const COSTO_LETTURA_DOCUMENTO = 0.20;
 
+const NOMI_LETTURE = ["memo_leggi_piano", "memo_leggi_cassa", "memo_leggi_fatture_fornitori", "memo_leggi_agenda", "memo_leggi_magazzino", "memo_leggi_banca", "memo_leggi_prenotazioni", "memo_leggi_haccp", "memo_leggi_costo_piatti", "memo_leggi_documenti", "memo_leggi_fatture_clienti"];
+
 type Riga = Record<string, unknown>;
 type Riferimento = { rif: string; tabella: string; riga_id: string };
 
@@ -190,6 +192,8 @@ Deno.serve(async (req) => {
     return errore(503, "listino", "Non conosco il costo di questo modello: mi fermo prima di spendere senza un limite verificabile.");
   }
   const cronologia = (passati ?? []).reverse().map((m: Riga) => ({ role: m.ruolo === "memo" ? "assistant" : "user", content: String(m.testo) }));
+  // L'API vuole che si parta da una domanda: se il taglio dei 25 messaggi cade su una risposta, la si scarta.
+  while (cronologia.length && cronologia[0].role === "assistant") cronologia.shift();
   const strumenti = consensoPerDocumento(domanda, (passati ?? []) as Riga[])
     ? [...strumentiBase, {
       name: "leggi_contenuto_documento",
@@ -231,7 +235,7 @@ Deno.serve(async (req) => {
   };
   const risultati: unknown[] = [];
   const nomiStrumenti: string[] = [];
-  let strumentiUsati = 0; let tokenIngresso = 0; let tokenUscita = 0; let rispostaFinale = ""; let stato = "fatto";
+  let strumentiUsati = 0; let tokenIngresso = 0; let tokenUscita = 0; let rispostaFinale = ""; let stato = "fatto"; let concluso = false;
 
   try {
     for (let giro = 0; giro < GIRI_MASSIMI; giro += 1) {
@@ -251,7 +255,7 @@ Deno.serve(async (req) => {
       const testo = testoDi(blocchi);
       if (testo) rispostaFinale = testo;
       const richieste = blocchi.filter((b) => b.type === "tool_use");
-      if (!richieste.length) break;
+      if (!richieste.length) { concluso = true; break; }
       if (strumentiUsati + richieste.length > STRUMENTI_MASSIMI) { stato = "tetto"; rispostaFinale = "Mi fermo: per questa domanda servirebbero troppi passaggi di lettura."; break; }
       const esitiStrumenti = [];
       for (const richiesta of richieste) {
@@ -288,6 +292,7 @@ Deno.serve(async (req) => {
         }
         else {
           const nome = richiesta.name?.replace(/^leggi_/, "memo_leggi_");
+          if (!NOMI_LETTURE.includes(nome ?? "")) throw new Error("Strumento non ammesso.");
           const { data, error } = await supabase.rpc(nome ?? "", { p_cerca: typeof richiesta.input?.cerca === "string" ? richiesta.input.cerca : null });
           if (error) throw new Error("Non riesco a leggere i dati richiesti.");
           const righe = (data ?? []) as Riga[];
@@ -313,7 +318,7 @@ Deno.serve(async (req) => {
     }
   } catch { stato = "errore"; rispostaFinale = "Non riesco a leggere i dati in questo momento. Riprova tra poco."; }
 
-  if (stato === "fatto" && !rispostaFinale) {
+  if (stato === "fatto" && !concluso) {
     stato = "interrotto";
     rispostaFinale = "Mi fermo qui: per risponderti servono più passaggi di lettura di quelli consentiti.";
   }
