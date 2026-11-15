@@ -39,6 +39,7 @@ import AppuntoDaApprovare from "../../components/AppuntoDaApprovare";
 import RispostaMemo from "../../components/RispostaMemo";
 import { ambienteCorrente } from "../../lib/ambiente";
 import { segnaRegistrazione } from "../../lib/registrazioneInCorso";
+import { useChatMemo } from "../../context/ChatMemoContext";
 import {
   impostaRispostaParlata,
   parla,
@@ -67,6 +68,7 @@ import {
 //    c'è nessuna registrazione da conservare né da cancellare.
 
 export default function Detta() {
+  const { apriChat } = useChatMemo();
   const [ascolto, setAscolto] = useState(false);
   const [frasi, setFrasi] = useState([]);
   const [parziale, setParziale] = useState("");
@@ -737,6 +739,7 @@ export default function Detta() {
           risposta={risposta.r}
           occupato={inRisposta}
           onScegli={scegliSoggetto}
+          onChiediNellaChat={() => apriChat?.(risposta.testo)}
         />
       )}
 

@@ -593,12 +593,8 @@ const scegli = (chiave, frase, candidati, extra = {}) => {
  */
 const nonSoFarlo = (area) => ({
   stato: "non_so_farlo",
-  frase:
-    "Questa domanda non la so ancora fare. Per ora so rispondere a queste, e a nient'altro:",
-  righe: Object.entries(DOMANDE_CHE_SO).map(([chiede, d]) => ({
-    chiave: chiede,
-    testo: d.esempio,
-  })),
+  frase: "Questa domanda non la so ancora fare.",
+  righe: [],
   troppe: 0,
   limite: null,
   candidati: [],

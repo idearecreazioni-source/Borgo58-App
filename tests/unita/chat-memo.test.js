@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { contestoDellaChat, partiDellaRisposta, riferimentiBrevi } from "../../src/lib/calcoli/chatMemo";
+import { contestoDellaChat, dataDellaConversazione, partiDellaRisposta, riferimentiBrevi, titoloDellaConversazione } from "../../src/lib/calcoli/chatMemo";
 
 const finte = vi.hoisted(() => ({ invoca: vi.fn() }));
 vi.mock("../../src/lib/supabase", () => ({
@@ -69,5 +69,13 @@ describe("le parole che il pannello mostra", () => {
       dove: "[C1], [P2]",
     });
     expect(riferimentiBrevi([{ rif: "C1" }, { rif: "R1" }, { rif: "P2" }])).toEqual(["C1", "P2"]);
+  });
+
+  it("da' un titolo leggibile alle conversazioni senza titolo", () => {
+    expect(titoloDellaConversazione({
+      titolo: null,
+      memo_messaggi: [{ ruolo: "alessio", testo: "  Quanto   ho speso per i lavori? ", creato_il: "2026-11-14T10:00:00Z" }],
+    })).toBe("Quanto ho speso per i lavori?");
+    expect(dataDellaConversazione("2026-11-14T10:00:00Z")).toMatch(/nov 2026/i);
   });
 });

@@ -29,7 +29,7 @@ const SEGNO = {
   non_so_farlo: { icona: "—", sfondo: "bg-b58-cream", testo: "text-b58-charcoal" },
 };
 
-function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
+function RispostaMemo({ titolo, testoDetto, risposta, onScegli, onChiediNellaChat, occupato }) {
   if (!risposta) return null;
   const segno = SEGNO[risposta.stato] ?? null;
 
@@ -56,7 +56,7 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
           {risposta.frase}
         </p>
 
-        {risposta.righe?.length > 0 && (
+        {risposta.stato !== "non_so_farlo" && risposta.righe?.length > 0 && (
           <ul className="mt-2 space-y-1">
             {risposta.righe.map((r) => (
               <li key={r.chiave} className="testo-sala text-b58-charcoal">
@@ -71,6 +71,16 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
               </li>
             ))}
           </ul>
+        )}
+
+        {risposta.stato === "non_so_farlo" && onChiediNellaChat && (
+          <button
+            type="button"
+            onClick={onChiediNellaChat}
+            className="tocco-riga mt-2 text-b58-terracotta-testo underline"
+          >
+            Chiedimelo nella chat →
+          </button>
         )}
 
 {/* 🔴 IL TAGLIO SI DICHIARA. Sei righe stanno in uno schermo; le

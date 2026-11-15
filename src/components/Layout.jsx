@@ -21,6 +21,7 @@ import { percorsoComande } from "../lib/schermo";
 import { avvisoAccesso } from "../lib/calcoli/avvisoAccesso";
 import { contestoDellaChat } from "../lib/calcoli/chatMemo";
 import { MODULES } from "../data/modules";
+import { FornitoreChatMemo } from "../context/ChatMemoContext";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,10 +32,13 @@ export default function Layout() {
   const { pathname } = location;
   const [chatAperta, setChatAperta] = useState(false);
   const [contestoChat, setContestoChat] = useState(null);
+  const [testoInizialeChat, setTestoInizialeChat] = useState("");
   const ultimoApriChat = useRef(null);
-  const apriChat = () => {
+  const apriChat = (testo = "") => {
     ultimoApriChat.current = document.activeElement;
     setContestoChat(contestoDellaChat(location, MODULES));
+    // Dal pulsante arriva l'evento del clic, non un testo: si accetta solo una stringa vera.
+    setTestoInizialeChat(typeof testo === "string" ? testo.trim() : "");
     setChatAperta(true);
   };
   const chiudiChat = () => {
@@ -127,6 +131,7 @@ export default function Layout() {
   );
 
   return (
+    <FornitoreChatMemo apriChat={apriChat}>
     <div className="min-h-screen bg-b58-cream flex">
       <a href="#contenuto" className="salta-al-contenuto">
         Vai al contenuto
@@ -340,7 +345,8 @@ export default function Layout() {
           </PezzoMancante>
         </main>
       </div>
-      {contestoChat && <PannelloChatMemo contesto={contestoChat} alChiudere={chiudiChat} aperto={chatAperta} />}
+      {contestoChat && <PannelloChatMemo contesto={contestoChat} testoIniziale={testoInizialeChat} alChiudere={chiudiChat} aperto={chatAperta} />}
     </div>
+    </FornitoreChatMemo>
   );
 }
