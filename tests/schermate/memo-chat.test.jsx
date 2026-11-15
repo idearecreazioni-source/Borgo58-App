@@ -160,4 +160,13 @@ describe("il pannello della chat di MEMO", () => {
     expect(screen.getByLabelText("Scrivi a MEMO", { hidden: true }).value).toBe("Quanto ho in cassa");
     delete window.SpeechRecognition;
   });
+
+  it("il grassetto scritto con gli asterischi si vede in grassetto vero", async () => {
+    finte.manda.mockResolvedValue({ esito: "fatto", conversazione_id: "c-3", risposta: "Ci sono **63 voci** in tutto.", riferimenti: [] });
+    render(<PannelloChatMemo contesto={contesto} alChiudere={vi.fn()} aperto />);
+    fireEvent.change(screen.getByLabelText("Scrivi a MEMO"), { target: { value: "Quante voci?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Invia" })));
+    expect(screen.getByText("63 voci").tagName).toBe("STRONG");
+    expect(document.body.textContent).not.toContain("**");
+  });
 });

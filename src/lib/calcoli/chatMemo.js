@@ -20,6 +20,19 @@ export function riferimentiBrevi(riferimenti) {
     .filter((rif) => /^[PCFAMBRHIDE]\d+$/.test(rif));
 }
 
+// Più di otto riferimenti si scrivono per intervallo, come fa il server.
+export function compattaRiferimenti(brevi) {
+  if (brevi.length <= 8) return brevi.map((rif) => `[${rif}]`).join(", ");
+  const per = new Map();
+  for (const rif of brevi) {
+    const m = /^([A-Z])(\d+)$/.exec(rif);
+    if (m) per.set(m[1], [...(per.get(m[1]) ?? []), Number(m[2])]);
+  }
+  return [...per.entries()]
+    .map(([lettera, numeri]) => `[${lettera}${Math.min(...numeri)}]–[${lettera}${Math.max(...numeri)}] (${numeri.length} righe)`)
+    .join(", ");
+}
+
 export function partiDellaRisposta(testo, riferimenti = []) {
   let corpo = String(testo ?? "").trim();
   let dove = "";
@@ -38,7 +51,7 @@ export function partiDellaRisposta(testo, riferimenti = []) {
   }
 
   const brevi = riferimentiBrevi(riferimenti);
-  if (brevi.length) dove = brevi.map((rif) => `[${rif}]`).join(", ");
+  if (brevi.length) dove = compattaRiferimenti(brevi);
   return { testo: corpo, dove, controllalo };
 }
 

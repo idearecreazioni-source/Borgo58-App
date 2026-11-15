@@ -24,6 +24,18 @@ const CARATTERI_DOCUMENTO = 40000;
 
 const NOMI_LETTURE = ["memo_leggi_piano", "memo_leggi_cassa", "memo_leggi_fatture_fornitori", "memo_leggi_agenda", "memo_leggi_magazzino", "memo_leggi_banca", "memo_leggi_prenotazioni", "memo_leggi_haccp", "memo_leggi_costo_piatti", "memo_leggi_documenti", "memo_leggi_fatture_clienti"];
 
+// Più di otto riferimenti si scrivono per intervallo: «[P1]–[P50] (50 righe)».
+function compattaRiferimenti(rif: string[]) {
+  if (rif.length <= 8) return rif.map((r) => `[${r}]`).join(", ");
+  const per = new Map<string, number[]>();
+  for (const r of rif) {
+    const m = /^([A-Z])(\d+)$/.exec(r);
+    if (!m) continue;
+    per.set(m[1], [...(per.get(m[1]) ?? []), Number(m[2])]);
+  }
+  return [...per.entries()].map(([l, nn]) => `[${l}${Math.min(...nn)}]–[${l}${Math.max(...nn)}] (${nn.length} righe)`).join(", ");
+}
+
 type Riga = Record<string, unknown>;
 type Riferimento = { rif: string; tabella: string; riga_id: string };
 
@@ -51,14 +63,14 @@ Concludi sempre con una frase breve e concreta. Il server aggiunge «Dove l'ho l
 
 const strumentiBase = [
   ...[
-    ["leggi_piano", "Legge fino a 50 voci del piano dell'investimento, con previsto, speso, impegnato e rate aperte.", "piano_voci"],
-    ["leggi_cassa", "Legge fino a 50 movimenti di cassa, con conteggio e totale firmato.", "cash_movements"],
-    ["leggi_fatture_fornitori", "Legge fino a 50 fatture fornitori, con totale e quanto resta da pagare calcolato dal gestionale.", "supplier_invoices"],
-    ["leggi_agenda", "Legge fino a 50 impegni aperti dell'Agenda con la corsia già calcolata.", "tasks"],
-    ["leggi_magazzino", "Legge fino a 50 prodotti del Magazzino con giacenza, soglia e prossima scadenza.", "ingredients"],
-    ["leggi_banca", "Legge fino a 50 movimenti della banca, con il saldo di ogni conto calcolato dai movimenti caricati, conteggio e totale firmato.", "movimenti_banca"],
+    ["leggi_piano", "Legge fino a 50 voci del piano dell'investimento, con previsto, speso, impegnato e rate aperte. Sono le voci senza sottovoci: una sottovoce porta tra parentesi il nome della madre, e la madre non compare (la sua cifra è già la somma delle sottovoci). Conteggio e totale valgono per tutte le voci, non solo per le righe lette.", "piano_voci"],
+    ["leggi_cassa", "Legge fino a 50 movimenti di cassa. Ogni riga dice il soggetto (Borgo 58 o la tasca personale): conteggio e totale valgono PER SOGGETTO. Il totale è entrate meno uscite dei movimenti trovati e NON è il saldo: il saldo vero è nel campo saldo di ogni riga.", "cash_movements"],
+    ["leggi_fatture_fornitori", "Legge fino a 50 fatture fornitori, prima quelle da pagare. Il totale è la somma di quanto resta da pagare e conta solo le fatture non pagate (una pagata ha da pagare zero). Il conteggio invece è di tutte le fatture, pagate comprese.", "supplier_invoices"],
+    ["leggi_agenda", "Legge fino a 50 impegni aperti dell'Agenda con la corsia già calcolata. Non ha un totale: conta le righe del conteggio.", "tasks"],
+    ["leggi_magazzino", "Legge fino a 50 prodotti del Magazzino con giacenza, soglia e prossima scadenza. Non ha un totale (unità diverse non si sommano).", "ingredients"],
+    ["leggi_banca", "Legge fino a 50 movimenti della banca non ignorati, prima quelli da abbinare. Il totale è la somma dei movimenti trovati e NON è il saldo del conto: il saldo della banca lo dà la Cassa.", "movimenti_banca"],
     ["leggi_prenotazioni", "Legge fino a 50 prenotazioni con data, ora, persone, stato e tavoli.", "reservations"],
-    ["leggi_haccp", "Legge fino a 50 registrazioni HACCP: temperature, non conformità, ricevimento merci, pulizie e disinfestazione.", "haccp"],
+    ["leggi_haccp", "Legge fino a 50 registrazioni HACCP (temperature, non conformità, ricevimento merci, pulizie, disinfestazione): prima le non conformità ancora aperte e le temperature fuori soglia. Non ha un totale.", "haccp"],
     ["leggi_costo_piatti", "Legge fino a 50 ricette con il food cost già calcolato dal gestionale. Non esiste un totale: non sommare i costi di piatti diversi.", "recipes"],
     ["leggi_documenti", "Legge fino a 50 metadati dell'Archivio: titolo, tutte le date con il loro nome, importo e file. Non legge il contenuto del file.", "documents"],
     ["leggi_fatture_clienti", "Legge fino a 50 fatture ai clienti, con stato e tutte le date della fattura e dell'invio. Il totale esclude bozze e scartate.", "fatture_emesse"],
@@ -340,7 +352,7 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
   if (nuovi.length) await supabase.from("memo_riferimenti").insert(nuovi.map((r) => ({ conversazione_id: conversazioneId, ...r })));
   const senzaFonte = numeriSenzaFonte(rispostaFinale, risultati);
   if (senzaFonte.length && !/controllalo/i.test(rispostaFinale)) rispostaFinale += "\n\nControllalo: alcuni numeri non arrivano dai dati letti.";
-  const fonti = usatiOra.length ? `Dove l'ho letto: ${usatiOra.map((r) => `[${r.rif}]`).join(", ")}.` : "Dove l'ho letto: nessuna riga del gestionale.";
+  const fonti = usatiOra.length ? `Dove l'ho letto: ${compattaRiferimenti(usatiOra.map((r) => r.rif))}.` : "Dove l'ho letto: nessuna riga del gestionale.";
   rispostaFinale = `${rispostaFinale}\n\n${fonti}`.trim();
   const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga);
   await supabase.from("memo_messaggi").insert({ conversazione_id: conversazioneId, ruolo: "memo", testo: rispostaFinale.slice(0, 4000), strumenti: nomiStrumenti, risultati: usatiOra.map(({ rif, tabella }) => ({ rif, tabella })), modello: MODELLO, token_ingresso: tokenIngresso, token_uscita: tokenUscita, costo_euro: costo, stato });
