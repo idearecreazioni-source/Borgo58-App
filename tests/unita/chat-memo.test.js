@@ -68,7 +68,7 @@ describe("le parole che il pannello mostra", () => {
       controllalo: "alcuni numeri non arrivano dai dati letti.",
       dove: "[C1], [P2]",
     });
-    expect(riferimentiBrevi([{ rif: "C1" }, { rif: "R1" }, { rif: "P2" }])).toEqual(["C1", "P2"]);
+    expect(riferimentiBrevi([{ rif: "C1" }, { rif: "D1" }, { rif: "B1" }, { rif: "R1" }, { rif: "P2" }])).toEqual(["C1", "D1", "B1", "R1", "P2"]);
   });
 
   it("da' un titolo leggibile alle conversazioni senza titolo", () => {

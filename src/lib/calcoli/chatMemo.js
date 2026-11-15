@@ -17,7 +17,7 @@ export function contestoDellaChat(location, moduli = []) {
 export function riferimentiBrevi(riferimenti) {
   return (riferimenti ?? [])
     .map((r) => String(r?.rif ?? "").replaceAll("[", "").replaceAll("]", "").trim())
-    .filter((rif) => /^[PCFAM]\d+$/.test(rif));
+    .filter((rif) => /^[PCFAMBRHIDE]\d+$/.test(rif));
 }
 
 export function partiDellaRisposta(testo, riferimenti = []) {
