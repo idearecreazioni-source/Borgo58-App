@@ -17,7 +17,7 @@ begin
   if not is_titolare() then raise exception 'La chat di MEMO e'' riservata al titolare.'; end if;
   return query
   with righe as (
-    select m.id, coalesce(nullif(m.descrizione, ''), 'Movimento di banca') as titolo, m.importo,
+    select m.id, coalesce(nullif(m.descrizione, ''), 'Movimento di banca') as titolo, m.importo, m.data_contabile as ord1, m.caricato_il as ord2,
            jsonb_build_object(
              'conto', c.nome, 'data_contabile', m.data_contabile, 'data_valuta', m.data_valuta,
              'importo', m.importo, 'descrizione', m.descrizione,
@@ -35,9 +35,8 @@ begin
         or c.nome ilike '%' || p_cerca || '%'
         or coalesce(m.descrizione, '') ilike '%' || p_cerca || '%'
         or coalesce(m.riferimento_banca, '') ilike '%' || p_cerca || '%'
-     order by m.data_contabile desc, m.caricato_il desc, m.id
-     limit 50
-  ) select id, titolo, dettaglio, count(*) over ()::integer, coalesce(sum(importo) over (), 0) from righe;
+  ) select id, titolo, dettaglio, count(*) over ()::integer, coalesce(sum(importo) over (), 0) from righe
+   order by ord1 desc, ord2 desc, id limit 50;
 end $fn$;
 
 create or replace function memo_leggi_prenotazioni(p_cerca text default null)
@@ -47,7 +46,7 @@ begin
   if not is_titolare() then raise exception 'La chat di MEMO e'' riservata al titolare.'; end if;
   return query
   with righe as (
-    select r.id, coalesce(nullif(r.customer_name, ''), 'Prenotazione') as titolo,
+    select r.id, coalesce(nullif(r.customer_name, ''), 'Prenotazione') as titolo, r.reservation_date as ord1, r.reservation_time as ord2,
            jsonb_build_object(
              'data_prenotazione', r.reservation_date, 'ora_prenotazione', r.reservation_time,
              'persone', r.party_size, 'stato', r.status, 'tipo', r.type,
@@ -60,9 +59,8 @@ begin
         or coalesce(r.customer_name, '') ilike '%' || p_cerca || '%'
         or coalesce(r.customer_phone, '') ilike '%' || p_cerca || '%'
         or coalesce(r.customer_email, '') ilike '%' || p_cerca || '%'
-     order by r.reservation_date, r.reservation_time, r.id
-     limit 50
-  ) select id, titolo, dettaglio, count(*) over ()::integer, count(*) over ()::numeric from righe;
+  ) select id, titolo, dettaglio, count(*) over ()::integer, count(*) over ()::numeric from righe
+   order by ord1, ord2, id limit 50;
 end $fn$;
 
 create or replace function memo_leggi_haccp(p_cerca text default null)
@@ -105,9 +103,8 @@ begin
   ), righe as (
     select * from tutte
      where p_cerca is null or titolo ilike '%' || p_cerca || '%' or dettaglio::text ilike '%' || p_cerca || '%'
-     order by quando desc, id
-     limit 50
-  ) select id, titolo, dettaglio, count(*) over ()::integer, count(*) over ()::numeric from righe;
+  ) select id, titolo, dettaglio, count(*) over ()::integer, count(*) over ()::numeric from righe
+   order by quando desc, id limit 50;
 end $fn$;
 
 create or replace function memo_leggi_costo_piatti(p_cerca text default null)
@@ -125,9 +122,8 @@ begin
       from recipes r
       join v_recipe_costs c on c.recipe_id = r.id
      where p_cerca is null or r.name ilike '%' || p_cerca || '%'
-     order by r.name, r.id
-     limit 50
-  ) select id, name, dettaglio, count(*) over ()::integer, coalesce(sum(food_cost_portion) over (), 0) from righe;
+  ) select id, name, dettaglio, count(*) over ()::integer, coalesce(sum(food_cost_portion) over (), 0) from righe
+   order by name, id limit 50;
 end $fn$;
 
 create or replace function memo_leggi_documenti(p_cerca text default null)
@@ -137,7 +133,7 @@ begin
   if not is_titolare() then raise exception 'La chat di MEMO e'' riservata al titolare.'; end if;
   return query
   with righe as (
-    select d.id, d.title, d.amount,
+    select d.id, d.title, d.amount, d.document_date as ord1, d.created_at as ord2,
            jsonb_build_object('tipo', d.doc_type, 'controparti', d.counterparties,
              'importo', d.amount, 'data_documento', d.document_date,
              'data_scadenza', d.expiry_date, 'nome_file', d.file_name,
@@ -147,9 +143,8 @@ begin
         or d.title ilike '%' || p_cerca || '%'
         or coalesce(d.doc_type, '') ilike '%' || p_cerca || '%'
         or coalesce(d.counterparties, '') ilike '%' || p_cerca || '%'
-     order by d.document_date desc nulls last, d.created_at desc, d.id
-     limit 50
-  ) select id, title, dettaglio, count(*) over ()::integer, coalesce(sum(amount) over (), 0) from righe;
+  ) select id, title, dettaglio, count(*) over ()::integer, coalesce(sum(amount) over (), 0) from righe
+   order by ord1 desc nulls last, ord2 desc, id limit 50;
 end $fn$;
 
 create or replace function memo_leggi_fatture_clienti(p_cerca text default null)
@@ -162,7 +157,7 @@ begin
     select f.id,
            coalesce(nullif(c.denominazione, ''), nullif(trim(concat_ws(' ', c.nome, c.cognome)), ''), 'Cliente')
              || coalesce(' · fattura ' || f.numero::text, ' · bozza') as titolo,
-           f.totale,
+           f.totale as tot_fattura, f.data as ord1, f.numero as ord2,
            jsonb_build_object('cliente', coalesce(nullif(c.denominazione, ''), nullif(trim(concat_ws(' ', c.nome, c.cognome)), '')),
              'numero', f.numero, 'stato', f.stato, 'imponibile', f.imponibile,
              'imposta', f.imposta, 'totale', f.totale, 'data_fattura', f.data,
@@ -174,9 +169,8 @@ begin
         or coalesce(c.denominazione, '') ilike '%' || p_cerca || '%'
         or concat_ws(' ', c.nome, c.cognome) ilike '%' || p_cerca || '%'
         or coalesce(f.numero::text, '') ilike '%' || p_cerca || '%'
-     order by f.data desc, f.numero desc nulls first, f.id
-     limit 50
-  ) select id, titolo, dettaglio, count(*) over ()::integer, coalesce(sum(totale) over (), 0) from righe;
+  ) select id, titolo, dettaglio, count(*) over ()::integer, coalesce(sum(tot_fattura) over (), 0) from righe
+   order by ord1 desc, ord2 desc nulls first, id limit 50;
 end $fn$;
 
 revoke all on function memo_leggi_banca(text), memo_leggi_prenotazioni(text), memo_leggi_haccp(text), memo_leggi_costo_piatti(text), memo_leggi_documenti(text), memo_leggi_fatture_clienti(text) from public, anon, authenticated;
@@ -198,22 +192,27 @@ begin
     set local role authenticated;
     select count(*), coalesce(sum((dati->>'importo')::numeric), 0), coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_banca(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: banca senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: banca senza limite, conteggio o totale.'; end if;
     select count(*), count(*)::numeric, coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_prenotazioni(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: prenotazioni senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: prenotazioni senza limite, conteggio o totale.'; end if;
     select count(*), count(*)::numeric, coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_haccp(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: HACCP senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: HACCP senza limite, conteggio o totale.'; end if;
     select count(*), coalesce(sum((dati->>'costo_porzione')::numeric), 0), coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_costo_piatti(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: costo piatti senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: costo piatti senza limite, conteggio o totale.'; end if;
     select count(*), coalesce(sum((dati->>'importo')::numeric), 0), coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_documenti(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: documenti senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: documenti senza limite, conteggio o totale.'; end if;
     select count(*), coalesce(sum((dati->>'totale')::numeric), 0), coalesce(max(totale), 0), coalesce(max(conteggio), 0)
       into v_n, v_totale, v_dichiarato, v_conteggio from memo_leggi_fatture_clienti(null);
-    if v_n > 50 or v_n <> v_conteggio or v_totale <> v_dichiarato then raise exception 'VERIFICA: fatture clienti senza limite, conteggio o totale.'; end if;
+    if v_n > 50 or (v_conteggio <= 50 and (v_n <> v_conteggio or v_totale <> v_dichiarato)) or (v_conteggio > 50 and v_n <> 50) then raise exception 'VERIFICA: fatture clienti senza limite, conteggio o totale.'; end if;
+    -- Il conteggio e il totale devono vedere TUTTE le righe: il limite sta fuori dalla CTE.
+    if exists (select 1 from pg_proc p where p.proname in ('memo_leggi_banca','memo_leggi_prenotazioni','memo_leggi_haccp','memo_leggi_costo_piatti','memo_leggi_documenti','memo_leggi_fatture_clienti')
+                and pg_get_functiondef(p.oid) ~ 'limit 50[[:space:]]*[)][[:space:]]*select') then
+      raise exception 'VERIFICA: una lettura taglia a 50 prima di contare.';
+    end if;
     perform set_config('request.jwt.claims', json_build_object('sub', v_staff, 'role', 'authenticated')::text, true);
     v_no := false; begin perform * from memo_leggi_banca(null); exception when raise_exception then v_no := true; end;
     if not v_no then raise exception 'VERIFICA: lo staff ha letto la banca dalla chat.'; end if;

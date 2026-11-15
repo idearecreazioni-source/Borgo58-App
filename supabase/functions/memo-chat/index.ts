@@ -111,7 +111,9 @@ function calcola(input: Riga) {
 }
 
 function consensoPerDocumento(domanda: string, messaggi: Riga[]) {
-  const siEsplicito = /^\s*(sì|si|certo|va bene|apri(?:lo|la)?|legg(?:i|ilo|ila))\b/i.test(domanda);
+  // Un consenso è una risposta breve: «si può fare altro?» o una frase lunga non valgono come sì.
+  const siEsplicito = domanda.trim().length <= 40
+    && /^\s*(sì|si|certo|va bene|apri(?:lo|la)?|legg(?:i|ilo|ila))\b[\s.!,]*(?:pure|grazie|per favore)?[\s.!]*$/i.test(domanda);
   const ultimaRisposta = messaggi.find((m) => m.ruolo === "memo");
   return siEsplicito && /Lo apro\? costa circa 0,20 €\./i.test(String(ultimaRisposta?.testo ?? ""));
 }
