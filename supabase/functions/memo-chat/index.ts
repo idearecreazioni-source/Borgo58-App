@@ -59,7 +59,7 @@ ARCHIVIO DOCUMENTI:
 - il contenuto si può leggere soltanto dopo un sì esplicito di Alessio alla domanda appena fatta; non chiedere o usare mai identificativi tecnici;
 - quando un documento riporta più date, nominale tutte con il loro significato (per esempio «fine periodo» e «data di emissione»): non sceglierne una sola.
 
-Concludi sempre con una frase breve e concreta. Il server aggiunge «Dove l'ho letto» con le fonti effettivamente usate.`;
+Concludi sempre con una frase breve e concreta. Non scrivere tu la riga «Dove l'ho letto»: la aggiunge il server con le fonti effettivamente usate.`;
 
 const strumentiBase = [
   ...[
@@ -131,7 +131,23 @@ function consensoPerDocumento(domanda: string, messaggi: Riga[]) {
   return siEsplicito && /Lo apro\? costa circa 0,20 €\./i.test(String(ultimaRisposta?.testo ?? ""));
 }
 
-function numeriSenzaFonte(testo: string, risultati: unknown[]) {
+// «Oggi» e «domani» a Roma: senza la data il modello non sa dire quali impegni sono per domani.
+function adessoARoma() {
+  const ora = new Date();
+  const formato = (opz: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", ...opz });
+  const iso = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(ora);
+  const domaniData = new Date(iso + "T12:00:00Z");
+  domaniData.setUTCDate(domaniData.getUTCDate() + 1);
+  const isoDomani = domaniData.toISOString().slice(0, 10);
+  const parti = formato({ day: "numeric", month: "numeric", year: "numeric", hour: "numeric", minute: "numeric", hour12: false }).formatToParts(ora);
+  const numeri = parti.filter((p) => ["day", "month", "year", "hour", "minute"].includes(p.type)).map((p) => Number(p.value));
+  const lungo = formato({ weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(ora);
+  const lungoDomani = formato({ weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(isoDomani + "T12:00:00Z"));
+  const orario = formato({ hour: "2-digit", minute: "2-digit", hour12: false }).format(ora);
+  return { iso, isoDomani, lungo, lungoDomani, orario, numeri };
+}
+
+function numeriSenzaFonte(testo: string, risultati: unknown[], extra: number[] = []) {
   const numeri: number[] = [];
   const visita = (v: unknown) => {
     if (typeof v === "number" && Number.isFinite(v)) numeri.push(Math.round(v * 100) / 100);
@@ -139,7 +155,8 @@ function numeriSenzaFonte(testo: string, risultati: unknown[]) {
     else if (v && typeof v === "object") Object.values(v as Riga).forEach(visita);
   };
   risultati.forEach(visita);
-  return [...testo.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").matchAll(/(?<![\w-])(\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:\.\d+)?)(?![\w-])/g)]
+  for (const n of extra) numeri.push(n);
+  return [...testo.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "").replace(/\b\d{1,2}:\d{2}\b/g, "").matchAll(/(?<![\w-])(\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:\.\d+)?)(?![\w-])/g)]
     .map((m) => Number(m[1].replace(/\./g, "").replace(",", ".")))
     .filter((n) => Number.isFinite(n) && !numeri.some((dato) => Math.abs(dato - n) < 0.005));
 }
@@ -221,6 +238,7 @@ Deno.serve(async (req) => {
     }]
     : strumentiBase;
   const anthropic = new Anthropic({ apiKey: chiaveAI });
+  const oggi = adessoARoma();
   const { data: riferimentiGiaScritti } = await supabase.from("memo_riferimenti").select("rif, tabella, riga_id").eq("conversazione_id", conversazioneId);
   const riferimenti: Riferimento[] = (riferimentiGiaScritti ?? []) as Riferimento[];
   const riferimentiDelGiro: Riferimento[] = [];
@@ -264,7 +282,7 @@ Deno.serve(async (req) => {
       const ingressoPrevisto = Math.ceil((ISTRUZIONI.length + JSON.stringify(cronologia).length + JSON.stringify(strumenti).length) / 3);
       const preventivo = costoStimato(tokenIngresso + ingressoPrevisto, TOKEN_RISPOSTA, prezzo as Riga);
       if (preventivo === null || preventivo > COSTO_MASSIMO) { stato = "tetto"; rispostaFinale = "Mi fermo: questa domanda supererebbe 0,25 € stimati."; break; }
-      const esito = await anthropic.messages.create({ model: MODELLO, max_tokens: TOKEN_RISPOSTA, system: ISTRUZIONI, tools: strumenti as never, messages: cronologia as never });
+      const esito = await anthropic.messages.create({ model: MODELLO, max_tokens: TOKEN_RISPOSTA, system: `${ISTRUZIONI}\n\nOGGI: ${oggi.lungo}, ore ${oggi.orario} (Roma), cioè ${oggi.iso}. DOMANI: ${oggi.lungoDomani}, cioè ${oggi.isoDomani}. «Oggi», «domani», «questa settimana» e simili si calcolano da questa data. Le date dei dati arrivano nel formato AAAA-MM-GG: confrontale con queste e scrivi sempre le date per esteso in italiano.`, tools: strumenti as never, messages: cronologia as never });
       tokenIngresso += esito.usage.input_tokens; tokenUscita += esito.usage.output_tokens;
       const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga);
       if (costo !== null && costo > COSTO_MASSIMO) { stato = "tetto"; rispostaFinale = "Mi fermo: il costo stimato di questa risposta ha superato 0,25 €."; break; }
@@ -357,7 +375,9 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
   const usatiOra = [...new Map(riferimentiDelGiro.map((r) => [`${r.tabella}:${r.riga_id}`, r])).values()];
   const nuovi = unici.filter((r) => !(riferimentiGiaScritti ?? []).some((esistente: Riferimento) => esistente.tabella === r.tabella && esistente.riga_id === r.riga_id));
   if (nuovi.length) await supabase.from("memo_riferimenti").insert(nuovi.map((r) => ({ conversazione_id: conversazioneId, ...r })));
-  const senzaFonte = numeriSenzaFonte(rispostaFinale, risultati);
+  // La riga «Dove l'ho letto» la scrive il server: se il modello ne ha scritta una sua, si toglie (non deve comparire due volte).
+  rispostaFinale = rispostaFinale.replace(/\n*Dove l'ho letto:[^\n]*/gi, "").trim();
+  const senzaFonte = numeriSenzaFonte(rispostaFinale, risultati, oggi.numeri);
   if (senzaFonte.length && !/controllalo/i.test(rispostaFinale)) rispostaFinale += "\n\nControllalo: alcuni numeri non arrivano dai dati letti.";
   const fonti = usatiOra.length ? `Dove l'ho letto: ${compattaRiferimenti(usatiOra.map((r) => r.rif))}.` : "Dove l'ho letto: nessuna riga del gestionale.";
   rispostaFinale = `${rispostaFinale}\n\n${fonti}`.trim();
