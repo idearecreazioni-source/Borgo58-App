@@ -168,50 +168,6 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261114000011",
     perche: "chat di MEMO, PR 4-5: il motore chiede il freno prima di inviare il messaggio al modello",
   },
-  memo_leggi_piano: {
-    versione: "20261114000012",
-    perche: "chat di MEMO, PR 4-5: il motore legge il piano con una funzione limitata",
-  },
-  memo_leggi_cassa: {
-    versione: "20261114000012",
-    perche: "chat di MEMO, PR 4-5: il motore legge la cassa con una funzione limitata",
-  },
-  memo_leggi_fatture_fornitori: {
-    versione: "20261114000012",
-    perche: "chat di MEMO, PR 4-5: il motore legge le fatture fornitori con una funzione limitata",
-  },
-  memo_leggi_agenda: {
-    versione: "20261114000012",
-    perche: "chat di MEMO, PR 4-5: il motore legge l'agenda con una funzione limitata",
-  },
-  memo_leggi_magazzino: {
-    versione: "20261114000012",
-    perche: "chat di MEMO, PR 4-5: il motore legge il magazzino con una funzione limitata",
-  },
-  memo_leggi_banca: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge movimenti e saldi della banca con un limite",
-  },
-  memo_leggi_prenotazioni: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge le prenotazioni con un limite",
-  },
-  memo_leggi_haccp: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge i registri HACCP con un limite",
-  },
-  memo_leggi_costo_piatti: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge il costo dei piatti con un limite",
-  },
-  memo_leggi_documenti: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge i metadati dell'Archivio con un limite",
-  },
-  memo_leggi_fatture_clienti: {
-    versione: "20261115000010",
-    perche: "chat di MEMO, PR 4-7: il motore legge le fatture ai clienti con un limite",
-  },
   // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
   //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
   //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
