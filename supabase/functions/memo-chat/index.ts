@@ -65,7 +65,7 @@ const strumentiBase = [
   ...[
     ["leggi_piano", "Legge fino a 50 voci del piano dell'investimento, con previsto, speso, impegnato e rate aperte. Sono le voci senza sottovoci: una sottovoce porta tra parentesi il nome della madre, e la madre non compare (la sua cifra è già la somma delle sottovoci). Conteggio e totale valgono per tutte le voci, non solo per le righe lette.", "piano_voci"],
     ["leggi_cassa", "Legge fino a 50 movimenti di cassa. Ogni riga dice il soggetto (Borgo 58 o la tasca personale): conteggio e totale valgono PER SOGGETTO. Il totale è entrate meno uscite dei movimenti trovati e NON è il saldo: il saldo vero è nel campo saldo di ogni riga.", "cash_movements"],
-    ["leggi_fatture_fornitori", "Legge fino a 50 fatture fornitori, prima quelle da pagare. Il totale è la somma di quanto resta da pagare e conta solo le fatture non pagate (una pagata ha da pagare zero). Il conteggio invece è di tutte le fatture, pagate comprese.", "supplier_invoices"],
+    ["leggi_fatture_fornitori", "Legge fino a 50 fatture fornitori, prima quelle da pagare. Conteggio e totale valgono PER SOCIETÀ (campo societa): sono due debiti diversi, mai sommarli. Il totale è la somma di quanto resta da pagare e conta solo le fatture non pagate (una pagata ha da pagare zero); il conteggio è di tutte le fatture della società, pagate comprese.", "supplier_invoices"],
     ["leggi_agenda", "Legge fino a 50 impegni aperti dell'Agenda con la corsia già calcolata. Non ha un totale: conta le righe del conteggio.", "tasks"],
     ["leggi_magazzino", "Legge fino a 50 prodotti del Magazzino con giacenza, soglia e prossima scadenza. Non ha un totale (unità diverse non si sommano).", "ingredients"],
     ["leggi_banca", "Legge fino a 50 movimenti della banca non ignorati, prima quelli da abbinare. Il totale è la somma dei movimenti trovati e NON è il saldo del conto: il saldo della banca lo dà la Cassa.", "movimenti_banca"],
@@ -249,7 +249,9 @@ Deno.serve(async (req) => {
     return rif;
   };
   const risultati: unknown[] = [];
-  const nomiStrumenti: string[] = [];
+  // Il registro di ogni risposta: per ogni lettura, il nome, quante righe sono arrivate al modello e il
+  // conteggio e il totale che la lettura dichiarava (il controllo settimanale del revisore li confronta con le pagine).
+  const nomiStrumenti: Array<string | Riga> = [];
   let strumentiUsati = 0; let tokenIngresso = 0; let tokenUscita = 0; let rispostaFinale = ""; let stato = "fatto"; let concluso = false; let documentiLetti = 0;
 
   try {
@@ -333,7 +335,12 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
             riga_id: undefined,
           }));
         }
-        nomiStrumenti.push(richiesta.name ?? "strumento");
+        if (Array.isArray(risultato) && risultato.length && typeof (risultato[0] as Riga).conteggio !== "undefined") {
+          const prima = risultato[0] as Riga;
+          nomiStrumenti.push({ nome: richiesta.name ?? "strumento", cerca: typeof richiesta.input?.cerca === "string" ? richiesta.input.cerca : null, righe: risultato.length, conteggio: prima.conteggio, totale: prima.totale });
+        } else {
+          nomiStrumenti.push(richiesta.name ?? "strumento");
+        }
         risultati.push(risultato);
         esitiStrumenti.push({ type: "tool_result", tool_use_id: richiesta.id, content: JSON.stringify(risultato) });
       }
