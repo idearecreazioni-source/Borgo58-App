@@ -22,3 +22,18 @@ Alessio ha chiesto sul telefono «Quanto ho speso finora sul piano per le attrez
 **Causa (riprodotta su Prova con 17 sottovoci)**: per sommare lo speso delle 17 sottovoci di «Attrezzature cucina» il modello usa lo strumento di calcolo, che accettava al massimo 12 numeri; con 17 sollevava un errore, e l'errore buttava via tutta la risposta (e non lasciava traccia: la funzione inghiottiva ogni errore). Su Prova non era mai comparso perché lì lo speso è zero e il modello non calcola.
 
 **Correzione**: il calcolo accetta fino a 500 numeri; un errore di uno strumento torna al modello come errore (`is_error`) invece di far fallire la risposta; ogni errore resta nei registri della funzione (`console.error`) e nel registro del messaggio (`strumenti`). Provato su Prova con la stessa situazione: ora risponde (somma 1.853 € corretta).
+
+## Terza correzione: le prove di Alessio del 16/11 (30 domande)
+Alessio ha provato 20 + 10 domande sul telefono (liste in `LISTA_prove_chat_MEMO_15-11.md` e `..._2_16-11.md`; risultati Prova in `RISULTATI_venti_domande_Prova_15-11.md`). Esito su work: 3 giuste, 2 a metà, 5 sbagliate; mai un dato inventato. Cause e correzioni (tutte in questo pacchetto, tranne la lettura libera, che è un lavoro a parte):
+- **Il ragionamento mangiava la risposta**: il modello «ragiona» prima di rispondere e il ragionamento conta nello stesso tetto delle parole in uscita (1.500): con tante righe finiva tutto a ragionare → risposta vuota (agenda) o ferma a «controllo i dati» (la seconda spesa più grande). Ora il tetto è 8.000, la risposta tagliata lo dice, e il registro (`strumenti`) salva come è finito ogni giro del modello (fine, blocchi, token).
+- **Taglio a 50 righe**: il piano ha 63 voci, e per pescare le altre MEMO finiva gli 8 passaggi. Ora le letture arrivano a **150 righe** (migrazione `20261115000018`) e i passaggi sono 20 (giri 10, tetto per domanda 0,50 €).
+- **Messaggio sbagliato**: il pannello diceva «Il tetto della chat è stato raggiunto» invece del motivo vero; ora mostra il motivo che manda la funzione.
+- **Descrizioni incomplete**: MEMO non sapeva che esiste il campo «stato» e disse che non c'è. Ora ogni strumento elenca tutti i suoi campi e dice che la ricerca filtra solo il testo.
+- **Regole nuove**: mai annunciare un controllo senza farlo né lasciare risposte vuote; «non l'ho trovato con questa ricerca» e non «non esiste»; previsto non è speso (per «la spesa più grande» guarda le uscite di cassa); per classifiche leggere tutto e dichiarare quanti elementi.
+- **«Controllalo» finto**: il costo di apertura di un documento (0,20 €) è scritto dal server e non conta come numero inventato.
+
+## Come si è provato
+Su Prova: 8 domande che prima fallivano (magazzino, fornitori, spesa più grande e la seconda nella stessa conversazione, agenda, riepilogo piano, SCIA, cosa non va nei conti) ora completano tutte, con risposte coerenti (costo medio 0,12 €). Su work serve il rilascio.
+
+## Su work
+Migrazione `20261115000018` e funzione `memo-chat`, più il sito (pannello). Copia prima.
