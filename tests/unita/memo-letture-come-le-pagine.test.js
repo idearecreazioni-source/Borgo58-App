@@ -43,3 +43,30 @@ describe("le letture di MEMO dicono quello che dicono le pagine (15/11/2026)", (
     expect(MOTORE).toContain("Non ha un totale");
   });
 });
+
+describe("un errore di uno strumento non butta via la risposta (15/11/2026)", () => {
+  it("il calcolo accetta più di 12 numeri e l'errore torna al modello", () => {
+    expect(MOTORE).toContain("maxItems: 500");
+    expect(MOTORE).toContain("numeri.length > 500");
+    expect(MOTORE).toContain("is_error: true");
+    expect(MOTORE).toContain("console.error(\"memo-chat: errore dello strumento\"");
+  });
+});
+
+describe("le prove di Alessio del 16/11 sul telefono", () => {
+  it("il modello ha respiro per ragionare e rispondere, e dice quando la risposta viene tagliata", () => {
+    expect(MOTORE).toContain("const TOKEN_RISPOSTA = 8000;");
+    expect(MOTORE).toContain("La risposta è stata tagliata");
+    expect(MOTORE).toContain("giri_del_modello");
+  });
+  it("più passaggi e letture fino a 150 righe", () => {
+    expect(MOTORE).toContain("const STRUMENTI_MASSIMI = 20;");
+    expect(MOTORE).toContain("const GIRI_MASSIMI = 10;");
+    expect(MOTORE).toContain("Legge fino a 150 voci del piano");
+  });
+  it("gli strumenti elencano i loro campi e le regole non permettono di annunciare e fermarsi", () => {
+    expect(MOTORE).toContain("stato (stimato, preventivato o confermato)");
+    expect(MOTORE).toContain("NON annunciare un controllo");
+    expect(MOTORE).toContain("«previsto» (il budget del piano) NON è «speso»");
+  });
+});

@@ -35,10 +35,11 @@ beforeAll(async () => {
   entrato = true;
 });
 
+// La pulizia toglie le righe una per una (160 voci del piano nella prova sul taglio a 150): ci vuole piu' dei 30 secondi di fabbrica.
 afterAll(async () => {
   await mie.pulisci();
   if (entrato) await supabase.auth.signOut({ scope: "local" });
-});
+}, 180000);
 
 async function leggiMemo(nome, cerca = null) {
   const { data, error } = await titolare.rpc(nome, { p_cerca: cerca });
@@ -70,7 +71,7 @@ describe("piano dell'investimento: MEMO = pagina", () => {
       }
     }
     // Più di 50 voci: il conteggio deve dire la verità oltre il taglio.
-    const molte = Array.from({ length: 55 }, (_, i) => ({
+    const molte = Array.from({ length: 160 }, (_, i) => ({
       gruppo: "D", ordine: 9100 + i, descrizione: `${MARCA} voce ${i}`, importo_ivato: 1, aliquota_iva: 22, stato: "stimato",
     }));
     const { data: inserite, error: eMolte } = await titolare.from("piano_voci").insert(molte).select("id");
@@ -84,17 +85,17 @@ describe("piano dell'investimento: MEMO = pagina", () => {
     // MEMO: la sua lettura, senza ricerca.
     const righe = await leggiMemo("memo_leggi_piano");
     expect(righe.length).toBeGreaterThan(0);
-    expect(righe.length).toBeLessThanOrEqual(50);
+    expect(righe.length).toBeLessThanOrEqual(150);
     expect(righe[0].conteggio).toBe(pagina.voci);
     expect(Number(righe[0].totale)).toBeCloseTo(pagina.previsto, 2);
-    expect(righe[0].conteggio).toBeGreaterThan(50);
+    expect(righe[0].conteggio).toBeGreaterThan(150); // il conteggio dice la verita' oltre il taglio
 
     // La madre non compare fra le righe; le sue sottovoci vive sì, la archiviata no.
     const cercate = await leggiMemo("memo_leggi_piano", MARCA);
     const nomi = cercate.map((r) => r.etichetta);
     expect(nomi.some((n) => n.startsWith(`${MARCA} madre`))).toBe(false);
-    expect(cercate[0].conteggio).toBe(2 + 55);
-    expect(Number(cercate[0].totale)).toBeCloseTo(10 + 20 + 55, 2);
+    expect(cercate[0].conteggio).toBe(2 + 160);
+    expect(Number(cercate[0].totale)).toBeCloseTo(10 + 20 + 160, 2);
   }, 120000);
 });
 
