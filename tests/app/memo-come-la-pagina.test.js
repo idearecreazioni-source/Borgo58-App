@@ -35,10 +35,11 @@ beforeAll(async () => {
   entrato = true;
 });
 
+// La pulizia toglie le righe una per una (160 voci del piano nella prova sul taglio a 150): ci vuole piu' dei 30 secondi di fabbrica.
 afterAll(async () => {
   await mie.pulisci();
   if (entrato) await supabase.auth.signOut({ scope: "local" });
-});
+}, 180000);
 
 async function leggiMemo(nome, cerca = null) {
   const { data, error } = await titolare.rpc(nome, { p_cerca: cerca });
