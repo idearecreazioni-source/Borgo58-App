@@ -249,7 +249,7 @@ export default function PannelloChatMemo({ contesto, testoIniziale = "", alChiud
       const esito = await mandaMessaggioAMemo({ testo: domanda, conversazioneId, contesto });
       if (esito.esito === "tetto") {
         setConversazioneId(esito.conversazione_id ?? conversazioneId);
-        setMessaggi((prima) => [...prima, { tipo: "tetto", testo: esito.messaggio || "Il tetto della chat e' stato raggiunto." }]);
+        setMessaggi((prima) => [...prima, { tipo: "tetto", testo: esito.messaggio || partiDellaRisposta(esito.risposta, esito.riferimenti).testo || "Il tetto della chat e' stato raggiunto." }]);
         return;
       }
       setConversazioneId(esito.conversazione_id);
