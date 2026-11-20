@@ -356,9 +356,10 @@ describe("l'assistente che legge le foto", () => {
 
   it("il costo di una lettura si calcola dal listino, non a occhio", async () => {
     // ⚠️ I numeri sono quelli di una foto vera, e le tre risposte sbagliate
-    //    possibili danno tre risultati DIVERSI: solo la domanda 0,00413,
-    //    solo la risposta 0,00550, i token sommati a un prezzo solo
-    //    0,00523. Un conto che sbaglia non può azzeccare per caso.
+    //    possibili danno tre risultati DIVERSI: solo la domanda 0,00276,
+    //    solo la risposta 0,00368, i token sommati a un prezzo solo
+    //    0,00350. Un conto che sbaglia non può azzeccare per caso.
+    //    (Listino Sonnet 5 corretto il 20/11: 1,84 / 9,20 € per milione.)
     const { data, error } = await titolare.rpc("registra_lettura_foto", {
       p_genere: "etichetta",
       p_esito: "letta",
@@ -368,7 +369,7 @@ describe("l'assistente che legge le foto", () => {
       p_messaggio: "ZZ prova costo",
     });
     expect(error).toBeNull();
-    expect(Number(data.costo_euro)).toBeCloseTo(0.00963, 5);
+    expect(Number(data.costo_euro)).toBeCloseTo(0.00644, 5);
     expect(data.nel_listino).toBe(true);
     mie.segna("letture_foto", data.id);
   });
