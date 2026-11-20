@@ -66,3 +66,6 @@ begin
   end loop;
 end
 $verifica$;
+
+insert into applied_migrations (version, name)
+values ('20261120000001', 'il_listino_dei_modelli_ai_corretto') on conflict (version) do nothing;
