@@ -127,7 +127,7 @@ export function messaggioDelDatabase(errore) {
     return "Solo il titolare può modificare la Scheda.";
   }
   // Un messaggio che il database ha scritto per noi, in italiano.
-  if (/La Scheda|Il testo composto|Spegni la voce|Lo storico|Solo il titolare/.test(testo)) return testo;
+  if (/La Scheda|Il testo composto|Spegni la voce|Lo storico|Solo il titolare|Questa proposta|Il testo corretto|Scegli Sì/.test(testo)) return testo;
   return "Non è stato salvato. Riprova tra un momento.";
 }
 

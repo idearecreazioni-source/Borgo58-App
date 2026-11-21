@@ -69,6 +69,46 @@ export async function leggiStorico(voceId) {
   return data ?? [];
 }
 
+// LE PROPOSTE DI MEMO (B1, migrazione 20261121000002). Nessuna scrittura diretta
+// sulla tabella: la riempie `scheda_proposte_genera` e la chiude `scheda_proposta_decidi`.
+
+/** Le proposte in attesa. ⚠️ Una lettura fallita LANCIA: «nessuna proposta» e «non l'ho letto» non sono la stessa cosa. */
+export async function leggiProposte() {
+  const { data, error } = await supabase
+    .from("scheda_proposte")
+    .select("id, tipo, origine, chiave, voce_id, sezione, testo_prima, testo_dopo, fonte_prima, fonte_dopo, abbassa_fonte, motivo, stato, creata_il, scade_il")
+    .eq("stato", "in_attesa")
+    .order("creata_il", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Chiede al database di calcolare le proposte nuove (costo zero, regole fisse).
+ * ⚠️ Se non riesce restituisce `null` e la pagina funziona lo stesso: le proposte già nate si leggono comunque.
+ */
+export async function generaProposte() {
+  const { data, error } = await supabase.rpc("scheda_proposte_genera");
+  if (error) return null;
+  return Array.isArray(data) ? data[0] ?? null : data ?? null;
+}
+
+/**
+ * Il Sì, il Non farlo o il Correggi del titolare. `esito`: "si" | "no" | "correggi".
+ * Lancia se il database rifiuta (privacy, 60 voci, 10.000 caratteri): la proposta resta in attesa.
+ * Restituisce `{ esito: "accettata" | "rifiutata" | "obsoleta" | "gia_decisa" | "scaduta", … }`.
+ */
+export async function decidiProposta(id, esito, testo = null, confermaFonte = false) {
+  const { data, error } = await supabase.rpc("scheda_proposta_decidi", {
+    p_id: id,
+    p_esito: esito,
+    p_testo: testo,
+    p_conferma_fonte: Boolean(confermaFonte),
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] : data;
+}
+
 /**
  * Le parole delicate nel testo (avviso, mai blocco).
  * ⚠️ Restituisce `null` se il controllo non è riuscito: «nessuna parola
