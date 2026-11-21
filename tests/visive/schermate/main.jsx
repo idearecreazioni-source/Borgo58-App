@@ -213,8 +213,18 @@ const DATI = {
         { id: "v2", numero: 2, sezione: "locale", chiave: "locale:a-0000", testo: "Chiuso il lunedì.", fonte: "riferito", valida_dal: null, verificata_il: null, rivedere_entro: null, attiva: true, ordine: 10 },
         { id: "v3", numero: 3, sezione: "decisioni", chiave: "decisioni:a-0000", testo: "Voce spenta.", fonte: "da_verificare", valida_dal: null, verificata_il: null, rivedere_entro: null, attiva: false, ordine: 10 },
       ],
+      // B1: tre proposte di MEMO — una di aggiungere col testo lungo, una che abbassa la fonte (casella da spuntare)
+      // e una di riconfermare: i casi che vanno a capo sul telefono.
+      scheda_proposte: [
+        { id: "p1", tipo: "aggiungi", origine: "fornitore", chiave: "fornitori:forn-00000001", voce_id: null, sezione: "fornitori", testo_prima: null, testo_dopo: "ZZ Ortofrutta Bianchi (ortofrutta). Consegne: lunedì e giovedì mattina entro le nove. Pagamento: 30 giorni data fattura, con bonifico alla consegna del lunedì successivo.", fonte_prima: null, fonte_dopo: "riferito", abbassa_fonte: false, motivo: "Nuovo fornitore in anagrafica dal 21/11/2026.", stato: "in_attesa", creata_il: "2026-11-21T09:00:00Z", scade_il: "2026-12-21" },
+        { id: "p2", tipo: "modifica", origine: "riconferma", chiave: "locale:a-0000", voce_id: "v2", sezione: "locale", testo_prima: "Chiuso il lunedì.", testo_dopo: "Chiuso il lunedì e il martedì a pranzo.", fonte_prima: "confermato", fonte_dopo: "riferito", abbassa_fonte: true, motivo: "Prova: la fonte scende.", stato: "in_attesa", creata_il: "2026-11-21T08:00:00Z", scade_il: "2026-12-21" },
+        { id: "p3", tipo: "riconferma", origine: "riconferma", chiave: "fornitori:a-0000", voce_id: "v1", sezione: "fornitori", testo_prima: "ZZ Ortofrutta Rossi consegna il martedì e il venerdì mattina.", testo_dopo: "ZZ Ortofrutta Rossi consegna il martedì e il venerdì mattina.", fonte_prima: "riferito", fonte_dopo: "confermato", abbassa_fonte: false, motivo: "La data «da rivedere» di questa voce è passata (01/01/2026): è ancora vera?", stato: "in_attesa", creata_il: "2026-11-21T07:00:00Z", scade_il: "2026-12-21" },
+      ],
     },
-    rpc: { scheda_per_memo: { versione: "x", voci: 2, caratteri: 9400, testo: "" } },
+    rpc: {
+      scheda_per_memo: { versione: "x", voci: 2, caratteri: 9400, testo: "" },
+      scheda_proposte_genera: { nuove: 0, scadute: 0, saltate_privacy: 0, in_attesa: 3 },
+    },
   },
   // Le stampanti (28/10/2026): un registratore, una stampante con la carta
   // finita e la sua frase lunga, e un lavoro «incerto» col suo testo — i

@@ -390,6 +390,11 @@ const OPERAZIONI = new Set([
   // Il tasto «Ignora le mail come questa» della Posta (11/11/2026): la regola
   // e la mail messa da parte, insieme.
   "aggiungi_filtro_posta",
+  // Il Sì, il Non farlo o il Correggi su una proposta di MEMO per la Scheda
+  // (20261121000002): la voce della Scheda e la proposta che si chiude, insieme.
+  // A meta' resterebbe una voce scritta con la proposta ancora «in attesa», e
+  // un secondo Sì la raddoppierebbe.
+  "scheda_proposta_decidi",
   "paga_fattura_da_movimento_banca",
   "registra_movimento_banca",
   // 🔴 La voce si chiude insieme al dato (20261026000002): una cosa detta a

@@ -264,6 +264,14 @@ export const SPECCHI_ESENTI = [
 // ⚠️ Una rete che grida su un caso legittimo viene spenta. Ma un'eccezione
 // senza la sua ragione scritta si allarga da sola, quindi ognuna ha la sua.
 export const GUARDIE_ESENTI = [
+  // ⚠️ IL SÌ DELLE PROPOSTE DI MEMO (21/11/2026, 20261121000002): non è il valore di una colonna ma il GESTO del
+  //    titolare sulla proposta. Nessuna colonna ha «si», «no» e «correggi» come vocabolario.
+  {
+    funzione: "scheda_proposta_decidi",
+    parametro: "p_esito",
+    perche:
+      "è il gesto del titolare sulla proposta — Sì, Non farlo, Correggi — e non il valore di una colonna: «si» e «correggi» finiscono entrambi nello stato «accettata» (correggi col testo cambiato), «no» in «rifiutata». Nessun vocabolario del database ha queste tre parole (21/11/2026)",
+  },
   // ⚠️ LE TRE DEL PONTE (28/10/2026, 20261028000005): sono sottoinsiemi
   //    VOLUTI dei vocabolari di `lavori_stampa` e `dispositivi`, e la
   //    ragione è la stessa per tutte e tre — il ponte non può scrivere i
