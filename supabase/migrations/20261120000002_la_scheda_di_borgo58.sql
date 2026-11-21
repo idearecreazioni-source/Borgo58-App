@@ -530,7 +530,7 @@ begin
     reset role;
     loop
       select last_value + 1 into v_numero_prossimo from scheda_voci_numero_seq;
-      select (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:calcolo-zz', repeat('ab ', 100), 'da_verificare', null, null, null, null, null, true, 99, now(), now())::scheda_voci) into v_record;
+      v_record := (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:calcolo-zz', repeat('ab ', 100), 'da_verificare', null, null, null, null, null, true, 99, now(), now())::scheda_voci);
       exit when char_length(scheda_compone_testo(null, v_record)) > 10000;
       v_righe_calcolate := v_righe_calcolate + 1;
       insert into scheda_voci (sezione, chiave, testo, ordine) values ('decisioni', 'limite:testo-calcolato-zz-' || v_righe_calcolate, repeat('ab ', 100), 100 + v_righe_calcolate);
@@ -545,9 +545,9 @@ begin
     reset role;
     select last_value + 1 into v_numero_prossimo from scheda_voci_numero_seq;
     for v_n in 1..300 loop
-      select (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:fonte-zz', repeat('x', v_n), 'da_verificare', null, null, null, null, null, true, 998, now(), now())::scheda_voci) into v_record;
+      v_record := (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:fonte-zz', repeat('x', v_n), 'da_verificare', null, null, null, null, null, true, 998, now(), now())::scheda_voci);
       if char_length(scheda_compone_testo(null, v_record)) <= 10000 then
-        select (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:fonte-zz', repeat('x', v_n), 'riferito', null, null, null, null, null, true, 998, now(), now())::scheda_voci) into v_record;
+        v_record := (row(gen_random_uuid(), v_numero_prossimo::integer, 'decisioni', 'limite:fonte-zz', repeat('x', v_n), 'riferito', null, null, null, null, null, true, 998, now(), now())::scheda_voci);
         if char_length(scheda_compone_testo(null, v_record)) > 10000 then
           v_limite_fonte_pronto := true;
           v_lunghezza_fonte := v_n;
