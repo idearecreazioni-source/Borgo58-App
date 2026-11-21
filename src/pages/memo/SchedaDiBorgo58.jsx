@@ -51,7 +51,7 @@ function Limiti({ contatori }) {
   const r = riquadroLimiti(contatori);
   if (!r) return null;
   return (
-    <div className="rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10 space-y-1" aria-label="Quanto spazio resta nella Scheda">
+    <div className="rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10 space-y-1" role="group" aria-label="Quanto spazio resta nella Scheda">
       <p className="testo-sala text-b58-charcoal">
         <strong>{r.voci}</strong> voci attive su {r.vociMassime} ·{" "}
         <strong>{r.caratteri.toLocaleString("it-IT")}</strong> caratteri su {r.caratteriMassimi.toLocaleString("it-IT")}
@@ -99,15 +99,36 @@ function ModuloVoce({ iniziale, onSalvata, onAnnulla, preparazione = null }) {
   const [delicate, setDelicate] = useState([]);
   const [nonControllate, setNonControllate] = useState(false);
   const guardia = useRef(unaVoltaSola());
+  const campoTesto = useRef(null);
+  // La parte casuale della chiave si sceglie UNA volta per modulo: se il salvataggio è riuscito ma la risposta si è
+  // persa, riprovare non crea un doppione (il database rifiuta la stessa chiave).
+  const casuale = useRef(Math.random());
   const conta = contatoreTesto(v.testo);
   const cambia = (campo) => (e) => setV((x) => ({ ...x, [campo]: e.target.value }));
 
-  // L'avviso si cerca quando si finisce di scrivere, non a ogni lettera.
-  async function controllaParole() {
-    const trovate = await paroleDelicate(v.testo);
-    setNonControllate(trovate === null);
-    setDelicate(trovate ?? []);
-  }
+  // Il modulo si apre con il cursore nel testo: chi usa la tastiera o un lettore di schermo non perde il posto.
+  useEffect(() => {
+    campoTesto.current?.focus();
+  }, []);
+
+  // L'avviso delle parole delicate si cerca poco dopo che si smette di scrivere, e vale per il testo di adesso:
+  // un avviso vecchio o arrivato in ritardo non resta a schermo.
+  useEffect(() => {
+    setDelicate([]);
+    setNonControllate(false);
+    if (!v.testo.trim()) return undefined;
+    let vivo = true;
+    const attesa = setTimeout(async () => {
+      const trovate = await paroleDelicate(v.testo);
+      if (!vivo) return;
+      setNonControllate(trovate === null);
+      setDelicate(trovate ?? []);
+    }, 500);
+    return () => {
+      vivo = false;
+      clearTimeout(attesa);
+    };
+  }, [v.testo]);
 
   async function salva(e) {
     e.preventDefault();
@@ -115,7 +136,7 @@ function ModuloVoce({ iniziale, onSalvata, onAnnulla, preparazione = null }) {
     setLavoro(true);
     setErrore(null);
     try {
-      onSalvata(await salvaVoce(preparazione ? preparazione(v) : v));
+      onSalvata(await salvaVoce(preparazione ? preparazione(v, casuale.current) : v));
     } catch (err) {
       setErrore(messaggioDelDatabase(err));
     } finally {
@@ -141,8 +162,8 @@ function ModuloVoce({ iniziale, onSalvata, onAnnulla, preparazione = null }) {
         <textarea
           id={idTesto}
           value={v.testo}
+          ref={campoTesto}
           onChange={cambia("testo")}
-          onBlur={controllaParole}
           rows={4}
           aria-describedby={`${idTesto}-conta`}
           className={inputClass}
@@ -153,9 +174,9 @@ function ModuloVoce({ iniziale, onSalvata, onAnnulla, preparazione = null }) {
             ? `${conta.oltre} caratteri di troppo: il massimo è ${TESTO_MASSIMO}.`
             : `${conta.scritti} di ${TESTO_MASSIMO} caratteri.`}
         </p>
-        {avviso && <p className="mt-1 testo-sala text-b58-turno-dark-testo">{avviso}</p>}
+        {avviso && <p role="status" className="mt-1 testo-sala text-b58-turno-dark-testo">{avviso}</p>}
         {nonControllate && (
-          <p className="mt-1 testo-sala text-b58-charcoal-soft">Non sono riuscito a controllare le parole delicate.</p>
+          <p role="status" className="mt-1 testo-sala text-b58-charcoal-soft">Non sono riuscito a controllare le parole delicate.</p>
         )}
       </div>
       <div>
@@ -169,15 +190,15 @@ function ModuloVoce({ iniziale, onSalvata, onAnnulla, preparazione = null }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label htmlFor={`${idTesto}-dal`} className={labelClass}>Vale dal</label>
-          <input id={`${idTesto}-dal`} type="date" value={v.valida_dal ?? ""} onChange={cambia("valida_dal")} className={inputClass} />
+          <input id={`${idTesto}-dal`} type="date" value={v.valida_dal ?? ""} onChange={cambia("valida_dal")} className={`${inputClass} campo-data`} />
         </div>
         <div>
           <label htmlFor={`${idTesto}-verificata`} className={labelClass}>Verificata il</label>
-          <input id={`${idTesto}-verificata`} type="date" value={v.verificata_il ?? ""} onChange={cambia("verificata_il")} className={inputClass} />
+          <input id={`${idTesto}-verificata`} type="date" value={v.verificata_il ?? ""} onChange={cambia("verificata_il")} className={`${inputClass} campo-data`} />
         </div>
         <div>
           <label htmlFor={`${idTesto}-rivedere`} className={labelClass}>Da rivedere entro</label>
-          <input id={`${idTesto}-rivedere`} type="date" value={v.rivedere_entro ?? ""} onChange={cambia("rivedere_entro")} className={inputClass} />
+          <input id={`${idTesto}-rivedere`} type="date" value={v.rivedere_entro ?? ""} onChange={cambia("rivedere_entro")} className={`${inputClass} campo-data`} />
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -266,11 +287,13 @@ export default function SchedaDiBorgo58() {
 
   const carica = useCallback(async () => {
     setErrore(false);
-    const r = await leggi(leggiVoci());
+    // Le due letture arrivano insieme: la pagina non mostra, nemmeno per un attimo, un «non riesco a leggere i
+    // limiti» che poi si rivela falso.
+    const [r, c] = await Promise.all([leggi(leggiVoci()), leggi(leggiContatori())]);
     if (nonLetto(r)) setErrore(true);
     else setVoci(r);
-    await caricaContatori();
-  }, [caricaContatori]);
+    setContatori(nonLetto(c) ? null : c);
+  }, []);
 
   useEffect(() => {
     carica();
@@ -293,7 +316,11 @@ export default function SchedaDiBorgo58() {
       rivedere_entro: "",
     });
   // La chiave interna e la posizione in fondo alla sezione le sceglie la pagina, non Alessio.
-  const preparaNuova = (v) => ({ ...v, chiave: chiaveNuova(v.sezione, v.testo), ordine: ordineInFondo(voci, v.sezione) });
+  const preparaNuova = (v, casuale) => ({ ...v, chiave: chiaveNuova(v.sezione, v.testo, casuale), ordine: ordineInFondo(voci, v.sezione) });
+  // Le voci spente si vedono anche quando una di loro è in modifica: nascondere la lista smonterebbe il modulo
+  // e lascerebbe la pagina bloccata (nessun pulsante attivo) senza niente da scrivere.
+  const modificaUnaSpenta = spente.some((x) => x.id === inModifica?.id);
+  const spenteVisibili = mostraSpente || modificaUnaSpenta;
 
   return (
     <div className="mx-auto max-w-3xl p-4 testo-sala-grande space-y-4">
@@ -372,12 +399,13 @@ export default function SchedaDiBorgo58() {
               <button
                 type="button"
                 onClick={() => setMostraSpente((m) => !m)}
-                aria-expanded={mostraSpente}
-                className="tocco-bottone testo-sala text-b58-olive-dark-testo underline"
+                disabled={modificaUnaSpenta}
+                aria-expanded={spenteVisibili}
+                className="tocco-bottone testo-sala text-b58-olive-dark-testo underline disabled:opacity-50"
               >
-                {mostraSpente ? "Nascondi le voci spente" : `Voci spente (${spente.length})`}
+                {spenteVisibili ? "Nascondi le voci spente" : `Voci spente (${spente.length})`}
               </button>
-              {mostraSpente && (
+              {spenteVisibili && (
                 <ul className="mt-2 flex flex-col gap-3">
                   {spente.map((voce) =>
                     inModifica?.id === voce.id ? (

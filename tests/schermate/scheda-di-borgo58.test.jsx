@@ -146,9 +146,54 @@ describe("La Scheda · scrivere una voce", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Aggiungi una voce" }));
     const campo = screen.getByLabelText("Cosa vuoi far sapere a MEMO");
     fireEvent.change(campo, { target: { value: "C'è un debito col fornitore." } });
-    fireEvent.blur(campo);
+    // L'avviso arriva poco dopo che si smette di scrivere, senza dover uscire dal campo.
     expect(await screen.findByText(/parole delicate \(debito\)/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Salva" }).disabled).toBe(false);
+    // Cambiando il testo l'avviso vecchio non resta a schermo.
+    finto.delicate = [];
+    fireEvent.change(campo, { target: { value: "Un testo senza problemi." } });
+    await waitFor(() => expect(screen.queryByText(/parole delicate/)).toBeNull());
+  });
+
+  it("aprendo la pagina non compare nemmeno per un attimo il falso «non riesco a leggere i limiti»", async () => {
+    await apri();
+    expect(screen.queryByText(/Non riesco a leggere quanto spazio/)).toBeNull();
+    await screen.findByText("[S1]");
+    expect(screen.queryByText(/Non riesco a leggere quanto spazio/)).toBeNull();
+  });
+
+  it("il cursore va subito nel testo del modulo che si apre", async () => {
+    await apri();
+    fireEvent.click(await screen.findByRole("button", { name: "Aggiungi una voce" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Cosa vuoi far sapere a MEMO"));
+  });
+
+  it("riprovando dopo un errore la chiave interna è la stessa: nessun doppione", async () => {
+    finto.rifiuto = "ERROR: rete caduta";
+    await apri();
+    fireEvent.click(await screen.findByRole("button", { name: "Aggiungi una voce" }));
+    fireEvent.change(screen.getByLabelText("Cosa vuoi far sapere a MEMO"), { target: { value: "Una voce." } });
+    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    await screen.findByRole("alert");
+    finto.rifiuto = null;
+    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    await waitFor(() => expect(spie.salvate).toHaveLength(2));
+    expect(spie.salvate[1].chiave).toBe(spie.salvate[0].chiave);
+  });
+
+  it("modificando una voce spenta la lista delle spente non si può chiudere (la pagina non resta bloccata)", async () => {
+    await apri();
+    fireEvent.click(await screen.findByRole("button", { name: /Voci spente/ }));
+    const voce = (await screen.findByText(/Voce spenta di prova/)).closest("li");
+    fireEvent.click(within(voce).getByRole("button", { name: "Modifica" }));
+    expect(await screen.findByLabelText("Cosa vuoi far sapere a MEMO")).toBeTruthy();
+    const nascondi = screen.getByRole("button", { name: "Nascondi le voci spente" });
+    expect(nascondi.disabled).toBe(true);
+    fireEvent.click(nascondi);
+    expect(screen.getByLabelText("Cosa vuoi far sapere a MEMO")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Annulla" }));
+    await waitFor(() => expect(screen.queryByLabelText("Cosa vuoi far sapere a MEMO")).toBeNull());
+    expect(screen.getByRole("button", { name: "Aggiungi una voce" })).toBeTruthy();
   });
 
   it("il rifiuto del database si legge sotto il pulsante, in italiano semplice, e la voce non entra", async () => {
