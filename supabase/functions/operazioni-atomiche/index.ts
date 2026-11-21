@@ -395,6 +395,10 @@ const OPERAZIONI = new Set([
   // A meta' resterebbe una voce scritta con la proposta ancora «in attesa», e
   // un secondo Sì la raddoppierebbe.
   "scheda_proposta_decidi",
+  // Annullare un lotto di import dal Drive (20261122000001): i documenti del lotto
+  // si tolgono e il lotto si segna annullato, insieme. A meta' resterebbe un lotto
+  // «vivo» senza documenti, o documenti di un lotto gia' annullato.
+  "import_lotto_annulla",
   "paga_fattura_da_movimento_banca",
   "registra_movimento_banca",
   // 🔴 La voce si chiude insieme al dato (20261026000002): una cosa detta a

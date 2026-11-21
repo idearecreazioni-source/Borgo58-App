@@ -142,3 +142,28 @@ export async function removeDocumentFile(storagePath) {
   const { error } = await supabase.storage.from(BUCKET).remove([storagePath]);
   if (error) throw error;
 }
+
+// 🔴 ANNULLARE UN LOTTO DI IMPORT DAL DRIVE (22/11/2026, 20261122000001).
+// Stesso ordine di `deleteDocument`: PRIMA i file dal deposito, POI le righe. Se il file non si toglie ci si
+// ferma e non si tocca niente; se si ferma il passo dopo, restano documenti senza file — si vedono, e riprovando
+// si riparano (togliere un file già assente non dà errore).
+export async function percorsiLottoImport(lottoId) {
+  const { data, error } = await supabase.rpc("import_lotto_percorsi", { p_lotto: lottoId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Restituisce quanti documenti ha tolto dall'Archivio.
+export async function annullaLottoImport(lottoId) {
+  const percorsi = await percorsiLottoImport(lottoId);
+  if (percorsi.length > 0) {
+    const { error } = await supabase.storage.from(BUCKET).remove(percorsi.map((p) => p.storage_path));
+    if (error) {
+      throw new Error(
+        "Non sono riuscito a togliere i file dal deposito, quindi non ho annullato il lotto: " +
+          "resta tutto com'era. Riprova fra poco. (" + error.message + ")"
+      );
+    }
+  }
+  return eseguiOperazione("import_lotto_annulla", { p_lotto: lottoId });
+}

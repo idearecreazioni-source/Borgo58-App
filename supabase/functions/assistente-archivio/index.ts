@@ -184,9 +184,12 @@ Deno.serve(async (req) => {
   for (const d of candidati) {
     const { data: riga } = await supabase
       .from("documents")
-      .select("id, title, testo")
+      .select("id, title, testo, no_ai")
       .eq("id", d.id as string)
       .single();
+    // 🔴 Un documento con «non far leggere all'AI» acceso non entra mai nel contesto (22/11/2026).
+    //    La funzione del database lo toglie già dall'elenco; questo è il secondo lucchetto, sulla lettura del testo.
+    if (riga?.no_ai === true) continue;
     const testo = (riga?.testo ?? "") as string;
     if (!testo) continue;
     if (caratteri + testo.length > CARATTERI_MAX && daLeggere.length > 0) break;
