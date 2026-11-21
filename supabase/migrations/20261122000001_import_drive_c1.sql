@@ -63,6 +63,10 @@ begin
 end;
 $funzione$;
 
+-- ⚠️ Una funzione nuova nasce eseguibile da tutti, anche da chi non è entrato (`anon`). Questa serve solo al
+--    trigger, che non chiede il permesso di eseguirla a chi cancella: si chiude.
+revoke all on function lotti_import_non_cancellabili() from public, anon, authenticated;
+
 drop trigger if exists lotti_import_bloccati on lotti_import;
 create trigger lotti_import_bloccati before delete on lotti_import
   for each row execute function lotti_import_non_cancellabili();
@@ -204,6 +208,26 @@ end $funzione$;
 
 revoke all on function memo_leggi_documenti(text) from public, anon, authenticated;
 grant execute on function memo_leggi_documenti(text) to authenticated;
+
+-- 🔴 IL CONFRONTO NOTTURNO DI MEMO (20261115000017) paragona `memo_leggi_documenti(null)` con il numero dei
+--    documenti della pagina. Ora la lettura di MEMO salta i `no_ai`: se il confronto contasse anche quelli, ogni
+--    documento riservato farebbe scattare un allarme finto ogni notte. Si ripara il corpo VIVO della funzione
+--    (cambia una sola riga, controllata: deve comparire una volta sola).
+do $confronto$
+declare
+  v_vecchio constant text := 'into v_pc, v_pt from documents d;';
+  v_nuovo   constant text := 'into v_pc, v_pt from documents d where not d.no_ai;';
+  v_def     text;
+  v_n       integer;
+begin
+  v_def := replace(pg_get_functiondef('public.memo_confronta_con_le_pagine()'::regprocedure), E'\r', '');
+  if v_def like '%' || v_nuovo || '%' then return; end if;
+  v_n := (length(v_def) - length(replace(v_def, v_vecchio, ''))) / length(v_vecchio);
+  if v_n <> 1 then
+    raise exception 'memo_confronta_con_le_pagine non ha una sola riga «%» (ne ha %): confronta il corpo vivo prima di applicare.', v_vecchio, v_n;
+  end if;
+  execute replace(v_def, v_vecchio, v_nuovo);
+end $confronto$;
 
 -- ---------------------------------------------------------------------
 -- 5. L'ELENCO DEL DRIVE
@@ -379,6 +403,16 @@ begin
   select user_id into v_tit from user_roles where role = 'titolare' limit 1;
   select user_id into v_staff from user_roles where role = 'staff' limit 1;
   if v_tit is null then raise exception 'VERIFICA: nessun titolare.'; end if;
+
+  -- (0) il confronto notturno conta i documenti come li legge MEMO (senza i no_ai).
+  if pg_get_functiondef('public.memo_confronta_con_le_pagine()'::regprocedure) not like '%from documents d where not d.no_ai;%' then
+    raise exception 'VERIFICA (0): il confronto notturno di MEMO conta ancora anche i documenti no_ai.';
+  end if;
+  -- (0b) la funzione del trigger non e'' eseguibile da nessuno (era il caso «18 invece di 17» di anon).
+  if has_function_privilege('anon', 'lotti_import_non_cancellabili()', 'execute')
+     or has_function_privilege('authenticated', 'lotti_import_non_cancellabili()', 'execute') then
+    raise exception 'VERIFICA (0b): la funzione del trigger dei lotti e'' eseguibile da chi non deve.';
+  end if;
 
   -- (1) le tre sezioni nuove ci sono e sono accese.
   select count(*) into v_n from sezioni_archivio

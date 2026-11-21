@@ -164,6 +164,13 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261010000003",
     perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
   },
+  // ⚠️ Lo strumento «leggi_elenco_drive» di MEMO (22/11/2026): lo chiama `memo-chat` con il nome costruito
+  //    (`rpc(nome)`), quindi in `src/` il nome intero non compare. PIANIFICATA finche' la 20261122000001
+  //    non e' anche in produzione.
+  memo_leggi_elenco_drive: {
+    versione: "20261122000001",
+    perche: "chiamata da memo-chat: lo strumento «leggi_elenco_drive» (i file del Drive che non sono nel gestionale)",
+  },
   memo_limite_messaggi: {
     versione: "20261114000011",
     perche: "chat di MEMO, PR 4-5: il motore chiede il freno prima di inviare il messaggio al modello",

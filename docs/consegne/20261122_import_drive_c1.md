@@ -14,6 +14,7 @@ Parte del progetto «import dal Drive» deciso con Alessio il 21-22/11. Questo p
 
 ## Migrazione
 - **20261122000001** (import drive C1): tabelle `lotti_import` e `elenco_drive`, quattro colonne di `documents`, tre sezioni, `documenti_per_domanda` e `memo_leggi_documenti` rifatte con il filtro `no_ai` (stessi corpi di prima: `20260812000010` e `20261115000010`+`20261115000018`, più un solo `where`), `elenco_drive_cerca`, `memo_leggi_elenco_drive`, `import_lotto_percorsi`, `import_lotto_annulla`. Verifica interna annullata (zero residui) con una ventina di controlli su dati inventati.
+- Ripara anche il **confronto notturno di MEMO** (`memo_confronta_con_le_pagine`, 20261115000017): ora paragona la lettura di MEMO con i documenti NON `no_ai`, altrimenti un documento riservato farebbe scattare un allarme finto ogni notte. Si cambia una riga del corpo vivo, controllata (se non è una sola, la migrazione si ferma).
 - Prerequisiti: `20260830000013` (sezioni), `20261121000002`. Non cambia nessuna riga esistente: i documenti già in Archivio restano con `no_ai` falso.
 
 ## Funzioni online da installare al rilascio (⚠️ senza di loro il blocco no_ai è a metà)

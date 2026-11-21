@@ -119,6 +119,17 @@ describe("l'import dal Drive (C1)", () => {
     expect(migrazione).toMatch(/grant execute on function memo_leggi_elenco_drive\(text\) to authenticated;/);
   });
 
+  it("il confronto notturno di MEMO non conta i documenti no_ai (niente allarmi finti)", () => {
+    expect(migrazione).toContain("into v_pc, v_pt from documents d where not d.no_ai;");
+    expect(migrazione).toMatch(/memo_confronta_con_le_pagine\(\)'::regprocedure/);
+    // Si cambia una sola riga del corpo vivo, e se non è una sola ci si ferma.
+    expect(migrazione).toMatch(/if v_n <> 1 then/);
+  });
+
+  it("la funzione del trigger dei lotti è chiusa a tutti (altrimenti anon la può eseguire)", () => {
+    expect(migrazione).toMatch(/revoke all on function lotti_import_non_cancellabili\(\) from public, anon, authenticated;/);
+  });
+
   it("la verifica interna è annullata e non lascia residui", () => {
     expect(migrazione).toContain("raise exception 'ZZ_ANNULLA'");
     expect(migrazione).toContain("pretendi_nessun_residuo(v_foto");
