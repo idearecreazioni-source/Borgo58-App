@@ -109,11 +109,17 @@ function una<T>(righe: T | T[] | null) { return Array.isArray(righe) ? righe[0] 
 function testoDi(blocchi: Array<{ type: string; text?: string }>) {
   return blocchi.filter((b) => b.type === "text").map((b) => b.text ?? "").join("\n").trim();
 }
-function costoStimato(tokenIngresso: number, tokenUscita: number, prezzo: Riga | null) {
+// I token della cache dei prompt costano diversamente dai token d'ingresso normali (che nell'API NON li
+// comprendono): riletti dalla cache un decimo, scritti nella cache una volta e un quarto (durata di 5 minuti).
+// Senza contarli, con la cache accesa il costo risulterebbe sottostimato e il tetto scatterebbe tardi.
+const CACHE_LETTURA = 0.1;
+const CACHE_SCRITTURA = 1.25;
+function costoStimato(tokenIngresso: number, tokenUscita: number, prezzo: Riga | null, cacheLettura = 0, cacheScrittura = 0) {
   const entrata = Number(prezzo?.euro_milione_in);
   const uscita = Number(prezzo?.euro_milione_out);
   if (!Number.isFinite(entrata) || !Number.isFinite(uscita)) return null;
-  return Math.round(((tokenIngresso / 1_000_000) * entrata + (tokenUscita / 1_000_000) * uscita) * 100000) / 100000;
+  const ingresso = (tokenIngresso + cacheLettura * CACHE_LETTURA + cacheScrittura * CACHE_SCRITTURA) / 1_000_000;
+  return Math.round((ingresso * entrata + (tokenUscita / 1_000_000) * uscita) * 100000) / 100000;
 }
 function calcola(input: Riga) {
   const numeri = Array.isArray(input.numeri) ? input.numeri.map(Number) : [];
@@ -278,7 +284,7 @@ Deno.serve(async (req) => {
   const nomiStrumenti: Array<string | Riga> = [];
   const giriDelModello: Riga[] = [];
   let tagliata = false;
-  let strumentiUsati = 0; let tokenIngresso = 0; let tokenUscita = 0; let rispostaFinale = ""; let stato = "fatto"; let concluso = false; let documentiLetti = 0;
+  let strumentiUsati = 0; let tokenIngresso = 0; let tokenUscita = 0; let tokenCacheLettura = 0; let tokenCacheScrittura = 0; let rispostaFinale = ""; let stato = "fatto"; let concluso = false; let documentiLetti = 0;
 
   try {
     for (let giro = 0; giro < GIRI_MASSIMI; giro += 1) {
@@ -288,14 +294,17 @@ Deno.serve(async (req) => {
       // renderebbe possibile sforare il freno quando la cronologia e gli
       // esiti degli strumenti crescono.
       const ingressoPrevisto = Math.ceil((ISTRUZIONI.length + JSON.stringify(cronologia).length + JSON.stringify(strumenti).length) / 3);
-      const preventivo = costoStimato(tokenIngresso + ingressoPrevisto, TOKEN_RISPOSTA, prezzo as Riga);
+      const preventivo = costoStimato(tokenIngresso + ingressoPrevisto, TOKEN_RISPOSTA, prezzo as Riga, tokenCacheLettura, tokenCacheScrittura);
       if (preventivo === null || preventivo > COSTO_MASSIMO) { stato = "tetto"; rispostaFinale = "Mi fermo: questa domanda supererebbe 0,50 € stimati: prova a spezzarla in domande più piccole."; break; }
       const esito = await anthropic.messages.create({ model: MODELLO, max_tokens: TOKEN_RISPOSTA, system: `${ISTRUZIONI}\n\nOGGI: ${oggi.lungo}, ore ${oggi.orario} (Roma), cioè ${oggi.iso}. DOMANI: ${oggi.lungoDomani}, cioè ${oggi.isoDomani}. «Oggi», «domani», «questa settimana» e simili si calcolano da questa data. Le date dei dati arrivano nel formato AAAA-MM-GG: confrontale con queste e scrivi sempre le date per esteso in italiano.`, tools: strumenti as never, messages: cronologia as never });
       tokenIngresso += esito.usage.input_tokens; tokenUscita += esito.usage.output_tokens;
+      // I token della cache non sono dentro input_tokens: si contano a parte, con il loro prezzo (vedi costoStimato).
+      tokenCacheLettura += Number(esito.usage.cache_read_input_tokens ?? 0) || 0;
+      tokenCacheScrittura += Number(esito.usage.cache_creation_input_tokens ?? 0) || 0;
       // Il registro dice come e' finito ogni giro del modello (perche' si e' fermato, che blocchi ha scritto): serve a capire i guasti.
       if (esito.stop_reason === "max_tokens") tagliata = true;
       giriDelModello.push({ giro, fine: esito.stop_reason, blocchi: (esito.content as Array<{ type: string }>).map((b) => b.type).join("+"), token_uscita: esito.usage.output_tokens });
-      const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga);
+      const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga, tokenCacheLettura, tokenCacheScrittura);
       if (costo !== null && costo > COSTO_MASSIMO) { stato = "tetto"; rispostaFinale = "Mi fermo: il costo stimato di questa risposta ha superato 0,50 €."; break; }
       const blocchi = esito.content as Array<{ type: string; id?: string; name?: string; input?: Riga; text?: string }>;
       const testo = testoDi(blocchi);
@@ -411,8 +420,10 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
   if (senzaFonte.length && !/controllalo/i.test(rispostaFinale)) rispostaFinale += "\n\nControllalo: alcuni numeri non arrivano dai dati letti.";
   const fonti = usatiOra.length ? `Dove l'ho letto: ${compattaRiferimenti(usatiOra.map((r) => r.rif))}.` : "Dove l'ho letto: nessuna riga del gestionale.";
   rispostaFinale = `${rispostaFinale}\n\n${fonti}`.trim();
-  const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga);
-  await supabase.from("memo_messaggi").insert({ conversazione_id: conversazioneId, ruolo: "memo", testo: rispostaFinale.slice(0, 4000), strumenti: [...nomiStrumenti, { giri_del_modello: giriDelModello }], risultati: usatiOra.map(({ rif, tabella }) => ({ rif, tabella })), modello: MODELLO, token_ingresso: tokenIngresso, token_uscita: tokenUscita, costo_euro: costo, stato });
+  // Il costo del messaggio conta anche i token di cache. Le letture di documento NON si sommano qui: le registra
+  // documento-leggi in letture_documento (fonte «documento» di consumi_ai), e sommarle anche qui le conterebbe due volte nel tetto.
+  const costo = costoStimato(tokenIngresso, tokenUscita, prezzo as Riga, tokenCacheLettura, tokenCacheScrittura);
+  await supabase.from("memo_messaggi").insert({ conversazione_id: conversazioneId, ruolo: "memo", testo: rispostaFinale.slice(0, 4000), strumenti: [...nomiStrumenti, { giri_del_modello: giriDelModello }], risultati: usatiOra.map(({ rif, tabella }) => ({ rif, tabella })), modello: MODELLO, token_ingresso: tokenIngresso, token_uscita: tokenUscita, token_cache_lettura: tokenCacheLettura, token_cache_scrittura: tokenCacheScrittura, costo_euro: costo, stato });
   await supabase.from("memo_messaggi").update({ stato }).eq("id", messaggioAlessio.id);
   return risposta(stato === "tetto" ? 429 : 200, { esito: stato, conversazione_id: conversazioneId, risposta: rispostaFinale, riferimenti: usatiOra.map(({ rif, tabella }) => ({ rif, tabella })), costo_euro: costo, token_ingresso: tokenIngresso, token_uscita: tokenUscita });
 });
