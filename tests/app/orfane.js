@@ -168,6 +168,14 @@ export const ORFANE_PIANIFICATE = {
     versione: "20261114000011",
     perche: "chat di MEMO, PR 4-5: il motore chiede il freno prima di inviare il messaggio al modello",
   },
+  scheda_per_memo: {
+    versione: "20261120000002",
+    perche: "Scheda di Borgo 58, S1-S3: MEMO legge il testo stabile della Scheda prima di rispondere; S2 dovrà chiamarla con il token dell'utente, non con service_role",
+  },
+  scheda_parole_delicate: {
+    versione: "20261120000002",
+    perche: "Scheda di Borgo 58, S1-S3: la schermata futura avvisa sulle parole delicate senza bloccarle",
+  },
   // ⚠️ Le porte del programma ponte sul mini-PC (28/10/2026): le chiama
   //    `ponte/`, che sta fuori da `src/` apposta — non deve finire nel sito.
   //    Sono tre, ma qui ne restano due: `ponte_esito_lavoro` ha il nome in
