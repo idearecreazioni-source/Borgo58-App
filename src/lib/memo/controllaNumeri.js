@@ -17,13 +17,15 @@ function raccogliNumeri(valore, dentro = []) {
 
 /**
  * Restituisce i numeri scritti nella risposta che non sono fra quelli letti
- * o calcolati dal gestionale. Le date (ISO o gg/mm/aaaa) e le ore non sono importi e si ignorano;
+ * o calcolati dal gestionale. Le date (ISO, gg/mm/aaaa o scritte in lettere come «1° ottobre 2026») e le ore non sono importi e si ignorano;
  * `extra` sono i numeri della data di oggi che il server dà al modello.
  */
 export function numeriSenzaFonte(risposta, risultati = [], extra = []) {
   const ammessi = [...raccogliNumeri(risultati), ...extra].map((n) => Math.round(n * 100) / 100);
   const senzaFonte = [];
   const testo = String(risposta ?? "").replace(/\b\d{4}-\d{2}-\d{2}\b/g, "")
+    .replace(/\b\d{1,2}\s*°?\s*(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)(?:\s+\d{4})?/gi, "")
+    .replace(/\b(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+\d{4}\b/gi, "")
     .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "")
     .replace(/\b\d{1,2}:\d{2}\b/g, "");
   for (const trovato of testo.matchAll(/(?<![\w-])(\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:\.\d+)?)(?![\w-])/g)) {

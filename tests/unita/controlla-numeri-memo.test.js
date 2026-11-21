@@ -18,7 +18,13 @@ describe("controllaNumeri", () => {
   });
 
   it("i numeri della data di oggi dati al modello sono ammessi", () => {
-    expect(controllaNumeri("Oggi è il 15 novembre 2026.", []).verificato).toBe(false);
-    expect(numeriSenzaFonte("Oggi è il 15 novembre 2026.", [], [15, 11, 2026, 22, 15])).toEqual([]);
+    expect(numeriSenzaFonte("Oggi sono le 22 e 15 del 15.", [], [15, 11, 2026, 22, 15])).toEqual([]);
+    expect(numeriSenzaFonte("Oggi sono le 22 e 15 del 15.", [])).toEqual(["22", "15"]);
+  });
+
+  it("le date scritte in lettere non sono numeri inventati (falso allarme del 21/11 su «1° ottobre 2026»)", () => {
+    expect(controllaNumeri("Il contratto parte dal 1° ottobre 2026 e finisce il 30 settembre 2032; da ottobre 2026 si paga l'affitto.", []).verificato).toBe(true);
+    expect(controllaNumeri("Oggi è il 15 novembre 2026.", []).verificato).toBe(true);
+    expect(controllaNumeri("Il 1 ottobre sono 300 € in più.", [{ totale: 250 }]).verificato).toBe(false);
   });
 });

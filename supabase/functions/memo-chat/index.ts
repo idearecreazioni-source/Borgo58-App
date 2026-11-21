@@ -176,7 +176,7 @@ function numeriSenzaFonte(testo: string, risultati: unknown[], extra: number[] =
   return numeriDelTesto(testo).filter((n) => !numeri.some((dato) => Math.abs(dato - n) < 0.005));
 }
 function numeriDelTesto(testo: string) {
-  return [...testo.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "").replace(/\b\d{1,2}:\d{2}\b/g, "").matchAll(/(?<![\w-])(\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:\.\d+)?)(?![\w-])/g)]
+  return [...testo.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").replace(/\b\d{1,2}\s*°?\s*(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)(?:\s+\d{4})?/gi, "").replace(/\b(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+\d{4}\b/gi, "").replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, "").replace(/\b\d{1,2}:\d{2}\b/g, "").matchAll(/(?<![\w-])(\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:\.\d+)?)(?![\w-])/g)]
     .map((m) => Number(m[1].replace(/\./g, "").replace(",", ".")))
     .filter((n) => Number.isFinite(n));
 }
