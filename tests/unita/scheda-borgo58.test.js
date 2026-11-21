@@ -156,10 +156,10 @@ describe("la Scheda di Borgo 58 (S1)", () => {
     expect(migrazione).toMatch(/new\.id is distinct from old\.id[\s\S]*new\.numero is distinct from old\.numero[\s\S]*new\.creata_il is distinct from old\.creata_il/i);
   });
 
-  it("dichiara le due funzioni chiamabili ma senza schermata della S1-S3", () => {
+  it("le due funzioni chiamabili hanno ora la loro porta (S2 e S3) e non sono più «orfane»", () => {
+    // S1 le dichiarava senza schermata, in attesa di S2 (memo-chat) e S3 (la pagina /memo/scheda).
     for (const nome of ["scheda_per_memo", "scheda_parole_delicate"]) {
-      expect(ORFANE_PIANIFICATE[nome]).toMatchObject({ versione: "20261120000002" });
-      expect(ORFANE_PIANIFICATE[nome].perche).toContain("Scheda di Borgo 58, S1-S3");
+      expect(ORFANE_PIANIFICATE[nome]).toBeUndefined();
     }
   });
 
