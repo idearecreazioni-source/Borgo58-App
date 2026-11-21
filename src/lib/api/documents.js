@@ -153,8 +153,20 @@ export async function percorsiLottoImport(lottoId) {
   return data ?? [];
 }
 
+// Si può annullare? Risposta { puo, motivo }. La pagina la chiede PRIMA di toccare i file.
+export async function lottoImportPuoAnnullare(lottoId) {
+  const { data, error } = await supabase.rpc("import_lotto_puo_annullare", { p_lotto: lottoId });
+  if (error) throw error;
+  const riga = Array.isArray(data) ? data[0] : data;
+  return { puo: riga?.puo === true, motivo: riga?.motivo ?? null };
+}
+
 // Restituisce quanti documenti ha tolto dall'Archivio.
+// ⚠️ Prima si chiede se si può annullare: tolti i file dal deposito, un annullamento che si ferma (lotto già
+// annullato, documento usato altrove) lascerebbe documenti senza file.
 export async function annullaLottoImport(lottoId) {
+  const { puo, motivo } = await lottoImportPuoAnnullare(lottoId);
+  if (!puo) throw new Error(motivo ?? "Questo lotto non si può annullare.");
   const percorsi = await percorsiLottoImport(lottoId);
   if (percorsi.length > 0) {
     const { error } = await supabase.storage.from(BUCKET).remove(percorsi.map((p) => p.storage_path));

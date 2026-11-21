@@ -151,10 +151,16 @@ Deno.serve(async (req) => {
 
   const tutti = (ordinati ?? []) as Array<Record<string, unknown>>;
   if (tutti.length === 0) {
+    // 🔴 La funzione del database toglie i documenti «non far leggere all'AI»: un elenco vuoto può voler dire
+    //    «Archivio vuoto» oppure «ci sono documenti, ma nessuno che io possa leggere». Sono due cose diverse.
+    const { count: totaleDocumenti } = await supabase.from("documents").select("id", { count: "exact", head: true });
+    const nessunoLeggibile = (totaleDocumenti ?? 0) > 0;
     return new Response(
       JSON.stringify({
         risultato: {
-          risposta: "Nell'Archivio non c'è ancora nessun documento.",
+          risposta: nessunoLeggibile
+            ? "Nessun documento che l'assistente possa leggere: quelli in Archivio sono tutti segnati «non far leggere all'AI»."
+            : "Nell'Archivio non c'è ancora nessun documento.",
           documenti_guardati: 0,
           documenti_letti: [],
           senza_contenuto: 0,

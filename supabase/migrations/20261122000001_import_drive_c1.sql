@@ -82,7 +82,8 @@ create policy lotti_import_titolare_legge on lotti_import for select to authenti
   using ((select is_titolare()));
 drop policy if exists lotti_import_titolare_apre on lotti_import;
 create policy lotti_import_titolare_apre on lotti_import for insert to authenticated
-  with check ((select is_titolare()) and annullato_il is null and annullato_da is null);
+  with check ((select is_titolare()) and annullato_il is null and annullato_da is null
+              and creato_da = (select auth.uid()));
 
 -- ---------------------------------------------------------------------
 -- 2. I DOCUMENTI: QUATTRO COLONNE IN PIÙ
@@ -122,15 +123,40 @@ comment on constraint documents_lotto_import_id_fkey on documents is
 create index if not exists idx_documents_impronta on documents (impronta_sha256) where impronta_sha256 is not null;
 create index if not exists idx_documents_lotto_import on documents (lotto_import_id) where lotto_import_id is not null;
 
+-- Un documento non entra in un lotto già annullato: un lotto annullato è chiuso, e il suo annullamento
+-- non ripasserebbe più a togliere il documento arrivato dopo.
+create or replace function documenti_lotto_non_annullato()
+returns trigger language plpgsql security definer set search_path = public as $funzione$
+begin
+  if tg_op = 'UPDATE' and old.lotto_import_id is not distinct from new.lotto_import_id then
+    return new;
+  end if;
+  if exists (select 1 from lotti_import l where l.id = new.lotto_import_id and l.annullato_il is not null) then
+    raise exception 'Questo lotto di import e'' gia'' stato annullato: un documento non puo'' entrare in un lotto annullato.';
+  end if;
+  return new;
+end;
+$funzione$;
+
+revoke all on function documenti_lotto_non_annullato() from public, anon, authenticated;
+
+drop trigger if exists documenti_lotto_non_annullato on documents;
+create trigger documenti_lotto_non_annullato before insert or update of lotto_import_id on documents
+  for each row when (new.lotto_import_id is not null) execute function documenti_lotto_non_annullato();
+
 -- ---------------------------------------------------------------------
 -- 3. TRE SEZIONI NUOVE
 -- ---------------------------------------------------------------------
--- `do nothing`: se Alessio rinomina un'etichetta, rieseguire non la riporta indietro.
+-- Se il codice esiste già ACCESO non si tocca: se Alessio rinomina un'etichetta, rieseguire non la riporta
+-- indietro. Se esiste SPENTO (su work potrebbe essere una sezione «legacy» nata da un valore scritto a mano,
+-- con l'etichetta uguale al codice) si riaccende e prende l'etichetta e l'ordine giusti.
 insert into sezioni_archivio (codice, etichetta, ordine) values
   ('preventivi',           'Preventivi',               9),
   ('progetto_planimetrie', 'Progetto e planimetrie',  10),
   ('assicurazioni',        'Assicurazioni',           11)
-on conflict (codice) do nothing;
+on conflict (codice) do update
+  set attiva = true, etichetta = excluded.etichetta, ordine = excluded.ordine
+  where not sezioni_archivio.attiva;
 
 -- ---------------------------------------------------------------------
 -- 4. «CHIEDI ALL'ARCHIVIO» E LA CHAT DI MEMO NON VEDONO I DOCUMENTI no_ai
@@ -229,6 +255,30 @@ begin
   execute replace(v_def, v_vecchio, v_nuovo);
 end $confronto$;
 
+-- 🔴 LE PROPOSTE DELLA SCHEDA (20261121000002, già su work: non si modifica) leggono i contratti dell'Archivio.
+--    Un contratto con «non far leggere all'AI» non deve generare una proposta (il suo titolo e le sue controparti
+--    finirebbero nel testo proposto) né una proposta di «spegni». Si ripara il corpo VIVO di
+--    `scheda_proposte_calcola()`: due righe, ognuna controllata (deve comparire una volta sola).
+do $proposte$
+declare
+  v_vecchio1 constant text := 'and btrim(coalesce(d0.title, '''')) <> ''''';
+  v_nuovo1   constant text := 'and btrim(coalesce(d0.title, '''')) <> '''' and not d0.no_ai';
+  v_vecchio2 constant text := 'where v.attiva and d.expiry_date is not null and d.expiry_date < v_oggi';
+  v_nuovo2   constant text := 'where v.attiva and d.expiry_date is not null and d.expiry_date < v_oggi and not d.no_ai';
+  v_def      text;
+  v_n1       integer;
+  v_n2       integer;
+begin
+  v_def := replace(pg_get_functiondef('public.scheda_proposte_calcola()'::regprocedure), E'\r', '');
+  if v_def like '%' || v_nuovo1 || '%' and v_def like '%' || v_nuovo2 || '%' then return; end if;
+  v_n1 := (length(v_def) - length(replace(v_def, v_vecchio1, ''))) / length(v_vecchio1);
+  v_n2 := (length(v_def) - length(replace(v_def, v_vecchio2, ''))) / length(v_vecchio2);
+  if v_n1 <> 1 or v_n2 <> 1 then
+    raise exception 'scheda_proposte_calcola: le due righe da riparare compaiono % e % volte (attese una e una): confronta il corpo vivo prima di applicare.', v_n1, v_n2;
+  end if;
+  execute replace(replace(v_def, v_vecchio1, v_nuovo1), v_vecchio2, v_nuovo2);
+end $proposte$;
+
 -- ---------------------------------------------------------------------
 -- 5. L'ELENCO DEL DRIVE
 -- ---------------------------------------------------------------------
@@ -252,6 +302,11 @@ create table if not exists elenco_drive (
 
 comment on table elenco_drive is
   'I file del Drive che NON sono (o non solo) nel gestionale, con il link per aprirli: l''elenco da consultare (C1, 22/11/2026). MEMO lo cerca con elenco_drive_cerca. Solo il titolare.';
+-- Come per i documenti: un file dell'elenco con no_ai acceso non lo vede MEMO. Spento di partenza.
+alter table elenco_drive add column if not exists no_ai boolean not null default false;
+comment on column elenco_drive.no_ai is
+  'Vero = questo file dell''elenco non va mostrato a MEMO (non compare nelle sue ricerche). Lo decide il titolare. Falso di partenza.';
+create index if not exists idx_elenco_drive_importato on elenco_drive (importato_documento_id) where importato_documento_id is not null;
 comment on column elenco_drive.sezione is
   'La sezione indicata nell''elenco di Alessio, scritta come testo libero: i file solo-elenco non vanno nell''Archivio, quindi non devono combaciare con le sue sezioni.';
 comment on column elenco_drive.importato_documento_id is
@@ -295,11 +350,14 @@ begin
     into v_parole
     from (select w from unnest(string_to_array(scheda_normalizza(p_testo), ' ')) as w
            where char_length(w) >= 2 limit 6) x;
+  -- Senza parole valide non si cerca niente: zero righe (non «tutto l'elenco»).
+  if coalesce(array_length(v_parole, 1), 0) = 0 then return; end if;
   return query
   select e.id, e.nome, e.cartella, e.sezione, e.data_documento, e.link, e.formato, e.mb, e.sensibile,
          (e.importato_documento_id is not null), (count(*) over ())::integer
     from elenco_drive e
-   where not exists (
+   where not e.no_ai
+     and not exists (
            select 1 from unnest(v_parole) as p
             where position(p in scheda_normalizza(e.nome || ' ' || e.cartella || ' ' || coalesce(e.sezione, ''))) = 0)
    order by (e.importato_documento_id is not null), e.data_documento desc nulls last, e.nome
@@ -348,6 +406,37 @@ end $funzione$;
 
 revoke all on function import_lotto_percorsi(uuid) from public, anon, authenticated;
 grant execute on function import_lotto_percorsi(uuid) to authenticated;
+
+-- Si può annullare? La pagina lo chiede PRIMA di togliere i file dal deposito: se il lotto è già annullato o un
+-- documento è stato usato altrove, tolti i file l'annullamento si fermerebbe e resterebbero documenti senza file.
+create or replace function import_lotto_puo_annullare(p_lotto uuid)
+returns table (puo boolean, motivo text)
+language plpgsql stable security definer set search_path = public as $funzione$
+declare
+  v_lotto lotti_import%rowtype;
+  v_usati integer;
+begin
+  if not is_titolare() then raise exception 'Solo il titolare puo'' vedere un lotto di import.'; end if;
+  select * into v_lotto from lotti_import where id = p_lotto;
+  if v_lotto.id is null then raise exception 'Lotto di import non trovato.'; end if;
+  if v_lotto.annullato_il is not null then
+    return query select false, 'Questo lotto e'' gia'' stato annullato.'::text;
+    return;
+  end if;
+  select count(*) into v_usati from spese_da_collocare s join documents d on d.id = s.documento_id
+   where d.lotto_import_id = p_lotto;
+  if v_usati > 0 then
+    return query select false, format('%s documenti di questo lotto sono gia'' stati usati altrove (come spesa da collocare): non posso annullare il lotto.', v_usati)::text;
+    return;
+  end if;
+  return query select true, null::text;
+end $funzione$;
+
+comment on function import_lotto_puo_annullare(uuid) is
+  'Dice se un lotto di import si può annullare (puo) e, se no, perché (motivo): già annullato, o con documenti già usati come spesa da collocare. La pagina la chiama prima di togliere i file dal deposito. Sola lettura.';
+
+revoke all on function import_lotto_puo_annullare(uuid) from public, anon, authenticated;
+grant execute on function import_lotto_puo_annullare(uuid) to authenticated;
 
 -- Annulla il lotto: toglie i suoi documenti (come `delete_document`: il promemoria collegato si
 -- completa) e lo segna annullato, nella stessa transazione. Restituisce quanti documenti ha tolto.
@@ -399,10 +488,30 @@ declare
   v_d1 uuid; v_d2 uuid; v_d3 uuid;
   v_n integer;
   v_no boolean;
+  v_ok boolean;
+  v_motivo text;
+  v_lotto2 uuid;
+  v_d4 uuid;
+  v_fn text;
 begin
   select user_id into v_tit from user_roles where role = 'titolare' limit 1;
   select user_id into v_staff from user_roles where role = 'staff' limit 1;
   if v_tit is null then raise exception 'VERIFICA: nessun titolare.'; end if;
+
+  -- (0a) NESSUNA funzione nuova o rifatta è eseguibile da chi non è entrato (`anon`).
+  foreach v_fn in array array[
+    'lotti_import_non_cancellabili()', 'documenti_lotto_non_annullato()', 'documenti_per_domanda(text)',
+    'memo_leggi_documenti(text)', 'elenco_drive_cerca(text,integer)', 'memo_leggi_elenco_drive(text)',
+    'import_lotto_percorsi(uuid)', 'import_lotto_puo_annullare(uuid)', 'import_lotto_annulla(uuid)'] loop
+    if has_function_privilege('anon', v_fn, 'execute') then
+      raise exception 'VERIFICA (0a): % e'' eseguibile da anon.', v_fn;
+    end if;
+  end loop;
+  -- (0c) le proposte della Scheda non pescano i documenti no_ai.
+  if pg_get_functiondef('public.scheda_proposte_calcola()'::regprocedure) not like '%and not d0.no_ai%'
+     or pg_get_functiondef('public.scheda_proposte_calcola()'::regprocedure) not like '%d.expiry_date < v_oggi and not d.no_ai%' then
+    raise exception 'VERIFICA (0c): le proposte della Scheda pescano ancora i documenti no_ai.';
+  end if;
 
   -- (0) il confronto notturno conta i documenti come li legge MEMO (senza i no_ai).
   if pg_get_functiondef('public.memo_confronta_con_le_pagine()'::regprocedure) not like '%from documents d where not d.no_ai;%' then
@@ -423,6 +532,11 @@ begin
     perform set_config('request.jwt.claims', json_build_object('sub', v_tit, 'role', 'authenticated')::text, true);
     set local role authenticated;
 
+    -- (1b) un lotto lo apre solo chi lo firma: «creato da» altrui è rifiutato.
+    v_no := false;
+    begin insert into lotti_import (nota, creato_da) values ('ZZ lotto altrui', gen_random_uuid());
+    exception when insufficient_privilege then v_no := true; end;
+    if not v_no then raise exception 'VERIFICA (1b): un lotto e'' stato aperto a nome di un altro.'; end if;
     insert into lotti_import (nota) values ('ZZ lotto di prova') returning id into v_lotto;
     insert into documents (title, doc_type, document_date, testo, lotto_import_id, impronta_sha256, storage_path)
       values ('ZZ documento libero', 'preventivi', current_date, 'zzparolaunica cantina', v_lotto, repeat('a', 64), 'zz/uno.pdf') returning id into v_d1;
@@ -459,6 +573,15 @@ begin
       values ('ZZ Preventivo àcqua e gas — 2026-05-15.pdf', '02_LOCALE/Lavori', 'preventivo', 'https://example.invalid/zz1', 0.2, date '2026-05-15');
     insert into elenco_drive (nome, cartella, sezione, link, importato_documento_id)
       values ('ZZ Contratto affitto.pdf', '01_CONTRATTI', 'contratto', 'https://example.invalid/zz2', v_d1);
+    insert into elenco_drive (nome, link, no_ai) values ('ZZ Riservato.pdf', 'https://example.invalid/zz3', true);
+    select count(*) into v_n from elenco_drive_cerca('zz riservato', 10);
+    if v_n <> 0 then raise exception 'VERIFICA (5h): un file dell''elenco con no_ai e'' stato mostrato a MEMO.'; end if;
+    select count(*) into v_n from elenco_drive_cerca('   ', 10);
+    if v_n <> 0 then raise exception 'VERIFICA (5i): senza parole la ricerca ha dato % righe, non 0.', v_n; end if;
+    select count(*) into v_n from elenco_drive_cerca('a', 10);
+    if v_n <> 0 then raise exception 'VERIFICA (5j): con una sola lettera la ricerca ha dato % righe, non 0.', v_n; end if;
+    select count(*) into v_n from memo_leggi_elenco_drive(null);
+    if v_n <> 0 then raise exception 'VERIFICA (5k): lo strumento della chat senza parole ha dato % righe, non 0.', v_n; end if;
     select count(*) into v_n from elenco_drive_cerca('ZZ preventivi acqua', 10);
     if v_n <> 1 then raise exception 'VERIFICA (5a): la ricerca per parole (plurale, senza accento) trova % righe, non 1.', v_n; end if;
     select count(*) into v_n from elenco_drive_cerca('zz', 10) where nel_gestionale;
@@ -482,6 +605,31 @@ begin
     select count(*) into v_n from import_lotto_percorsi(v_lotto);
     if v_n <> 2 then raise exception 'VERIFICA (6): i percorsi del lotto sono %, non 2.', v_n; end if;
 
+    -- (6b) si può annullare, e la pagina lo sa PRIMA di toccare i file; con un documento già usato altrove, no.
+    select puo into v_ok from import_lotto_puo_annullare(v_lotto);
+    if not v_ok then raise exception 'VERIFICA (6b): un lotto pulito risulta non annullabile.'; end if;
+    -- Un SECONDO lotto, con un documento già usato come spesa collocata in archivio (quella riga non si cancella
+    -- più: la guardia delle spese lo vieta, ed è giusto così; qui sparisce con l'annullamento di tutta la verifica).
+    insert into lotti_import (nota) values ('ZZ lotto con spesa') returning id into v_lotto2;
+    insert into documents (title, doc_type, document_date, lotto_import_id)
+      values ('ZZ documento usato', 'preventivi', current_date, v_lotto2) returning id into v_d4;
+    reset role;
+    insert into spese_da_collocare (provenienza, descrizione, stato, collocata_in, collocata_il, documento_id)
+      values ('voce', 'ZZ spesa di prova', 'collocata', 'archivio', now(), v_d4);
+    set local role authenticated;
+    select puo, motivo into v_ok, v_motivo from import_lotto_puo_annullare(v_lotto2);
+    if v_ok or v_motivo is null or v_motivo not like '%spesa da collocare%' then
+      raise exception 'VERIFICA (6c): con un documento usato altrove il lotto risulta annullabile (% / %).', v_ok, v_motivo;
+    end if;
+    v_no := false;
+    begin perform import_lotto_annulla(v_lotto2);
+    exception when raise_exception then v_no := sqlerrm like '%gia'' stato usato altrove%'; end;
+    if not v_no then raise exception 'VERIFICA (6d): l''annullamento non si e'' fermato con il suo messaggio.'; end if;
+    if not exists (select 1 from documents where id = v_d4)
+       or exists (select 1 from lotti_import where id = v_lotto2 and annullato_il is not null) then
+      raise exception 'VERIFICA (6e): l''annullamento fermato ha toccato il documento o il lotto.';
+    end if;
+
     -- (7) annullare: tolgono i 3 documenti, il lotto resta segnato, il file torna «solo nel Drive».
     if import_lotto_annulla(v_lotto) <> 3 then raise exception 'VERIFICA (7a): l''annullamento non ha tolto 3 documenti.'; end if;
     if exists (select 1 from documents where lotto_import_id = v_lotto) then raise exception 'VERIFICA (7b): restano documenti del lotto.'; end if;
@@ -494,6 +642,15 @@ begin
     v_no := false;
     begin perform import_lotto_annulla(v_lotto); exception when raise_exception then v_no := sqlerrm like '%gia'' stato annullato%'; end;
     if not v_no then raise exception 'VERIFICA (7e): un lotto si e'' annullato due volte.'; end if;
+    select puo, motivo into v_ok, v_motivo from import_lotto_puo_annullare(v_lotto);
+    if v_ok or v_motivo is null or v_motivo not like '%gia'' stato annullato%' then
+      raise exception 'VERIFICA (7f): un lotto annullato risulta ancora annullabile.';
+    end if;
+    -- (7g) un documento non entra in un lotto già annullato.
+    v_no := false;
+    begin insert into documents (title, doc_type, document_date, lotto_import_id) values ('ZZ tardivo', 'preventivi', current_date, v_lotto);
+    exception when raise_exception then v_no := sqlerrm like '%gia'' stato annullato%'; end;
+    if not v_no then raise exception 'VERIFICA (7g): un documento e'' entrato in un lotto annullato.'; end if;
 
     -- (8) un lotto non si cancella.
     reset role;
