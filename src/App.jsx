@@ -25,6 +25,7 @@ const Estrapola = lazy(() => import("./pages/ricettario/Estrapola"));
 const AnteprimaDaTesto = lazy(() => import("./pages/ricettario/AnteprimaDaTesto"));
 const Fotografa = lazy(() => import("./pages/assistente/Fotografa"));
 const Detta = lazy(() => import("./pages/assistente/Detta"));
+const SchedaDiBorgo58 = lazy(() => import("./pages/memo/SchedaDiBorgo58"));
 const IngredienteForm = lazy(() => import("./pages/ricettario/IngredienteForm"));
 const RicetteList = lazy(() => import("./pages/ricettario/RicetteList"));
 const RicettaForm = lazy(() => import("./pages/ricettario/RicettaForm"));
@@ -211,6 +212,7 @@ function AppRoutes() {
         {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
             sopra: per ora l'assistente lo usa solo Alessio. */}
         <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
+        <Route path="/memo/scheda" element={<RequireTitolare><SchedaDiBorgo58 /></RequireTitolare>} />
         <Route path="/segnalazioni" element={<RequireTitolare><Segnalazioni /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/nuovo" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/:id" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />

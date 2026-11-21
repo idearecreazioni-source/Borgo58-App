@@ -71,6 +71,15 @@ describe("le parole che il pannello mostra", () => {
     expect(riferimentiBrevi([{ rif: "C1" }, { rif: "D1" }, { rif: "B1" }, { rif: "R1" }, { rif: "P2" }])).toEqual(["C1", "D1", "B1", "R1", "P2"]);
   });
 
+  it("le voci della Scheda restano nelle fonti accanto alle righe del gestionale", () => {
+    expect(partiDellaRisposta(
+      "Il fornitore è quello di sempre [S12].\n\nDove l'ho letto: [F1]; Scheda S12.",
+      [{ rif: "F1", tabella: "supplier_invoices" }],
+    ).dove).toBe("[F1]; Scheda S12");
+    // Solo Scheda: nessuna riga del gestionale, la fonte scritta dal server resta com'è.
+    expect(partiDellaRisposta("Come deciso [S3] [S12].\n\nDove l'ho letto: Scheda S3, S12.", []).dove).toBe("Scheda S3, S12");
+  });
+
   it("da' un titolo leggibile alle conversazioni senza titolo", () => {
     expect(titoloDellaConversazione({
       titolo: null,

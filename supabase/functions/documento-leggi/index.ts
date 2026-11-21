@@ -180,6 +180,24 @@ type Letto =
 type Token = { domanda: number; risposta: number };
 
 /**
+ * IL CONTO DELLA SPESA: il freno PRIMA di chiamare il modello, il registro DOPO.
+ *
+ * 🔴 Dal 21/11/2026 ogni chiamata al modello fatta da questa funzione entra nel
+ * tetto mensile dell'assistente. Prima la trascrizione di un PDF (fino a
+ * 16.000 token di uscita con Opus 5) non lasciava traccia da nessuna parte e
+ * non guardava il tetto: era la fonte che costa di più ed era l'unica fuori
+ * dal conto. Il registro (`letture_documento`) conserva modello e token; il
+ * costo lo calcola `consumi_ai()` dal listino.
+ *
+ * ⚠️ Un file che si legge senza modello (`.odt`, `.docx`) non passa di qui:
+ *    non costa, quindi non è fermato dal tetto.
+ */
+type Conto = {
+  freno: () => Promise<Response | null>;
+  registra: (gesto: "trascrizione" | "proposta", modello: string, token: Token) => Promise<void>;
+};
+
+/**
  * IL TESTO DI UN FILE, comunque sia arrivato.
  *
  * 🔴 STA IN UN POSTO SOLO, e dal 10/09/2026 lo chiamano in due: chi legge
@@ -193,7 +211,8 @@ async function estraiTesto(
   byte: Uint8Array,
   mime: string,
   nome: string,
-  chiaveAI: string | undefined
+  chiaveAI: string | undefined,
+  conto: Conto
 ): Promise<Letto> {
   const dentro = DA_SPACCHETTARE[mime];
   if (dentro) {
@@ -220,6 +239,10 @@ async function estraiTesto(
     };
   }
 
+  // Il tetto, PRIMA di spendere.
+  const fermo = await conto.freno();
+  if (fermo) return { ok: false, risposta: fermo };
+
   const anthropic = new Anthropic({ apiKey: chiaveAI });
   const data = inBase64(byte);
   const blocco =
@@ -241,6 +264,10 @@ async function estraiTesto(
           content: [blocco, { type: "text", text: `Documento: ${nome}` }],
         },
       ],
+    });
+    await conto.registra("trascrizione", esito.model, {
+      domanda: esito.usage.input_tokens,
+      risposta: esito.usage.output_tokens,
     });
     const testo = esito.content
       .filter((b) => b.type === "text")
@@ -292,8 +319,11 @@ async function estraiTesto(
 async function proponi(
   testo: string,
   sezioni: string[],
-  chiaveAI: string
+  chiaveAI: string,
+  conto: Conto
 ): Promise<{ proposta: unknown; token: Token | null }> {
+  // La proposta è facoltativa: col tetto raggiunto la scheda si compila a mano, come sempre.
+  if (await conto.freno()) return { proposta: null, token: null };
   try {
     const anthropic = new Anthropic({ apiKey: chiaveAI });
     const esito = await anthropic.messages.create({
@@ -301,6 +331,10 @@ async function proponi(
       max_tokens: 1200,
       system: ISTRUZIONI_PROPOSTA(sezioni.join(", ")),
       messages: [{ role: "user", content: testo.slice(0, TESTO_PER_PROPOSTA) }],
+    });
+    await conto.registra("proposta", esito.model, {
+      domanda: esito.usage.input_tokens,
+      risposta: esito.usage.output_tokens,
     });
     const grezzo = esito.content
       .filter((b) => b.type === "text")
@@ -360,6 +394,47 @@ Deno.serve(async (req) => {
     return errore(400, "richiesta", "Richiesta illeggibile");
   }
 
+  // Il conto della spesa (vedi il tipo `Conto`): freno prima, registro dopo.
+  const idDocumento =
+    typeof corpo.documento_id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(corpo.documento_id)
+      ? corpo.documento_id
+      : null;
+  const conto: Conto = {
+    freno: async () => {
+      const { data, error } = await supabase.rpc("spesa_ai_del_mese");
+      if (error) {
+        return errore(
+          503,
+          "spesa",
+          "Non riesco a controllare il tetto di spesa: mi fermo prima di spendere senza un limite verificabile."
+        );
+      }
+      const stato = Array.isArray(data) ? data[0] : data;
+      if (stato?.blocca) {
+        return errore(
+          429,
+          "tetto",
+          stato?.frase ?? "La spesa del mese ha raggiunto il tetto: le letture sono ferme."
+        );
+      }
+      return null;
+    },
+    registra: async (gesto, modello, token) => {
+      // Se il registro non si scrive la lettura deve arrivare lo stesso:
+      // perdere il conto è meno grave che perdere un testo già pagato.
+      const { error } = await supabase.from("letture_documento").insert({
+        creato_da: utente.user.id,
+        documento_id: idDocumento,
+        gesto,
+        modello,
+        token_domanda: token.domanda,
+        token_risposta: token.risposta,
+      });
+      if (error) console.error("letture_documento:", error.message);
+    },
+  };
+
   // ===================================================================
   // 🔴 IL FILE PRIMA, LA SCHEDA DOPO — 10/09/2026, Blocco 4 del mandato
   // ===================================================================
@@ -402,7 +477,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const letto = await estraiTesto(byte, mimeFile, corpo.nome_file ?? "documento", chiaveAI);
+    const letto = await estraiTesto(byte, mimeFile, corpo.nome_file ?? "documento", chiaveAI, conto);
     if (!letto.ok) return letto.risposta;
 
     // ⚠️ LE SEZIONI ARRIVANO DAL DATABASE, non da un elenco scritto qui:
@@ -414,7 +489,7 @@ Deno.serve(async (req) => {
     let proposta: unknown = null;
     let tokenProposta: Token | null = null;
     if (chiaveAI && letto.testo.length > 0) {
-      const p = await proponi(letto.testo, codici, chiaveAI);
+      const p = await proponi(letto.testo, codici, chiaveAI, conto);
       proposta = p.proposta;
       tokenProposta = p.token;
     }
@@ -486,7 +561,7 @@ Deno.serve(async (req) => {
   // ⚠️ STESSO ESTRATTORE dell'altra porta (10/09/2026): due copie di questo
   //    ragionamento direbbero due cose diverse dello stesso file al primo
   //    ritocco che ne tocca una sola.
-  const letto = await estraiTesto(byte, mime, doc.file_name ?? doc.title, chiaveAI);
+  const letto = await estraiTesto(byte, mime, doc.file_name ?? doc.title, chiaveAI, conto);
   if (!letto.ok) return letto.risposta;
   const { testo, come, token, troncato } = letto;
 

@@ -24,3 +24,11 @@ Costi e token per modello della Console di Anthropic (ultimi 30 giorni, mandati 
 
 ## Prove
 - Prova (progetto di prova): migrazione applicata, sei righe lette e uguali ai valori attesi; il blocco di verifica della migrazione fa fermare tutto se un prezzo non coincide.
+
+## Su work (20/11/2026, sera)
+- Sì scritto di Alessio: «1 si» per la correzione, «tutto confermato adesso» per copia di sicurezza e migrazione, «Sì, approva» per l'«Approve and deploy».
+- Copia di sicurezza di work: 2026-11-20_2129 (163 tabelle, 2.612 righe, 56 documenti, controllata).
+- Unite: #430 (migrazione), #432 (riallineamento di slave a master) e #431 (slave verso master). Giro su master 44811799610: verde.
+- Migrazione applicata su work: 505 migrazioni (prima 504). Le sei righe di `costo_modello_ai` lette su work coincidono con i valori attesi (Opus 5 4,60/23,00; Sonnet 5 1,84/9,20; Sonnet 5.5 1,84/9,20; Opus 5.5 3,68/18,40; Haiku 5.5 0,092/0,46; Haiku 4.5 0,92/4,60).
+- Approve and deploy dato con `gh api` col sì scritto di Alessio.
+- Nota: la prima volta la migrazione non partiva su work perché su Prova mancava la riga di registro (era stata applicata a mano prima della correzione); registrata con `prova:migra`.

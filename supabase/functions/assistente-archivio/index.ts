@@ -214,6 +214,29 @@ Deno.serve(async (req) => {
   // -------------------------------------------------------------------
   // 3. La domanda
   // -------------------------------------------------------------------
+  // 🔴 Il tetto mensile, PRIMA di spendere (21/11/2026). La spesa di questa
+  //    funzione si contava già (`domande_archivio` è dentro `consumi_ai`), ma
+  //    nessuno la fermava: con Opus 5 e fino a 12 documenti interi nel
+  //    contesto, una domanda costa abbastanza da contare.
+  //    Se il controllo non riesce ci si ferma: spendere senza un limite
+  //    verificabile è il caso che il tetto esiste per impedire.
+  const { data: spesa, error: erroreSpesa } = await supabase.rpc("spesa_ai_del_mese");
+  if (erroreSpesa) {
+    return errore(
+      503,
+      "spesa",
+      "Non riesco a controllare il tetto di spesa: mi fermo prima di spendere senza un limite verificabile."
+    );
+  }
+  const statoSpesa = Array.isArray(spesa) ? spesa[0] : spesa;
+  if (statoSpesa?.blocca) {
+    return errore(
+      429,
+      "tetto",
+      statoSpesa?.frase ?? "La spesa del mese ha raggiunto il tetto: le letture sono ferme."
+    );
+  }
+
   const anthropic = new Anthropic({ apiKey: chiaveAI });
 
   try {

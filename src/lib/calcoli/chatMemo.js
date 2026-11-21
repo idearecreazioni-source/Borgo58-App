@@ -50,8 +50,11 @@ export function partiDellaRisposta(testo, riferimenti = []) {
     corpo = corpo.slice(0, avviso.index).trim();
   }
 
+  // Le voci della Scheda [S#] non sono righe del gestionale: arrivano solo nella riga scritta dal server, e restano.
+  const scheda = /Scheda\s+(S\d+(?:,\s*S\d+)*)/i.exec(dove);
   const brevi = riferimentiBrevi(riferimenti);
   if (brevi.length) dove = compattaRiferimenti(brevi);
+  if (brevi.length && scheda) dove = `${dove}; Scheda ${scheda[1]}`;
   return { testo: corpo, dove, controllalo };
 }
 
