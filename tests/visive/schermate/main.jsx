@@ -27,6 +27,7 @@ import SpesaSpicciola from "../../../src/pages/magazzino/SpesaSpicciola";
 import IngredienteForm from "../../../src/pages/ricettario/IngredienteForm";
 import ArchivioDocumentiHome from "../../../src/pages/documenti/ArchivioDocumentiHome";
 import Stampanti from "../../../src/pages/comande/Stampanti";
+import SchedaDiBorgo58 from "../../../src/pages/memo/SchedaDiBorgo58";
 import { agendaCorsie } from "../finti/tasks.js";
 
 applyPxCm();
@@ -203,6 +204,18 @@ const DATI = {
       ],
     },
   },
+  // La Scheda di Borgo 58 (21/11/2026): una voce lunga quasi al massimo, una da rivedere,
+  // una spenta, e i limiti — i casi che vanno a capo sul telefono.
+  scheda: {
+    tabelle: {
+      scheda_voci: [
+        { id: "v1", numero: 1, sezione: "fornitori", chiave: "fornitori:a-0000", testo: "ZZ Ortofrutta Rossi consegna il martedì e il venerdì mattina entro le nove; si ordina entro le sedici del giorno prima per telefono o per messaggio, e si controlla sempre la bolla.", fonte: "confermato", valida_dal: "2026-11-03", verificata_il: "2026-11-10", rivedere_entro: "2026-01-01", attiva: true, ordine: 10 },
+        { id: "v2", numero: 2, sezione: "locale", chiave: "locale:a-0000", testo: "Chiuso il lunedì.", fonte: "riferito", valida_dal: null, verificata_il: null, rivedere_entro: null, attiva: true, ordine: 10 },
+        { id: "v3", numero: 3, sezione: "decisioni", chiave: "decisioni:a-0000", testo: "Voce spenta.", fonte: "da_verificare", valida_dal: null, verificata_il: null, rivedere_entro: null, attiva: false, ordine: 10 },
+      ],
+    },
+    rpc: { scheda_per_memo: { versione: "x", voci: 2, caratteri: 9400, testo: "" } },
+  },
   // Le stampanti (28/10/2026): un registratore, una stampante con la carta
   // finita e la sua frase lunga, e un lavoro «incerto» col suo testo — i
   // casi che vanno a capo.
@@ -235,6 +248,7 @@ const PAGINE = {
   ingrediente: ["/ricettario/ingredienti/nuovo", <IngredienteForm key="i" />],
   archivio: ["/documenti", <ArchivioDocumentiHome key="ar" />],
   stampanti: ["/comande/stampanti", <Stampanti key="st" />],
+  scheda: ["/memo/scheda", <SchedaDiBorgo58 key="sc" />],
 };
 
 const nome = new URLSearchParams(location.search).get("pagina") ?? "dashboard";

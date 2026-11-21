@@ -89,6 +89,18 @@ function IlLocale() {
         </span>
         <span aria-hidden="true">→</span>
       </Link>
+      <Link
+        to="/memo/scheda"
+        className="tocco-bottone flex items-center justify-between gap-3 rounded-lg px-3 testo-sala text-b58-charcoal ring-1 ring-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors"
+      >
+        <span>
+          La Scheda di Borgo 58
+          <span className="block text-b58-charcoal-soft">
+            Gli appunti sul locale che MEMO legge a ogni domanda
+          </span>
+        </span>
+        <span aria-hidden="true">→</span>
+      </Link>
     </section>
   );
 }
