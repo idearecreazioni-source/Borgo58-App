@@ -97,6 +97,12 @@ comment on constraint scheda_proposta_scadenza_sensata on scheda_proposte is
 
 create unique index if not exists scheda_proposta_una_in_attesa
   on scheda_proposte (chiave) where stato = 'in_attesa';
+comment on constraint scheda_proposte_voce_id_fkey on scheda_proposte is
+  'Una proposta su una voce esistente indica quale: una voce che ha proposte non si può cancellare (le voci della Scheda non si cancellano comunque, si spengono).';
+comment on constraint scheda_proposte_voce_creata_id_fkey on scheda_proposte is
+  'La voce nata da una proposta accettata: non si può cancellare, perché la traccia di chi l''ha accettata resta leggibile.';
+comment on constraint scheda_proposte_documento_id_fkey on scheda_proposte is
+  'Il documento da cui nasce una proposta (un contratto in Archivio): se il documento viene tolto, la proposta resta e perde solo il collegamento.';
 comment on index scheda_proposta_una_in_attesa is
   'Per la stessa voce può esserci una sola proposta in attesa: MEMO non ti fa la stessa domanda due volte.';
 create index if not exists idx_scheda_proposte_stato on scheda_proposte (stato, creata_il);

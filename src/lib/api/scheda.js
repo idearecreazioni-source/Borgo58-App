@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // LA SCHEDA DI BORGO 58 — lettura e scrittura (21/11/2026, pezzo S3).
 // Le tabelle sono del solo titolare (RLS, migrazione 20261120000002): uno
@@ -99,14 +100,14 @@ export async function generaProposte() {
  * Restituisce `{ esito: "accettata" | "rifiutata" | "obsoleta" | "gia_decisa" | "scaduta", … }`.
  */
 export async function decidiProposta(id, esito, testo = null, confermaFonte = false) {
-  const { data, error } = await supabase.rpc("scheda_proposta_decidi", {
+  // 🔴 Scrive su DUE tabelle (la voce e la proposta): passa dal corridoio, come ogni scrittura su più tabelle.
+  //    Il corridoio restituisce intatto il messaggio del database («La Scheda ha già 60 voci attive…»).
+  return eseguiOperazione("scheda_proposta_decidi", {
     p_id: id,
     p_esito: esito,
     p_testo: testo,
     p_conferma_fonte: Boolean(confermaFonte),
   });
-  if (error) throw error;
-  return Array.isArray(data) ? data[0] : data;
 }
 
 /**

@@ -19,8 +19,10 @@ Regole fisse:
 - Prerequisito: la 20261120000002 (Scheda) già applicata. Non tocca colonne di `documents` o `suppliers`: li legge soltanto.
 - Costante nel calcolo: `2026-11-21`. Prima di quella data nessun fornitore o contratto è «nuovo»: senza, il primo giorno arriverebbe tutto il vecchio in blocco.
 
-## Nessuna funzione online da aggiornare
-Solo database e pagina. Nessuna Edge Function, nessuna chiamata al modello.
+## Funzione online da aggiornare al rilascio
+- `operazioni-atomiche` (il corridoio): il Sì scrive su due tabelle (la voce e la proposta), quindi passa dal corridoio come ogni scrittura multi-tabella. Il nome `scheda_proposta_decidi` è stato aggiunto al suo elenco chiuso. ⚠️ Se la pagina nuova va online prima che il corridoio sia installato, il Sì risponde «la parte online non è ancora stata aggiornata» e **non scrive niente**; `scripts/rilascio.mjs` lo controlla prima di pubblicare.
+- Ordine: prima la migrazione, poi il corridoio, poi il sito (Approve and deploy).
+- Nessuna chiamata al modello, nessun'altra Edge Function.
 
 ## Cosa NON deve cambiare (da ricontrollare dopo il rilascio)
 - La Scheda resta com'è finché Alessio non preme Sì: subito dopo la migrazione ha ancora le sue 35 voci, i suoi numeri e i suoi limiti.
