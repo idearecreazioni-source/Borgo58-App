@@ -75,6 +75,8 @@ create table if not exists scheda_storico (
 );
 comment on table scheda_storico is
   'La traccia automatica delle voci della Scheda: soltanto il trigger la scrive e non si corregge.';
+comment on constraint scheda_storico_voce_id_fkey on scheda_storico is
+  'Ogni riga dello storico appartiene a una voce della Scheda, e una voce che ha uno storico non si può cancellare: la traccia di cosa è cambiato resta sempre leggibile.';
 
 -- ---------------------------------------------------------------------
 -- 2. I PORTIERI: data, storico e privacy
