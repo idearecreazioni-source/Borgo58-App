@@ -37,6 +37,7 @@ const IN_ITALIANO = {
   incassa_da_soli_bonifici: "abbinare i bonifici alle fatture",
   annulla_incasso_fattura: "annullare l'incasso della fattura",
   incassa_fattura_a_mano: "segnare incassata la fattura",
+  scheda_proposta_decidi: "decidere la proposta di MEMO",
 };
 
 const comeSiChiama = (operazione) =>

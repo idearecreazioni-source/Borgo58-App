@@ -40,6 +40,10 @@ vi.mock("../../src/lib/api/scheda", () => ({
     if (finto.rifiuto) throw new Error(finto.rifiuto);
     return { ...finto.voci.find((x) => x.id === id), attiva };
   }),
+  // B1: la pagina monta anche le proposte di MEMO; qui non ce ne sono (le prove stanno in scheda-proposte.test.jsx).
+  generaProposte: vi.fn(async () => ({ nuove: 0, scadute: 0, saltate_privacy: 0, in_attesa: 0 })),
+  leggiProposte: vi.fn(async () => []),
+  decidiProposta: vi.fn(async () => ({ esito: "rifiutata" })),
 }));
 
 const V1 = { id: "a", numero: 1, sezione: "fornitori", chiave: "fornitori:ortofrutta-0000", testo: "ZZ Ortofrutta consegna il martedì.", fonte: "confermato", valida_dal: null, verificata_il: null, rivedere_entro: "2020-01-01", attiva: true, ordine: 10 };
