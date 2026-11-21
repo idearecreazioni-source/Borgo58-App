@@ -89,5 +89,12 @@ export function fraseNessunaProposta(saltatePrivacy = 0) {
   const base = "MEMO non ha proposte oggi. Controlla i fornitori nuovi, i contratti nuovi e le voci da riconfermare.";
   const n = Number(saltatePrivacy) || 0;
   if (!n) return base;
-  return `${base} ${n === 1 ? "Una possibile proposta è stata tenuta da parte" : `${n} possibili proposte sono state tenute da parte`} perché conteneva dati personali o parole delicate.`;
+  return n === 1
+    ? `${base} Una possibile proposta è stata tenuta da parte perché conteneva dati personali, contatti o parole delicate.`
+    : `${base} ${n} possibili proposte sono state tenute da parte perché contenevano dati personali, contatti o parole delicate.`;
 }
+
+// Le risposte di «decidi» che CHIUDONO la proposta (la tolgono dall'elenco). Ogni altra risposta (sconosciuta,
+// vuota, di una versione futura) lascia la proposta dov'è e la pagina rilegge: il database è la fonte vera.
+const ESITI_CHE_CHIUDONO = new Set(["accettata", "rifiutata", "obsoleta", "gia_decisa", "scaduta"]);
+export const esitoChiudeLaProposta = (risposta) => ESITI_CHE_CHIUDONO.has(risposta?.esito);

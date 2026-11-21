@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   avvisoFonte,
   dettaglioProposta,
+  esitoChiudeLaProposta,
   etichettaTipoProposta,
   fraseNessunaProposta,
   frasePerLaFonte,
@@ -115,6 +116,17 @@ describe("le risposte della decisione", () => {
   });
 });
 
+describe("quali risposte chiudono la proposta", () => {
+  it("solo le cinque che il database sa dare; ogni altra lascia la proposta dov'è", () => {
+    for (const esito of ["accettata", "rifiutata", "obsoleta", "gia_decisa", "scaduta"]) {
+      expect(esitoChiudeLaProposta({ esito }), esito).toBe(true);
+    }
+    for (const risposta of [{ esito: "boh" }, { esito: "" }, {}, null, undefined, "accettata"]) {
+      expect(esitoChiudeLaProposta(risposta), JSON.stringify(risposta)).toBe(false);
+    }
+  });
+});
+
 describe("quando non ci sono proposte", () => {
   it("lo dice e dice dove guarda", () => {
     expect(fraseNessunaProposta()).toMatch(/MEMO non ha proposte oggi/);
@@ -122,8 +134,8 @@ describe("quando non ci sono proposte", () => {
   });
 
   it("se alcune sono state tenute da parte per privacy, lo dice col numero", () => {
-    expect(fraseNessunaProposta(1)).toMatch(/Una possibile proposta è stata tenuta da parte/);
-    expect(fraseNessunaProposta(3)).toMatch(/3 possibili proposte sono state tenute da parte/);
+    expect(fraseNessunaProposta(1)).toMatch(/Una possibile proposta è stata tenuta da parte perché conteneva dati personali, contatti o parole delicate/);
+    expect(fraseNessunaProposta(3)).toMatch(/3 possibili proposte sono state tenute da parte perché contenevano dati personali, contatti o parole delicate/);
   });
 });
 

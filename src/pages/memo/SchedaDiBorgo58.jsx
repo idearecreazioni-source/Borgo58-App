@@ -300,6 +300,17 @@ export default function SchedaDiBorgo58() {
     carica();
   }, [carica]);
 
+  // Dopo un Sì sulle proposte di MEMO la Scheda si rilegge, ma come lettura ACCESSORIA (come `caricaContatori`):
+  // se non riesce NON si smonta la pagina con un errore (il Sì è già andato a buon fine), si tengono le voci che
+  // c'erano e si restituisce `false`, così chi ha chiamato lo dice.
+  const rileggi = useCallback(async () => {
+    const [r, c] = await Promise.all([leggi(leggiVoci()), leggi(leggiContatori())]);
+    if (!nonLetto(c)) setContatori(c);
+    if (nonLetto(r)) return false;
+    setVoci(r);
+    return true;
+  }, []);
+
   const { sezioni, spente } = useMemo(() => raggruppaVoci(voci), [voci]);
 
   const salvata = (riga) => {
@@ -346,7 +357,7 @@ export default function SchedaDiBorgo58() {
           )}
 
           {/* B1: MEMO propone, tu decidi. Dopo un Sì le voci e i limiti si rileggono. */}
-          <ProposteDiMemo occupato={inModifica !== null} onCambiata={carica} />
+          <ProposteDiMemo occupato={inModifica !== null} onCambiata={rileggi} />
 
           {inModifica === null ? (
             <button type="button" onClick={apriNuova} className={bottonePrimario}>

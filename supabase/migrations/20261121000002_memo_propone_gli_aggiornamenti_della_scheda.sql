@@ -148,6 +148,16 @@ returns text language sql immutable set search_path = public as $funzione$
     else rtrim(coalesce(nullif(regexp_replace(left(p_testo, 299), '\s+\S*$', ''), ''), left(p_testo, 299))) || '…' end
 $funzione$;
 
+-- Un telefono o un indirizzo e-mail dentro un testo: una proposta che li contiene non si fa nemmeno
+-- (i contatti non devono finire nella Scheda che MEMO legge a ogni domanda).
+-- ⚠️ Le date («03/11/2026»), gli importi («3.150,00») e la partita IVA non sono telefoni.
+create or replace function scheda_contatti_nel_testo(p_testo text)
+returns boolean language sql immutable set search_path = public as $funzione$
+  select coalesce(p_testo, '') ~ '[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}'
+      or coalesce(p_testo, '') ~ '(^|[^0-9])(\+|00)[ ]?[0-9]{1,3}[ ./-]?[0-9][0-9 ./-]{5,}[0-9]([^0-9]|$)'
+      or coalesce(p_testo, '') ~ '(^|[^0-9])(3[0-9]{2}|0[0-9]{1,3})[ ./-]?[0-9]{3,4}[ ./-]?[0-9]{3,4}([^0-9]|$)'
+$funzione$;
+
 create or replace function scheda_data_it(p_data date)
 returns text language sql immutable set search_path = public as $funzione$
   select to_char(p_data, 'DD/MM/YYYY')
@@ -173,6 +183,8 @@ declare
   v_in_attesa integer;
   v_inserite integer;
   v_abbassa boolean;
+  v_srls uuid;
+  v_n_srls integer;
   c record;
 begin
   v_finestra := greatest(v_dal, v_oggi - 60);
@@ -180,7 +192,15 @@ begin
   -- Due schede aperte insieme non calcolano insieme: il tetto di 5 al giorno non si sfonda per un soffio.
   perform pg_advisory_xact_lock(hashtext('scheda_proposte'));
 
-  update scheda_proposte set stato = 'scaduta' where stato = 'in_attesa' and scade_il < v_oggi;
+  -- 🔴 Solo l'entità del ristorante (Borgo 58 S.r.l.s., `entity_type = 'srls'`): l'azienda agricola dell'orto ha i
+  --    suoi fornitori e i suoi documenti, e la Scheda è del ristorante. Se l'entità non è una sola, non si propone
+  --    niente (meglio nessuna proposta che una proposta dell'entità sbagliata); i documenti senza entità restano fuori.
+  select count(*) into v_n_srls from entities where entity_type = 'srls';
+  if v_n_srls = 1 then
+    select id into v_srls from entities where entity_type = 'srls';
+  end if;
+
+  update scheda_proposte set stato = 'scaduta', decisa_il = now() where stato = 'in_attesa' and scade_il < v_oggi;
   get diagnostics v_scadute = row_count;
 
   -- Il tetto è sulle proposte NUOVE del giorno: quelle in attesa da giorni non contano.
@@ -189,7 +209,7 @@ begin
 
   for c in
     select y.* from (
-      select distinct on (x.chiave) x.* from (
+      select distinct on (x.chiave, x.origine) x.* from (
         -- 1. Contratti nuovi in Archivio
         select 1 as prio, 'aggiungi'::text as tipo, 'contratto'::text as origine, d.id as origine_id,
                d.sez || ':doc-' || left(d.id::text, 8) as chiave, null::uuid as voce_id, d.sez as sezione,
@@ -208,6 +228,7 @@ begin
                               then 'locale' else 'societa' end as sez
               from documents d0
              where d0.doc_type = 'contratti'
+               and d0.entity_id = v_srls
                and (d0.created_at at time zone 'Europe/Rome')::date >= v_finestra
                and (d0.expiry_date is null or d0.expiry_date >= v_oggi)
                and btrim(coalesce(d0.title, '')) <> ''
@@ -229,6 +250,7 @@ begin
                s.created_at
           from suppliers s
          where s.active and not s.is_occasional
+           and s.entity_id = v_srls
            and btrim(coalesce(s.name, '')) <> ''
            and (s.created_at at time zone 'Europe/Rome')::date >= v_finestra
            -- Già scritto a mano (anche in una voce spenta: una voce spenta è una scelta, non si insiste).
@@ -273,16 +295,18 @@ begin
              or (v.rivedere_entro is not null and v.rivedere_entro < v_oggi)
            )
       ) x
-      order by x.chiave, x.prio
+      order by x.chiave, x.origine, x.prio
     ) y
     where
-      -- Una sola in attesa per voce, e il silenzio dopo un rifiuto (90 giorni) o una scadenza (30).
+      -- Una sola in attesa per voce, e il silenzio dopo un rifiuto (90 giorni) o una scadenza (30 giorni veri dal
+      -- momento in cui è scaduta). Il silenzio vale per lo STESSO motivo: una riconferma rifiutata non zittisce
+      -- il «spegni» sulla stessa voce, e viceversa.
       not exists (
         select 1 from scheda_proposte p
          where p.chiave = y.chiave
            and (p.stato = 'in_attesa'
-                or (p.stato = 'rifiutata' and p.decisa_il > now() - interval '90 days')
-                or (p.stato = 'scaduta' and p.scade_il > v_oggi - 30)))
+                or (p.origine = y.origine and p.stato = 'rifiutata' and p.decisa_il > now() - interval '90 days')
+                or (p.origine = y.origine and p.stato = 'scaduta' and coalesce(p.decisa_il, p.scade_il::timestamptz) > now() - interval '30 days')))
       and (y.tipo <> 'aggiungi' or not exists (select 1 from scheda_voci v where v.chiave = y.chiave))
     order by y.prio, y.data_ordine
   loop
@@ -290,6 +314,7 @@ begin
     -- Quello che il database rifiuterebbe non si propone nemmeno; le parole delicate nemmeno.
     if c.tipo = 'aggiungi'
        and (scheda_testo_personale(c.testo_dopo) or scheda_testo_personale(c.chiave)
+            or scheda_contatti_nel_testo(c.testo_dopo)
             or coalesce(array_length(scheda_parole_delicate(c.testo_dopo), 1), 0) > 0) then
       v_saltate := v_saltate + 1;
       continue;
@@ -364,7 +389,7 @@ begin
     return jsonb_build_object('esito', 'gia_decisa', 'stato', p.stato);
   end if;
   if p.scade_il < v_oggi then
-    update scheda_proposte set stato = 'scaduta' where id = p.id;
+    update scheda_proposte set stato = 'scaduta', decisa_il = now() where id = p.id;
     return jsonb_build_object('esito', 'scaduta');
   end if;
 
@@ -393,22 +418,33 @@ begin
   if p.tipo = 'aggiungi' then
     -- Qualcuno ha già scritto a mano una voce attiva con questa chiave dopo la proposta: non si raddoppia.
     if exists (select 1 from scheda_voci where chiave = p.chiave and attiva) then
-      update scheda_proposte set stato = 'scaduta' where id = p.id;
+      update scheda_proposte set stato = 'scaduta', decisa_il = now() where id = p.id;
       return jsonb_build_object('esito', 'obsoleta');
     end if;
     select document_date into v_valida_dal from documents where id = p.documento_id;
     select coalesce(max(ordine), 0) + 10 into v_ordine from scheda_voci where sezione = p.sezione;
-    insert into scheda_voci (sezione, chiave, testo, fonte, fonte_dettaglio, documento_id, valida_dal, ordine)
+    -- Il Sì è una conferma del titolare: la voce nasce già «verificata oggi», e la prima riconferma parte da qui.
+    insert into scheda_voci (sezione, chiave, testo, fonte, fonte_dettaglio, documento_id, valida_dal, verificata_il, ordine)
     values (
       p.sezione, p.chiave, v_testo, p.fonte_dopo,
-      'Proposta di MEMO accettata il ' || scheda_data_it(v_oggi) || '.', p.documento_id, v_valida_dal, v_ordine
+      'Proposta di MEMO accettata il ' || scheda_data_it(v_oggi) || '.', p.documento_id, v_valida_dal, v_oggi, v_ordine
     ) returning id, numero into v_voce_id, v_numero;
   else
     select * into v from scheda_voci where id = p.voce_id for update;
     -- La voce è cambiata dopo la proposta: non si sovrascrive una correzione fatta a mano.
     -- Si risponde col valore (non con un errore, che annullerebbe anche la nuova scadenza).
     if not found or not v.attiva or v.testo is distinct from p.testo_prima or v.fonte is distinct from p.fonte_prima then
-      update scheda_proposte set stato = 'scaduta' where id = p.id;
+      update scheda_proposte set stato = 'scaduta', decisa_il = now() where id = p.id;
+      return jsonb_build_object('esito', 'obsoleta');
+    end if;
+    -- «Spegni»: la ragione di allora vale ancora? Se il contratto è stato rinnovato o il fornitore riacceso,
+    -- la voce non si spegne.
+    if p.tipo = 'spegni' and (
+         (p.origine = 'scadenza_contratto' and not exists (
+            select 1 from documents d where d.id = p.origine_id and d.expiry_date is not null and d.expiry_date < v_oggi))
+      or (p.origine = 'fornitore_spento' and not exists (
+            select 1 from suppliers s where s.id = p.origine_id and not s.active))) then
+      update scheda_proposte set stato = 'scaduta', decisa_il = now() where id = p.id;
       return jsonb_build_object('esito', 'obsoleta');
     end if;
     v_voce_id := v.id;
@@ -451,7 +487,7 @@ revoke all on table scheda_proposte from authenticated;
 grant select on table scheda_proposte to authenticated;
 
 revoke all on function scheda_proposte_non_cancellabili(), scheda_fonte_rango(text), scheda_fonte_parole(text),
-  scheda_normalizza(text), scheda_taglia_300(text), scheda_data_it(date), scheda_proposte_calcola()
+  scheda_normalizza(text), scheda_taglia_300(text), scheda_contatti_nel_testo(text), scheda_data_it(date), scheda_proposte_calcola()
   from public, anon, authenticated;
 revoke all on function scheda_proposte_genera(), scheda_proposta_decidi(uuid, text, text, boolean)
   from public, anon, authenticated;
@@ -464,7 +500,8 @@ do $verifica$
 declare
   v_foto jsonb := foto_righe();
   v_oggi date := (now() at time zone 'Europe/Rome')::date;
-  v_titolare uuid; v_staff uuid; v_ent uuid;
+  v_titolare uuid; v_staff uuid; v_ent uuid; v_agri uuid;
+  v_forn5 uuid; v_doc3 uuid; v_voce_x uuid; v_voce_y uuid;
   v_seq_last bigint; v_seq_called boolean;
   v_forn uuid; v_forn2 uuid; v_forn3 uuid; v_forn4 uuid; v_doc uuid; v_doc2 uuid;
   v_voce_ric uuid; v_voce_dec uuid; v_voce_sca uuid; v_voce_obs uuid;
@@ -475,9 +512,10 @@ begin
   select last_value, is_called into v_seq_last, v_seq_called from scheda_voci_numero_seq;
   select user_id into v_titolare from user_roles where role = 'titolare' limit 1;
   select user_id into v_staff from user_roles where role = 'staff' limit 1;
-  select id into v_ent from entities limit 1;
+  select id into v_ent from entities where entity_type = 'srls';
+  select id into v_agri from entities where entity_type = 'azienda_agricola';
   if v_titolare is null or v_staff is null or v_ent is null then
-    raise exception 'VERIFICA: servono un titolare, uno staff e un''entità.';
+    raise exception 'VERIFICA: servono un titolare, uno staff e l''entità del ristorante (srls).';
   end if;
 
   -- (1) Permessi dichiarati.
@@ -496,8 +534,35 @@ begin
     raise exception 'VERIFICA (1): i permessi delle proposte sono diversi da quelli dichiarati.';
   end if;
 
+  -- (1b) Cosa è un contatto e cosa no (date, importi e partita IVA non lo sono).
+  if not scheda_contatti_nel_testo('chiamare il 333 1234567')
+     or not scheda_contatti_nel_testo('tel. 333-123-4567')
+     or not scheda_contatti_nel_testo('+39 333 123 4567')
+     or not scheda_contatti_nel_testo('ufficio 0935 123456')
+     or not scheda_contatti_nel_testo('scrivere a zz@esempio.test')
+     or scheda_contatti_nel_testo('Lun e Gio dal 03/11/2026, 30 giorni, 3.150,00 euro, contratto n. 1895')
+     or scheda_contatti_nel_testo('P.IVA 12345678901, scade il 30/09/2032')
+     or scheda_contatti_nel_testo(null) then
+    raise exception 'VERIFICA (1b): scheda_contatti_nel_testo non distingue un contatto da una data o da un importo.';
+  end if;
+
   begin
     perform set_config('request.jwt.claims', json_build_object('sub', v_titolare, 'role', 'authenticated')::text, true);
+
+    -- 🔴 ROBUSTA AI DATI VERI: la verifica gira dentro una transazione che poi si annulla, quindi può mettere da parte
+    --    ciò che esiste già (proposte di oggi, fornitori, contratti, voci da riconfermare) senza lasciare traccia.
+    --    Senza, un fornitore vero creato oggi, o cinque proposte vere di oggi, farebbero fallire i conteggi.
+    --    Si toccano solo le righe che potrebbero diventare candidate (finestra dei 60 giorni, voci con più di 170 giorni).
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where (creata_il at time zone 'Europe/Rome')::date = v_oggi;
+    update suppliers set is_occasional = true
+     where active and not is_occasional and (created_at at time zone 'Europe/Rome')::date >= greatest(date '2026-11-21', v_oggi - 60);
+    update suppliers set active = true
+     where not active and left(id::text, 8) in (select substr(chiave, 16, 8) from scheda_voci where chiave like 'fornitori:forn-%' and attiva);
+    update documents set created_at = created_at - interval '400 days'
+     where doc_type = 'contratti' and (created_at at time zone 'Europe/Rome')::date >= greatest(date '2026-11-21', v_oggi - 60);
+    update scheda_voci set documento_id = null where attiva and documento_id is not null;
+    update scheda_voci set verificata_il = v_oggi, rivedere_entro = null
+     where attiva and (rivedere_entro < v_oggi or coalesce(verificata_il, valida_dal, (creata_il at time zone 'Europe/Rome')::date) <= v_oggi - 170);
 
     -- Fornitore e contratto nuovi: dati personali e note NON devono finire nel testo.
     insert into suppliers (entity_id, name, tax_code, contact_phone, contact_email, notes, delivery_days, payment_terms)
@@ -575,6 +640,10 @@ begin
     v_r := scheda_proposta_decidi(v_prop, 'si');
     if v_r->>'esito' <> 'accettata' or not exists (select 1 from scheda_voci where chiave = v_chiave_forn and fonte = 'riferito' and attiva) then
       raise exception 'VERIFICA (6): il Sì sul fornitore non ha scritto la voce (%).', v_r;
+    end if;
+    -- Il Sì è una conferma: la voce nasce già «verificata oggi» (giorno di Roma).
+    if not exists (select 1 from scheda_voci where chiave = v_chiave_forn and verificata_il = v_oggi) then
+      raise exception 'VERIFICA (6c): il Sì su «aggiungi» non ha scritto la data «verificata il».';
     end if;
     v_r := scheda_proposta_decidi(v_prop, 'si');
     if v_r->>'esito' <> 'gia_decisa' then raise exception 'VERIFICA (6b): decidere due volte non è stato fermato (%).', v_r; end if;
@@ -662,6 +731,21 @@ begin
        or not exists (select 1 from scheda_voci where id = v_voce_obs and testo = 'Zz voce corretta a mano dopo la proposta.' and verificata_il = v_oggi - 400) then
       raise exception 'VERIFICA (10c): una correzione a mano è stata sovrascritta o la proposta non è scaduta.';
     end if;
+    -- (10d) Dopo una proposta diventata obsoleta il silenzio dura 30 giorni VERI dal momento in cui è scaduta.
+    reset role;
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where creata_il > now() - interval '1 day';
+    set local role authenticated;
+    perform scheda_proposte_genera();
+    if exists (select 1 from scheda_proposte where chiave = 'locale:zz-da-spegnere-ric' and stato = 'in_attesa') then
+      raise exception 'VERIFICA (10d): una proposta appena diventata obsoleta è tornata subito.';
+    end if;
+    reset role;
+    update scheda_proposte set decisa_il = now() - interval '31 days' where id = v_prop;
+    set local role authenticated;
+    perform scheda_proposte_genera();
+    if not exists (select 1 from scheda_proposte where chiave = 'locale:zz-da-spegnere-ric' and stato = 'in_attesa') then
+      raise exception 'VERIFICA (10e): una proposta obsoleta da 31 giorni non è tornata.';
+    end if;
 
     -- (11) Spegni: contratto scaduto → la voce si spegne, non si cancella.
     reset role;
@@ -679,6 +763,77 @@ begin
     v_r := scheda_proposta_decidi(v_prop, 'si');
     if v_r->>'esito' <> 'accettata' or not exists (select 1 from scheda_voci where id = v_voce_sca and not attiva) then
       raise exception 'VERIFICA (11b): il Sì su «spegni» non ha spento la voce (%).', v_r;
+    end if;
+
+    -- (11c) «Spegni»: se nel frattempo il contratto è stato rinnovato, la voce NON si spegne («obsoleta»).
+    reset role;
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where creata_il > now() - interval '1 day';
+    insert into documents (entity_id, title, doc_type, document_date, expiry_date)
+    values (v_ent, 'Zz Contratto poi rinnovato', 'contratti', v_oggi - 300, v_oggi - 1) returning id into v_doc3;
+    insert into scheda_voci (sezione, chiave, testo, fonte, documento_id)
+    values ('societa', 'societa:zz-contratto-rinnovato', 'Zz contratto poi rinnovato inventato.', 'documentato', v_doc3)
+    returning id into v_voce_x;
+    set local role authenticated;
+    perform scheda_proposte_genera();
+    select id into v_prop from scheda_proposte where voce_id = v_voce_x and tipo = 'spegni' and stato = 'in_attesa';
+    if v_prop is null then raise exception 'VERIFICA (11c-a): il contratto scaduto non ha generato la proposta di spegnere.'; end if;
+    reset role;
+    update documents set expiry_date = v_oggi + 100 where id = v_doc3;
+    set local role authenticated;
+    v_r := scheda_proposta_decidi(v_prop, 'si');
+    if v_r->>'esito' <> 'obsoleta' or not exists (select 1 from scheda_voci where id = v_voce_x and attiva)
+       or not exists (select 1 from scheda_proposte where id = v_prop and stato = 'scaduta' and decisa_il is not null) then
+      raise exception 'VERIFICA (11c-b): un contratto rinnovato ha lasciato spegnere la voce (%).', v_r;
+    end if;
+
+    -- (11d) Riconferma e «spegni» sulla stessa voce non si bloccano a vicenda: rifiutato lo «spegni», la riconferma arriva.
+    reset role;
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where creata_il > now() - interval '1 day';
+    insert into documents (entity_id, title, doc_type, document_date, expiry_date)
+    values (v_ent, 'Zz Contratto doppia proposta', 'contratti', v_oggi - 300, v_oggi - 1) returning id into v_doc3;
+    insert into scheda_voci (sezione, chiave, testo, fonte, verificata_il, documento_id)
+    values ('locale', 'locale:zz-doppia', 'Zz voce con due motivi.', 'confermato', v_oggi - 400, v_doc3) returning id into v_voce_y;
+    set local role authenticated;
+    perform scheda_proposte_genera();
+    select id into v_prop from scheda_proposte where chiave = 'locale:zz-doppia' and stato = 'in_attesa' and origine = 'scadenza_contratto';
+    if v_prop is null then raise exception 'VERIFICA (11d-a): la voce con due motivi non ha generato prima lo «spegni».'; end if;
+    v_r := scheda_proposta_decidi(v_prop, 'no');
+    reset role;
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where creata_il > now() - interval '1 day';
+    set local role authenticated;
+    perform scheda_proposte_genera();
+    if not exists (select 1 from scheda_proposte where chiave = 'locale:zz-doppia' and stato = 'in_attesa' and origine = 'riconferma') then
+      raise exception 'VERIFICA (11d-b): lo «spegni» rifiutato ha zittito anche la riconferma.';
+    end if;
+    if exists (select 1 from scheda_proposte where chiave = 'locale:zz-doppia' and stato = 'in_attesa' and origine = 'scadenza_contratto') then
+      raise exception 'VERIFICA (11d-c): lo «spegni» rifiutato è tornato subito.';
+    end if;
+
+    -- (11e) Solo l'entità del ristorante; un telefono o un'e-mail nel testo scarta la proposta (contata tra i saltati).
+    reset role;
+    update scheda_proposte set creata_il = creata_il - interval '3 days' where creata_il > now() - interval '1 day';
+    if v_agri is not null then
+      insert into suppliers (entity_id, name) values (v_agri, 'Zz Fornitore Dell Orto Prova') returning id into v_forn5;
+    end if;
+    insert into documents (entity_id, title, doc_type, document_date) values (null, 'Zz Contratto Senza Entita', 'contratti', v_oggi);
+    insert into suppliers (entity_id, name, payment_terms) values (v_ent, 'Zz Fornitore Telefono Prova', 'chiamare il 333 1234567');
+    insert into suppliers (entity_id, name, payment_terms) values (v_ent, 'Zz Fornitore Posta Prova', 'scrivere a zz@esempio.test');
+    insert into suppliers (entity_id, name, delivery_days, payment_terms)
+    values (v_ent, 'Zz Fornitore Date Prova', 'Lun e Gio dal 03/11/2026', '30 giorni, 3.150,00 euro') returning id into v_forn4;
+    set local role authenticated;
+    v_r := scheda_proposte_genera();
+    if v_forn5 is not null and exists (select 1 from scheda_proposte where chiave = 'fornitori:forn-' || left(v_forn5::text, 8)) then
+      raise exception 'VERIFICA (11e-a): un fornitore dell''azienda agricola ha generato la proposta.';
+    end if;
+    if exists (select 1 from scheda_proposte where testo_dopo like '%Senza Entita%') then
+      raise exception 'VERIFICA (11e-b): un documento senza entità ha generato la proposta.';
+    end if;
+    if exists (select 1 from scheda_proposte where testo_dopo like '%Telefono Prova%' or testo_dopo like '%Posta Prova%') then
+      raise exception 'VERIFICA (11e-c): un testo con un telefono o un''e-mail ha generato la proposta.';
+    end if;
+    if (v_r->>'saltate_privacy')::integer < 2 then raise exception 'VERIFICA (11e-d): telefono ed e-mail non sono contati tra i saltati (%).', v_r; end if;
+    if not exists (select 1 from scheda_proposte where chiave = 'fornitori:forn-' || left(v_forn4::text, 8) and stato = 'in_attesa') then
+      raise exception 'VERIFICA (11e-e): una data e un importo sono stati scambiati per un telefono.';
     end if;
 
     -- (12) La proposta che abbassa la fonte non passa senza conferma.

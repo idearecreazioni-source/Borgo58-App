@@ -77,7 +77,8 @@ describe("le proposte della Scheda (B1)", () => {
     expect(corpo).toContain("at time zone 'Europe/Rome'");
     expect(corpo).toMatch(/greatest\(0, 5 - count\(\*\)\)/);
     expect(corpo).toMatch(/interval '90 days'/);
-    expect(corpo).toMatch(/v_oggi - 30/);
+    // 30 giorni VERI dal momento in cui la proposta è scaduta (decisa_il), non dalla sua scadenza teorica.
+    expect(corpo).toMatch(/p\.stato = 'scaduta' and coalesce\(p\.decisa_il, p\.scade_il::timestamptz\) > now\(\) - interval '30 days'/);
     expect(corpo).toMatch(/v_oggi - 60/);
     expect(corpo).toMatch(/interval '12 months'/);
     expect(corpo).toMatch(/interval '6 months'/);
@@ -89,6 +90,40 @@ describe("le proposte della Scheda (B1)", () => {
     expect(corpo).toContain("scheda_testo_personale(c.testo_dopo)");
     expect(corpo).toContain("scheda_testo_personale(c.chiave)");
     expect(corpo).toContain("scheda_parole_delicate(c.testo_dopo)");
+    // Un telefono o un'e-mail nel testo scartano la proposta (e si contano tra i saltati).
+    expect(corpo).toContain("scheda_contatti_nel_testo(c.testo_dopo)");
+  });
+
+  it("propone solo per l'entità del ristorante: l'azienda agricola e i documenti senza entità restano fuori", () => {
+    const corpo = corpoFunzione("scheda_proposte_calcola");
+    expect(corpo).toContain("entity_type = 'srls'");
+    expect(corpo).toContain("d0.entity_id = v_srls");
+    expect(corpo).toContain("s.entity_id = v_srls");
+    // Se l'entità non è una sola, non si propone niente (v_srls resta nullo e `= null` non è mai vero).
+    expect(corpo).toMatch(/if v_n_srls = 1 then/);
+  });
+
+  it("il silenzio dopo un rifiuto o una scadenza vale per lo stesso motivo: riconferma e «spegni» non si zittiscono a vicenda", () => {
+    const corpo = corpoFunzione("scheda_proposte_calcola");
+    expect(corpo).toContain("distinct on (x.chiave, x.origine)");
+    expect(corpo).toContain("p.origine = y.origine and p.stato = 'rifiutata'");
+    expect(corpo).toContain("p.origine = y.origine and p.stato = 'scaduta'");
+  });
+
+  it("il Sì su «aggiungi» scrive anche «verificata il» oggi (giorno di Roma)", () => {
+    const corpo = corpoFunzione("scheda_proposta_decidi");
+    expect(corpo).toMatch(/insert into scheda_voci \(sezione, chiave, testo, fonte, fonte_dettaglio, documento_id, valida_dal, verificata_il, ordine\)/);
+    expect(corpo).toMatch(/p\.documento_id, v_valida_dal, v_oggi, v_ordine/);
+  });
+
+  it("il Sì su «spegni» ricontrolla la ragione di partenza, e ogni proposta che diventa obsoleta segna quando", () => {
+    const corpo = corpoFunzione("scheda_proposta_decidi");
+    expect(corpo).toMatch(/p\.origine = 'scadenza_contratto' and not exists[\s\S]*?d\.expiry_date < v_oggi/);
+    expect(corpo).toMatch(/p\.origine = 'fornitore_spento' and not exists[\s\S]*?not s\.active/);
+    // Ogni «scaduta» scritta dalla funzione porta anche decisa_il: da lì partono i 30 giorni di silenzio.
+    const scadute = [...corpo.matchAll(/set stato = 'scaduta'([^;]*);/g)].map((m) => m[1]);
+    expect(scadute.length).toBeGreaterThanOrEqual(4);
+    for (const resto of scadute) expect(resto, "una proposta scaduta senza decisa_il").toContain("decisa_il = now()");
   });
 
   it("il Sì passa dagli stessi portieri e una voce cambiata dopo la proposta non si sovrascrive", () => {
