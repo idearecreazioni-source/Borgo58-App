@@ -284,6 +284,12 @@ export default function ArchivioDocumentiHome() {
             Chiedi all'archivio
           </button>
           <button
+            onClick={() => navigate("/documenti/importa")}
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+          >
+            Importa dal Drive
+          </button>
+          <button
             onClick={() => navigate("/documenti/posta")}
             className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
