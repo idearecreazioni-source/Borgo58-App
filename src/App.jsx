@@ -109,6 +109,7 @@ const ArchivioDocumentiHome = lazy(() => import("./pages/documenti/ArchivioDocum
 const DocumentoDetail = lazy(() => import("./pages/documenti/DocumentoDetail"));
 const PostaInArrivo = lazy(() => import("./pages/documenti/PostaInArrivo"));
 const ChiediArchivio = lazy(() => import("./pages/documenti/ChiediArchivio"));
+const ImportaDalDrive = lazy(() => import("./pages/documenti/ImportaDalDrive"));
 const EditorMenuHome = lazy(() => import("./pages/menu-editor/EditorMenuHome"));
 const BevandeVini = lazy(() => import("./pages/menu-editor/BevandeVini"));
 const PiattiDelGiorno = lazy(() => import("./pages/menu-editor/PiattiDelGiorno"));
@@ -396,6 +397,7 @@ function AppRoutes() {
         {/* Prima di /documenti/:id, altrimenti "posta" verrebbe letto come un id. */}
         <Route path="/documenti/posta" element={<RequireTitolare><PostaInArrivo /></RequireTitolare>} />
         <Route path="/documenti/chiedi" element={<RequireTitolare><ChiediArchivio /></RequireTitolare>} />
+        <Route path="/documenti/importa" element={<RequireTitolare><ImportaDalDrive /></RequireTitolare>} />
         {/* Schermata usa-e-getta: prova della dettatura in cucina prima di
             comprare qualunque microfono. Da togliere dopo la decisione. */}
         <Route path="/documenti/:id" element={<RequireTitolare><DocumentoDetail /></RequireTitolare>} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { deleteDocument, getDocument, getDocumentUrl, sezioniArchivio, updateDocument } from "../../lib/api/documents";
 import { leggiContenutoDocumento } from "../../lib/api/assistente";
+import { impostaNoAi } from "../../lib/api/importDrive";
 import { formatDate } from "../../lib/constants";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import DatoNonLetto from "../../components/DatoNonLetto";
@@ -18,6 +19,7 @@ export default function DocumentoDetail() {
   const [leggendo, setLeggendo] = useState(false);
   const [esitoLettura, setEsitoLettura] = useState(null);
   const [sezioni, setSezioni] = useState([]);
+  const [cambiandoNoAi, setCambiandoNoAi] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -73,6 +75,20 @@ export default function DocumentoDetail() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const cambiaNoAi = async (valore) => {
+    setCambiandoNoAi(true);
+    setError("");
+    try {
+      const saved = await impostaNoAi(id, valore);
+      // Si aggiorna solo il segno: le altre correzioni non ancora salvate restano dov'erano.
+      setDoc((d) => ({ ...d, no_ai: saved.no_ai }));
+    } catch (e) {
+      setError(`Non sono riuscito a cambiare il segno: ${e.message}`);
+    } finally {
+      setCambiandoNoAi(false);
     }
   };
 
@@ -193,9 +209,35 @@ export default function DocumentoDetail() {
           <p className="testo-sala text-b58-charcoal-soft/60 mb-4">Nessun file allegato (solo metadati).</p>
         )}
 
+        {/* 🔴 «NON FAR LEGGERE ALL'AI» (22/11/2026, C2). Acceso, questo documento sparisce da «Chiedi all'archivio», dalla
+            chat di MEMO e dalla lettura del file. Si cambia con un gesto solo e si salva subito: un interruttore che
+            aspetta «Salva modifiche» si lascerebbe spento credendolo acceso. */}
+        <div className="mb-4 rounded-lg bg-b58-campo border border-b58-charcoal/10 p-3">
+          <label className="flex items-start gap-3 testo-sala-grande text-b58-charcoal cursor-pointer">
+            <input
+              type="checkbox"
+              checked={doc.no_ai === true}
+              disabled={cambiandoNoAi}
+              onChange={(e) => cambiaNoAi(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Non far leggere questo documento all&apos;AI
+              <span className="block testo-sala text-b58-charcoal-soft">
+                {doc.no_ai === true
+                  ? "Acceso: MEMO e «Chiedi all'archivio» non lo leggono e non lo nominano."
+                  : "Spento: MEMO e «Chiedi all'archivio» possono leggerlo."}
+              </span>
+            </span>
+          </label>
+          {doc.sensibile && (
+            <p className="testo-sala text-b58-charcoal-soft mt-2">Segnato come riservato: {doc.sensibile}.</p>
+          )}
+        </div>
+
         {/* Il contenuto letto dentro il file. Senza, l'assistente conosce
             di questo documento solo i campi qui sopra. */}
-        {doc.storage_path && (
+        {doc.storage_path && !doc.no_ai && (
           <div className="mb-4 rounded-lg bg-b58-campo border border-b58-charcoal/10 p-3">
             {doc.testo ? (
               <p className="testo-sala text-b58-charcoal-soft">
