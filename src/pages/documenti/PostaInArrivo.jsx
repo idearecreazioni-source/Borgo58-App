@@ -27,6 +27,8 @@ import {
   etichettaRifiuto,
   inScheda,
   motivoAzioneBloccata,
+  conDataDellaMail,
+  giornoDellaMail,
   notaInChiaro,
   statoDellaMail,
   statoLettura,
@@ -785,6 +787,9 @@ export default function PostaInArrivo() {
   const [entities, setEntities] = useState(null);
   const [posta, setPosta] = useState([]);
   const [valori, setValori] = useState({});
+  // Le azioni a cui è stata messa la data della mail perché nel documento non
+  // c'era (22/11/2026): la schermata lo dice, finché la data resta quella.
+  const [dataDallaMail, setDataDallaMail] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   // 🔴 L'errore porta con se' DOVE e' successo (28/08/2026).
   // Prima era una stringa sola, mostrata in cima alla pagina: su un elenco
@@ -889,12 +894,22 @@ export default function PostaInArrivo() {
       // Nessun errore, nessun avviso: solo del lavoro buttato via e un
       // dato sbagliato che sembra giusto. È il difetto peggiore che ci
       // sia, ed era in tre righe di codice.
+      // 22/11/2026: senza data nel documento si propone quella della mail,
+      // e si ricorda quali azioni l'hanno avuta così (per dirlo a schermo).
+      // ⚠️ Calcolato fuori da `setValori`: la funzione passata lì gira più
+      //    tardi, e un insieme riempito là dentro sarebbe ancora vuoto.
+      const daMail = new Set(
+        righe.flatMap((m) =>
+          (m.azioni ?? []).filter((a) => conDataDellaMail(a, a.parametri, m.ricevuta_il).daMail).map((a) => a.id)
+        )
+      );
+      setDataDallaMail((prima) => new Set([...prima, ...daMail]));
       setValori((precedenti) =>
         Object.fromEntries(
           righe.flatMap((m) =>
             (m.azioni ?? []).map((a) => [
               a.id,
-              precedenti[a.id] ?? { ...(a.parametri ?? {}) },
+              precedenti[a.id] ?? { ...conDataDellaMail(a, a.parametri, m.ricevuta_il).parametri },
             ])
           )
         )
@@ -1517,7 +1532,17 @@ export default function PostaInArrivo() {
                         type={TIPO_CAMPO[c] ?? "text"}
                         step={c === "importo" ? "0.01" : undefined}
                         value={valori[a.id]?.[c] ?? ""}
-                        onChange={(e) => cambia(a.id, c, e.target.value)}
+                        onChange={(e) => {
+                          cambia(a.id, c, e.target.value);
+                          // Toccata la data, non è più quella proposta dalla mail.
+                          if (c === "data") {
+                            setDataDallaMail((prima) => {
+                              const n = new Set(prima);
+                              n.delete(a.id);
+                              return n;
+                            });
+                          }
+                        }}
                         className={campo}
                       />
                     )}
@@ -1535,6 +1560,16 @@ export default function PostaInArrivo() {
               return (
                 <>
                   {bloccato && <p className={`${avviso} mt-2`}>{bloccato}</p>}
+                  {/* La data non era nel documento: è quella della mail, e lo
+                      si dice. Sparisce se la si cambia. */}
+                  {!bloccato &&
+                    dataDallaMail.has(a.id) &&
+                    valori[a.id]?.data === giornoDellaMail(m.ricevuta_il) && (
+                      <p className="testo-sala text-b58-charcoal-soft mt-2">
+                        Data del documento: {formatDate(valori[a.id].data)}, il giorno in cui è arrivata la
+                        mail (nel documento non c{"'"}era). Se è un{"'"}altra, premi «Correggi».
+                      </p>
+                    )}
                   {errore?.dove === a.id && <p className={`${avviso} mt-2`}>{errore.messaggio}</p>}
                   {/* Pulsanti corti (08/11): il verbo si vede, il nome intero
                       lo legge il lettore di schermo. */}

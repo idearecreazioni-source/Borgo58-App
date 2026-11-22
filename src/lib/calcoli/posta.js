@@ -329,6 +329,36 @@ export function etichettaRifiuto(azione) {
  *    spegnere il pulsante CON LA RAGIONE invece di lasciarlo premere per
  *    essere rifiutato: non è una seconda regola, è la stessa detta prima.
  */
+/**
+ * Il giorno in cui è arrivata la mail, come «AAAA-MM-GG» in ora italiana —
+ * o `null` se non si sa. 🔴 22/11/2026, deciso da Alessio: una scheda tecnica
+ * non porta una data scritta, e MEMO lasciava il campo vuoto bloccando
+ * «Archivia». Il giorno della mail è la data giusta di quasi ogni documento
+ * arrivato per posta, e se non lo è si corregge.
+ * ⚠️ In ora di Roma, non UTC: una mail delle 00:30 è del giorno dopo.
+ */
+export function giornoDellaMail(ricevutaIl) {
+  if (!ricevutaIl) return null;
+  const d = new Date(ricevutaIl);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(d);
+}
+
+/**
+ * I parametri di un'azione che archivia, con la data della mail al posto
+ * di una data mancante. Se la data c'è già non si tocca; per le azioni che
+ * non archiviano non cambia niente. Dice anche se ha messo lei la data, così
+ * la schermata lo scrive (un predefinito si vede, non si nasconde).
+ */
+export function conDataDellaMail(azione, parametri, ricevutaIl) {
+  const p = parametri ?? {};
+  if (!azioneArchivia(azione?.tipo) || String(p.data ?? "").trim()) {
+    return { parametri: p, daMail: false };
+  }
+  const giorno = giornoDellaMail(ricevutaIl);
+  return giorno ? { parametri: { ...p, data: giorno }, daMail: true } : { parametri: p, daMail: false };
+}
+
 export function motivoAzioneBloccata(azione, parametri, sezioniVere = null) {
   if (azioneArchivia(azione?.tipo)) {
     const p = parametri ?? {};

@@ -7,6 +7,8 @@ import {
   etichettaRifiuto,
   motivoAzioneBloccata,
   motivoCaricoBloccato,
+  conDataDellaMail,
+  giornoDellaMail,
   TENTATIVI_DI_RIPIEGO,
   daQuanto,
 } from "../../src/lib/calcoli/posta.js";
@@ -269,6 +271,52 @@ describe("un documento non si archivia senza identita", () => {
     expect(
       motivoAzioneBloccata({ tipo: "carico_magazzino" }, { righe: [{ ingrediente_id: "a", quantita: "2" }] })
     ).toMatch(/Scegli il fornitore/);
+  });
+});
+
+// 22/11/2026, Alessio: una scheda tecnica non ha una data scritta, e «Archivia»
+// restava spento. Senza data nel documento si usa il giorno della mail.
+describe("la data della mail al posto di una data mancante", () => {
+  const archivia = { tipo: "archivia_documento" };
+
+  it("il giorno è quello italiano, non quello UTC", () => {
+    expect(giornoDellaMail("2026-11-20T10:00:00Z")).toBe("2026-11-20");
+    // 23:30 UTC del 20 = 00:30 del 21 a Roma
+    expect(giornoDellaMail("2026-11-20T23:30:00Z")).toBe("2026-11-21");
+    expect(giornoDellaMail(null)).toBeNull();
+    expect(giornoDellaMail("non una data")).toBeNull();
+  });
+
+  it("manca la data: mette quella della mail e lo dice", () => {
+    const r = conDataDellaMail(archivia, { titolo: "Scheda", tipo: "preventivi" }, "2026-11-20T10:00:00Z");
+    expect(r.parametri.data).toBe("2026-11-20");
+    expect(r.parametri.titolo).toBe("Scheda");
+    expect(r.daMail).toBe(true);
+    // e ora il pulsante non è più bloccato dalla data
+    expect(motivoAzioneBloccata(archivia, r.parametri)).toBeNull();
+  });
+
+  it("la data del documento, se c'è, non si tocca", () => {
+    const r = conDataDellaMail(archivia, { data: "2026-07-12" }, "2026-11-20T10:00:00Z");
+    expect(r.parametri.data).toBe("2026-07-12");
+    expect(r.daMail).toBe(false);
+  });
+
+  it("una data di soli spazi conta come mancante", () => {
+    expect(conDataDellaMail(archivia, { data: "   " }, "2026-11-20T10:00:00Z").parametri.data).toBe("2026-11-20");
+  });
+
+  it("le azioni che non archiviano restano com'erano", () => {
+    const p = { titolo: "Chiama il fornitore" };
+    const r = conDataDellaMail({ tipo: "da_fare_a_mano" }, p, "2026-11-20T10:00:00Z");
+    expect(r.parametri).toBe(p);
+    expect(r.daMail).toBe(false);
+  });
+
+  it("senza giorno della mail non inventa niente: resta bloccata", () => {
+    const r = conDataDellaMail(archivia, { tipo: "preventivi" }, null);
+    expect(r.daMail).toBe(false);
+    expect(motivoAzioneBloccata(archivia, r.parametri)).toMatch(/Manca la data/);
   });
 });
 
