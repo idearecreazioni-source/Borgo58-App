@@ -151,10 +151,16 @@ Deno.serve(async (req) => {
 
   const tutti = (ordinati ?? []) as Array<Record<string, unknown>>;
   if (tutti.length === 0) {
+    // 🔴 La funzione del database toglie i documenti «non far leggere all'AI»: un elenco vuoto può voler dire
+    //    «Archivio vuoto» oppure «ci sono documenti, ma nessuno che io possa leggere». Sono due cose diverse.
+    const { count: totaleDocumenti } = await supabase.from("documents").select("id", { count: "exact", head: true });
+    const nessunoLeggibile = (totaleDocumenti ?? 0) > 0;
     return new Response(
       JSON.stringify({
         risultato: {
-          risposta: "Nell'Archivio non c'è ancora nessun documento.",
+          risposta: nessunoLeggibile
+            ? "Nessun documento che l'assistente possa leggere: quelli in Archivio sono tutti segnati «non far leggere all'AI»."
+            : "Nell'Archivio non c'è ancora nessun documento.",
           documenti_guardati: 0,
           documenti_letti: [],
           senza_contenuto: 0,
@@ -184,9 +190,12 @@ Deno.serve(async (req) => {
   for (const d of candidati) {
     const { data: riga } = await supabase
       .from("documents")
-      .select("id, title, testo")
+      .select("id, title, testo, no_ai")
       .eq("id", d.id as string)
       .single();
+    // 🔴 Un documento con «non far leggere all'AI» acceso non entra mai nel contesto (22/11/2026).
+    //    La funzione del database lo toglie già dall'elenco; questo è il secondo lucchetto, sulla lettura del testo.
+    if (riga?.no_ai === true) continue;
     const testo = (riga?.testo ?? "") as string;
     if (!testo) continue;
     if (caratteri + testo.length > CARATTERI_MAX && daLeggere.length > 0) break;
