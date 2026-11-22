@@ -517,10 +517,14 @@ Deno.serve(async (req) => {
 
   const { data: doc, error: docError } = await supabase
     .from("documents")
-    .select("id, title, file_name, storage_path, testo")
+    .select("id, title, file_name, storage_path, testo, no_ai")
     .eq("id", corpo.documento_id)
     .single();
   if (docError || !doc) return errore(404, "documento", "Documento non trovato");
+  // 🔴 «Non far leggere all'AI» (22/11/2026): né un file nuovo, né un testo già in archivio, né dalla chat di MEMO.
+  if (doc.no_ai === true) {
+    return errore(403, "no_ai", "Questo documento è segnato «non far leggere all'AI»: non lo leggo. Per sbloccarlo, togli il segno dalla sua scheda.");
+  }
   if (!doc.storage_path) {
     return errore(400, "file", "Questo documento non ha un file: c'è solo la scheda.");
   }

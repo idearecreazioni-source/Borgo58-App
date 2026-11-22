@@ -38,6 +38,7 @@ const IN_ITALIANO = {
   annulla_incasso_fattura: "annullare l'incasso della fattura",
   incassa_fattura_a_mano: "segnare incassata la fattura",
   scheda_proposta_decidi: "decidere la proposta di MEMO",
+  import_lotto_annulla: "annullare il lotto di import",
 };
 
 const comeSiChiama = (operazione) =>

@@ -24,7 +24,7 @@ const CARATTERI_MASSIMI = 2000;
 const COSTO_LETTURA_DOCUMENTO = 0.20;
 const CARATTERI_DOCUMENTO = 40000;
 
-const NOMI_LETTURE = ["memo_leggi_piano", "memo_leggi_cassa", "memo_leggi_fatture_fornitori", "memo_leggi_agenda", "memo_leggi_magazzino", "memo_leggi_banca", "memo_leggi_prenotazioni", "memo_leggi_haccp", "memo_leggi_costo_piatti", "memo_leggi_documenti", "memo_leggi_fatture_clienti"];
+const NOMI_LETTURE = ["memo_leggi_piano", "memo_leggi_cassa", "memo_leggi_fatture_fornitori", "memo_leggi_agenda", "memo_leggi_magazzino", "memo_leggi_banca", "memo_leggi_prenotazioni", "memo_leggi_haccp", "memo_leggi_costo_piatti", "memo_leggi_documenti", "memo_leggi_fatture_clienti", "memo_leggi_elenco_drive"];
 
 // Più di otto riferimenti si scrivono per intervallo: «[P1]–[P50] (50 righe)».
 function compattaRiferimenti(rif: string[]) {
@@ -84,6 +84,7 @@ const strumentiBase = [
     ["leggi_haccp","Legge fino a 150 registrazioni HACCP (temperature, non conformità, ricevimento merci, pulizie, disinfestazione): prima le non conformità ancora aperte e le temperature fuori soglia. Il campo registro dice di quale si tratta; gli altri campi dipendono dal registro (attrezzatura, temperatura, conforme, risolta, descrizione, rimedio...). Non ha un totale.","haccp"],
     ["leggi_costo_piatti","Legge fino a 150 ricette con il food cost già calcolato dal gestionale. Campi: tipo, categoria, porzioni, costo_ricetta, costo_porzione, in_carta, pronta_per_carta, ritirata_il. Non esiste un totale: non sommare i costi di piatti diversi.","recipes"],
     ["leggi_documenti","Legge fino a 150 metadati dell'Archivio. Campi: tipo, controparti, importo, data_documento, data_scadenza, nome_file, ha_file, nota. Non legge il contenuto del file. La ricerca filtra il testo; la scadenza si guarda nel campo data_scadenza di ogni riga.","documents"],
+    ["leggi_elenco_drive","Cerca nell'elenco dei file del Drive di Borgo 58 (fino a 30 righe). Usalo quando un documento non risulta nell'Archivio del gestionale: se il file è nell'elenco, di' che non è nel gestionale ma nel Drive e dai il link. Campi: cartella, sezione, data_documento, link, formato, mb, sensibile, nel_gestionale. La ricerca cerca tutte le parole nel nome, nella cartella o nella sezione. Non ha un totale. Non legge il contenuto dei file.","elenco_drive"],
     ["leggi_fatture_clienti","Legge fino a 150 fatture ai clienti. Campi: cliente, numero, stato, imponibile, imposta, totale, data_fattura, emessa_il, inviata_il, esito_il, esito, modalita_pagamento. Il totale esclude bozze e scartate.","fatture_emesse"],
   ].map(([name, description]) => ({
     name,
@@ -293,7 +294,7 @@ Deno.serve(async (req) => {
   const indiceRiferimenti = new Map(riferimenti.map((r) => [`${r.tabella}:${r.riga_id}`, r.rif]));
   const prefissi: Record<string, string> = {
     piano_voci: "P", cash_movements: "C", supplier_invoices: "F", tasks: "A", ingredients: "M",
-    movimenti_banca: "B", reservations: "R", haccp: "H", recipes: "I", documents: "D", fatture_emesse: "E",
+    movimenti_banca: "B", reservations: "R", haccp: "H", recipes: "I", documents: "D", fatture_emesse: "E", elenco_drive: "L",
   };
   const prossimoRiferimento = (tabella: string, rigaId: string) => {
     const chiave = `${tabella}:${rigaId}`;
@@ -401,7 +402,7 @@ ${String(corpoDocumento.risultato.testo).slice(0, CARATTERI_DOCUMENTO)}
             memo_leggi_piano: "piano_voci", memo_leggi_cassa: "cash_movements", memo_leggi_fatture_fornitori: "supplier_invoices",
             memo_leggi_agenda: "tasks", memo_leggi_magazzino: "ingredients", memo_leggi_banca: "movimenti_banca",
             memo_leggi_prenotazioni: "reservations", memo_leggi_haccp: "haccp", memo_leggi_costo_piatti: "recipes",
-            memo_leggi_documenti: "documents", memo_leggi_fatture_clienti: "fatture_emesse",
+            memo_leggi_documenti: "documents", memo_leggi_fatture_clienti: "fatture_emesse", memo_leggi_elenco_drive: "elenco_drive",
           } as Record<string, string>)[nome ?? ""];
           risultato = righe.map((riga) => ({
             ...riga,
