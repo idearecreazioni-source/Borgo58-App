@@ -253,3 +253,57 @@ describe("NESSUN FILE VA A UN MODELLO", () => {
     expect(readFileSync("src/lib/api/importDrive.js", "utf8")).toContain("no_ai: noAi === true");
   });
 });
+
+// La revisione del 22/11: la mappa che non si legge, i file che non ci stanno, la chiave col percorso.
+import { CSV_MAX_BYTE, LIMITE_FILE_MB, chiaveFile, controllaFile, leggiCsvConErrore } from "../../src/lib/calcoli/importDrive";
+
+describe("la mappa che non si legge si dice", () => {
+  it("una virgoletta aperta e mai chiusa è un errore, non una mappa più corta", () => {
+    expect(leggiCsvConErrore('a,"b\nc,d').virgoletteAperte).toBe(true);
+    expect(leggiCsvConErrore('a,"b"\nc,d').virgoletteAperte).toBe(false);
+    const m = leggiMappa(csv(riga("sì", "A.pdf", "C", "contratti")) + '\nsì,"nome senza fine,x');
+    expect(m.ok).toBe(false);
+    expect(m.errore).toContain("virgoletta aperta");
+  });
+  it("un file con il punto e virgola (o tabulazioni) dice che il separatore deve essere la virgola", () => {
+    for (const t of ["caricare;nome;sezione;link\nsì;a;b;c", "caricare\tnome\tsezione\tlink\nsì\ta\tb\tc"]) {
+      const m = leggiMappa(t);
+      expect(m.ok).toBe(false);
+      expect(m.errore).toContain("deve essere la virgola");
+    }
+  });
+  it("una cella lunghissima è rifiutata con il numero di riga", () => {
+    const m = leggiMappa(csv(riga("sì", "x".repeat(1500), "C", "contratti")));
+    expect(m.ok).toBe(false);
+    expect(m.errore).toMatch(/riga 2/);
+  });
+  it("il tetto di dimensione della mappa è 2 MB", () => {
+    expect(CSV_MAX_BYTE).toBe(2 * 1024 * 1024);
+  });
+});
+
+describe("controllaFile", () => {
+  it("oltre il limite del deposito è un rifiuto, con i MB veri nel motivo", () => {
+    const r = controllaFile({ name: "a.pdf", size: 80 * 1024 * 1024 });
+    expect(r.rifiuto).toContain("80 MB");
+    expect(r.rifiuto).toContain(`${LIMITE_FILE_MB} MB`);
+    expect(controllaFile({ name: "a.pdf", size: LIMITE_FILE_MB * 1024 * 1024 }).rifiuto).toBeNull();
+  });
+  it("html, svg e eseguibili sono un avviso (non un rifiuto); i documenti normali nessuno", () => {
+    for (const n of ["pagina.HTML", "logo.svg", "programma.exe", "script.sh", "app.msi"]) {
+      const r = controllaFile({ name: n, size: 10 });
+      expect(r.rifiuto).toBeNull();
+      expect(r.avviso).toContain("insolito");
+    }
+    for (const n of ["a.pdf", "foto.jpg", "relazione.docx", "senza-estensione"]) expect(controllaFile({ name: n, size: 10 }).avviso).toBeNull();
+  });
+});
+
+describe("chiaveFile", () => {
+  it("due file con lo stesso nome in cartelle diverse hanno chiavi diverse", () => {
+    const a = { name: "x.pdf", size: 1, lastModified: 5, webkitRelativePath: "uno/x.pdf" };
+    const b = { name: "x.pdf", size: 1, lastModified: 5, webkitRelativePath: "due/x.pdf" };
+    expect(chiaveFile(a)).not.toBe(chiaveFile(b));
+    expect(chiaveFile(a)).toBe(chiaveFile({ ...a }));
+  });
+});

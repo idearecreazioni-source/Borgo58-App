@@ -13,7 +13,13 @@
 // ---------------------------------------------------------------------
 // Separatore virgola, virgolette doppie, «""» dentro le virgolette = una virgoletta, righe che vanno a capo dentro
 // le virgolette, BOM all'inizio (Excel e il Drive lo mettono). Restituisce un array di righe di celle.
+// ⚠️ Una virgoletta aperta e mai chiusa NON si perdona: tutto il resto del file finirebbe dentro una sola cella e la
+//    mappa sembrerebbe «più corta» senza dire niente. `leggiCsvConErrore` lo dice; `leggiCsv` resta per chi vuole solo le righe.
 export function leggiCsv(testo) {
+  return leggiCsvConErrore(testo).righe;
+}
+
+export function leggiCsvConErrore(testo) {
   const t = String(testo ?? "").replace(/^﻿/, "");
   const righe = [];
   let riga = [];
@@ -44,7 +50,7 @@ export function leggiCsv(testo) {
     riga.push(cella);
     righe.push(riga);
   }
-  return righe.filter((r) => r.some((x) => x.trim() !== ""));
+  return { righe: righe.filter((r) => r.some((x) => x.trim() !== "")), virgoletteAperte: tra };
 }
 
 // ---------------------------------------------------------------------
@@ -104,6 +110,8 @@ export function leggiDataCsv(testo) {
 // ---------------------------------------------------------------------
 // 4. La mappa
 // ---------------------------------------------------------------------
+export const CSV_MAX_BYTE = 2 * 1024 * 1024;
+const CELLA_MAX = 1000;
 const COLONNE = ["caricare", "nome", "cartella", "formato", "mb", "data", "tipo", "sezione", "sensibile", "no_ai", "link"];
 
 // «sì — IBAN» → «IBAN»; «sì» e basta, o «no», → nessuna nota. La nota è informativa e il database la vuole lunga al
@@ -123,8 +131,18 @@ function numeroMb(testo) {
 
 // Una riga della mappa. `entra`: «sì». Ogni altra cosa («no (solo elenco)», vuoto, un refuso) NON entra.
 export function leggiMappa(testoCsv) {
-  const righe = leggiCsv(testoCsv);
+  const { righe, virgoletteAperte } = leggiCsvConErrore(testoCsv);
+  if (virgoletteAperte) {
+    return { ok: false, errore: "Nel file della mappa c'è una virgoletta aperta e mai chiusa: controlla il file e riprova.", righe: [] };
+  }
   if (righe.length === 0) return { ok: false, errore: "Il file della mappa è vuoto.", righe: [] };
+  if (righe[0].length === 1 && /[;	]/.test(righe[0][0])) {
+    return { ok: false, errore: "Il separatore del file della mappa deve essere la virgola (qui sembra un punto e virgola o una tabulazione).", righe: [] };
+  }
+  const lunga = righe.findIndex((r) => r.some((c) => c.length > CELLA_MAX));
+  if (lunga >= 0) {
+    return { ok: false, errore: `Nella riga ${lunga + 1} del file della mappa c'è una cella lunghissima (oltre ${CELLA_MAX} caratteri): non è la mappa giusta, o è rovinata.`, righe: [] };
+  }
   const intestazione = righe[0].map((c) => normalizzaTesto(c).replace(/ /g, "_"));
   const col = Object.fromEntries(COLONNE.map((nome) => [nome, intestazione.indexOf(nome)]));
   const mancanti = ["caricare", "nome", "sezione", "link"].filter((nome) => col[nome] < 0);
@@ -227,7 +245,7 @@ export function abbinaFile(file, righeMappa) {
 export function rigaAnteprima({ file, riga, sezioni }) {
   const codice = codiceSezione(riga.sezione, sezioni);
   return {
-    chiave: `${file.name}#${file.size}#${file.lastModified ?? 0}`,
+    chiave: chiaveFile(file),
     file,
     nome: file.name,
     titolo: titoloDaNome(file.name),
@@ -240,7 +258,9 @@ export function rigaAnteprima({ file, riga, sezioni }) {
     noAi: false,
     mb: Math.round((file.size / (1024 * 1024)) * 100) / 100,
     impronta: null,
+    improntaFallita: false,
     doppione: null,
+    avviso: null,
     link: riga.link,
     selezionato: true,
   };
@@ -336,4 +356,31 @@ export async function improntaFile(file) {
   const byte = await leggiByte(file);
   const hash = await globalThis.crypto.subtle.digest("SHA-256", byte);
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ---------------------------------------------------------------------
+// 9. Prima di caricare: il file ci sta, ed è del tipo che ci si aspetta?
+// ---------------------------------------------------------------------
+// ⚠️ IL LIMITE REALE DEL DEPOSITO NON SI LEGGE DA QUI: il bucket «documents» non dichiara un tetto proprio (lo eredita
+//    dal progetto) e il tetto del progetto di work non è leggibile dal database. 50 MB è il valore standard di
+//    Supabase: se work ne avesse uno più basso, il rifiuto lo dà comunque il deposito e la pagina lo mostra com'è.
+export const LIMITE_FILE_MB = 50;
+const ESTENSIONI_STRANE = new Set(["html", "htm", "svg", "js", "mjs", "exe", "msi", "bat", "cmd", "com", "scr", "sh", "ps1", "jar", "apk", "dmg", "vbs", "lnk"]);
+
+export function controllaFile(file) {
+  const mb = file.size / (1024 * 1024);
+  if (mb > LIMITE_FILE_MB) {
+    return { rifiuto: `Pesa ${Math.round(mb * 10) / 10} MB: il deposito accetta al massimo ${LIMITE_FILE_MB} MB per file.`, avviso: null };
+  }
+  const estensione = String(file.name ?? "").toLowerCase().match(/.([a-z0-9]{1,6})$/)?.[1] ?? "";
+  if (ESTENSIONI_STRANE.has(estensione)) {
+    return { rifiuto: null, avviso: `Un file «.${estensione}» è insolito in un archivio di documenti (può contenere programmi o pagine web): importalo solo se sei sicuro.` };
+  }
+  return { rifiuto: null, avviso: null };
+}
+
+// La chiave di un file scelto: con il percorso, perché due cartelle diverse possono avere un file con lo stesso nome,
+// la stessa dimensione e la stessa data.
+export function chiaveFile(f) {
+  return `${f.webkitRelativePath || ""}|${f.name}#${f.size}#${f.lastModified ?? 0}`;
 }

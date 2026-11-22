@@ -24,6 +24,9 @@ const finto = vi.hoisted(() => ({
   linkPresenti: new Set(),
   lottoFallito: false,
   annullaFallisce: null,
+  trattieniImpronta: null,
+  trattieniImporta: null,
+  improntaFallisce: false,
 }));
 const spie = vi.hoisted(() => ({ importati: [], lotti: 0, elenco: [], annullati: [] }));
 
@@ -49,6 +52,7 @@ vi.mock("../../src/lib/api/importDrive", () => ({
     return finto.gia;
   }),
   importaDocumento: vi.fn(async (d) => {
+    if (finto.trattieniImporta) await finto.trattieniImporta;
     if (finto.fallisciQuesti.has(d.file.name)) throw new Error("il deposito non risponde");
     spie.importati.push(d);
     return `doc-${spie.importati.length}`;
@@ -64,7 +68,11 @@ vi.mock("../../src/lib/calcoli/importDrive", async (importOriginal) => {
   const vero = await importOriginal();
   return {
     ...vero,
-    improntaFile: vi.fn(async (f) => (f.impronta ?? `${(f.name + "0".repeat(64)).replace(/[^a-z0-9]/gi, "0")}`.slice(0, 64)).toLowerCase()),
+    improntaFile: vi.fn(async (f) => {
+      if (finto.improntaFallisce) throw new Error("illeggibile");
+      if (finto.trattieniImpronta) await finto.trattieniImpronta;
+      return (f.impronta ?? `${(f.name + "0".repeat(64)).replace(/[^a-z0-9]/gi, "0")}`.slice(0, 64)).toLowerCase();
+    }),
   };
 });
 
@@ -99,6 +107,9 @@ beforeEach(() => {
   finto.linkPresenti = new Set();
   finto.lottoFallito = false;
   finto.annullaFallisce = null;
+  finto.trattieniImpronta = null;
+  finto.trattieniImporta = null;
+  finto.improntaFallisce = false;
   spie.importati = [];
   spie.lotti = 0;
   spie.elenco = [];
@@ -117,19 +128,19 @@ async function apri() {
 }
 
 async function scegliMappa(testo) {
-  fireEvent.change(screen.getByLabelText("File della mappa"), { target: { files: [mappaFile(testo)] } });
+  fireEvent.change(screen.getByLabelText(/^Scegli (la|un'altra) mappa/), { target: { files: [mappaFile(testo)] } });
   await screen.findByText(/Mappa «mappa finta.csv»/);
 }
 async function scegliFile(...files) {
-  await waitFor(() => expect(screen.getByLabelText("File da importare").disabled).toBe(false));
-  fireEvent.change(screen.getByLabelText("File da importare"), { target: { files } });
+  await waitFor(() => expect(screen.getByLabelText("Scegli i file").disabled).toBe(false));
+  fireEvent.change(screen.getByLabelText("Scegli i file"), { target: { files } });
 }
 const riga = (nome) => screen.getByLabelText(`Titolo di ${nome}`).closest("li");
 
 describe("Importa dal Drive · la mappa", () => {
   it("i file restano chiusi finché non c'è la mappa, e lo dice", async () => {
     await apri();
-    expect(screen.getByLabelText("File da importare").disabled).toBe(true);
+    expect(screen.getByLabelText("Scegli i file").disabled).toBe(true);
     expect(screen.getByText(/Prima la mappa/)).toBeTruthy();
   });
 
@@ -142,9 +153,9 @@ describe("Importa dal Drive · la mappa", () => {
 
   it("un file che non è la mappa è respinto con le colonne mancanti", async () => {
     await apri();
-    fireEvent.change(screen.getByLabelText("File della mappa"), { target: { files: [mappaFile("a,b\n1,2")] } });
+    fireEvent.change(screen.getByLabelText(/^Scegli (la|un'altra) mappa/), { target: { files: [mappaFile("a,b\n1,2")] } });
     expect(await screen.findByText(/non sembra il file della mappa/)).toBeTruthy();
-    expect(screen.getByLabelText("File da importare").disabled).toBe(true);
+    expect(screen.getByLabelText("Scegli i file").disabled).toBe(true);
   });
 
   it("se le sezioni non si leggono lo dice e non lascia importare", async () => {
@@ -152,7 +163,7 @@ describe("Importa dal Drive · la mappa", () => {
     await apri();
     expect(await screen.findByText(/Non sono riuscito a leggere le sezioni dell'Archivio/)).toBeTruthy();
     await scegliMappa();
-    expect(screen.getByLabelText("File da importare").disabled).toBe(true);
+    expect(screen.getByLabelText("Scegli i file").disabled).toBe(true);
   });
 });
 
@@ -175,10 +186,10 @@ describe("Importa dal Drive · rifiutati e anteprima", () => {
     await scegliFile(pdf("Contratto prova.pdf"));
     await screen.findByTestId("anteprima");
     const r = riga("Contratto prova.pdf");
-    expect(within(r).getByLabelText("Sezione di Contratto prova.pdf").value).toBe("contratti");
-    expect(within(r).getByLabelText("Data di Contratto prova.pdf").value).toBe("2026-11-02");
-    expect(within(r).getByLabelText("Data di Contratto prova.pdf").className).toContain("campo-data");
-    expect(within(r).getByLabelText("Non far leggere all'AI Contratto prova.pdf").checked).toBe(false);
+    expect(within(r).getByLabelText("Sezione").value).toBe("contratti");
+    expect(within(r).getByLabelText("Data del documento").value).toBe("2026-11-02");
+    expect(within(r).getByLabelText("Data del documento").className).toContain("campo-data");
+    expect(within(r).getByLabelText("Non far leggere all'AI").checked).toBe(false);
     expect(screen.getByRole("button", { name: "Importa 1 documenti" })).toBeTruthy();
   });
 
@@ -188,7 +199,7 @@ describe("Importa dal Drive · rifiutati e anteprima", () => {
     await scegliFile(pdf("Riservato prova.pdf"));
     await screen.findByTestId("anteprima");
     const r = riga("Riservato prova.pdf");
-    expect(within(r).getByLabelText("Non far leggere all'AI Riservato prova.pdf").checked).toBe(false);
+    expect(within(r).getByLabelText("Non far leggere all'AI").checked).toBe(false);
     expect(r.textContent).toContain("IBAN");
   });
 
@@ -199,7 +210,7 @@ describe("Importa dal Drive · rifiutati e anteprima", () => {
     await screen.findByTestId("anteprima");
     const r = riga("Preventivo prova.pdf");
     expect(r.textContent).toMatch(/Da verificare: è l'ultima modifica del file/);
-    fireEvent.change(within(r).getByLabelText("Data di Preventivo prova.pdf"), { target: { value: "2026-10-05" } });
+    fireEvent.change(within(r).getByLabelText("Data del documento"), { target: { value: "2026-10-05" } });
     expect(r.textContent).not.toMatch(/Da verificare/);
   });
 
@@ -215,7 +226,7 @@ describe("Importa dal Drive · rifiutati e anteprima", () => {
     expect(strana.textContent).toMatch(/«Cose varie» non esiste/);
     expect(screen.getByRole("button", { name: "Importa 0 documenti" }).disabled).toBe(true);
     // Si sistema: la riga si sblocca.
-    fireEvent.change(within(strana).getByLabelText("Sezione di Sezione strana.pdf"), { target: { value: "preventivi" } });
+    fireEvent.change(within(strana).getByLabelText("Sezione"), { target: { value: "preventivi" } });
     expect(within(strana).getByLabelText("Importa Sezione strana.pdf").disabled).toBe(false);
     expect(screen.getByRole("button", { name: "Importa 1 documenti" })).toBeTruthy();
   });
@@ -248,7 +259,7 @@ describe("Importa dal Drive · rifiutati e anteprima", () => {
     expect(screen.queryByTestId("anteprima")).toBeNull();
     fireEvent.change(within(chiedi).getByLabelText(/Quale riga della mappa è Doppio nome.pdf/), { target: { value: "1" } });
     const anteprima = await screen.findByTestId("anteprima");
-    expect(within(anteprima).getByLabelText("Sezione di Doppio nome.pdf").value).toBe("preventivi");
+    expect(within(anteprima).getByLabelText("Sezione").value).toBe("preventivi");
   });
 });
 
@@ -258,7 +269,7 @@ describe("Importa dal Drive · importare", () => {
     await scegliMappa();
     await scegliFile(pdf("Contratto prova.pdf"), pdf("Riservato prova.pdf", "altro"));
     await screen.findByTestId("anteprima");
-    fireEvent.click(within(riga("Riservato prova.pdf")).getByLabelText("Non far leggere all'AI Riservato prova.pdf"));
+    fireEvent.click(within(riga("Riservato prova.pdf")).getByLabelText("Non far leggere all'AI"));
     fireEvent.click(screen.getByRole("button", { name: "Importa 2 documenti" }));
     const esito = await screen.findByTestId("esito");
     expect(esito.textContent).toMatch(/Entrati in Archivio: 2/);
@@ -331,5 +342,178 @@ describe("Importa dal Drive · l'elenco", () => {
     expect(await within(blocco).findByText(/Fatto: 1 file aggiunti all'elenco/)).toBeTruthy();
     expect(spie.elenco).toHaveLength(1);
     expect(spie.elenco[0]).toMatchObject({ nome: "Altro elenco.pdf", no_ai: false, link: "https://example.invalid/solo2" });
+  });
+});
+
+// ---------------------------------------------------------------------
+// La revisione React del 22/11: un gesto alla volta, il riepilogo non sparisce, niente in silenzio.
+// ---------------------------------------------------------------------
+const tieni = () => {
+  let rilascia;
+  const promessa = new Promise((r) => {
+    rilascia = r;
+  });
+  return { promessa, rilascia };
+};
+const grande = (nome, mb) => {
+  const f = pdf(nome);
+  Object.defineProperty(f, "size", { value: mb * 1024 * 1024 });
+  return f;
+};
+const etichettaMappa = () => screen.getByLabelText(/^Scegli (la|un'altra) mappa/);
+
+describe("Importa dal Drive · un gesto alla volta", () => {
+  it("un doppio clic su «Importa» non importa due volte", async () => {
+    const t = tieni();
+    finto.trattieniImporta = t.promessa;
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    const bottoneImporta = screen.getByRole("button", { name: "Importa 1 documenti" });
+    fireEvent.click(bottoneImporta);
+    fireEvent.click(bottoneImporta);
+    t.rilascia();
+    await screen.findByTestId("esito");
+    expect(spie.lotti).toBe(1);
+    expect(spie.importati).toHaveLength(1);
+  });
+
+  it("mentre importa tutti i campi sono bloccati e chiudere la scheda chiede conferma al browser", async () => {
+    const t = tieni();
+    finto.trattieniImporta = t.promessa;
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await waitFor(() => expect(document.querySelector("fieldset").disabled).toBe(true));
+    expect(screen.getByRole("button", { name: /Importo 1 di 1/ }).disabled).toBe(true);
+    const uscita = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(uscita);
+    expect(uscita.defaultPrevented).toBe(true);
+    t.rilascia();
+    await screen.findByTestId("esito");
+    await waitFor(() => expect(document.querySelector("fieldset").disabled).toBe(false));
+    const dopo = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(dopo);
+    expect(dopo.defaultPrevented).toBe(false);
+  });
+
+  it("finita l'importazione il focus va al titolo del riepilogo, e il riepilogo è annunciato", async () => {
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    const titolo = await screen.findByRole("heading", { name: /Ultimo carico — com'è andata/ });
+    await waitFor(() => expect(document.activeElement).toBe(titolo));
+    expect(within(screen.getByTestId("esito")).getByRole("status").textContent).toMatch(/Entrati in Archivio: 1/);
+  });
+});
+
+describe("Importa dal Drive · il riepilogo non sparisce", () => {
+  it("cambiare mappa o scegliere altri file NON toglie «Annulla questo carico»; si chiude solo con un clic esplicito", async () => {
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await screen.findByTestId("esito");
+    fireEvent.change(etichettaMappa(), { target: { files: [mappaFile()] } });
+    await waitFor(() => expect(screen.getByText(/Mappa «mappa finta.csv»/)).toBeTruthy());
+    expect(screen.getByRole("button", { name: "Annulla questo carico" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Chiudi questo riepilogo" }));
+    expect(screen.queryByTestId("esito")).toBeNull();
+  });
+
+  it("un carico in cui non è entrato niente lo dice e non offre di annullare", async () => {
+    finto.fallisciQuesti = new Set(["Contratto prova.pdf"]);
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    const esito = await screen.findByTestId("esito");
+    expect(esito.textContent).toMatch(/Nessun documento è entrato: il carico è rimasto vuoto/);
+    expect(screen.queryByRole("button", { name: "Annulla questo carico" })).toBeNull();
+  });
+});
+
+describe("Importa dal Drive · niente in silenzio", () => {
+  it("un file scelto due volte non sparisce in silenzio: lo dice", async () => {
+    await apri();
+    await scegliMappa();
+    const stesso = pdf("Contratto prova.pdf");
+    await scegliFile(stesso);
+    await screen.findByTestId("anteprima");
+    await scegliFile(stesso);
+    expect(await screen.findByText(/1 file era già stato scelto e l'ho ignorato/)).toBeTruthy();
+  });
+
+  it("un file oltre il limite del deposito è rifiutato PRIMA di caricarlo, con il motivo", async () => {
+    await apri();
+    await scegliMappa();
+    await scegliFile(grande("Contratto prova.pdf", 80));
+    const rif = await screen.findByTestId("rifiutati");
+    expect(rif.textContent).toMatch(/Pesa 80 MB: il deposito accetta al massimo 50 MB/);
+    expect(screen.queryByTestId("anteprima")).toBeNull();
+  });
+
+  it("un file insolito (html) è segnalato e parte NON spuntato", async () => {
+    const m = [INTESTAZIONE, rigaCsv("sì", "Pagina.html", "Contratti")].join("\n");
+    await apri();
+    await scegliMappa(m);
+    await scegliFile(pdf("Pagina.html"));
+    await screen.findByTestId("anteprima");
+    const r = riga("Pagina.html");
+    await waitFor(() => expect(r.textContent).toMatch(/insolito in un archivio di documenti/));
+    expect(within(r).getByLabelText("Importa Pagina.html").checked).toBe(false);
+  });
+
+  it("una mappa nuova che non si legge NON butta via quella buona", async () => {
+    await apri();
+    await scegliMappa();
+    fireEvent.change(etichettaMappa(), { target: { files: [mappaFile("a;b;c\n1;2;3")] } });
+    expect(await screen.findByText(/deve essere la virgola/)).toBeTruthy();
+    expect(screen.getByText(/Tengo la mappa di prima/)).toBeTruthy();
+    expect(screen.getByText(/Mappa «mappa finta.csv»/)).toBeTruthy();
+  });
+
+  it("una virgoletta mai chiusa è un errore detto a parole", async () => {
+    await apri();
+    fireEvent.change(etichettaMappa(), { target: { files: [mappaFile(INTESTAZIONE + '\nsì,"nome senza fine,x')] } });
+    expect(await screen.findByText(/virgoletta aperta e mai chiusa/)).toBeTruthy();
+  });
+
+  it("durante il controllo dice a che file è arrivato, e se un file non si legge lo scrive sulla sua riga", async () => {
+    const t = tieni();
+    finto.trattieniImpronta = t.promessa;
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    expect(await screen.findByText(/Controllo il file 1 di 1 \(Contratto prova.pdf\)/)).toBeTruthy();
+    t.rilascia();
+    finto.trattieniImpronta = null;
+    await screen.findByTestId("anteprima");
+    finto.improntaFallisce = true;
+    await scegliFile(pdf("Preventivo prova.pdf"));
+    await waitFor(() => expect(riga("Preventivo prova.pdf").textContent).toMatch(/controllo dei doppioni non è valido per questo file/));
+  });
+});
+
+describe("Importa dal Drive · i doppioni dopo un carico", () => {
+  it("quello appena entrato conta come «già in Archivio»: il file uguale rimasto in anteprima resta un doppione", async () => {
+    const a = pdf("Contratto prova.pdf", "stesso");
+    const b = pdf("Preventivo prova.pdf", "stesso");
+    await apri();
+    await scegliMappa();
+    await scegliFile(a, b);
+    await screen.findByTestId("anteprima");
+    await waitFor(() => expect(riga("Preventivo prova.pdf").textContent).toMatch(/scelto due volte/));
+    // Il primo entra; il secondo (non spuntato) resta, ed è un doppione VERO di quello appena archiviato.
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await screen.findByTestId("esito");
+    await waitFor(() => expect(riga("Preventivo prova.pdf").textContent).toMatch(/Già in Archivio come «Contratto prova»/));
   });
 });

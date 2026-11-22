@@ -34,3 +34,24 @@ Niente `documento-leggi`, niente `assistente-archivio`, niente `memo-chat`, nien
 1. Rilascio di C1 (copia di sicurezza, migrazione `20261122000001`, 4 funzioni, «Approve and deploy») — il sito con questa pagina esce con lo stesso «Approve and deploy».
 2. Primo giro: **3 file non riservati** scelti insieme, guardare l'anteprima e l'Archivio, provare «Annulla questo carico» su un carico di prova solo se Alessio lo vuole; poi gli altri.
 3. «Carica l'elenco del Drive» dalla stessa mappa (136 righe «solo elenco»): prima il conteggio, poi il caricamento.
+
+## Dopo la revisione React del 22/11 (cosa è cambiato nella pagina)
+- **Il riepilogo di un carico non sparisce**: sta in uno stato a parte («Ultimo carico — com'è andata»), cambiare mappa o scegliere altri file non lo tocca, e «Annulla questo carico» resta raggiungibile. Si chiude solo con «Chiudi questo riepilogo». Un errore dell'annullamento compare dentro il riquadro del carico.
+- **Un gesto alla volta**: mentre si importa, si annulla o si scrive l'elenco, tutti i campi sono bloccati (`fieldset`), i bottoni mostrano «Importo X di N…», un secondo clic non parte (`inVolo`) e chiudere o ricaricare la scheda fa chiedere conferma al browser (`beforeunload`).
+- **Doppioni**: calcolati con un messaggio «Controllo il file X di N»; un file che non si legge lo dice sulla sua riga («il controllo dei doppioni non è valido per questo file»); togliere un file rifà i segni; quello appena entrato conta come «già in Archivio» per i file uguali rimasti. Le correzioni di Alessio non vengono sovrascritte a fine calcolo.
+- **Mai in silenzio**: «N file erano già stati scelti e li ho ignorati»; la chiave di un file comprende il percorso (due cartelle con lo stesso nome file non si confondono); una mappa nuova che non si legge **non butta via quella buona**; virgoletta aperta, punto e virgola al posto della virgola, celle oltre 1000 caratteri e file oltre 2 MB sono errori detti a parole.
+- **File grossi o strani**: un file oltre **50 MB** è rifiutato prima di caricarlo (il tetto reale del deposito di work NON è leggibile da qui: il bucket non dichiara un limite proprio; se work ne avesse uno più basso lo rifiuta il deposito e la pagina mostra l'errore com'è); html, svg e programmi sono segnalati e partono non spuntati.
+- **Accessibilità**: anello di focus sulle etichette dei file, focus al titolo del riepilogo dopo l'importazione, `role="status"`/`aria-live` su esito e contatori, `role="alert"` sugli errori, `aria-describedby` sul motivo del blocco, aree di tocco più grandi sulle caselle, nomi lunghi a capo. «Scegli una cartella» si nasconde sotto la larghezza `md` (iPhone e iPad non la offrono) con una frase che lo spiega.
+- **Carico vuoto**: se nessun file entra, il lotto esiste lo stesso (un lotto non si cancella) ma è vuoto e innocuo; la pagina lo dice e non offre di annullare.
+
+## Dove il blocco «non far leggere all'AI» è davvero sul server
+- `supabase/functions/documento-leggi/index.ts` riga 520-527: legge `no_ai` dal documento e risponde 403 **prima** di scaricare il file e prima di usare un testo già salvato. Vale per la scheda del documento e per la chat di MEMO, che passa di lì (`memo-chat/index.ts` ~375, `fetch .../documento-leggi`).
+- `supabase/functions/assistente-archivio/index.ts` riga 193-198: secondo lucchetto sul testo (`if (riga?.no_ai === true) continue`); il primo è `documenti_per_domanda` (riga 145), che in `20261122000001` esclude `no_ai` (`where not d.no_ai`).
+- Chat di MEMO, metadati: `memo_leggi_documenti` (`20261122000001`, `where not d.no_ai`).
+- Elenco del Drive: `elenco_drive_cerca` e `memo_leggi_elenco_drive` escludono `no_ai`.
+- Non provato con le chiavi AI vere: il blocco è provato sul testo del codice (`tests/unita/import-drive-c1-sql.test.js`) e, per le funzioni SQL, dalla verifica interna della migrazione.
+
+## Aggiunti ai «non verificato»
+- Il **doppio clic** vero (due tocchi ravvicinati su un telefono) non è provato: lo è solo con due clic consecutivi in jsdom.
+- Il **cambio di mappa a metà** di un'importazione è impedito (campi bloccati), ma non provato in un browser vero.
+- I **file grandi su iPhone** (decine di MB letti in memoria per l'impronta SHA-256) non sono provati: la pagina li legge interi nel browser, e su un telefono con poca memoria potrebbe fallire; in quel caso il file riceve l'avviso «controllo dei doppioni non valido» e si importa lo stesso, se Alessio lo spunta.
