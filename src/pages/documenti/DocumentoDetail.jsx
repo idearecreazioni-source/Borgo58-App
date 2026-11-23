@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { deleteDocument, getDocument, getDocumentUrl, sezioniArchivio, updateDocument } from "../../lib/api/documents";
 import { leggiContenutoDocumento } from "../../lib/api/assistente";
-import { impostaNoAi } from "../../lib/api/importDrive";
+import { confermaDataDocumento, impostaNoAi } from "../../lib/api/importDrive";
 import { formatDate } from "../../lib/constants";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import DatoNonLetto from "../../components/DatoNonLetto";
@@ -20,6 +20,7 @@ export default function DocumentoDetail() {
   const [esitoLettura, setEsitoLettura] = useState(null);
   const [sezioni, setSezioni] = useState([]);
   const [cambiandoNoAi, setCambiandoNoAi] = useState(false);
+  const [confermandoData, setConfermandoData] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -75,6 +76,20 @@ export default function DocumentoDetail() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // «La data è giusta»: si spegne solo il segno; le altre correzioni non ancora salvate restano dov'erano.
+  const dataGiusta = async () => {
+    setConfermandoData(true);
+    setError("");
+    try {
+      const saved = await confermaDataDocumento(id);
+      setDoc((d) => ({ ...d, data_incerta: saved.data_incerta }));
+    } catch (e) {
+      setError(`Non sono riuscito a confermare la data: ${e.message}`);
+    } finally {
+      setConfermandoData(false);
     }
   };
 
@@ -182,6 +197,20 @@ export default function DocumentoDetail() {
           <div>
             <label className={labelClass}>Data documento</label>
             <input type="date" value={doc.document_date ?? ""} onChange={(e) => setField("document_date", e.target.value)} className={inputClass} />
+            {doc.data_incerta === true && (
+              <div className="mt-1.5 testo-sala text-b58-charcoal-soft" role="status">
+                <span className="font-medium text-b58-terracotta">Data da verificare</span>: è quella dell'ultima modifica del file, non
+                per forza quella del documento. Se la cambi e salvi, il segno sparisce. «La data è giusta» tiene la data com'è già salvata.{" "}
+                <button
+                  type="button"
+                  onClick={dataGiusta}
+                  disabled={confermandoData}
+                  className="tocco-campo underline underline-offset-2 text-b58-terracotta disabled:opacity-50"
+                >
+                  {confermandoData ? "Un momento…" : "La data è giusta"}
+                </button>
+              </div>
+            )}
           </div>
           <div>
             <label className={labelClass}>Scadenza</label>

@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { annullaLottoImport, sezioniArchivio } from "../../lib/api/documents";
+import { getEntities } from "../../lib/api/entities";
 import {
   apriLottoImport,
   impronteInArchivio,
@@ -253,6 +254,19 @@ export default function ImportaDalDrive() {
     setInCorso(true);
     setErrore("");
     try {
+      // I documenti importati sono di Borgo 58 S.r.l.s.: senza società le proposte della Scheda li ignorano.
+      // Se non riesco a trovarla non importo niente: meglio fermarsi che caricare 27 documenti senza società.
+      let societaId;
+      try {
+        societaId = (await getEntities())?.srls?.id;
+      } catch (e) {
+        setErrore(`Non sono riuscito a leggere la società, quindi non ho importato niente: ${e.message}`);
+        return;
+      }
+      if (!societaId) {
+        setErrore("Non trovo Borgo 58 S.r.l.s. fra le società, quindi non ho importato niente.");
+        return;
+      }
       let lottoId;
       try {
         lottoId = await apriLottoImport(`Dal Drive, ${daImportare.length} file`);
@@ -271,10 +285,12 @@ export default function ImportaDalDrive() {
             titolo: r.titolo.trim(),
             sezione: r.sezione,
             data: r.data,
+            dataDaVerificare: r.dataDaVerificare === true,
             sensibile: r.sensibile,
             noAi: r.noAi,
             impronta: r.impronta,
             lottoId,
+            entityId: societaId,
           });
           entrati.push({ chiave: r.chiave, nome: r.nome, id, impronta: r.impronta, titolo: r.titolo.trim() });
         } catch (e) {
