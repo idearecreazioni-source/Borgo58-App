@@ -35,7 +35,7 @@ describe("memo-chat: la cronologia non porta documenti riservati", () => {
 
   it("se non riesce a leggere i riferimenti della conversazione si ferma (non salta il controllo in silenzio)", () => {
     expect(codice).toContain("erroreRiferimenti");
-    expect(codice).toMatch(/if (erroreRiferimenti) {[sS]*?return errore(503, "riferimenti"/);
+    expect(codice).toMatch(/if \(erroreRiferimenti\) \{[\s\S]*?return errore\(503, "riferimenti"/);
   });
 
   it("il controllo sta PRIMA della prima chiamata al modello", () => {
