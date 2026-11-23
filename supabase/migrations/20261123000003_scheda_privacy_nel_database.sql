@@ -23,7 +23,7 @@ declare
   v_iban_pattern text := '\m[A-Za-z]{2}[0-9]{2}([ .-]?[A-Za-z0-9]{4}){2,7}([ .-]?[A-Za-z0-9]{1,3})?\M';
   -- «IT 60 X054 …»: con uno spazio dopo la sigla del paese. Solo i paesi che si usano davvero: una sigla qualunque
   -- di due lettere («da 12 anni 2026») sarebbe un IBAN finto.
-  v_iban_spaziato text := '\m(IT|SM|VA|FR|DE|ES|GB|CH|NL|BE|AT|PT|LU|IE|MT|CY|GR|SK)[ .-][0-9]{2}([ .-]?[A-Za-z0-9]{4}){2,7}([ .-]?[A-Za-z0-9]{1,3})?\M';
+  v_iban_spaziato text := '\m(IT|SM|FR|DE|ES|GB|CH|NL|BE|AT|PT|LU|IE|MT|CY|GR|SK)[ .-][0-9]{2}([ .-]?[A-Za-z0-9]{4}){4,7}([ .-]?[A-Za-z0-9]{1,3})?\M';
   v_cf_pattern text := '\m[A-Za-z]([ .-]?[A-Za-z]){5}([ .-]?[0-9LMNPQRSTUV]){2}[ .-]?[ABCDEHLMPRST]([ .-]?[0-9LMNPQRSTUV]){2}[ .-]?[A-Za-z]([ .-]?[0-9LMNPQRSTUV]){3}[ .-]?[A-Za-z]\M';
 begin
   -- IBAN internazionale; CF anche omocodico nelle sole posizioni numeriche.
@@ -56,6 +56,15 @@ begin
   if not is_titolare() then
     raise exception 'Solo il titolare può modificare la Scheda' using errcode = 'insufficient_privilege';
   end if;
+  -- 🔴 Spegnere (o spostare di sezione) una voce che c'è già non cambia il suo testo: non si riguarda il contenuto.
+  --    Altrimenti una voce già dentro con «prestito» o un IBAN non si potrebbe più nemmeno spegnere, e la proposta
+  --    «spegni» di MEMO resterebbe in attesa per sempre.
+  if tg_op = 'UPDATE'
+     and old.chiave is not distinct from new.chiave
+     and old.testo is not distinct from new.testo
+     and old.fonte_dettaglio is not distinct from new.fonte_dettaglio then
+    return new;
+  end if;
   foreach v_campo in array array[new.chiave, new.testo, new.fonte_dettaglio] loop
     if scheda_testo_personale(v_campo) then
       raise exception 'La Scheda non accetta IBAN, codici fiscali di persona o numeri di carta. Se è un numero d''ordine, scrivilo con una parola davanti attaccata o spezzalo.';
@@ -82,7 +91,7 @@ declare
   v_vecchio constant text := 'v_testo := btrim(coalesce(p_testo, ''''));';
   v_nuovo   constant text := 'v_testo := btrim(coalesce(p_testo, ''''));
     if scheda_contatti_nel_testo(v_testo) then
-      raise exception ''Il testo corretto non può contenere telefoni o indirizzi e-mail: la Scheda non li accetta.'';
+      raise exception ''Il testo corretto sembra contenere un telefono o un indirizzo e-mail, che la Scheda non accetta (anche una partita IVA di 11 cifre che inizia per 0 o 3 può sembrarlo): toglilo, o scrivilo con una parola davanti.'';
     end if;';
   v_def     text;
   v_n       integer;
@@ -111,7 +120,7 @@ begin
   if not scheda_testo_personale('IBAN IT60X0542811101000000123456') then raise exception 'VERIFICA (1a): IBAN compatto non riconosciuto.'; end if;
   if not scheda_testo_personale('IBAN IT 60 X054 2811 1010 0000 0123 456') then raise exception 'VERIFICA (1b): IBAN con lo spazio dopo la sigla non riconosciuto.'; end if;
   if not scheda_testo_personale('iban: it 60 X054 2811 1010 0000 0123 456') then raise exception 'VERIFICA (1c): IBAN in minuscolo con lo spazio non riconosciuto.'; end if;
-  if scheda_testo_personale('Consegna da 12 anni 2026 2027 ogni mese: si 20 mesi 2026 2027') then
+  if scheda_testo_personale('Consegna da 12 anni 2026 2027 ogni mese: si 20 mesi 2026 2027 e va 30 anno 2026 2027 con P.IVA IT 01234567890') then
     raise exception 'VERIFICA (1d): un testo italiano è stato scambiato per un IBAN.';
   end if;
 
@@ -121,17 +130,31 @@ begin
   -- I numeri [S#] delle voci non si sprecano nemmeno per una verifica: si rimette la sequenza dove era.
   select last_value, is_called into v_seq_ultimo, v_seq_usato from scheda_voci_numero_seq;
   begin
+    -- Una voce GIÀ dentro con una parola delicata (come quelle di prima di questa migrazione): si scrive senza portieri.
+    alter table scheda_voci disable trigger user;
+    insert into scheda_voci (sezione, chiave, testo, fonte) values ('decisioni', 'decisioni:zz-vecchia', 'Voce ZZ inventata vecchia, sul prestito di una persona.', 'riferito');
+    alter table scheda_voci enable trigger user;
     perform set_config('request.jwt.claims', json_build_object('sub', v_tit, 'role', 'authenticated')::text, true);
     set local role authenticated;
+    -- Spegnerla si può (il testo non cambia); cambiarle il testo tenendo la parola delicata no.
+    update scheda_voci set attiva = false where chiave = 'decisioni:zz-vecchia';
+    if exists (select 1 from scheda_voci where chiave = 'decisioni:zz-vecchia' and attiva) then
+      raise exception 'VERIFICA (2z): la voce vecchia non si è spenta.';
+    end if;
+    v_no := false;
+    begin
+      update scheda_voci set testo = 'Voce ZZ inventata vecchia, ancora sul prestito.' where chiave = 'decisioni:zz-vecchia';
+    exception when raise_exception then v_no := (sqlerrm like '%delicati%'); end;
+    if not v_no then raise exception 'VERIFICA (2y): il portiere ha accettato un testo nuovo con una parola delicata.'; end if;
     v_no := false;
     begin
       insert into scheda_voci (sezione, chiave, testo, fonte) values ('decisioni', 'decisioni:zz-delicata', 'Voce ZZ inventata sul prestito di una persona.', 'riferito');
-    exception when raise_exception then v_no := true; end;
+    exception when raise_exception then v_no := (sqlerrm like '%delicati%'); end;
     if not v_no then raise exception 'VERIFICA (2a): il portiere ha accettato una voce con una parola delicata.'; end if;
     v_no := false;
     begin
       insert into scheda_voci (sezione, chiave, testo, fonte) values ('decisioni', 'decisioni:zz-iban', 'Voce ZZ inventata con IT 60 X054 2811 1010 0000 0123 456.', 'riferito');
-    exception when raise_exception then v_no := true; end;
+    exception when raise_exception then v_no := (sqlerrm like '%IBAN%'); end;
     if not v_no then raise exception 'VERIFICA (2b): il portiere ha accettato un IBAN con lo spazio dopo la sigla.'; end if;
     insert into scheda_voci (sezione, chiave, testo, fonte) values ('decisioni', 'decisioni:zz-normale', 'Voce ZZ inventata, normale, sul finanziamento Credem.', 'riferito');
     reset role;

@@ -19,10 +19,18 @@ describe("migrazione 20261123000003: privacy della Scheda", () => {
   });
 
   it("l'IBAN con lo spazio dopo la sigla è coperto, ma solo per i paesi che si usano (non «da 12 anni 2026»)", () => {
-    expect(migrazione).toMatch(/v_iban_spaziato text := '\\m\(IT\|SM\|VA\|FR\|DE\|ES\|GB\|CH\|NL\|BE\|AT\|PT\|LU\|IE\|MT\|CY\|GR\|SK\)\[ \.-\]\[0-9\]\{2\}/);
-    // «SI» è una parola italiana: non può essere fra le sigle.
-    expect(migrazione).not.toMatch(/\(IT\|SM[^)]*\|SI\|/);
+    expect(migrazione).toMatch(/v_iban_spaziato text := '\\m\(IT\|SM\|FR\|DE\|ES\|GB\|CH\|NL\|BE\|AT\|PT\|LU\|IE\|MT\|CY\|GR\|SK\)\[ \.-\]\[0-9\]\{2\}/);
+    // «SI» e «VA» sono parole italiane: non possono essere fra le sigle.
+    expect(migrazione).not.toMatch(/\(IT\|SM[^)]*\|(SI|VA)\|/);
+    // Almeno 4 gruppi di 4 dopo le cifre di controllo: una partita IVA scritta «IT 01234567890» non è un IBAN.
+    expect(migrazione).toMatch(/\{4,7\}\(\[ \.-\]\?\[A-Za-z0-9\]\{1,3\}\)\?\\M';/);
     expect(migrazione).toMatch(/~\* v_iban_spaziato/);
+  });
+
+  it("una voce già dentro con una parola delicata si può SPEGNERE (il testo non cambia) ma non riscrivere", () => {
+    expect(migrazione).toMatch(/if tg_op = 'UPDATE'\s+and old\.chiave is not distinct from new\.chiave\s+and old\.testo is not distinct from new\.testo\s+and old\.fonte_dettaglio is not distinct from new\.fonte_dettaglio then\s+return new;/);
+    expect(migrazione).toContain("VERIFICA (2z): la voce vecchia non si è spenta.");
+    expect(migrazione).toContain("VERIFICA (2y): il portiere ha accettato un testo nuovo con una parola delicata.");
   });
 
   it("«Correggi» controlla telefoni ed e-mail sul testo corretto (cambio del corpo vivo, una riga sola)", () => {
