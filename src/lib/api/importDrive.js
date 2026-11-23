@@ -37,14 +37,19 @@ export async function apriLottoImport(nota = null) {
 // Un documento importato: prima il file nel deposito, poi la riga (come `deleteDocument` al contrario: se la riga non
 // si scrive, il file appena caricato si toglie, per non lasciare orfani). Restituisce l'id del documento.
 // ⚠️ `doc_type` e `document_date` vanno INSIEME (vincolo documents_ha_identita).
-export async function importaDocumento({ file, titolo, sezione, data, sensibile, noAi, impronta, lottoId }) {
+// 🔴 `entityId`: la società a cui il documento appartiene (Borgo 58 S.r.l.s.). Senza, le proposte della Scheda lo
+//    ignorano (guardano solo i documenti della S.r.l.s.): è quanto trovò la revisione del 23/11 sui primi 27 file.
+// 🔴 `dataDaVerificare`: la data è l'ultima modifica del file, non quella vera: il segno resta sul documento.
+export async function importaDocumento({ file, titolo, sezione, data, dataDaVerificare, sensibile, noAi, impronta, lottoId, entityId }) {
   const { storage_path, file_name } = await uploadDocumentFile(file);
   const { data: nato, error } = await supabase
     .from("documents")
     .insert({
       title: titolo,
+      entity_id: entityId ?? null,
       doc_type: sezione,
       document_date: data,
+      data_da_verificare: dataDaVerificare === true,
       storage_path,
       file_name,
       impronta_sha256: impronta ?? null,
@@ -86,6 +91,19 @@ export async function scriviElencoDrive(righe) {
     scritte += (data ?? []).length;
   }
   return scritte;
+}
+
+// «La data è giusta»: toglie il segno «da verificare» senza cambiare la data. Si scrive il segno apertamente (il
+// database lo spegne da solo solo quando la data cambia).
+export async function confermaDataDocumento(documentoId) {
+  const { data, error } = await supabase
+    .from("documents")
+    .update({ data_da_verificare: false })
+    .eq("id", documentoId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // Il segno «non far leggere all'AI» di un documento, dalla sua scheda.
