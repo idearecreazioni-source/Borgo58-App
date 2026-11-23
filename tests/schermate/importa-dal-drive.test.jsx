@@ -23,6 +23,8 @@ const finto = vi.hoisted(() => ({
   fallisciQuesti: new Set(),
   linkPresenti: new Set(),
   lottoFallito: false,
+  societa: { srls: { id: "srls-prova" } },
+  societaFallita: false,
   annullaFallisce: null,
   trattieniImpronta: null,
   trattieniImporta: null,
@@ -39,6 +41,12 @@ vi.mock("../../src/lib/api/documents", () => ({
     spie.annullati.push(id);
     if (finto.annullaFallisce) throw new Error(finto.annullaFallisce);
     return spie.importati.length;
+  }),
+}));
+vi.mock("../../src/lib/api/entities", () => ({
+  getEntities: vi.fn(async () => {
+    if (finto.societaFallita) throw new Error("non risponde");
+    return finto.societa;
   }),
 }));
 vi.mock("../../src/lib/api/importDrive", () => ({
@@ -106,6 +114,8 @@ beforeEach(() => {
   finto.fallisciQuesti = new Set();
   finto.linkPresenti = new Set();
   finto.lottoFallito = false;
+  finto.societa = { srls: { id: "srls-prova" } };
+  finto.societaFallita = false;
   finto.annullaFallisce = null;
   finto.trattieniImpronta = null;
   finto.trattieniImporta = null;
@@ -295,6 +305,41 @@ describe("Importa dal Drive · importare", () => {
     expect(esito.textContent).toMatch(/Preventivo prova.pdf non è entrato: il deposito non risponde/);
     expect(spie.importati.map((d) => d.titolo)).toEqual(["Contratto prova"]);
     expect(within(screen.getByTestId("anteprima")).getByLabelText("Titolo di Preventivo prova.pdf")).toBeTruthy();
+  });
+
+  it("ogni documento importato porta la società (Borgo 58 S.r.l.s.)", async () => {
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await screen.findByTestId("esito");
+    expect(spie.importati).toHaveLength(1);
+    expect(spie.importati[0].entityId).toBe("srls-prova");
+  });
+
+  it("se la società non si trova non apre il carico e non importa NIENTE", async () => {
+    finto.societa = {};
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Non trovo Borgo 58 S\.r\.l\.s\..*non ho importato niente/);
+    expect(spie.importati).toHaveLength(0);
+    expect(spie.lotti).toBe(0);
+  });
+
+  it("se la società non si legge non apre il carico e non importa NIENTE", async () => {
+    finto.societaFallita = true;
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Non sono riuscito a leggere la società.*non ho importato niente/);
+    expect(spie.importati).toHaveLength(0);
+    expect(spie.lotti).toBe(0);
   });
 
   it("se il lotto non si apre non importa NIENTE e lo dice", async () => {
