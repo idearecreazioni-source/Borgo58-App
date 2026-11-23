@@ -115,6 +115,9 @@ declare
   v_def     text;
   v_n       integer;
 begin
+  -- Questo blocco NON chiama `agenda_corsie()`: la nomina solo dentro il testo da sostituire. Il guardiano delle
+  -- migrazioni (migrazioni-senza-portieri) cerca i claims: si impostano a vuoto, come fanno i blocchi di verifica.
+  perform set_config('request.jwt.claims', null, true);
   v_def := replace(pg_get_functiondef('public.memo_confronta_con_le_pagine()'::regprocedure), E'\r', '');
   if v_def like '%' || v_nuovo || '%' then return; end if;
   v_n := (length(v_def) - length(replace(v_def, v_vecchio, ''))) / length(v_vecchio);
