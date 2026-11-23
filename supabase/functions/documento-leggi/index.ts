@@ -423,15 +423,27 @@ Deno.serve(async (req) => {
     registra: async (gesto, modello, token) => {
       // Se il registro non si scrive la lettura deve arrivare lo stesso:
       // perdere il conto è meno grave che perdere un testo già pagato.
-      const { error } = await supabase.from("letture_documento").insert({
-        creato_da: utente.user.id,
-        documento_id: idDocumento,
-        gesto,
-        modello,
-        token_domanda: token.domanda,
-        token_risposta: token.risposta,
-      });
-      if (error) console.error("letture_documento:", error.message);
+      // 🔴 Ma si ritenta prima di arrendersi (3 volte, con una piccola pausa): un salvataggio andato male una volta non
+      //    deve far uscire una lettura dal conto del tetto.
+      let ultimoErrore = "";
+      let scritto = false;
+      for (let n = 0; n < 3 && !scritto; n += 1) {
+        try {
+          const { error } = await supabase.from("letture_documento").insert({
+            creato_da: utente.user.id,
+            documento_id: idDocumento,
+            gesto,
+            modello,
+            token_domanda: token.domanda,
+            token_risposta: token.risposta,
+          });
+          if (error) ultimoErrore = error.message; else scritto = true;
+        } catch (e) {
+          ultimoErrore = (e as Error).message;
+        }
+        if (!scritto && n < 2) await new Promise((fine) => setTimeout(fine, 250 * (n + 1)));
+      }
+      if (!scritto) console.error("letture_documento: la spesa non si è registrata dopo 3 tentativi:", ultimoErrore);
     },
   };
 
