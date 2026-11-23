@@ -204,7 +204,10 @@ async function leggiScheda(supabase: { rpc: (nome: string) => PromiseLike<{ data
     const { data, error } = await supabase.rpc("scheda_per_memo");
     if (error) return null;
     const riga = una(data as Riga | Riga[] | null) as Riga | null;
-    const testo = typeof riga?.testo === "string" ? riga.testo.trim() : "";
+    // 🔴 Il testo va dentro <scheda>…</scheda>: un «<» o «>» scritto in una voce (un titolo di documento, un nome di
+    //    fornitore scelto da un estraneo) potrebbe chiudere il riquadro e far passare per istruzioni ciò che è dato.
+    //    Il database li toglie già quando compone il testo; qui si toglie ancora (cintura e bretelle).
+    const testo = typeof riga?.testo === "string" ? riga.testo.replace(/[<>]/g, "").trim() : "";
     if (!testo || !(Number(riga?.voci) > 0)) return null;
     return { testo, numeri: new Set([...testo.matchAll(/\[S(\d+)\]/g)].map((m) => Number(m[1]))) };
   } catch {
