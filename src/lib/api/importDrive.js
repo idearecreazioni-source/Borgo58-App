@@ -49,7 +49,7 @@ export async function importaDocumento({ file, titolo, sezione, data, dataDaVeri
       entity_id: entityId ?? null,
       doc_type: sezione,
       document_date: data,
-      data_da_verificare: dataDaVerificare === true,
+      data_incerta: dataDaVerificare === true,
       storage_path,
       file_name,
       impronta_sha256: impronta ?? null,
@@ -98,7 +98,7 @@ export async function scriviElencoDrive(righe) {
 export async function confermaDataDocumento(documentoId) {
   const { data, error } = await supabase
     .from("documents")
-    .update({ data_da_verificare: false })
+    .update({ data_incerta: false })
     .eq("id", documentoId)
     .select("*")
     .single();

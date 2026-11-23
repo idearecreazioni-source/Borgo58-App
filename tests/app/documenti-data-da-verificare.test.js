@@ -14,7 +14,7 @@ describe("documenti: data da verificare", () => {
     const { data, error } = await titolare
       .from("documents")
       .insert({ title: `${SIGLA} ${documenti.length}`, doc_type: "contratti", document_date: "2026-10-10", ...extra })
-      .select("id, document_date, data_da_verificare")
+      .select("id, document_date, data_incerta")
       .single();
     expect(error).toBeNull();
     documenti.push(data.id);
@@ -34,69 +34,69 @@ describe("documenti: data da verificare", () => {
 
   it("per partenza il segno è spento", async () => {
     const d = await nuovo();
-    expect(d.data_da_verificare).toBe(false);
+    expect(d.data_incerta).toBe(false);
   });
 
   it("un documento può nascere col segno acceso", async () => {
-    const d = await nuovo({ data_da_verificare: true });
-    expect(d.data_da_verificare).toBe(true);
+    const d = await nuovo({ data_incerta: true });
+    expect(d.data_incerta).toBe(true);
   });
 
   it("cambiare la data spegne il segno da solo", async () => {
-    const d = await nuovo({ data_da_verificare: true });
+    const d = await nuovo({ data_incerta: true });
     const { data, error } = await titolare
       .from("documents")
       .update({ document_date: "2026-09-01" })
       .eq("id", d.id)
-      .select("document_date, data_da_verificare")
+      .select("document_date, data_incerta")
       .single();
     expect(error).toBeNull();
-    expect(data).toMatchObject({ document_date: "2026-09-01", data_da_verificare: false });
+    expect(data).toMatchObject({ document_date: "2026-09-01", data_incerta: false });
   });
 
   it("cambiare altro (non la data) lascia il segno com'è", async () => {
-    const d = await nuovo({ data_da_verificare: true });
+    const d = await nuovo({ data_incerta: true });
     const { data, error } = await titolare
       .from("documents")
       .update({ note: "una nota" })
       .eq("id", d.id)
-      .select("data_da_verificare")
+      .select("data_incerta")
       .single();
     expect(error).toBeNull();
-    expect(data.data_da_verificare).toBe(true);
+    expect(data.data_incerta).toBe(true);
   });
 
   it("riscrivere la STESSA data non spegne il segno", async () => {
-    const d = await nuovo({ data_da_verificare: true });
+    const d = await nuovo({ data_incerta: true });
     const { data, error } = await titolare
       .from("documents")
       .update({ document_date: "2026-10-10" })
       .eq("id", d.id)
-      .select("data_da_verificare")
+      .select("data_incerta")
       .single();
     expect(error).toBeNull();
-    expect(data.data_da_verificare).toBe(true);
+    expect(data.data_incerta).toBe(true);
   });
 
   it("«La data è giusta» spegne il segno e la data resta", async () => {
-    const d = await nuovo({ data_da_verificare: true });
+    const d = await nuovo({ data_incerta: true });
     const { data, error } = await titolare
       .from("documents")
-      .update({ data_da_verificare: false })
+      .update({ data_incerta: false })
       .eq("id", d.id)
-      .select("document_date, data_da_verificare")
+      .select("document_date, data_incerta")
       .single();
     expect(error).toBeNull();
-    expect(data).toMatchObject({ document_date: "2026-10-10", data_da_verificare: false });
+    expect(data).toMatchObject({ document_date: "2026-10-10", data_incerta: false });
   });
 
   it("MEMO legge il segno insieme alla data", async () => {
-    const d = await nuovo({ data_da_verificare: true });
+    const d = await nuovo({ data_incerta: true });
     const { data, error } = await titolare.rpc("memo_leggi_documenti", { p_cerca: SIGLA });
     expect(error).toBeNull();
     const riga = (data ?? []).find((r) => r.riga_id === d.id);
     expect(riga).toBeTruthy();
-    expect(riga.dati.data_da_verificare).toBe(true);
+    expect(riga.dati.data_incerta).toBe(true);
     expect(riga.dati.data_documento).toBe("2026-10-10");
   });
 });

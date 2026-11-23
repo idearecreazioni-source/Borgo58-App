@@ -519,7 +519,7 @@ export default function ArchivioDocumentiHome() {
                 <div className="text-b58-charcoal font-medium">{d.title}</div>
                 <div className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {[
-                    d.document_date && `${formatDate(d.document_date)}${d.data_da_verificare ? " (da verificare)" : ""}`,
+                    d.document_date && `${formatDate(d.document_date)}${d.data_incerta ? " (da verificare)" : ""}`,
                     d.counterparties,
                     d.amount != null && formatEUR(d.amount),
                     d.expiry_date && `scade ${formatDate(d.expiry_date)}`,

@@ -85,7 +85,7 @@ export default function DocumentoDetail() {
     setError("");
     try {
       const saved = await confermaDataDocumento(id);
-      setDoc((d) => ({ ...d, data_da_verificare: saved.data_da_verificare }));
+      setDoc((d) => ({ ...d, data_incerta: saved.data_incerta }));
     } catch (e) {
       setError(`Non sono riuscito a confermare la data: ${e.message}`);
     } finally {
@@ -197,7 +197,7 @@ export default function DocumentoDetail() {
           <div>
             <label className={labelClass}>Data documento</label>
             <input type="date" value={doc.document_date ?? ""} onChange={(e) => setField("document_date", e.target.value)} className={inputClass} />
-            {doc.data_da_verificare === true && (
+            {doc.data_incerta === true && (
               <div className="mt-1.5 testo-sala text-b58-charcoal-soft" role="status">
                 <span className="font-medium text-b58-terracotta">Data da verificare</span>: è quella dell'ultima modifica del file, non
                 per forza quella del documento. Se la cambi e salvi, il segno sparisce. «La data è giusta» tiene la data com'è già salvata.{" "}

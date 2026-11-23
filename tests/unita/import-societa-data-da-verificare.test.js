@@ -69,22 +69,22 @@ describe("l'import scrive società e segno «data da verificare»", () => {
 
   it("la data dell'ultima modifica entra col segno «da verificare»", async () => {
     await importaDocumento({ ...base, entityId: "srls-1", dataDaVerificare: true });
-    expect(insert.mock.calls[0][0].data_da_verificare).toBe(true);
+    expect(insert.mock.calls[0][0].data_incerta).toBe(true);
   });
 
   it("una data sicura (dal nome del file) entra senza segno", async () => {
     await importaDocumento({ ...base, entityId: "srls-1", dataDaVerificare: false });
-    expect(insert.mock.calls[0][0].data_da_verificare).toBe(false);
+    expect(insert.mock.calls[0][0].data_incerta).toBe(false);
   });
 
   it("un valore strano (non `true`) non accende il segno", async () => {
     await importaDocumento({ ...base, entityId: "srls-1", dataDaVerificare: "si" });
-    expect(insert.mock.calls[0][0].data_da_verificare).toBe(false);
+    expect(insert.mock.calls[0][0].data_incerta).toBe(false);
   });
 
   it("«La data è giusta» spegne solo il segno, senza toccare la data", async () => {
     const saved = await confermaDataDocumento("doc-1");
-    expect(update).toHaveBeenCalledWith({ data_da_verificare: false });
-    expect(saved.data_da_verificare).toBe(false);
+    expect(update).toHaveBeenCalledWith({ data_incerta: false });
+    expect(saved.data_incerta).toBe(false);
   });
 });
