@@ -117,3 +117,11 @@ export async function impostaNoAi(documentoId, noAi) {
   if (error) throw error;
   return data;
 }
+
+// Le voci ATTIVE della Scheda nate dai documenti di un lotto. Si chiede PRIMA di annullare il lotto: dopo, i documenti non
+// ci sono più e il collegamento si perde. Ogni lettura fallita LANCIA (un elenco vuoto per un errore si leggerebbe «nessuna voce»).
+export async function vociSchedaDelLotto(lottoId) {
+  const { data, error } = await supabase.rpc("import_lotto_voci_scheda", { p_lotto: lottoId });
+  if (error) throw error;
+  return (data ?? []).map((v) => ({ numero: v.numero, sezione: v.sezione, testo: v.testo }));
+}
