@@ -69,6 +69,7 @@ declare
   v_doc uuid;
   v_voce uuid;
   v_prop uuid;
+  v_prop2 uuid;
   v_n integer;
   v_stato text;
   v_seq_ultimo bigint;
@@ -93,6 +94,10 @@ begin
     insert into scheda_proposte (tipo, origine, origine_id, chiave, sezione, testo_dopo, fonte_dopo, documento_id, motivo, scade_il)
       values ('aggiungi', 'contratto', v_doc, 'societa:zz-proposta-lotto', 'societa', 'Proposta ZZ inventata.', 'documentato', v_doc, 'Verifica.', current_date + 20)
       returning id into v_prop;
+    -- E una proposta «spegni» che nomina il documento solo con origine_id (senza documento_id): si chiude lo stesso.
+    insert into scheda_proposte (tipo, origine, origine_id, chiave, voce_id, sezione, testo_prima, fonte_prima, motivo, scade_il)
+      values ('spegni', 'scadenza_contratto', v_doc, 'societa:zz-lotto-prova', v_voce, 'societa', 'Voce ZZ nata da un documento inventato.', 'documentato', 'Verifica.', current_date + 20)
+      returning id into v_prop2;
     set local role authenticated;
 
     -- (1) l'elenco delle voci del lotto la trova.
@@ -104,6 +109,8 @@ begin
     reset role;
     select stato into v_stato from scheda_proposte where id = v_prop;
     if v_stato is distinct from 'scaduta' then raise exception 'VERIFICA (2a): la proposta del lotto non si è chiusa (%).', v_stato; end if;
+    select stato into v_stato from scheda_proposte where id = v_prop2;
+    if v_stato is distinct from 'scaduta' then raise exception 'VERIFICA (2a2): la proposta «spegni» del lotto non si è chiusa (%).', v_stato; end if;
     if not exists (select 1 from scheda_voci where id = v_voce and attiva) then
       raise exception 'VERIFICA (2b): la voce della Scheda non doveva spegnersi da sola.';
     end if;
@@ -133,7 +140,7 @@ begin
   perform setval('scheda_voci_numero_seq', v_seq_ultimo, v_seq_usato);
   if exists (select 1 from lotti_import where nota = 'ZZ lotto di verifica')
      or exists (select 1 from scheda_voci where chiave = 'societa:zz-lotto-prova')
-     or exists (select 1 from scheda_proposte where chiave = 'societa:zz-proposta-lotto')
+     or exists (select 1 from scheda_proposte where chiave in ('societa:zz-proposta-lotto', 'societa:zz-lotto-prova'))
      or exists (select 1 from documents where title = 'ZZ Contratto di verifica') then
     raise exception 'VERIFICA (4): resta un residuo della verifica.';
   end if;
