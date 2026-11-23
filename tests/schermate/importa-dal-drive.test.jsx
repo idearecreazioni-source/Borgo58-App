@@ -25,6 +25,8 @@ const finto = vi.hoisted(() => ({
   lottoFallito: false,
   societa: { srls: { id: "srls-prova" } },
   societaFallita: false,
+  voci: [],
+  vociFallite: false,
   annullaFallisce: null,
   trattieniImpronta: null,
   trattieniImporta: null,
@@ -64,6 +66,10 @@ vi.mock("../../src/lib/api/importDrive", () => ({
     if (finto.fallisciQuesti.has(d.file.name)) throw new Error("il deposito non risponde");
     spie.importati.push(d);
     return `doc-${spie.importati.length}`;
+  }),
+  vociSchedaDelLotto: vi.fn(async () => {
+    if (finto.vociFallite) throw new Error("scheda non risponde");
+    return finto.voci;
   }),
   linkElencoDrive: vi.fn(async () => finto.linkPresenti),
   scriviElencoDrive: vi.fn(async (righe) => {
@@ -116,6 +122,8 @@ beforeEach(() => {
   finto.lottoFallito = false;
   finto.societa = { srls: { id: "srls-prova" } };
   finto.societaFallita = false;
+  finto.voci = [];
+  finto.vociFallite = false;
   finto.annullaFallisce = null;
   finto.trattieniImpronta = null;
   finto.trattieniImporta = null;
@@ -370,6 +378,43 @@ describe("Importa dal Drive · importare", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sì, annulla il carico" }));
     expect(await screen.findByText(/Carico annullato: ho tolto dall'Archivio 1 documenti/)).toBeTruthy();
     expect(spie.annullati.at(-1)).toBe("lotto-1");
+    // Nessuna voce della Scheda nata da questo carico: non compare nessun riquadro.
+    expect(screen.queryByTestId("voci-scheda-del-carico")).toBeNull();
+  });
+
+  it("dopo l'annullamento elenca le voci della Scheda nate dal carico, che RESTANO, e la proposta chiusa", async () => {
+    finto.voci = [
+      { numero: 12, sezione: "societa", testo: "Contratto inventato con una controparte inventata." },
+      { numero: 14, sezione: "locale", testo: "Altra voce inventata dallo stesso carico." },
+    ];
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await screen.findByTestId("esito");
+    fireEvent.click(screen.getByRole("button", { name: "Annulla questo carico" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, annulla il carico" }));
+    const riquadro = await screen.findByTestId("voci-scheda-del-carico");
+    expect(riquadro.textContent).toMatch(/\[S12\] Contratto inventato/);
+    expect(riquadro.textContent).toMatch(/\[S14\] Altra voce inventata/);
+    expect(riquadro.textContent).toMatch(/restano/);
+    expect(riquadro.textContent).toMatch(/proposte per la Scheda di questo carico le ho chiuse io/);
+    expect(within(riquadro).getByRole("link", { name: "Apri la Scheda" }).getAttribute("href")).toBe("/memo/scheda");
+  });
+
+  it("se non riesce a leggere le voci della Scheda NON annulla niente e lo dice", async () => {
+    finto.vociFallite = true;
+    await apri();
+    await scegliMappa();
+    await scegliFile(pdf("Contratto prova.pdf"));
+    await screen.findByTestId("anteprima");
+    fireEvent.click(screen.getByRole("button", { name: "Importa 1 documenti" }));
+    await screen.findByTestId("esito");
+    fireEvent.click(screen.getByRole("button", { name: "Annulla questo carico" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sì, annulla il carico" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/non ho annullato niente: scheda non risponde/);
+    expect(spie.annullati).toHaveLength(0);
   });
 });
 
