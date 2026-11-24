@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // REVISIONE DELL'11/11/2026, punto 19: l'importo di un movimento che paga una fattura non si cambia. Il database vero lo
-// prova la verifica della migrazione e tests/app/pagamento-fattura-importo-fermo.test.js (Prova); qui le cose che non devono
+// prova la verifica della migrazione (che si annulla da sola e non lascia righe: un movimento legato a una fattura non si cancella, quindi una prova su Prova con righe vere le lascerebbe); qui le cose che non devono
 // cambiare per sbaglio.
 
 const migrazione = readFileSync(new URL("../../supabase/migrations/20261124000002_l_importo_di_un_pagamento_di_fattura_non_si_cambia.sql", import.meta.url), "utf8");
