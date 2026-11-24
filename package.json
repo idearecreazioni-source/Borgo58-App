@@ -26,6 +26,7 @@
     "casa:chiave": "node scripts/casa-chiave.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
+    "prova:blocco": "node scripts/prova-blocco-doppio-invio.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",
     "migra": "node scripts/migra.mjs",
     "piano:carica": "node scripts/piano-carica.mjs",

@@ -9,7 +9,8 @@ import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorri
 //    corridoio e non si sovrappongono abbastanza per aprire la corsa. Quindi è una guardia sul RISULTATO — mai più
 //    restituito del dovuto, un solo movimento per restituzione — e NON la prova che il blocco c'è: quella la dà la verifica
 //    della migrazione, che legge il corpo vivo delle tre funzioni. Una prova vera della corsa chiede due sessioni SQL con
-//    una transazione tenuta aperta: resta da fare se serve.
+//    una transazione tenuta aperta: `npm run prova:blocco` (scripts/prova-blocco-doppio-invio.mjs), che SENZA il blocco fa
+//    uscire 1.400 euro su un prestito da 700 e COL blocco 700, aspettando 4 secondi (provato il 24/11).
 // ⚠️ Righe inventate (il repo è pubblico) e marchio di questo giro, ripulite alla fine.
 
 const MARCA = marchio("TEST-AUTO doppio invio");
