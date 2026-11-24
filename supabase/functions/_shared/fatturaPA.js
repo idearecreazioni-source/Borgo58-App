@@ -449,6 +449,34 @@ export function leggiFatturaPA(xml) {
       a.push(`Le scadenze di pagamento sommano ${euro(daPagare)}, il totale è ${euro(totale)} (una ritenuta o un pagamento già fatto?).`);
     }
 
+    // 🔴 LA RITENUTA D'ACCONTO (revisione dell'11/11, punto 14). Una parcella da 1.000 € con 200 € di ritenuta si paga
+    //    800 €. Il gestionale registra il TOTALE (1.000 €) come importo da pagare: il bonifico da 800 € non si abbina e,
+    //    pagandola dal gestionale, escono 1.000 €. Finché il gestionale non sa tenere un importo da pagare diverso dal
+    //    totale, una fattura con ritenuta NON si registra da sola: si ferma con un errore che dice quanto va pagato davvero
+    //    (la PEC la mette fra le cose da fare a mano, l'importazione la blocca).
+    const ritenute = figli(gen, "DatiRitenuta").map((r) => centesimiDecimale(testo(r, "ImportoRitenuta")));
+    if (ritenute.length > 0) {
+      if (ritenute.some((r) => r === null)) {
+        e.push("La fattura ha una ritenuta d'acconto con un importo che non si legge: non la registro da sola, va guardata a mano.");
+      } else {
+        const ritenuta = ritenute.reduce((s, r) => s + r, 0);
+        if (ritenuta > 0) {
+          // Una ritenuta più grande del totale non è una parcella normale: niente importo «netto» negativo, si dice che i
+          // numeri non tornano e si lascia guardare a mano.
+          const netto = totale !== null && ritenuta <= totale ? totale - ritenuta : null;
+          if (totale !== null && ritenuta > totale) {
+            e.push(`La fattura ha una ritenuta d'acconto di ${euro(ritenuta)}, più grande del totale (${euro(totale)}): i numeri non tornano, va guardata a mano.`);
+          } else {
+            e.push(
+              `La fattura ha una ritenuta d'acconto di ${euro(ritenuta)}: il fornitore si paga ${netto !== null ? euro(netto) : "il totale meno la ritenuta"}`
+              + (totale !== null ? `, non ${euro(totale)}` : "")
+              + ". Il gestionale non sa ancora registrare un importo da pagare diverso dal totale: registrala a mano con l'importo da pagare.",
+            );
+          }
+        }
+      }
+    }
+
     const righe = figli(nodo(corpo, "DatiBeniServizi"), "DettaglioLinee").map((l) => ({
       descrizione: testo(l, "Descrizione"),
       quantita: testo(l, "Quantita") === null ? null : Number(testo(l, "Quantita")),
