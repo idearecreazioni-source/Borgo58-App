@@ -229,7 +229,7 @@ E i dati confermano che sommarli non avrebbe significato niente
 
 | Tipo | Importo |
 |---|---|
-| contratto | 24.000,00 (canone d'affitto) |
+| contratto | 12.000,00 (canone d'affitto) |
 | atto societario | 1.000,00 (capitale sociale) |
 | ddt | 250,30 |
 | fattura × 5 | 292,53 · 260,19 · 270,55 · 261,50 · 57,41 |

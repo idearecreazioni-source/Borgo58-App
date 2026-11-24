@@ -14,7 +14,7 @@ Il mandato chiedeva di misurare tre cose e riferire **prima** di scegliere.
 
 | trovato | e perché non bastava |
 |---|---|
-| `cash_movements.is_owner_injection` | esiste già, ma vuol dire **soldi di Alessio**: usarlo direbbe che i 20.000 di Ylenia sono suoi, cioè l'opposto |
+| `cash_movements.is_owner_injection` | esiste già, ma vuol dire **soldi di Alessio**: usarlo direbbe che i 15.000 di Marta sono suoi, cioè l'opposto |
 | `anticipazioni_socio` | è il **verso contrario** — Alessio che paga di tasca propria per la società |
 | le 17 causali | 12 sue e 5 di sistema; nessuna riguarda un debito |
 

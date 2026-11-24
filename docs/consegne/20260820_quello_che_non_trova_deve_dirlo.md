@@ -137,7 +137,7 @@ stessi tre del validatore. ⚠️ **Non tolti**: stasera non si tocca la produzi
 
 🔴 **E due dei tre sono documenti VERI**, non di collaudo:
 `AA7_attribuzione_Partita_IVA.pdf` e
-`Locazione_Parlato_Borgo58-10.08.2026.odt`. Vanno nominati ad Alessio **prima**
+`Locazione_Rossi_Borgo58-10.08.2026.odt`. Vanno nominati ad Alessio **prima**
 di togliere qualunque cosa dal deposito — vedi la domanda in fondo.
 
 ⚠️ **E una misura che serve a chi scriverà il prossimo script**: in questo
