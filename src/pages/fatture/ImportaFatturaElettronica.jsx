@@ -4,7 +4,7 @@ import { registraFatturaElettronica } from "../../lib/api/banca";
 import { allegaXmlPerFile } from "../../lib/api/fatturaXml";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR } from "../../lib/constants";
-import { eGiaRegistrata, leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
+import { eFileMetadatiSdi, eGiaRegistrata, leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { eZip, leggiZip } from "../../lib/calcoli/zip";
 
@@ -62,7 +62,10 @@ export default function ImportaFatturaElettronica() {
       try {
         const xml = xmlDaFile(s.bytes);
         const { fatture, errori } = leggiFatturaPA(xml);
-        if (s.daZip && fatture.length === 0) {
+        // 🔴 Si tacciono SOLO i file dei metadati del portale. Un file dello zip che non è una fattura leggibile (una
+        //    fattura rovinata, un file tagliato) è un errore da mostrare con il suo motivo: prima finiva fra i
+        //    «non è una fattura» e quella fattura non entrava senza che nessuno se ne accorgesse.
+        if (s.daZip && fatture.length === 0 && eFileMetadatiSdi(s.nome, xml)) {
           saltati.push(s.nome);
           continue;
         }
@@ -82,7 +85,7 @@ export default function ImportaFatturaElettronica() {
           }),
         );
       } catch (e) {
-        if (s.daZip) saltati.push(s.nome);
+        if (s.daZip && eFileMetadatiSdi(s.nome)) saltati.push(s.nome);
         else nuove.push({ chiave: s.nome, nome: s.nome, errore: e.message });
       }
     }

@@ -316,6 +316,28 @@ function euro(c) {
 }
 
 /**
+ * È un file dei METADATI dello SdI (quelli che il portale mette accanto alle fatture in uno scarico: `…_MT_001.xml`)?
+ * Si riconosce dal nome e, se l'XML si legge, dalla radice `FileMetadati`. Solo questi si tacciono quando non sono fatture:
+ * un file che dovrebbe essere una fattura e non si legge è un errore da DIRE, non un «non è una fattura» (revisione
+ * dell'11/11, punto 13).
+ *
+ * @param {string} nome nome del file (anche con il percorso dentro lo zip)
+ * @param {string|null} xml il testo XML, se si è riusciti a leggerlo
+ */
+export function eFileMetadatiSdi(nome, xml = null) {
+  const file = String(nome ?? "").split("/").pop();
+  if (/_MT_\d+\.xml(\.p7m)?$/i.test(file)) return true;
+  if (xml) {
+    try {
+      return leggiXml(xml)?.localName === "FileMetadati";
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
  * Legge l'XML di una fattura elettronica. Un file può contenere più
  * fatture (un «lotto»: stesso fornitore, più corpi): ognuna è una voce.
  *

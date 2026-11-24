@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centesimiDecimale, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
+import { centesimiDecimale, eFileMetadatiSdi, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
 
 // IL LETTORE DELLE FATTURE ELETTRONICHE (24/10/2026).
 //
@@ -226,5 +226,32 @@ describe("il lettore dell'XML", () => {
     expect(() => leggiXml('<!DOCTYPE A [<!ENTITY e "x">]><A>&e;</A>')).toThrow(/DOCTYPE/);
     expect(() => leggiXml("<A></A><B></B>")).toThrow(/radice/);
     expect(() => leggiXml("niente")).toThrow();
+  });
+});
+
+// REVISIONE DELL'11/11/2026, punto 13: si tacciono solo i file dei metadati del portale, mai una fattura rovinata.
+describe("i file dei metadati dello SdI si riconoscono (e solo quelli)", () => {
+  const METADATI = '<?xml version="1.0"?><ns2:FileMetadati xmlns:ns2="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"><IdentificativoSdI>1</IdentificativoSdI></ns2:FileMetadati>';
+
+  it("dal nome (_MT_), anche dentro un percorso e anche firmati", () => {
+    expect(eFileMetadatiSdi("IT00000000001_ab1Cd_MT_001.xml")).toBe(true);
+    expect(eFileMetadatiSdi("scarico/IT00000000001_ab1Cd_MT_002.xml")).toBe(true);
+    expect(eFileMetadatiSdi("IT00000000001_ab1Cd_MT_001.xml.p7m")).toBe(true);
+  });
+
+  it("dalla radice dell'XML, anche se il nome non lo dice", () => {
+    expect(eFileMetadatiSdi("qualunque.xml", METADATI)).toBe(true);
+  });
+
+  it("una fattura, anche rovinata o tagliata, NON è un file di metadati", () => {
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml", fattura().slice(0, 400))).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml", fattura())).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml")).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml.p7m", "non è xml")).toBe(false);
+  });
+
+  it("un nome mancante non rompe niente", () => {
+    expect(eFileMetadatiSdi(null)).toBe(false);
+    expect(eFileMetadatiSdi(undefined, null)).toBe(false);
   });
 });
