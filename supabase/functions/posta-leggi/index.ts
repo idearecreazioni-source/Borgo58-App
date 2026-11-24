@@ -147,6 +147,9 @@ const DA_SPACCHETTARE: Record<string, string> = {
 const MAX_BYTE_PER_ALLEGATO = 10 * 1024 * 1024;
 const MAX_BYTE_TOTALI = 20 * 1024 * 1024;
 const MAX_CARATTERI_TESTO_ESTRATTO = 20000;
+// Il pezzo di un .odt/.docx che si apre (content.xml / word/document.xml): oltre questa taglia dichiarata non si apre.
+// Un contratto lungo sta in qualche centinaio di KB; 8 MB di XML sono già un file anomalo.
+const TETTO_PEZZO_DI_PACCHETTO_BYTE = 8 * 1024 * 1024;
 
 // Elenco chiuso, come per il corridoio: un tipo inventato dal modello
 // diventerebbe un bottone che non fa niente, ed è peggio che non
@@ -359,7 +362,13 @@ function inBase64(byte: Uint8Array): string {
  */
 function testoDaPacchetto(byte: Uint8Array, dentro: string): string | null {
   try {
-    const contenuto = unzipSync(byte)[dentro];
+    // 🔴 SI APRE SOLO IL PEZZO CHE SERVE, E CON UN TETTO. Un .docx piccolo può nascondere un pezzo che, aperto, diventa
+    //    enorme (una «bomba»): aprendo tutto il pacchetto la funzione muore per memoria prima di contare il tentativo, e
+    //    quella mail resta in testa alla coda per sempre. Con il filtro il resto del pacchetto non si apre nemmeno, e
+    //    un pezzo che dichiara di valere più del tetto si lascia stare.
+    const contenuto = unzipSync(byte, {
+      filter: (file) => file.name === dentro && file.originalSize <= TETTO_PEZZO_DI_PACCHETTO_BYTE,
+    })[dentro];
     if (!contenuto) return null;
     return new TextDecoder()
       .decode(contenuto)
@@ -829,6 +838,24 @@ async function leggiLaPosta() {
   const daFare: string[] = [];
 
   for (const m of messaggi) {
+    // 🔴 IL TENTATIVO SI CONTA PRIMA DI APRIRE GLI ALLEGATI. Prima si contava solo nel ramo dell'errore: se la funzione
+    //    moriva a metà (un allegato costruito apposta, la memoria, il tempo), il conto non partiva mai e la mail restava
+    //    in testa alla coda, rilanciando lo stesso guasto ogni quarto d'ora e bloccando tutte quelle dopo. Ora il conto
+    //    è già scritto quando si comincia: dopo MAX_TENTATIVI la mail esce dalla coda, anche se muore sempre a metà.
+    //    Se il conto non si riesce a scrivere NON si apre niente: meglio saltarla (e dirlo) che rischiare di bloccare la coda.
+    const tentativiContati = (m.tentativi_lettura ?? 0) + 1;
+    const contato = await db(`posta_ricevuta?id=eq.${m.id}&stato=eq.da_leggere`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        tentativi_lettura: tentativiContati,
+        lettura_note: `lettura in corso (tentativo ${tentativiContati} di ${MAX_TENTATIVI}): se resta così la lettura è morta a metà`,
+      }),
+    });
+    if (!contato.ok) {
+      falliti++;
+      saltati.push(`«${m.oggetto ?? "senza oggetto"}» — non riesco a contare il tentativo (codice ${contato.status}): non l'ho aperta`);
+      continue;
+    }
     try {
       // Le ricevute della PEC (accettazione, consegna) si chiudono senza
       // modello e senza avviso: Alessio, 08/11, «spariscono del tutto».
