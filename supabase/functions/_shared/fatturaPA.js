@@ -316,6 +316,44 @@ function euro(c) {
 }
 
 /**
+ * È un file dei METADATI dello SdI (quelli che il portale mette accanto alle fatture in uno scarico: `…_MT_001.xml`)?
+ * Si riconosce dal nome e, se l'XML si legge, dalla radice `FileMetadati`. Solo questi si tacciono quando non sono fatture:
+ * un file che dovrebbe essere una fattura e non si legge è un errore da DIRE, non un «non è una fattura» (revisione
+ * dell'11/11, punto 13).
+ *
+ * @param {string} nome nome del file (anche con il percorso dentro lo zip)
+ * @param {string|null} xml il testo XML, se si è riusciti a leggerlo
+ */
+export function eFileMetadatiSdi(nome, xml = null) {
+  const file = String(nome ?? "").split("/").pop();
+  // I messaggi che lo SdI mette accanto alle fatture: metadati (MT), ricevuta di consegna (RC), notifica di scarto (NS),
+  // di mancata consegna (MC), di esito (EC), decorrenza termini (DT), attestazione di trasmissione (AT), scarto/esito
+  // (SE, NE); più il file di accettazione di Aruba. Nessuno è una fattura: si tacciono e si contano.
+  if (/_(MT|RC|NS|MC|EC|DT|AT|SE|NE)_\d+\.xml(\.p7m)?$/i.test(file)) return true;
+  if (/^SubmissionAcceptance\.xml$/i.test(file)) return true;
+  if (xml) {
+    try {
+      return RADICI_MESSAGGI_SDI.has(leggiXml(xml)?.localName);
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+const RADICI_MESSAGGI_SDI = new Set([
+  "FileMetadati",
+  "RicevutaConsegna",
+  "NotificaScarto",
+  "NotificaMancataConsegna",
+  "NotificaEsito",
+  "NotificaDecorrenzaTermini",
+  "AttestazioneTrasmissioneFattura",
+  "RicevutaScarto",
+  "RicevutaImpossibilitaRecapito",
+]);
+
+/**
  * Legge l'XML di una fattura elettronica. Un file può contenere più
  * fatture (un «lotto»: stesso fornitore, più corpi): ognuna è una voce.
  *
@@ -326,10 +364,16 @@ function euro(c) {
  */
 export function leggiFatturaPA(xml) {
   let radice = null;
+  let nonSiLegge = false;
   try {
     radice = leggiXml(xml);
   } catch {
     radice = null;
+    nonSiLegge = true;
+  }
+  if (nonSiLegge) {
+    // Un file tagliato o rovinato non è «un file che non è una fattura»: è una fattura che non si apre, e va detto.
+    return { fatture: [], errori: ["Il file è rovinato o incompleto: l'XML non si legge."] };
   }
   if (!radice || radice.localName !== "FatturaElettronica") {
     return { fatture: [], errori: ["Il file non è una fattura elettronica (manca «FatturaElettronica»)."] };

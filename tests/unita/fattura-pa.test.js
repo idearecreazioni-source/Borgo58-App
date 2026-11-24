@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centesimiDecimale, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
+import { centesimiDecimale, eFileMetadatiSdi, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
 
 // IL LETTORE DELLE FATTURE ELETTRONICHE (24/10/2026).
 //
@@ -228,6 +228,56 @@ describe("il lettore dell'XML", () => {
     expect(() => leggiXml("niente")).toThrow();
   });
 });
+
+// REVISIONE DELL'11/11/2026, punto 13: si tacciono solo i file dei metadati del portale, mai una fattura rovinata.
+describe("i file dei metadati dello SdI si riconoscono (e solo quelli)", () => {
+  const METADATI = '<?xml version="1.0"?><ns2:FileMetadati xmlns:ns2="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"><IdentificativoSdI>1</IdentificativoSdI></ns2:FileMetadati>';
+
+  it("dal nome (_MT_), anche dentro un percorso e anche firmati", () => {
+    expect(eFileMetadatiSdi("IT00000000001_ab1Cd_MT_001.xml")).toBe(true);
+    expect(eFileMetadatiSdi("scarico/IT00000000001_ab1Cd_MT_002.xml")).toBe(true);
+    expect(eFileMetadatiSdi("IT00000000001_ab1Cd_MT_001.xml.p7m")).toBe(true);
+  });
+
+  it("dalla radice dell'XML, anche se il nome non lo dice", () => {
+    expect(eFileMetadatiSdi("qualunque.xml", METADATI)).toBe(true);
+  });
+
+  it("una fattura, anche rovinata o tagliata, NON è un file di metadati", () => {
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml", fattura().slice(0, 400))).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml", fattura())).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml")).toBe(false);
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml.p7m", "non è xml")).toBe(false);
+  });
+
+  it("un nome mancante non rompe niente", () => {
+    expect(eFileMetadatiSdi(null)).toBe(false);
+    expect(eFileMetadatiSdi(undefined, null)).toBe(false);
+  });
+});
+
+describe("i messaggi dello SdI accanto alle fatture si tacciono tutti, e il file tagliato lo dice", () => {
+  it("ricevute e notifiche si riconoscono dal nome e dalla radice", () => {
+    for (const nome of ["IT00000000001_ab1Cd_RC_001.xml", "IT00000000001_ab1Cd_NS_001.xml", "IT00000000001_ab1Cd_MC_001.xml", "IT00000000001_ab1Cd_EC_001.xml", "IT00000000001_ab1Cd_DT_001.xml", "IT00000000001_ab1Cd_AT_001.xml", "SubmissionAcceptance.xml"]) {
+      expect(eFileMetadatiSdi(nome), nome).toBe(true);
+    }
+    expect(eFileMetadatiSdi("x.xml", '<?xml version="1.0"?><ns3:RicevutaConsegna xmlns:ns3="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"/>')).toBe(true);
+    expect(eFileMetadatiSdi("x.xml", '<?xml version="1.0"?><ns3:NotificaScarto xmlns:ns3="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"/>')).toBe(true);
+  });
+
+  it("un nome da fattura (IT…_00002.xml) non è un messaggio dello SdI", () => {
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml")).toBe(false);
+  });
+
+  it("un file tagliato dice «rovinato o incompleto», non «non è una fattura»", () => {
+    const { fatture, errori } = leggiFatturaPA(fattura().slice(0, 400));
+    expect(fatture).toEqual([]);
+    expect(errori).toEqual(["Il file è rovinato o incompleto: l'XML non si legge."]);
+  });
+
+  it("un XML che si legge ma non è una fattura dice ancora «non è una fattura elettronica»", () => {
+    expect(leggiFatturaPA("<Altro/>").errori[0]).toMatch(/non è una fattura elettronica/);
+});});
 
 // REVISIONE DELL'11/11/2026, punto 14: una parcella con ritenuta d'acconto NON si registra da sola.
 // Una parcella da 1.000 € con 200 € di ritenuta si paga 800 €: registrata come 1.000 € non abbinerebbe il bonifico, e pagandola
