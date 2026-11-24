@@ -44,8 +44,8 @@ begin
 
   begin
     insert into suppliers (entity_id, name) values (v_ent, 'ZZ Fornitore di prova piano') returning id into v_forn;
-    insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, due_date, amount)
-      values (v_ent, v_forn, 'ZZ-PIANO-1', date '2026-10-01', date '2026-10-31', 1000) returning id into v_fat;
+    insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, due_date, amount, e_investimento)
+      values (v_ent, v_forn, 'ZZ-PIANO-1', date '2026-10-01', date '2026-10-31', 1000, true) returning id into v_fat;
     insert into piano_voci (gruppo, descrizione, importo_ivato) values ('A', 'ZZ voce di prova del piano', 1000) returning id into v_voce;
     insert into piano_collegamenti (voce_id, supplier_invoice_id, importo_attribuito) values (v_voce, v_fat, 1000);
 
