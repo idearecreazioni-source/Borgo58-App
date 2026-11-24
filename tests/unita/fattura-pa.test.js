@@ -228,3 +228,44 @@ describe("il lettore dell'XML", () => {
     expect(() => leggiXml("niente")).toThrow();
   });
 });
+
+// REVISIONE DELL'11/11/2026, punto 14: una parcella con ritenuta d'acconto NON si registra da sola.
+// Una parcella da 1.000 € con 200 € di ritenuta si paga 800 €: registrata come 1.000 € non abbinerebbe il bonifico, e pagandola
+// dal gestionale uscirebbero 1.000 €. Importi e nomi INVENTATI (il repo è pubblico).
+describe("la ritenuta d'acconto ferma la registrazione automatica", () => {
+  const ritenuta = (importo) =>
+    `<DatiRitenuta><TipoRitenuta>RT01</TipoRitenuta><ImportoRitenuta>${importo}</ImportoRitenuta><AliquotaRitenuta>20.00</AliquotaRitenuta><CausalePagamento>A</CausalePagamento></DatiRitenuta>`;
+  const parcella = (extra) =>
+    leggiFatturaPA(fattura({ totale: "1000.00", riepiloghi: [["1000.00", "0.00"]], pagamenti: [["2026-11-08", "800.00"]], extraGenerali: extra })).fatture[0];
+
+  it("una parcella da 1.000 € con 200 € di ritenuta si ferma e dice che si paga 800 €", () => {
+    const f = parcella(ritenuta("200.00"));
+    expect(f.errori).toHaveLength(1);
+    expect(f.errori[0]).toMatch(/ritenuta d'acconto di 200,00/);
+    expect(f.errori[0]).toMatch(/si paga 800,00 €, non 1000,00 €/);
+    expect(f.errori[0]).toMatch(/registrala a mano con l'importo da pagare/);
+    // I numeri letti restano quelli del documento: nessuna correzione in silenzio.
+    expect(f.totaleCentesimi).toBe(100000);
+    expect(f.daPagareCentesimi).toBe(80000);
+  });
+
+  it("più ritenute si sommano", () => {
+    const f = parcella(ritenuta("150.00") + ritenuta("50.00"));
+    expect(f.errori[0]).toMatch(/ritenuta d'acconto di 200,00/);
+  });
+
+  it("una ritenuta il cui importo non si legge ferma lo stesso, e lo dice", () => {
+    const f = parcella(ritenuta("abc"));
+    expect(f.errori.join(" ")).toMatch(/ritenuta d'acconto con un importo che non si legge/);
+  });
+
+  it("una ritenuta di zero euro non ferma niente", () => {
+    const f = leggiFatturaPA(fattura({ extraGenerali: ritenuta("0.00") })).fatture[0];
+    expect(f.errori).toEqual([]);
+  });
+
+  it("una fattura senza ritenuta si registra come prima", () => {
+    const f = leggiFatturaPA(fattura()).fatture[0];
+    expect(f.errori).toEqual([]);
+  });
+});
