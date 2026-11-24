@@ -83,7 +83,7 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
         operazione: "registra_prestito_privato",
         parametri: {
           p_entity_id: ente,
-          p_da_chi: `${MARCA} Manuela`,
+          p_da_chi: `${MARCA} Giulia`,
           p_importo: 4990,
           p_mezzo: "cassa",
           p_ricevuto_il: `${ANNO}-03-01`,

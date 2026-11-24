@@ -18,7 +18,7 @@
 -- — *i conti chiusi sono l'unica fonte dei ricavi* — che protegge un caso
 -- che nessuno aveva in mente quando fu scritta.
 --
--- **2. Ma il SALDO li conta, e deve.** I 4.990 di Manuela sono contanti nel
+-- **2. Ma il SALDO li conta, e deve.** I 4.990 di Giulia sono contanti nel
 -- cassetto: se non entrassero nel saldo, il primo conteggio darebbe
 -- un'eccedenza di 4.990 e una rettifica per un errore che non esiste. È la
 -- lezione delle mance in contanti del 16/08.

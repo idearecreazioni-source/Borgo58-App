@@ -13,10 +13,10 @@ Un minuto dopo il push, Alessio ha chiesto: *«quanto pagherò di affitto
 dopo un anno?»*. Risposta:
 
 > Non ce l'ho. Il canone e le sue eventuali variazioni sarebbero nel
-> **Contratto di locazione Borgo58 - Parlato**, di cui non ho il testo.
+> **Contratto di locazione Borgo58 - Rossi**, di cui non ho il testo.
 >
 > Dalla sola scheda risulta: data 2026-09-01, scadenza 2032-08-31,
-> importo 24000, controparte Manuela Parlato / Borgo58 s.r.l.s. La scheda
+> importo 12000, controparte Giulia Rossi / Borgo58 s.r.l.s. La scheda
 > non dice se l'importo sia mensile o annuo, né se siano previsti
 > aggiornamenti dopo il primo anno: non posso ricavarlo.
 

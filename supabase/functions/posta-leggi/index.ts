@@ -244,7 +244,7 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
  "azioni": [
    {"tipo": "archivia_documento",
     "titolo": "nome del documento",
-    "descrizione": "Archivio il contratto — locazione commerciale, 24.000 l'anno, dal 01/09/2026 al 31/08/2032",
+    "descrizione": "Archivio il contratto — locazione commerciale, 12.000 l'anno, dal 01/03/2026 al 28/02/2032",
     "allegato": "nome esatto del file",
     "dati": {"tipo": "contratto", "data": "AAAA-MM-GG o null",
              "controparte": "chi", "importo": numero o null,
@@ -799,7 +799,7 @@ async function leggiLaPosta() {
   }
 
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
-  // nome di un file dice spessissimo tutto — «Locazione Parlato
+  // nome di un file dice spessissimo tutto — «Locazione Rossi
   // Borgo58-10.08.2026.odt» si spiega da solo. Trovato alla prima prova
   // vera, dove la mail inoltrata aveva il corpo vuoto e l'unica
   // informazione utile era il nome dell'allegato.
