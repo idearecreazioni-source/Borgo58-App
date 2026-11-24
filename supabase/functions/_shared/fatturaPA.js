@@ -417,12 +417,18 @@ export function leggiFatturaPA(xml) {
       } else {
         const ritenuta = ritenute.reduce((s, r) => s + r, 0);
         if (ritenuta > 0) {
-          const netto = totale !== null ? totale - ritenuta : null;
-          e.push(
-            `La fattura ha una ritenuta d'acconto di ${euro(ritenuta)}: il fornitore si paga ${netto !== null ? euro(netto) : "il totale meno la ritenuta"}`
-            + (totale !== null ? `, non ${euro(totale)}` : "")
-            + ". Il gestionale non sa ancora registrare un importo da pagare diverso dal totale: registrala a mano con l'importo da pagare.",
-          );
+          // Una ritenuta più grande del totale non è una parcella normale: niente importo «netto» negativo, si dice che i
+          // numeri non tornano e si lascia guardare a mano.
+          const netto = totale !== null && ritenuta <= totale ? totale - ritenuta : null;
+          if (totale !== null && ritenuta > totale) {
+            e.push(`La fattura ha una ritenuta d'acconto di ${euro(ritenuta)}, più grande del totale (${euro(totale)}): i numeri non tornano, va guardata a mano.`);
+          } else {
+            e.push(
+              `La fattura ha una ritenuta d'acconto di ${euro(ritenuta)}: il fornitore si paga ${netto !== null ? euro(netto) : "il totale meno la ritenuta"}`
+              + (totale !== null ? `, non ${euro(totale)}` : "")
+              + ". Il gestionale non sa ancora registrare un importo da pagare diverso dal totale: registrala a mano con l'importo da pagare.",
+            );
+          }
         }
       }
     }

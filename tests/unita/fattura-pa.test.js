@@ -269,3 +269,46 @@ describe("la ritenuta d'acconto ferma la registrazione automatica", () => {
     expect(f.errori).toEqual([]);
   });
 });
+
+describe("la ritenuta: i casi di bordo e la strada della PEC", () => {
+  const ritenuta = (importo) =>
+    `<DatiRitenuta><TipoRitenuta>RT01</TipoRitenuta><ImportoRitenuta>${importo}</ImportoRitenuta><AliquotaRitenuta>20.00</AliquotaRitenuta><CausalePagamento>A</CausalePagamento></DatiRitenuta>`;
+
+  it("un importo scritto con la virgola (non è il formato dello SdI) non si legge, e la fattura si ferma lo stesso", () => {
+    const f = leggiFatturaPA(fattura({ totale: "1000.00", riepiloghi: [["1000.00", "0.00"]], pagamenti: [["2026-11-08", "800.00"]], extraGenerali: ritenuta("200,00") })).fatture[0];
+    expect(f.errori.join(" ")).toMatch(/ritenuta d'acconto con un importo che non si legge/);
+  });
+
+  it("una ritenuta più grande del totale dice che i numeri non tornano, senza un «si paga» negativo", () => {
+    const f = leggiFatturaPA(fattura({ totale: "100.00", riepiloghi: [["100.00", "0.00"]], pagamenti: [["2026-11-08", "100.00"]], extraGenerali: ritenuta("150.00") })).fatture[0];
+    expect(f.errori.join(" ")).toMatch(/più grande del totale/);
+    expect(f.errori.join(" ")).not.toMatch(/si paga/);
+  });
+
+  it("senza totale dichiarato la ritenuta ferma lo stesso e dice «il totale meno la ritenuta»", () => {
+    const f = leggiFatturaPA(fattura({ totale: null, riepiloghi: [["1000.00", "0.00"]], pagamenti: [], extraGenerali: ritenuta("200.00") })).fatture[0];
+    expect(f.errori.join(" ")).toMatch(/ritenuta d'acconto di 200,00 €/);
+  });
+
+  it("in un file con due fatture l'errore è solo di quella con la ritenuta", () => {
+    const una = fattura({ numero: "1/26" });
+    const due = fattura({ numero: "2/26", totale: "1000.00", riepiloghi: [["1000.00", "0.00"]], pagamenti: [["2026-11-08", "800.00"]], extraGenerali: ritenuta("200.00") });
+    const corpoDue = due.slice(due.indexOf("<FatturaElettronicaBody"), due.indexOf("</p:FatturaElettronica>"));
+    const unite = una.replace("</p:FatturaElettronica>", `${corpoDue}</p:FatturaElettronica>`);
+    const { fatture } = leggiFatturaPA(unite);
+    expect(fatture).toHaveLength(2);
+    expect(fatture[0].errori).toEqual([]);
+    expect(fatture[1].errori.join(" ")).toMatch(/ritenuta d'acconto/);
+  });
+
+  it("dalla PEC una parcella con ritenuta diventa un'azione «da fare a mano» con il motivo, non sparisce e non si registra", async () => {
+    const { proposteDaFattura } = await import("../../supabase/functions/_shared/pec.js");
+    const xml = fattura({ totale: "1000.00", riepiloghi: [["1000.00", "0.00"]], pagamenti: [["2026-11-08", "800.00"]], extraGenerali: ritenuta("200.00") });
+    const azioni = proposteDaFattura("parcella-di-prova.xml", xml);
+    expect(azioni).toHaveLength(1);
+    expect(azioni[0].tipo).toBe("da_fare_a_mano");
+    expect(azioni[0].descrizione).toMatch(/Non si registra da sola/);
+    expect(azioni[0].descrizione).toMatch(/ritenuta d'acconto di 200,00 €/);
+    expect(azioni[0].descrizione).toMatch(/800,00 €/);
+  });
+});
