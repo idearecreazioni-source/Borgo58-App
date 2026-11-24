@@ -346,6 +346,9 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // verifica annullata segna una fattura come investimento per provare
       // che una rata gia' coperta non cambia.
       "20261114000010_le_rate_si_propongono.sql",
+      // L'impegnato del piano toglie le note di credito (24/11/2026): NON e' fiscale, nella propria verifica annullata
+      // segna una fattura come investimento per poterla collegare a una voce e provare che l'impegnato scende.
+      "20261124000003_il_piano_impegnato_toglie_le_note_di_credito.sql",
     ]);
   });
 
