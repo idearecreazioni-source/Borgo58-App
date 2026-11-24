@@ -5,7 +5,7 @@
 
 La condizione che la teneva ferma è caduta: Alessio ha confermato che i
 quattro documenti veri (atto notarile, partita IVA, contratto di locazione
-Parlato, business plan) sono scaricati e al sicuro fuori dal gestionale.
+Rossi, business plan) sono scaricati e al sicuro fuori dal gestionale.
 
 ---
 
