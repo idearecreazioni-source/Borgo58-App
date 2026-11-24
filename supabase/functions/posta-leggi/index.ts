@@ -811,8 +811,12 @@ async function leggiLaPosta() {
   if (!elenco.ok) {
     // Detto, non taciuto: una colonna mancante (per esempio la funzione
     // pubblicata prima della migrazione) fermerebbe la posta in silenzio.
-    console.error("posta non letta: elenco delle mail non leggibile", elenco.status, await elenco.text());
-    return;
+    const corpoErrore = (await elenco.text()).slice(0, 300);
+    console.error("posta non letta: elenco delle mail non leggibile", elenco.status, corpoErrore);
+    // 🔴 Un errore vero, non un `return`: chi ci chiama lo trasforma in un avviso su Telegram («Non sono riuscito a
+    //    leggere la posta»). Prima si fermava in silenzio e da quel momento nessuna mail o PEC veniva più letta, mentre
+    //    dal telefono sembrava solo «nessuna posta nuova».
+    throw new Error(`l'elenco delle mail non si legge (codice ${elenco.status}); il dettaglio è nel registro della funzione`);
   }
   const messaggi = await elenco.json();
   if (!messaggi.length) return;
