@@ -12,11 +12,11 @@ Sono **soldi già entrati**, e oggi il gestionale non li conosce.
 
 | da chi | quanto | come |
 |---|---|---|
-| Ylenia | 20.000 | bonifico |
-| Roberto | 5.000 | bonifico |
-| Manuela | **4.990** | contanti |
+| Marta | 15.000 | bonifico |
+| Luca | 5.000 | bonifico |
+| Giulia | **4.990** | contanti |
 
-⚠️ **L'importo di Manuela è 4.990 e non 5.000** perché la legge pone lì la
+⚠️ **L'importo di Giulia è 4.990 e non 5.000** perché la legge pone lì la
 soglia del contante. **Il numero è quello, non si arrotonda** — ma Alessio ha
 deciso che **non serve annotare il perché** nel gestionale.
 

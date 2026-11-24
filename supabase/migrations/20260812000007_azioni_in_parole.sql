@@ -15,7 +15,7 @@
 --
 -- 1. Ogni azione porta la sua DESCRIZIONE: una riga in italiano che dice
 --    cosa succede se la confermi, con dentro i dati («archivio il
---    contratto — locazione commerciale, 24.000 l'anno, fino al
+--    contratto — locazione commerciale, 12.000 l'anno, fino al
 --    31/08/2032»). I campi restano, ma dietro un «modifica»: servono a
 --    correggere, non a leggere.
 --
