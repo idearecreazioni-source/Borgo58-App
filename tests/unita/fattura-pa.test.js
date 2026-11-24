@@ -255,3 +255,27 @@ describe("i file dei metadati dello SdI si riconoscono (e solo quelli)", () => {
     expect(eFileMetadatiSdi(undefined, null)).toBe(false);
   });
 });
+
+describe("i messaggi dello SdI accanto alle fatture si tacciono tutti, e il file tagliato lo dice", () => {
+  it("ricevute e notifiche si riconoscono dal nome e dalla radice", () => {
+    for (const nome of ["IT00000000001_ab1Cd_RC_001.xml", "IT00000000001_ab1Cd_NS_001.xml", "IT00000000001_ab1Cd_MC_001.xml", "IT00000000001_ab1Cd_EC_001.xml", "IT00000000001_ab1Cd_DT_001.xml", "IT00000000001_ab1Cd_AT_001.xml", "SubmissionAcceptance.xml"]) {
+      expect(eFileMetadatiSdi(nome), nome).toBe(true);
+    }
+    expect(eFileMetadatiSdi("x.xml", '<?xml version="1.0"?><ns3:RicevutaConsegna xmlns:ns3="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"/>')).toBe(true);
+    expect(eFileMetadatiSdi("x.xml", '<?xml version="1.0"?><ns3:NotificaScarto xmlns:ns3="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"/>')).toBe(true);
+  });
+
+  it("un nome da fattura (IT…_00002.xml) non è un messaggio dello SdI", () => {
+    expect(eFileMetadatiSdi("IT00000000001_00002.xml")).toBe(false);
+  });
+
+  it("un file tagliato dice «rovinato o incompleto», non «non è una fattura»", () => {
+    const { fatture, errori } = leggiFatturaPA(fattura().slice(0, 400));
+    expect(fatture).toEqual([]);
+    expect(errori).toEqual(["Il file è rovinato o incompleto: l'XML non si legge."]);
+  });
+
+  it("un XML che si legge ma non è una fattura dice ancora «non è una fattura elettronica»", () => {
+    expect(leggiFatturaPA("<Altro/>").errori[0]).toMatch(/non è una fattura elettronica/);
+  });
+});

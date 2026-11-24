@@ -326,16 +326,32 @@ function euro(c) {
  */
 export function eFileMetadatiSdi(nome, xml = null) {
   const file = String(nome ?? "").split("/").pop();
-  if (/_MT_\d+\.xml(\.p7m)?$/i.test(file)) return true;
+  // I messaggi che lo SdI mette accanto alle fatture: metadati (MT), ricevuta di consegna (RC), notifica di scarto (NS),
+  // di mancata consegna (MC), di esito (EC), decorrenza termini (DT), attestazione di trasmissione (AT), scarto/esito
+  // (SE, NE); più il file di accettazione di Aruba. Nessuno è una fattura: si tacciono e si contano.
+  if (/_(MT|RC|NS|MC|EC|DT|AT|SE|NE)_\d+\.xml(\.p7m)?$/i.test(file)) return true;
+  if (/^SubmissionAcceptance\.xml$/i.test(file)) return true;
   if (xml) {
     try {
-      return leggiXml(xml)?.localName === "FileMetadati";
+      return RADICI_MESSAGGI_SDI.has(leggiXml(xml)?.localName);
     } catch {
       return false;
     }
   }
   return false;
 }
+
+const RADICI_MESSAGGI_SDI = new Set([
+  "FileMetadati",
+  "RicevutaConsegna",
+  "NotificaScarto",
+  "NotificaMancataConsegna",
+  "NotificaEsito",
+  "NotificaDecorrenzaTermini",
+  "AttestazioneTrasmissioneFattura",
+  "RicevutaScarto",
+  "RicevutaImpossibilitaRecapito",
+]);
 
 /**
  * Legge l'XML di una fattura elettronica. Un file può contenere più
@@ -348,10 +364,16 @@ export function eFileMetadatiSdi(nome, xml = null) {
  */
 export function leggiFatturaPA(xml) {
   let radice = null;
+  let nonSiLegge = false;
   try {
     radice = leggiXml(xml);
   } catch {
     radice = null;
+    nonSiLegge = true;
+  }
+  if (nonSiLegge) {
+    // Un file tagliato o rovinato non è «un file che non è una fattura»: è una fattura che non si apre, e va detto.
+    return { fatture: [], errori: ["Il file è rovinato o incompleto: l'XML non si legge."] };
   }
   if (!radice || radice.localName !== "FatturaElettronica") {
     return { fatture: [], errori: ["Il file non è una fattura elettronica (manca «FatturaElettronica»)."] };

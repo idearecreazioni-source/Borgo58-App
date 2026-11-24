@@ -53,6 +53,8 @@ const XML = `<?xml version="1.0" encoding="utf-8"?>
   </FatturaElettronicaBody>
 </p:FatturaElettronica>`;
 
+const RICEVUTA = `<?xml version="1.0"?><ns3:RicevutaConsegna xmlns:ns3="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"><IdentificativoSdI>1</IdentificativoSdI></ns3:RicevutaConsegna>`;
+
 const METADATI = `<?xml version="1.0"?><ns2:FileMetadati xmlns:ns2="http://www.fatturapa.gov.it/sdi/messaggi/v1.0"><IdentificativoSdI>1</IdentificativoSdI><NomeFile>IT00000000001_ab1Cd.xml</NomeFile></ns2:FileMetadati>`;
 
 
@@ -87,15 +89,26 @@ describe("uno zip con fatture e metadati", () => {
       { nome: "IT00000000001_00001.xml", testo: XML },
       { nome: "IT00000000001_00002.xml", testo: XML.slice(0, 400) },
       { nome: "IT00000000001_00001_MT_001.xml", testo: METADATI },
+      { nome: "IT00000000001_00001_RC_001.xml", testo: RICEVUTA },
+      { nome: "SubmissionAcceptance.xml", testo: "<Accettazione/>" },
     ]);
     // La fattura buona si può registrare.
     expect(await screen.findByRole("button", { name: "Registra la fattura" })).toBeTruthy();
     // La rovinata compare con il suo nome e un motivo, non sparisce.
     expect(await screen.findByText(/IT00000000001_00002.xml/)).toBeTruthy();
-    expect(screen.getAllByText(/non è una fattura elettronica|incompleta/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Il file è rovinato o incompleto: l.XML non si legge/)).toBeTruthy();
     // I metadati sono contati, una sola volta, e detti per quello che sono.
-    expect(screen.getByText(/Un file dell'archivio non è una fattura/)).toBeTruthy();
-    expect(screen.getByText(/metadati del portale/)).toBeTruthy();
+    // I tre file dello SdI (metadati, ricevuta di consegna, accettazione) sono contati e taciuti, e NON sono righe d'errore.
+    expect(screen.getByText(/3 file dell'archivio non sono fatture/)).toBeTruthy();
+    expect(screen.queryByText(/_RC_001/)).toBeNull();
+    expect(screen.queryByText(/SubmissionAcceptance/)).toBeNull();
+  });
+
+  it("🔴 un file dello zip che non si apre (né XML né busta firmata) compare con il suo nome e non sparisce", async () => {
+    apri();
+    scegliLoZip([{ nome: "IT00000000001_00003.xml.p7m", testo: "questi byte non sono né XML né una busta firmata" }]);
+    expect(await screen.findByText(/IT00000000001_00003.xml.p7m/)).toBeTruthy();
+    expect(screen.queryByText(/archivio non son/)).toBeNull();
   });
 
   it("uno zip con SOLI metadati: nessun errore, solo il conto dei file lasciati stare", async () => {

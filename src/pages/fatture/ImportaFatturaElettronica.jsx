@@ -65,7 +65,7 @@ export default function ImportaFatturaElettronica() {
         // 🔴 Si tacciono SOLO i file dei metadati del portale. Un file dello zip che non è una fattura leggibile (una
         //    fattura rovinata, un file tagliato) è un errore da mostrare con il suo motivo: prima finiva fra i
         //    «non è una fattura» e quella fattura non entrava senza che nessuno se ne accorgesse.
-        if (s.daZip && fatture.length === 0 && eFileMetadatiSdi(s.nome, xml)) {
+        if (s.daZip && fatture.length === 0 && eFileMetadatiSdi(s.file, xml)) {
           saltati.push(s.nome);
           continue;
         }
@@ -85,7 +85,7 @@ export default function ImportaFatturaElettronica() {
           }),
         );
       } catch (e) {
-        if (s.daZip && eFileMetadatiSdi(s.nome)) saltati.push(s.nome);
+        if (s.daZip && eFileMetadatiSdi(s.file)) saltati.push(s.nome);
         else nuove.push({ chiave: s.nome, nome: s.nome, errore: e.message });
       }
     }
