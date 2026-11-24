@@ -6,23 +6,29 @@
 -- proporzione di quanto la fattura costa davvero: quota × da_pagare / importo della fattura (`da_pagare` è la funzione che
 -- toglie le note scalate, l'unico posto dove quella sottrazione esiste). Senza note di credito il rapporto è 1 e non cambia
 -- niente; con una fattura pagata per intero il calcolo non c'entra (conta il pagamento, nello «speso»).
--- Si cambia il corpo VIVO di `piano_speso_per_voce` in un punto solo (controllato: la riga deve comparire una volta sola).
+-- La STESSA regola vale per le rate «aperte» del piano (`piano_rate_aperte`, la previsione di cassa): il suo calcolo delle
+-- coperture dichiara di essere «la stessa regola dell'impegnato», e deve restarlo (se no la rata risulterebbe coperta per
+-- 1.000 mentre la voce mostra 800 impegnati). Il risultato si arrotonda al centesimo.
+-- Si cambia il corpo VIVO delle due funzioni in un punto solo ciascuna (controllato: la riga deve comparire una volta sola).
 
 do $impegnato$
 declare
   v_vecchio constant text := 'greatest(c.importo_attribuito - coalesce((';
-  v_nuovo   constant text := 'greatest(c.importo_attribuito * (da_pagare(i) / nullif(i.amount, 0)) - coalesce((';
+  v_nuovo   constant text := 'greatest(round(c.importo_attribuito * (da_pagare(i) / nullif(i.amount, 0)), 2) - coalesce((';
+  v_funzione text;
   v_def     text;
   v_n       integer;
 begin
   perform set_config('request.jwt.claims', null, true);
-  v_def := replace(pg_get_functiondef('public.piano_speso_per_voce()'::regprocedure), E'\r', '');
-  if v_def like '%' || v_nuovo || '%' then return; end if;
-  v_n := (length(v_def) - length(replace(v_def, v_vecchio, ''))) / length(v_vecchio);
-  if v_n <> 1 then
-    raise exception 'piano_speso_per_voce non ha una sola riga «%» (ne ha %): confronta il corpo vivo prima di applicare.', v_vecchio, v_n;
-  end if;
-  execute replace(v_def, v_vecchio, v_nuovo);
+  foreach v_funzione in array array['public.piano_speso_per_voce()', 'public.piano_rate_aperte()'] loop
+    v_def := replace(pg_get_functiondef(v_funzione::regprocedure), E'\r', '');
+    if v_def like '%' || v_nuovo || '%' then continue; end if;
+    v_n := (length(v_def) - length(replace(v_def, v_vecchio, ''))) / length(v_vecchio);
+    if v_n <> 1 then
+      raise exception '% non ha una sola riga «%» (ne ha %): confronta il corpo vivo prima di applicare.', v_funzione, v_vecchio, v_n;
+    end if;
+    execute replace(v_def, v_vecchio, v_nuovo);
+  end loop;
 end $impegnato$;
 
 -- ---------------------------------------------------------------------
@@ -78,8 +84,9 @@ begin
      or exists (select 1 from note_credito where numero = 'ZZ-NC-1') then
     raise exception 'VERIFICA (4): resta un residuo della verifica.';
   end if;
-  if pg_get_functiondef('public.piano_speso_per_voce()'::regprocedure) not like '%da_pagare(i)%' then
-    raise exception 'VERIFICA (5): il corpo vivo non usa da_pagare.';
+  if pg_get_functiondef('public.piano_speso_per_voce()'::regprocedure) not like '%da_pagare(i)%'
+     or pg_get_functiondef('public.piano_rate_aperte()'::regprocedure) not like '%da_pagare(i)%' then
+    raise exception 'VERIFICA (5): il corpo vivo del piano o delle rate non usa da_pagare.';
   end if;
 
   raise notice 'Fatto: nel piano dell''investimento l''impegnato di una fattura da pagare toglie le note di credito già scalate (1.000 con 200 di nota → 800; quota parziale in proporzione). Provato e annullato: zero residui.';

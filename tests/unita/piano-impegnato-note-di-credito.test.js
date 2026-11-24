@@ -8,13 +8,15 @@ const migrazione = readFileSync(new URL("../../supabase/migrations/2026112400000
 
 describe("migrazione 20261124000003: impegnato del piano con le note di credito", () => {
   it("la quota attribuita si riduce nella proporzione di quanto la fattura costa davvero, usando da_pagare", () => {
-    expect(migrazione).toContain("'greatest(c.importo_attribuito * (da_pagare(i) / nullif(i.amount, 0)) - coalesce(('");
+    expect(migrazione).toContain("'greatest(round(c.importo_attribuito * (da_pagare(i) / nullif(i.amount, 0)), 2) - coalesce(('");
+    // La stessa regola vale per le rate aperte della previsione di cassa.
+    expect(migrazione).toContain("array['public.piano_speso_per_voce()', 'public.piano_rate_aperte()']");
   });
 
   it("cambia il corpo vivo in una riga sola e si ferma se l'ancora non c'è o c'è due volte", () => {
     expect(migrazione).toContain("if v_n <> 1 then");
-    expect(migrazione).toContain("piano_speso_per_voce non ha una sola riga");
-    expect(migrazione).toContain("if v_def like '%' || v_nuovo || '%' then return; end if;");
+    expect(migrazione).toContain("non ha una sola riga");
+    expect(migrazione).toContain("if v_def like '%' || v_nuovo || '%' then continue; end if;");
   });
 
   it("senza note di credito non cambia niente (rapporto 1); con una fattura già pagata il calcolo non c'entra", () => {
