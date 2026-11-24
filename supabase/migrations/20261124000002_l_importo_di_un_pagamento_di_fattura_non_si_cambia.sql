@@ -8,6 +8,8 @@
 -- della fattura (`annulla_pagamento_fattura`) e si registra di nuovo con l'importo giusto: la fattura e la cassa si muovono
 -- insieme, come quando è stato scritto. Tutto il resto del movimento (nota, data, mezzo, riferimento) si può correggere.
 -- Non si tocca niente di quello che c'è: vale solo per le modifiche da adesso.
+-- Limite accettato: chi ha il token del titolare potrebbe scollegare il movimento dalla fattura e POI cambiare l'importo (due
+-- gesti): è lo stesso scollegamento che fanno apposta l'annullo del pagamento, la nota di credito e l'anticipo, quindi non si chiude.
 
 create or replace function movimento_di_fattura_importo_fermo()
 returns trigger language plpgsql set search_path = public as $funzione$
