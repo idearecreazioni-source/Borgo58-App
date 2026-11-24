@@ -8,6 +8,7 @@ import {
   importaDocumento,
   linkElencoDrive,
   scriviElencoDrive,
+  vociSchedaDelLotto,
 } from "../../lib/api/importDrive";
 import {
   CSV_MAX_BYTE,
@@ -320,9 +321,18 @@ export default function ImportaDalDrive() {
     const tocca = (patch) => setCarichi((cs) => cs.map((c) => (c.lottoId === lottoId ? { ...c, ...patch } : c)));
     tocca({ errore: null });
     try {
+      // Le voci della Scheda nate da questi documenti si chiedono PRIMA: dopo l'annullamento il collegamento si perde.
+      // Se non riesco a leggerle non annullo niente (resta tutto com'era): non voglio lasciare voci senza dirlo.
+      let vociScheda;
+      try {
+        vociScheda = await vociSchedaDelLotto(lottoId);
+      } catch (e) {
+        tocca({ errore: `Non sono riuscito a controllare le voci della Scheda di questo carico, quindi non ho annullato niente: ${e.message}` });
+        return;
+      }
       const quanti = await annullaLottoImport(lottoId);
       setCarichi((cs) =>
-        cs.map((c) => (c.lottoId === lottoId ? { ...c, annullato: typeof quanti === "number" ? quanti : c.entrati.length } : c))
+        cs.map((c) => (c.lottoId === lottoId ? { ...c, annullato: typeof quanti === "number" ? quanti : c.entrati.length, vociScheda } : c))
       );
     } catch (e) {
       // L'errore sta nel riquadro del carico, dove si è premuto il bottone.
@@ -410,9 +420,31 @@ export default function ImportaDalDrive() {
           </h2>
           <div role="status" aria-live="polite">
             {c.annullato !== null ? (
-              <p className="testo-sala-grande text-b58-charcoal">
-                Carico annullato: ho tolto dall&apos;Archivio {c.annullato} documenti.
-              </p>
+              <>
+                <p className="testo-sala-grande text-b58-charcoal">
+                  Carico annullato: ho tolto dall&apos;Archivio {c.annullato} documenti.
+                </p>
+                {(c.vociScheda ?? []).length > 0 && (
+                  <div data-testid="voci-scheda-del-carico" className="mt-3 rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
+                    <p className="testo-sala-grande text-b58-charcoal">
+                      Queste voci della Scheda nascevano da documenti di questo carico e <strong>restano</strong>: guardale e spegni
+                      quelle che non servono (le proposte per la Scheda di questo carico le ho chiuse io).
+                    </p>
+                    <ul className="mt-2 space-y-1 testo-sala text-b58-charcoal-soft">
+                      {c.vociScheda.map((v) => (
+                        <li key={v.numero}>
+                          <strong>[S{v.numero}]</strong> {v.testo}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 testo-sala">
+                      <Link to="/memo/scheda" className="underline underline-offset-2 text-b58-terracotta tocco-campo">
+                        Apri la Scheda
+                      </Link>
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <p className="testo-sala-grande text-b58-charcoal">
