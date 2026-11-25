@@ -8,6 +8,7 @@
 -- Cura: `esegui_azione_posta` accetta solo lo stato «proposta». Una già «fatta» continua a rispondere «già fatta» (come
 -- prima: il controllo c'è subito sopra); una «rifiutata» ora è rifiutata a sua volta, con un messaggio chiaro.
 -- Si cambia il corpo VIVO della funzione in un punto solo (controllato: la riga deve comparire una volta sola).
+-- ⚠️ Nessun file del repo contiene il corpo completo col controllo: per riscrivere la funzione si riparte da `npm run funzione:viva`, mai da una migrazione vecchia.
 
 do $stato$
 declare
