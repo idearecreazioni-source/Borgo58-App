@@ -56,6 +56,13 @@ const DI_SERVIZIO = new Set([
   // sigla di trentasei caratteri in una firma non dice niente a nessuno.
   "prenotazione_id",
   "supplier_id",
+  // 25/11/2026 (revisione dell'11/11, punto 16): causale, prodotto e conto
+  // hanno il loro nome letto dal database (`causale_nome`, `prodotto_nome`,
+  // `conto_nome`, come `fornitore_nome`): è il nome che chi firma deve
+  // vedere, e il codice accanto non gli dice niente.
+  "causale_id",
+  "ingredient_id",
+  "conto_id",
   // Il piano dell'investimento (08/11/2026): accanto ci sono «voce» e «spesa».
   "voce_id",
   "spesa_id",
@@ -119,6 +126,9 @@ const ETICHETTE = {
   data_nuova: "nuovo giorno",
   data_precedente: "adesso è",
   fornitore_nome: "fornitore",
+  causale_nome: "causale",
+  prodotto_nome: "prodotto",
+  conto_nome: "conto",
   ogni_mesi: "si ripete ogni (mesi)",
   telefono_non_capito: "telefono non capito (non lo scrivo)",
   // 28/10/2026: il promemoria per luogo, letto come lo si e' detto.
@@ -489,7 +499,9 @@ export function campiCorreggibili(dati) {
       continue;
     }
     if (DI_SERVIZIO.has(chiave) || SOLO_USCITA.includes(chiave)) continue;
-    if (chiave.endsWith("_id") || NUMERI_DI_CATALOGO.has(chiave)) continue;
+    // I nomi accanto agli identificativi (`fornitore_nome`, `causale_nome`…) li scrive il database da solo:
+    // un testo modificabile qui verrebbe sovrascritto senza dirlo (revisione dell'11/11, punto 16).
+    if (chiave.endsWith("_id") || chiave.endsWith("_nome") || NUMERI_DI_CATALOGO.has(chiave)) continue;
     // Collegando una spesa, l'importo è quanto ne resta: lo dice il database.
     if (conSpesa && chiave === "importo") continue;
     if (v !== null && typeof v === "object") continue;
