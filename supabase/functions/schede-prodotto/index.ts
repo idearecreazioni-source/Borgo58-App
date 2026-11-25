@@ -190,6 +190,26 @@ Deno.serve(async (req) => {
   }
 
   // -------------------------------------------------------------------
+  // 1-bis. Il tetto di spesa, PRIMA di spendere (revisione dell'11/11, punto 38)
+  // -------------------------------------------------------------------
+  // ⚠️ `spesa_ai_del_mese` ha il portiere del titolare (un altro ruolo riceve
+  // un rifiuto) e dice se il tetto è raggiunto: qui si guarda prima di
+  // chiamare il modello, come fa già la lettura delle foto. Fermarsi non
+  // ferma il lavoro: la scheda si compila a mano come sempre.
+  const { data: spesa, error: erroreSpesa } = await supabase.rpc("spesa_ai_del_mese");
+  if (erroreSpesa) {
+    return errore(403, "spesa", erroreSpesa.message);
+  }
+  const statoSpesa = Array.isArray(spesa) ? spesa[0] : spesa;
+  if (statoSpesa?.blocca) {
+    return errore(
+      429,
+      "tetto",
+      statoSpesa?.frase ?? "La spesa del mese ha raggiunto il tetto. La scheda si compila a mano come sempre."
+    );
+  }
+
+  // -------------------------------------------------------------------
   // 2. Una domanda sola per tutti
   // -------------------------------------------------------------------
   const elenco = scelti
