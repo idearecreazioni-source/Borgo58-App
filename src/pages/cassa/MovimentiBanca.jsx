@@ -274,7 +274,8 @@ export default function MovimentiBanca() {
           {caricamento.righe.map((r) => (
             <p key={r.nome} className="text-b58-charcoal">
               {r.conto}: {r.nuovi} {r.nuovi === 1 ? "movimento nuovo" : "movimenti nuovi"}
-              {r.gia_presenti > 0 && `, ${r.gia_presenti} già caricati prima`}.
+              {r.gia_presenti > 0 && `, ${r.gia_presenti} già caricati prima`}
+              {r.descrizione_cambiata > 0 && ` (${r.descrizione_cambiata} con la descrizione cambiata dalla banca: non rientrano)`}.
             </p>
           ))}
           {caricamento.incassate?.incassate > 0 && (
