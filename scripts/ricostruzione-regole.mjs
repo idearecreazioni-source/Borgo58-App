@@ -128,6 +128,14 @@ export const ECCEZIONI_STORICHE = [
     motivo: "conseguenza della 20260917000001 non applicata: la funzione dei promemoria resta quella con l'indirizzo scritto fisso",
   },
   {
+    versione: "20261115000017",
+    come: "a_meta",
+    attesa: "il confronto ha controllato solo",
+    sanataDa: null,
+    motivo:
+      "la verifica pretende almeno 10 letture, ma quelle per societa' (fatture, cassa) esistono solo se ci sono fatture e movimenti: su un database vuoto sono 9. In produzione e' passata con dati veri; qui la funzione resta, la registrazione no",
+  },
+  {
     versione: "20260921000001",
     come: "nota",
     attesa: "nella forma uuid + jsonb, non esiste",
@@ -162,6 +170,24 @@ export const PREPARAZIONI_PROVA = [
   {
     versione: "20260826000013",
     sql: "update impostazioni_ai set tetto_mensile_euro = 10 where id;",
+  },
+  // 20260829000007 cerca nel corpo vivo di `registra_produzione` il testo «quantita_mancante)<CR><LF>      values»
+  // (con l'a-capo di Windows): in produzione il corpo era stato scritto da un file con quegli a-capo. Rifatto da zero
+  // dai file del repository, quel punto ha il solo <LF> e la migrazione si ferma, trascinandosi dietro altre 16.
+  // La fixture mette quegli a-capo nello stesso punto, SENZA toccare il file della migrazione (la sua storia resta vera).
+  // Non scrive dati, cambia solo il corpo di una funzione, e solo nel database di prova.
+  {
+    versione: "20260829000007",
+    sql: `do $fixture$
+declare r record;
+begin
+  for r in select p.oid from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname = 'registra_produzione' and p.prokind = 'f' loop
+    if position(E'quantita_mancante)\\n      values' in pg_get_functiondef(r.oid)) > 0 then
+      execute replace(pg_get_functiondef(r.oid), E'quantita_mancante)\\n      values', E'quantita_mancante)\\r\\n      values');
+    end if;
+  end loop;
+end $fixture$;`,
   },
 ];
 
