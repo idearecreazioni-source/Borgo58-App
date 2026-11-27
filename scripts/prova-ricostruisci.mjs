@@ -13,7 +13,7 @@
 //
 // Aggiungere `-- --azzera` al comando per svuotare prima il progetto di prova.
 
-import { readdirSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   leggiConfigurazione,
@@ -30,6 +30,11 @@ import {
   REF_PRODUZIONE,
   argomentiMigrazione,
 } from "./comune.mjs";
+// Le STESSE regole della prova di ricarica (`npm run ricostruzione:verifica`): poche migrazioni vecchie non si
+// possono rifare identiche su un database vuoto (cercano una ricetta che non c'e', un istante scritto a mano...).
+// Sono elencate una per una, col messaggio con cui DEVONO fermarsi; qualunque altra fermata resta un errore.
+// I file delle migrazioni non si toccano mai: la storia che raccontano e' vera.
+import { argomentiRicostruzione, classificaFermate, esitoRegistro, modoRicostruzione, preparazioneDi } from "./ricostruzione-regole.mjs";
 
 const UTENTI_RICHIESTI = [
   "alessio@borgo58.app",
@@ -258,28 +263,41 @@ const migrazioni = readdirSync("supabase/migrations").filter((f) => f.endsWith("
 titolo(`Applico ${migrazioni.length} migrazioni`);
 
 const diario = [];
+const fermate = [];
 let numero = 0;
 for (const file of migrazioni) {
   numero++;
   const etichetta = `${String(numero).padStart(2, " ")}/${migrazioni.length}  ${file}`;
-  const r = esegui(
-    psql,
-    argomentiMigrazione(url, path.join("supabase/migrations", file)).argomenti,
-    { silenzioso: true }
-  );
+  const percorso = path.join("supabase/migrations", file);
+  const versione = file.slice(0, 14);
+  const modo = modoRicostruzione(versione, argomentiMigrazione(url, percorso).atomica);
+  // FIXTURE dichiarata (non storia, non dati veri): solo per le versioni che la richiedono.
+  const preparazione = preparazioneDi(versione);
+  if (preparazione) sql(preparazione, `La preparazione per la ${versione}`);
+  // Il catalogo: stesso aggiramento del piano della prova di ricarica (vedi nota sopra e ricostruzione-verifica.mjs).
+  const chiedeIlCatalogo = /pg_get_functiondef/.test(readFileSync(percorso, "utf8"));
+  const r = esegui(psql, argomentiRicostruzione(url, percorso, { ...modo, chiedeIlCatalogo }), { silenzioso: true });
   diario.push(`===== ${file} =====\n${r.uscita}`);
-  console.log(`   ${r.ok ? "ok  " : "STOP"} ${etichetta}`);
+  const attesa = !r.ok && modo.eccezione?.attesa && r.uscita.includes(modo.eccezione.attesa);
+  console.log(`   ${r.ok ? "ok  " : attesa ? "nota" : "STOP"} ${etichetta}`);
 
   if (!r.ok) {
-    const registro = `ricostruzione_${timbroLocale()}.log`;
-    writeFileSync(registro, diario.join("\n"), "utf8");
-    fermati(
-      `La migrazione ${file} si e' fermata.`,
-      "",
-      r.uscita.trim().split("\n").slice(-8).join("\n  "),
-      "",
-      `Il resoconto completo e' nel file ${registro}: mandalo a Claude Code cosi' com'e'.`
-    );
+    const motivo = (r.uscita.split(/\r?\n/).filter((l) => /ERROR:/.test(l)).pop() || "?")
+      .replace(/^psql:[^:]+:\d+:\s*/, "")
+      .slice(0, 200);
+    fermate.push({ file, versione, numero, motivo });
+    // Una fermata NON dichiarata ferma tutto, come prima. Una dichiarata (col suo messaggio) si segna e si va avanti.
+    if (!attesa) {
+      const registro = `ricostruzione_${timbroLocale()}.log`;
+      writeFileSync(registro, diario.join("\n"), "utf8");
+      fermati(
+        `La migrazione ${file} si e' fermata.`,
+        "",
+        r.uscita.trim().split("\n").slice(-8).join("\n  "),
+        "",
+        `Il resoconto completo e' nel file ${registro}: mandalo a Claude Code cosi' com'e'.`
+      );
+    }
   }
 
   if (file === MIGRAZIONE_DEI_RUOLI) {
@@ -294,8 +312,36 @@ for (const file of migrazioni) {
 const registro = `ricostruzione_${timbroLocale()}.log`;
 writeFileSync(registro, diario.join("\n"), "utf8");
 
+// Il registro deve essere COMPLETO (ogni file ha la sua riga): e' la domanda che conta, non «quante si sono fermate».
+const versioniFile = migrazioni.map((f) => f.slice(0, 14));
+const versioniRegistrate = interroga(url, "select version from applied_migrations order by 1;")
+  .split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+const registroFinale = esitoRegistro(versioniFile, versioniRegistrate);
+const { note: fermateNote, nonScattate } = classificaFermate(fermate, versioniFile);
+titolo("Fermate dichiarate");
+console.log(`   fermate attese e spiegate: ${fermateNote.length}`);
+for (const f of fermateNote) console.log(`     · ${f.file} (sanata da ${f.eccezione.sanataDa ?? "nessuna"})`);
+if (nonScattate.length) {
+  console.log(`   ⚠ eccezioni che dovevano fermarsi e non l'hanno fatto: ${nonScattate.map((e) => e.versione).join(", ")}`);
+  console.log("     (la storia non corrisponde piu': va riguardato scripts/ricostruzione-regole.mjs)");
+}
+// Le righe mancanti di una fermata DICHIARATA senza «sanataDa» sono attese (nessuna migrazione le registra): si dicono
+// e si va avanti, altrimenti il comando si fermerebbe sempre prima della sala e dello stato di partenza.
+const dichiarate = new Set(fermateNote.map((f) => f.versione));
+const mancantiInattese = registroFinale.mancanti.filter((v) => !dichiarate.has(v));
+const mancantiNote = registroFinale.mancanti.filter((v) => dichiarate.has(v));
+if (mancantiNote.length) console.log(`   righe di registro mancanti ma dichiarate: ${mancantiNote.join(", ")}`);
+if (mancantiInattese.length > 0 || registroFinale.estranee.length > 0) {
+  fermati(
+    "Il registro delle migrazioni NON e' completo dopo la ricostruzione.",
+    `mancanti: ${mancantiInattese.join(", ") || "-"}; senza file: ${registroFinale.estranee.join(", ") || "-"}`,
+    "",
+    `Resoconto completo: ${registro}`
+  );
+}
+
 titolo("Risultato");
-console.log(`   tabelle create:        ${interroga(url, "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE';")}`);
+console.log(`   tabelle create:       ${interroga(url, "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE';")}`);
 console.log(`   migrazioni registrate: ${interroga(url, "select count(*) from applied_migrations;")}`);
 console.log(`   ruoli assegnati:       ${interroga(url, "select count(*) from user_roles;")}`);
 console.log("");

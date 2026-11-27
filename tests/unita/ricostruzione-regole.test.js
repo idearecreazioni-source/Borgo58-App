@@ -82,7 +82,7 @@ describe("come si applica una migrazione nella ricostruzione", () => {
 
   it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
     const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
-    expect(conAttesa.length).toBe(10);
+    expect(conAttesa.length).toBe(11);
     for (const e of conAttesa) {
       // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
       // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
@@ -216,11 +216,11 @@ describe("le due storie aggiunte il 30/09 (mandato M20-E)", () => {
     expect(inattese).toHaveLength(1);
   });
 
-  it("l'elenco e' chiuso: undici eccezioni, queste e non altre", () => {
+  it("l'elenco e' chiuso: dodici eccezioni, queste e non altre", () => {
     expect(ECCEZIONI_STORICHE.map((e) => e.versione)).toEqual([
       "20260820000010", "20260822000003", "20260823000024", "20260824000033",
       "20260827000006", "20260827000018", "20260829000006",
-      "20260917000001", "20260920000001", "20260921000001", "20261006000001",
+      "20260917000001", "20260920000001", "20261115000017", "20260921000001", "20261006000001",
     ]);
   });
 });
@@ -244,11 +244,11 @@ describe("la 20260826000013: fixture della prova, non eccezione storica (mandato
   });
 
   it("la preparazione esiste SOLO per la 20260826000013", () => {
-    expect(PREPARAZIONI_PROVA.map((p) => p.versione)).toEqual(["20260826000013"]);
+    expect(PREPARAZIONI_PROVA.map((p) => p.versione)).toEqual(["20260826000013", "20260829000007"]);
     expect(preparazioneDi("20260826000013")).toBeTruthy();
     for (const f of elenco) {
       const v = f.slice(0, 14);
-      if (v !== "20260826000013") expect(preparazioneDi(v), v).toBeNull();
+      if (v !== "20260826000013" && v !== "20260829000007") expect(preparazioneDi(v), v).toBeNull();
     }
   });
 

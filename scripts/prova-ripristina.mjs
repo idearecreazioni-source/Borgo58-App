@@ -11,7 +11,7 @@
 // Non tocca MAI il database vero: scrive solo dove punta DB_URL_PROVA, e
 // `soloProva()` interrompe il programma se quella stringa e' quella vera.
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import {
@@ -47,7 +47,17 @@ const radice = config.BACKUP_CARTELLA || path.join(os.homedir(), "Desktop", "Bac
 let cartella = indicata;
 if (!cartella) {
   if (!existsSync(radice)) fermati(`Non trovo nessuna copia di sicurezza in ${radice}.`, "Fai prima: npm run backup");
-  const copie = readdirSync(radice).sort();
+  // Solo le CARTELLE di copia: nella radice ci possono stare anche file sciolti (script, appunti) e il
+  // «piu' recente in ordine alfabetico» non deve mai essere uno di quelli (25/11: prese un .ps1).
+  const copie = readdirSync(radice)
+    .filter((nome) => {
+      try {
+        return statSync(path.join(radice, nome)).isDirectory();
+      } catch {
+        return false; // collegamento rotto: non e' una copia
+      }
+    })
+    .sort();
   if (copie.length === 0) fermati(`Nessuna copia dentro ${radice}.`, "Fai prima: npm run backup");
   cartella = path.join(radice, copie[copie.length - 1]);
 }
@@ -89,6 +99,21 @@ sql("drop schema if exists public cascade;", "Lo svuotamento");
 // inserimenti diretti in SQL. I file veri sono nella cartella `file/`
 // della copia e si ricaricano dall'app (docs/BACKUP.md, paragrafo 6).
 sql("delete from auth.users;", "La pulizia degli accessi");
+// I ruoli che la copia nomina ma che NON stanno nella copia (sono della piattaforma o di strumenti esterni):
+// senza, `01_schema.sql` si ferma su «role does not exist» (25/11: manifest_ro). Si creano vuoti e senza accesso:
+// servono solo a far andare a buon fine i `grant`, non a far entrare nessuno.
+sql(
+  `do $ruoli$
+   declare r text;
+   begin
+     foreach r in array array['manifest_ro'] loop
+       if not exists (select 1 from pg_roles where rolname = r) then
+         execute format('create role %I nologin', r);
+       end if;
+     end loop;
+   end $ruoli$;`,
+  "La creazione dei ruoli esterni"
+);
 console.log("   fatto");
 
 for (const [file, descrizione] of [
@@ -225,9 +250,11 @@ if (origineDichiarata?.includes("scenario")) {
   console.log("  ATTENZIONE: il progetto di prova adesso contiene i dati VERI,");
   console.log("  nomi e telefoni dei clienti compresi. Va rimesso a posto subito:");
   console.log("");
-  console.log("    npm run prova:ricostruisci -- --azzera");
+  console.log("    npm run prova:rimetti      (rimette lo scenario finto del 23/08)");
+  console.log("    npm run prova:migra -- <le migrazioni uscite dopo lo scenario>");
   console.log("");
   console.log("  Gli accessi non vanno rifatti: la copia porta gli stessi quattro");
   console.log("  indirizzi, quindi le prove automatiche continuano a entrare.");
+  console.log("  I lavori pianificati (cron) NON tornano da soli: vanno ricreati a mano.");
   console.log("");
 }

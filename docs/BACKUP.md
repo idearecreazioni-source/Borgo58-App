@@ -212,8 +212,16 @@ backup va ripristinato almeno una volta prima di fidarsene.
 
 ⚠️ Dopo un ripristino il progetto di prova contiene i **dati veri**, nomi e
 telefoni dei clienti compresi. Rimettilo a posto subito dopo con
-`npm run prova:ricostruisci -- --azzera`. Gli accessi non vanno rifatti: la
-copia porta gli stessi quattro indirizzi.
+`npm run prova:rimetti` (lo scenario finto) e poi `npm run prova:migra -- <le
+migrazioni uscite dopo lo scenario>`: è la strada provata il 25/11/2026.
+(`prova:ricostruisci -- --azzera` rifà tutto dai file del repository; dal 27/11
+applica le stesse regole della prova di ricarica, ma su Prova non è ancora
+stato provato fino in fondo.) Gli accessi non vanno rifatti: la copia porta
+gli stessi quattro indirizzi.
+
+Il ripristino rimette anche il ruolo vuoto `manifest_ro` (senza, la copia si
+ferma), sceglie solo cartelle di copia (mai file sciolti) e **non** rimette i
+lavori pianificati (cron): vanno ricreati a mano.
 
 ---
 
