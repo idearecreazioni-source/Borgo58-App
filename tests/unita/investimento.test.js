@@ -349,6 +349,9 @@ describe("9 · niente di fiscale sa cos'e' un investimento", () => {
       // L'impegnato del piano toglie le note di credito (24/11/2026): NON e' fiscale, nella propria verifica annullata
       // segna una fattura come investimento per poterla collegare a una voce e provare che l'impegnato scende.
       "20261124000003_il_piano_impegnato_toglie_le_note_di_credito.sql",
+      // MEMO libero, passo L1 (28/11/2026): NON e' fiscale, le viste di sola lettura (`memo_v_ho_pagato_io`,
+      // `memo_v_fatture_fornitori`) mostrano la spunta com'e', senza usarla in nessun calcolo.
+      "20261128000001_memo_legge_solo_da_viste_pulite.sql",
     ]);
   });
 
